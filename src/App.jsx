@@ -5,6 +5,8 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, us
 
 const PP_LOGO_B64 = "data:image/png;base64,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";
 
+const NBA_LOGO_B64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCAxMjAiPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIHJ4PSI4IiBmaWxsPSIjQzkwODJBIi8+CiAgPHBhdGggZD0iTTQwIDEwIEMyMCAxMCA1IDMwIDUgNTUgQzUgODAgMjAgMTAwIDQwIDEwMCBDNjAgMTAwIDc1IDgwIDc1IDU1IEM3NSAzMCA2MCAxMCA0MCAxMFoiIGZpbGw9IiMxRDQyQkEiIG9wYWNpdHk9IjAuOSIvPgogIDxlbGxpcHNlIGN4PSI0MCIgY3k9IjU1IiByeD0iMzUiIHJ5PSI0NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTQwIDEwIEw0MCAxMDAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHBhdGggZD0iTTUgNTUgTDc1IDU1IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxwYXRoIGQ9Ik04IDM1IEMyMCA0MCAzNSA0MiA0MCA0MiBDNDUgNDIgNjAgNDAgNzIgMzUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTggNzUgQzIwIDcwIDM1IDY4IDQwIDY4IEM0NSA2OCA2MCA3MCA3MiA3NSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8dGV4dCB4PSI0MCIgeT0iMTE1IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2siIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5OQkE8L3RleHQ+Cjwvc3ZnPg==";
+
 function normalizeDT(dt,id){
   const p=v=>String(v).padStart(2,"0");
   const tsToStr=ts=>{
@@ -516,7 +518,7 @@ const STATUS_CFG={
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
   lost:{label:"Perdu",color:"#EF4444",bg:"rgba(248,113,113,0.1)"},
 };
-const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:"",isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over"};
+const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:"",isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[]};
 const EMPTY_MAP_ROW={odds:"",stake:"",status:"pending",enabled:true};
 
 function toDateKey(dt){
@@ -1205,15 +1207,18 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
         <div style={{display:"flex",alignItems:"center",gap:11}}>
 
           {/* Logo sport — légèrement plus grand */}
-          <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)"}}>
-            <GameLogo game={bet.game} size={37}/>
+          <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {bet.game==="NBA"
+              ? <img src={NBA_LOGO_B64} style={{width:33,height:33,objectFit:"contain"}} alt="NBA"/>
+              : <GameLogo game={bet.game} size={37}/>
+            }
           </div>
 
           {/* Centre — 2 lignes */}
           <div style={{flex:1,minWidth:0}}>
             {/* L1 : Joueur — Kills — Map */}
             <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4,flexWrap:"wrap"}}>
-              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",textTransform:"capitalize",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{bet.player}</span>
+              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
               {bet.role&&<PositionLogo role={bet.role} size={14}/>}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
               {bet.isLive&&<span style={{fontSize:8,fontWeight:800,color:"#fb7185",background:"rgba(251,113,133,.12)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,113,133,.25)",letterSpacing:.3,flexShrink:0}}>LIVE</span>}
@@ -2038,7 +2043,7 @@ function MesParisView({
         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
           <button onClick={()=>setSortByMap(v=>!v)}
             style={{padding:"5px 10px",borderRadius:9,border:"1px solid "+(sortByMap?"rgba(251,191,36,.5)":"rgba(255,255,255,.07)"),background:sortByMap?"rgba(251,191,36,.1)":"transparent",color:sortByMap?"#fbbf24":"#4a5a6e",fontSize:10,fontWeight:sortByMap?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
-            🗺 Map {sortByMap?"↓":"↑"}
+            
           </button>
           {bookmakers.filter(bk=>!hiddenBKs||!hiddenBKs.has(bk)).map(bk=>{
             const on=fBKs.includes(bk);
@@ -3104,9 +3109,9 @@ export default function App(){
         if(b.status==="won")won++;
         profit+=b.profit;staked+=b.stake;oddsSum+=b.odds;
       });
-      const pointsArr=Object.values(kills).map(x=>({...x,wr:x.count>0?x.won/x.count*100:0})).sort((a,b)=>b.profit-a.profit).slice(0,10);
+      const pointsArr=Object.values(points).map(x=>({...x,wr:x.count>0?x.won/x.count*100:0})).sort((a,b)=>b.profit-a.profit).slice(0,10);
       const duelsArr=Object.values(duels).map(x=>({...x,wr:x.count>0?x.won/x.count*100:0}));
-      const hsArr=Object.values(hs).map(x=>({...x,wr:x.count>0?x.won/x.count*100:0})).sort((a,b)=>b.profit-a.profit).slice(0,10);
+      const hsArr=Object.values(threes).map(x=>({...x,wr:x.count>0?x.won/x.count*100:0})).sort((a,b)=>b.profit-a.profit).slice(0,10);
       // Live & HS counted inline above during main forEach loop
       const liveS=liveCnt>0?{count:liveCnt,won:liveWon,profit:liveProfit,staked:liveStaked,wr:liveWon/liveCnt*100,roi:liveStaked>0?liveProfit/liveStaked*100:0}:null;
       const nonLiveS=nonLiveCnt>0?{count:nonLiveCnt,won:nonLiveWon,profit:nonLiveProfit,staked:nonLiveStaked,wr:nonLiveWon/nonLiveCnt*100,roi:nonLiveStaked>0?nonLiveProfit/nonLiveStaked*100:0}:null;
@@ -3328,7 +3333,7 @@ export default function App(){
   },[form.autoInfo]);
 
   function addBet(){
-    if(!form.player||!form.odds||!form.stake||!form.bookmaker||!form.description||!form.mapTag)return;
+    if(!form.player||!form.odds||!form.stake||!form.bookmaker||!form.description)return;
     const info=findPlayer(form.player)||{game:"?",league:"?",role:"?",team:"?"};
     const stake=parseFloat(form.stake),odds=parseFloat(form.odds);
     const desc=form.description?form.overUnder+" "+form.description:form.overUnder;
@@ -5111,6 +5116,62 @@ export default function App(){
 
 
 
+            {/* ── 2b. ANNONCE — Joueurs out ── */}
+            {form.autoInfo&&form.autoInfo.team&&(()=>{
+              const [announceOpen,setAnnounceOpen]=React.useState(false);
+              const [outPlayers,setOutPlayers]=React.useState(form.announceOuts||[]);
+              // Joueurs de la même équipe
+              const teammates=Object.values(allPlayers).filter(p=>
+                p.team===form.autoInfo.team && (p.name||"")!==form.player.toLowerCase().trim()
+              ).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+              const toggleOut=(name)=>{
+                const newOuts=outPlayers.includes(name)?outPlayers.filter(x=>x!==name):[...outPlayers,name];
+                setOutPlayers(newOuts);
+                setForm(f=>({...f,announceOuts:newOuts}));
+              };
+              return(
+                <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
+                  <div onClick={()=>setAnnounceOpen(v=>!v)}
+                    style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",userSelect:"none"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4"}}>
+                      📢 Annonce
+                      {outPlayers.length>0&&<span style={{background:"rgba(239,68,68,.2)",color:"#f87171",fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:10,border:"1px solid rgba(239,68,68,.3)"}}>
+                        {outPlayers.length} out
+                      </span>}
+                    </div>
+                    <span style={{color:"#4a5a6e",fontSize:12,transform:announceOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
+                  </div>
+                  {announceOpen&&(
+                    <div style={{marginTop:10}}>
+                      <div style={{fontSize:10,color:"#6b7280",marginBottom:8,fontWeight:600}}>
+                        Coche les joueurs de {form.autoInfo.team} qui sont OUT :
+                      </div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:200,overflowY:"auto"}}>
+                        {teammates.length===0&&<div style={{fontSize:11,color:"#4a5a6e"}}>Aucun coéquipier trouvé</div>}
+                        {teammates.map(p=>{
+                          const displayName=(p.name||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+                          const isOut=outPlayers.includes(p.name);
+                          return(
+                            <button key={p.name} onClick={()=>toggleOut(p.name)}
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:20,border:"1.5px solid "+(isOut?"rgba(239,68,68,.6)":"rgba(255,255,255,.08)"),background:isOut?"rgba(239,68,68,.12)":"rgba(255,255,255,.02)",color:isOut?"#f87171":"#8a9eb8",fontSize:11,fontWeight:isOut?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                              {p.photo_url&&<img src={p.photo_url} style={{width:18,height:18,borderRadius:"50%",objectFit:"cover"}} onError={e=>e.target.style.display="none"} alt=""/>}
+                              {isOut?"❌ ":""}
+                              {displayName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {outPlayers.length>0&&(
+                        <div style={{marginTop:8,fontSize:10,color:"#f87171",fontWeight:600}}>
+                          Out : {outPlayers.map(n=>n.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")).join(", ")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* ── 3. SÉLECTION ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:9}}>
@@ -5129,7 +5190,10 @@ export default function App(){
                 return(
                   <div style={{display:"flex",alignItems:"center",gap:8,borderRadius:13,border:"1px solid rgba(255,255,255,.06)",background:"rgba(8,14,28,.9)",overflow:"hidden",height:50}}>
                     <div style={{height:"100%",width:46,borderRight:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <GameLogo game={form.autoInfo.game} size={22}/>
+                      {form.autoInfo.game==="NBA"
+                        ? <img src={NBA_LOGO_B64} style={{width:36,height:36,objectFit:"contain"}} alt="NBA"/>
+                        : <GameLogo game={form.autoInfo.game} size={22}/>
+                      }
                     </div>
                     <select id="kills-select" value={form.description} onChange={e=>{const val=e.target.value;const is3Pts=val.includes("Headshot");setForm(f=>({...f,description:val,isHeadshot:is3Pts}));if(e.target.value){setTimeout(()=>{const el=document.getElementById("odds-input-field");if(el)el.focus();},80);}}}
                       style={{flex:1,height:"100%",background:"transparent",border:"none",padding:"0 12px 0 4px",color:form.description?"#a8c4ff":"#5a6880",fontSize:14,fontFamily:"Inter,sans-serif",fontWeight:500,outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}>
@@ -5262,225 +5326,11 @@ export default function App(){
               </div>
             )}
 
-            {/* ── 6. MAP TAG ── */}
-            <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
-                  
-                  Map
-                </div>
-                {form.mapTag&&(
-                  <button onClick={()=>setForm(f=>({...f,mapLocked:!f.mapLocked}))}
-                    style={{background:form.mapLocked?"rgba(245,158,11,0.1)":"transparent",border:"1px solid "+(form.mapLocked?"rgba(245,158,11,.3)":"rgba(255,255,255,0.06)"),borderRadius:7,padding:"3px 9px",color:form.mapLocked?"#F59E0B":"#4B5563",cursor:"pointer",fontSize:11,fontFamily:"Inter,sans-serif",fontWeight:700}}>
-                    {form.mapLocked?"🔒 Locked":"🔓 Lock"}
-                  </button>
-                )}
-              </div>
-              <div style={{display:"flex",gap:7}}>
-                {MAP_TAGS.map(t=>(
-                  <button key={t} onClick={()=>!form.mapLocked&&setForm(f=>({...f,mapTag:f.mapTag===t?"":t}))}
-                    style={{flex:1,height:40,borderRadius:10,border:"1.5px solid "+(form.mapTag===t?"rgba(245,166,35,.6)":"rgba(255,255,255,.06)"),background:form.mapTag===t?"rgba(245,166,35,.08)":"rgba(255,255,255,.02)",color:form.mapTag===t?"#f5a623":"#5a6478",fontSize:12,cursor:form.mapLocked?"not-allowed":"pointer",fontFamily:"Inter,sans-serif",fontWeight:500,opacity:form.mapLocked&&form.mapTag!==t?0.35:1,transition:"all .12s"}}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-              {form.mapLocked&&<div style={{fontSize:10,color:"#F59E0B",marginTop:6,fontWeight:600}}>🔒 Map verrouillée pour le prochain pari</div>}
-            </div>
 
 
+            
 
-            {/* ── 6b. PRIZEPICKS ── */}
-            {!duelMode&&!form.isLive&&(()=>{
-              const game=form.autoInfo&&form.autoInfo.game;
-              // PP type = type de ligne PP uniquement, sans lien avec mapTag du pari
-              // Map 1+2 : stats cumulées 2 maps → ligne × 2 avec edge
-              // Map 3 : stats map unitaire → ligne directe avec edge réduit
-              function calcPPLine(baseVal, overUnder, ppType){
-                if(!baseVal||!overUnder||!ppType)return null;
-                if(ppType==="H1+H2"){
-                  const edge = overUnder==="Over" ? 2.0 : 2.5;
-                  const raw = baseVal * 2 - edge;
-                  return Math.round(raw * 2) / 2;
-                }
-                if(ppType==="Match"){
-                  const edge = 1.5;
-                  const raw = baseVal - edge;
-                  return Math.round(raw * 2) / 2;
-                }
-                if(ppType==="H1+H2+OT"){
-                  // Série complète = base × 3 − edge
-                  const edge = overUnder==="Over" ? 3.0 : 4.0;
-                  const raw = baseVal * 3 - edge;
-                  return Math.round(raw * 2) / 2;
-                }
-                return null;
-              }
-              function genOpts(ppType){
-                if(!game||!ppType)return[];
-                const range=(start,end)=>{
-                  const r=[];
-                  for(let v=start;v<=end+0.001;v+=0.5) r.push(parseFloat(v.toFixed(1)));
-                  return r;
-                };
-                const is3Pts=form.isHeadshot;
-                if(ppType==="H1+H2"){
-                  if(is3Pts) return range(0.5,12);
-                  return range(5,55); // basket Points
-                }
-                if(ppType==="Match"){
-                  if(is3Pts) return range(0.5,6);
-                  return range(2,25); // basket half
-                }
-                if(ppType==="H1+H2+OT"){
-                  if(is3Pts) return range(0.5,15);
-                  return range(8,75); // basket série
-                }
-                return[];
-              }
-              const opts=genOpts(form.ppMapType);
-              const baseKills=form.description?parseFloat(form.description):null;
-              const autoLine=(baseKills&&!isNaN(baseKills)&&form.overUnder&&form.ppMapType)
-                ?calcPPLine(baseKills,form.overUnder,form.ppMapType):null;
-              // Valeur courante PP (override manuel ou auto)
-              const currentPP=form.ppDescription||(autoLine!==null?autoLine.toFixed(1)+(form.isHeadshot?" 3 Pts":" Points"):"" );
-              const currentPPVal=currentPP?parseFloat(currentPP):null;
-              // Index de la valeur courante dans opts (pour le picker centré)
-              const currentIdx=currentPPVal!==null?opts.findIndex(o=>Math.abs(o-currentPPVal)<0.01):-1;
-              // Quick PP EV+ difference per game — used as edge in calcPPLine
-              const quickPPDiff={NBA:2.5,EuroLeague:2.0,"Pro A":2.0,ACB:2.0,Bundesliga:2.0,Lega:2.0,HEBA:2.0};
-              const qDiff=quickPPDiff[game]||1.0;
-              function quickPP(){
-                if(!baseKills||!form.overUnder||!form.ppMapType)return;
-                // Use calcPPLine with a base adjusted by the game edge
-                // For Over: we want PP line where BK line - PP/2 = diff (Map 1+2) or BK - PP = diff (Map 3)
-                // Simplest: just call calcPPLine with baseKills and override the edge
-                const ppType=form.ppMapType;
-                let ppV;
-                if(ppType==="H1+H2"){
-                  const edge=form.overUnder==="Over"?qDiff*2:qDiff*2;
-                  ppV=Math.round((baseKills*2-edge)*2)/2;
-                } else if(ppType==="Match"){
-                  ppV=Math.round((baseKills-qDiff)*2)/2;
-                } else if(ppType==="H1+H2+OT"){
-                  ppV=Math.round((baseKills*3-qDiff*3)*2)/2;
-                } else {
-                  ppV=Math.round((baseKills-qDiff)*2)/2;
-                }
-                const suffix=form.isHeadshot?" 3 Pts":" Points";
-                setForm(f=>({...f,ppDescription:ppV.toFixed(1)+suffix}));
-              }
-              return(
-                <div style={{background:"linear-gradient(180deg,rgba(14,8,28,.98),rgba(8,4,20,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.35)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(107,33,245,.15)"}}>
-                  {/* Header */}
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                    <span style={{fontSize:13,fontWeight:700,color:"#c4b5fd",letterSpacing:.2}}>PrizePicks</span>
-                    <button onClick={()=>setForm(f=>({...f,ppMapType:f.ppMapType==="HIDE"?"":"HIDE"}))}
-                      style={{marginLeft:4,padding:"2px 9px",borderRadius:7,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#4a5a6e",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                      Ignorer
-                    </button>
-                    {/* Quick PP button */}
-                    {baseKills&&form.overUnder&&form.ppMapType&&(
-                      <button onClick={quickPP}
-                        style={{padding:"3px 10px",borderRadius:7,border:"1px solid rgba(167,139,250,.4)",background:"rgba(124,58,237,.15)",color:"#c4b5fd",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                        ⚡ Quick PP ({form.overUnder==="Over"?"-":"+"}{""+qDiff})
-                      </button>
-                    )}
-                    {(()=>{
-                      const bk=parseFloat(form.description);
-                      const line=form.ppDescription?parseFloat(form.ppDescription):autoLine;
-                      if(!line||isNaN(bk)||!form.ppMapType)return null;
-                      const ppPerMapB=form.ppMapType==="H1+H2"?line/2:form.ppMapType==="H1+H2+OT"?line/3:line;
-                      const edge=(form.overUnder==="Over"?ppPerMapB-bk:bk-ppPerMapB).toFixed(2);
-                      return(
-                        <span style={{marginLeft:"auto",fontSize:10,color:"rgba(167,139,250,.7)",fontWeight:600,background:"rgba(139,92,246,.12)",padding:"2px 7px",borderRadius:5,border:"1px solid rgba(139,92,246,.25)"}}>
-                          Edge {edge>0?"+":""}{edge}
-                        </span>
-                      );
-                    })()}
-                  </div>
-
-                  {/* PP type — Map 1+2 / Map 3 / Map 1+2+3 */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:9}}>
-                    {["H1+H2","Match","H1+H2+OT"].map(mt=>{
-                      const isOn=form.ppMapType===mt;
-                      return(
-                        <button key={mt} onClick={()=>setForm(f=>({...f,ppMapType:mt,ppDescription:""}))}
-                          style={{height:52,borderRadius:13,border:"2px solid "+(isOn?"rgba(139,92,246,.8)":"rgba(139,92,246,.15)"),background:isOn?"rgba(139,92,246,0.15)":"rgba(139,92,246,0.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,boxShadow:isOn?"0 0 20px rgba(139,92,246,.25)":"none"}}>
-                          <span style={{fontSize:15,fontWeight:800,color:isOn?"#c4b5fd":"#6b5a8a"}}>{mt}</span>
-                          <span style={{fontSize:9,color:isOn?"rgba(196,181,253,.5)":"#3d2e52",fontWeight:600,letterSpacing:.5,textTransform:"uppercase"}}>{mt==="H1+H2"?"Combiné":mt==="Match"?"Match":mt==="H1+H2+OT"?"Série":mt}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Ligne PP */}
-                  {form.ppMapType&&opts.length>0&&(
-                    <div>
-                      {/* Picker centré sur la valeur auto — ±2 valeurs visibles */}
-                      {(()=>{
-                        const refIdx=currentIdx>=0?currentIdx:Math.floor(opts.length/2);
-                        // Afficher 5 valeurs : -2 / -1 / [current] / +1 / +2
-                        const visible=[-2,-1,0,1,2].map(d=>{
-                          const idx=refIdx+d;
-                          if(idx<0||idx>=opts.length)return null;
-                          return{val:opts[idx],delta:d};
-                        });
-                        return(
-                          <div style={{display:"flex",alignItems:"center",gap:0,borderRadius:13,border:"1px solid rgba(139,92,246,.3)",background:"rgba(139,92,246,.06)",overflow:"hidden",height:56}}>
-                            <img src="data:image/png;base64,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"
-                              onError={e=>{e.target.style.display="none";}}
-                              alt="PP" style={{width:20,height:20,borderRadius:4,objectFit:"cover",flexShrink:0,margin:"0 10px"}}/>
-                            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:0,overflow:"hidden"}}>
-                              {visible.map((item,i)=>{
-                                if(!item)return<div key={i} style={{flex:1}}/>;
-                                const isCurrent=item.delta===0;
-                                return(
-                                  <button key={item.val} onClick={()=>setForm(f=>({...f,ppDescription:item.val.toFixed(1)+(form.isHeadshot?" 3 Pts":" Points")}))}
-                                    style={{flex:isCurrent?2:1,height:"100%",background:isCurrent?"rgba(139,92,246,.2)":"transparent",border:"none",borderLeft:i>0?"1px solid rgba(139,92,246,.1)":"none",cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:0,transition:"all .1s"}}>
-                                    <span style={{fontSize:isCurrent?17:12,fontWeight:isCurrent?800:500,color:isCurrent?"#c4b5fd":"rgba(139,92,246,.4)",lineHeight:1}}>
-                                      {item.val.toFixed(1)}
-                                    </span>
-                                    {isCurrent&&<span style={{fontSize:8,color:"rgba(196,181,253,.4)",marginTop:2,fontWeight:600}}>KILLS</span>}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {/* Override select invisible pour mobile */}
-                            <div style={{position:"relative",width:36,height:"100%",borderLeft:"1px solid rgba(139,92,246,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <span style={{color:"rgba(139,92,246,.5)",fontSize:14,pointerEvents:"none"}}>⋯</span>
-                              <select value={form.ppDescription} onChange={e=>setForm(f=>({...f,ppDescription:e.target.value}))}
-                                style={{position:"absolute",inset:0,opacity:0,width:"100%",height:"100%",cursor:"pointer",fontSize:16}}>
-                                <option value="">{autoLine!==null?`Auto: ${autoLine.toFixed(1)}`:"Choisir..."}</option>
-                                {opts.map(o=><option key={o} value={o.toFixed(1)+" Points"}>{o.toFixed(1)} Kills</option>)}
-                              </select>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {/* Reset auto */}
-                      {form.ppDescription&&autoLine!==null&&(
-                        <button onClick={()=>setForm(f=>({...f,ppDescription:""}))}
-                          style={{marginTop:5,width:"100%",background:"none",border:"none",color:"rgba(167,139,250,.35)",fontSize:10,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600}}>
-                          ↺ Auto ({autoLine.toFixed(1)} Kills)
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {form.ppMapType&&opts.length===0&&(
-                    <div style={{height:40,display:"flex",alignItems:"center",justifyContent:"center",color:"#3d2e52",fontSize:12}}>
-                      {!game?"Sélectionnez d'abord un joueur":"Jeu non supporté"}
-                    </div>
-                  )}
-                  {!form.ppMapType&&(
-                    <div style={{height:40,display:"flex",alignItems:"center",justifyContent:"center",color:"#3d2e52",fontSize:12,fontWeight:500}}>
-                      Choisir Map 1+2 ou Map 3
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* ── 7. STATUT ── */}
+                        {/* ── 7. STATUT ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid "+(lockedStatus?"rgba(245,158,11,.25)":"rgba(139,92,246,.2)"),padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
@@ -5512,7 +5362,7 @@ export default function App(){
               if(!form.description) missing.push("Stat/Ligne");
               if(!form.odds) missing.push("Cote");
               if(!form.stake) missing.push("Mise");
-              if(!form.mapTag) missing.push("Map");
+              // map not required
               const canAdd=sessionMode?(!form.player||!sessionMaps.some(m=>m.enabled&&m.odds)):missing.length===0;
               const isDisabled=sessionMode?(!form.player||!sessionMaps.some(m=>m.enabled&&m.odds)):missing.length>0;
               const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(2):null;
