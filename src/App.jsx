@@ -788,12 +788,12 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.1)"}
                 onMouseLeave={e=>e.currentTarget.style.background=isSelected?"rgba(124,58,237,0.08)":"transparent"}>
                 {/* Photo joueur */}
-                <div style={{width:36,height:36,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
+                <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
                   {p.photo_url
-                    ?<img src={p.photo_url} style={{width:36,height:36,objectFit:"cover",objectPosition:"top center"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
+                    ?<img src={p.photo_url} style={{width:44,height:55,objectFit:"cover",objectPosition:"top center",marginTop:-3}} alt={key} onError={e=>{e.target.style.display="none";}}/>
                     :<GameLogo game={p.game} size={36}/>
                   }
-                  {p.team&&NBA_TEAM_LOGOS[p.team]&&<img src={NBA_TEAM_LOGOS[p.team]} style={{position:"absolute",bottom:0,right:0,width:13,height:13,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:2,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
+                  {p.team&&NBA_TEAM_LOGOS[p.team]&&<img src={NBA_TEAM_LOGOS[p.team]} style={{position:"absolute",bottom:0,right:0,width:15,height:15,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <span style={{fontWeight:700,fontSize:14,color:"#E5E7EB",textTransform:"capitalize"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
@@ -1276,13 +1276,13 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             const photoUrl=pData&&pData.photo_url;
             const teamLogo=pData&&pData.team?NBA_TEAM_LOGOS[pData.team]:null;
             return(
-              <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+              <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                 {photoUrl
-                  ? <img src={photoUrl} style={{width:37,height:37,objectFit:"cover",objectPosition:"top center"}} alt={bet.player}
+                  ? <img src={photoUrl} style={{width:48,height:60,objectFit:"cover",objectPosition:"top center",marginTop:-4}} alt={bet.player}
                       onError={e=>{e.target.style.display="none";}}/>
                   : <GameLogo game={bet.game} size={37}/>
                 }
-                {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:14,height:14,objectFit:"contain",background:"rgba(0,0,0,.6)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
+                {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:16,height:16,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
               </div>
             );
           })()}
