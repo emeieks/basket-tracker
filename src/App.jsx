@@ -1209,7 +1209,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Logo sport — légèrement plus grand */}
           {(()=>{
-            const pData=allPlayers[bet.player]||findPlayer(bet.player);
+            const pData=allPlayers[(bet.player||"").toLowerCase().trim()]||allPlayers[bet.player]||null;
             const photoUrl=pData&&pData.photo_url;
             return(
               <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
