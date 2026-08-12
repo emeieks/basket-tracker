@@ -2183,6 +2183,70 @@ function MesParisView({
 }
 
 
+
+// ── Composant Annonce (joueurs out) ─────────────────────────────────────────
+function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
+  const [open, setOpen] = useState(false);
+  const [outPlayers, setOutPlayers] = useState(outs);
+
+  const teammates = Object.values(allPlayers).filter(p=>
+    p.team===team && (p.name||"")!==(playerName||"").toLowerCase().trim()
+  ).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+
+  function toggleOut(name){
+    const next = outPlayers.includes(name)
+      ? outPlayers.filter(x=>x!==name)
+      : [...outPlayers, name];
+    setOutPlayers(next);
+    onOutsChange(next);
+  }
+
+  function capName(n){
+    return (n||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+  }
+
+  return(
+    <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
+      <div onClick={()=>setOpen(v=>!v)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",userSelect:"none"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4"}}>
+          📢 Annonce
+          {outPlayers.length>0&&(
+            <span style={{background:"rgba(239,68,68,.2)",color:"#f87171",fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:10,border:"1px solid rgba(239,68,68,.3)"}}>
+              {outPlayers.length} OUT
+            </span>
+          )}
+        </div>
+        <span style={{color:"#4a5a6e",fontSize:12,transform:open?"rotate(180deg)":"none",transition:"transform .2s",display:"inline-block"}}>▼</span>
+      </div>
+      {open&&(
+        <div style={{marginTop:10}}>
+          <div style={{fontSize:10,color:"#6b7280",marginBottom:8,fontWeight:600}}>
+            Joueurs de {team} qui sont OUT :
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:200,overflowY:"auto"}}>
+            {teammates.length===0&&<div style={{fontSize:11,color:"#4a5a6e"}}>Aucun coéquipier trouvé</div>}
+            {teammates.map(p=>{
+              const isOut=outPlayers.includes(p.name);
+              return(
+                <button key={p.name} onClick={()=>toggleOut(p.name)}
+                  style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:20,border:"1.5px solid "+(isOut?"rgba(239,68,68,.6)":"rgba(255,255,255,.08)"),background:isOut?"rgba(239,68,68,.12)":"rgba(255,255,255,.02)",color:isOut?"#f87171":"#8a9eb8",fontSize:11,fontWeight:isOut?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                  {p.photo_url&&<img src={p.photo_url} style={{width:18,height:18,borderRadius:"50%",objectFit:"cover"}} onError={e=>e.target.style.display="none"} alt=""/>}
+                  {isOut?"❌ ":""}{capName(p.name)}
+                </button>
+              );
+            })}
+          </div>
+          {outPlayers.length>0&&(
+            <div style={{marginTop:8,fontSize:10,color:"#f87171",fontWeight:600}}>
+              Out : {outPlayers.map(capName).join(", ")}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App(){
   const [bets,setBets]=useState([]);
   const [bankroll,setBankroll]=useState(5000);
@@ -5117,60 +5181,15 @@ export default function App(){
 
 
             {/* ── 2b. ANNONCE — Joueurs out ── */}
-            {form.autoInfo&&form.autoInfo.team&&(()=>{
-              const [announceOpen,setAnnounceOpen]=useState(false);
-              const [outPlayers,setOutPlayers]=useState(form.announceOuts||[]);
-              // Joueurs de la même équipe
-              const teammates=Object.values(allPlayers).filter(p=>
-                p.team===form.autoInfo.team && (p.name||"")!==form.player.toLowerCase().trim()
-              ).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-              const toggleOut=(name)=>{
-                const newOuts=outPlayers.includes(name)?outPlayers.filter(x=>x!==name):[...outPlayers,name];
-                setOutPlayers(newOuts);
-                setForm(f=>({...f,announceOuts:newOuts}));
-              };
-              return(
-                <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
-                  <div onClick={()=>setAnnounceOpen(v=>!v)}
-                    style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",userSelect:"none"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4"}}>
-                      📢 Annonce
-                      {outPlayers.length>0&&<span style={{background:"rgba(239,68,68,.2)",color:"#f87171",fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:10,border:"1px solid rgba(239,68,68,.3)"}}>
-                        {outPlayers.length} out
-                      </span>}
-                    </div>
-                    <span style={{color:"#4a5a6e",fontSize:12,transform:announceOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
-                  </div>
-                  {announceOpen&&(
-                    <div style={{marginTop:10}}>
-                      <div style={{fontSize:10,color:"#6b7280",marginBottom:8,fontWeight:600}}>
-                        Coche les joueurs de {form.autoInfo.team} qui sont OUT :
-                      </div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:200,overflowY:"auto"}}>
-                        {teammates.length===0&&<div style={{fontSize:11,color:"#4a5a6e"}}>Aucun coéquipier trouvé</div>}
-                        {teammates.map(p=>{
-                          const displayName=(p.name||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
-                          const isOut=outPlayers.includes(p.name);
-                          return(
-                            <button key={p.name} onClick={()=>toggleOut(p.name)}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:20,border:"1.5px solid "+(isOut?"rgba(239,68,68,.6)":"rgba(255,255,255,.08)"),background:isOut?"rgba(239,68,68,.12)":"rgba(255,255,255,.02)",color:isOut?"#f87171":"#8a9eb8",fontSize:11,fontWeight:isOut?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                              {p.photo_url&&<img src={p.photo_url} style={{width:18,height:18,borderRadius:"50%",objectFit:"cover"}} onError={e=>e.target.style.display="none"} alt=""/>}
-                              {isOut?"❌ ":""}
-                              {displayName}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {outPlayers.length>0&&(
-                        <div style={{marginTop:8,fontSize:10,color:"#f87171",fontWeight:600}}>
-                          Out : {outPlayers.map(n=>n.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")).join(", ")}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            {form.autoInfo&&form.autoInfo.team&&(
+              <AnnonceBlock
+                team={form.autoInfo.team}
+                playerName={form.player}
+                allPlayers={allPlayers}
+                outs={form.announceOuts||[]}
+                onOutsChange={outs=>setForm(f=>({...f,announceOuts:outs}))}
+              />
+            )}
 
             {/* ── 3. SÉLECTION ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
