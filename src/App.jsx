@@ -514,6 +514,42 @@ const GAME_COLORS={
   HEBA:{accent:"#1E90FF",bg:"rgba(30,144,255,0.08)",border:"rgba(30,144,255,0.25)",logo:""},
 };
 const GAME_CFG=GAME_COLORS;
+
+// ── Logos équipes NBA (ESPN CDN) ─────────────────────────────────────────────
+const NBA_TEAM_LOGOS = {
+  "Atlanta Hawks":        "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/atl.png&h=200&w=200",
+  "Boston Celtics":       "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/bos.png&h=200&w=200",
+  "Brooklyn Nets":        "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/bkn.png&h=200&w=200",
+  "Charlotte Hornets":    "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/cha.png&h=200&w=200",
+  "Chicago Bulls":        "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/chi.png&h=200&w=200",
+  "Cleveland Cavaliers":  "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/cle.png&h=200&w=200",
+  "Dallas Mavericks":     "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/dal.png&h=200&w=200",
+  "Denver Nuggets":       "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/den.png&h=200&w=200",
+  "Detroit Pistons":      "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/det.png&h=200&w=200",
+  "Golden State Warriors":"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/gs.png&h=200&w=200",
+  "Houston Rockets":      "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/hou.png&h=200&w=200",
+  "Indiana Pacers":       "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/ind.png&h=200&w=200",
+  "LA Clippers":          "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/lac.png&h=200&w=200",
+  "Los Angeles Lakers":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/lal.png&h=200&w=200",
+  "Memphis Grizzlies":    "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/mem.png&h=200&w=200",
+  "Miami Heat":           "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/mia.png&h=200&w=200",
+  "Milwaukee Bucks":      "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/mil.png&h=200&w=200",
+  "Minnesota Timberwolves":"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/min.png&h=200&w=200",
+  "New Orleans Pelicans": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/no.png&h=200&w=200",
+  "New York Knicks":      "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/ny.png&h=200&w=200",
+  "Oklahoma City Thunder":"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/okc.png&h=200&w=200",
+  "Orlando Magic":        "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/orl.png&h=200&w=200",
+  "Philadelphia 76ers":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/phi.png&h=200&w=200",
+  "Phoenix Suns":         "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/phx.png&h=200&w=200",
+  "Portland Trail Blazers":"https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/por.png&h=200&w=200",
+  "Sacramento Kings":     "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/sac.png&h=200&w=200",
+  "San Antonio Spurs":    "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/sa.png&h=200&w=200",
+  "Toronto Raptors":      "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/tor.png&h=200&w=200",
+  "Utah Jazz":            "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/utah.png&h=200&w=200",
+  "Washington Wizards":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/wsh.png&h=200&w=200",
+};
+const NBA_LEAGUE_LOGO = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&h=200&w=200";
+
 const STATUS_CFG={
   pending:{label:"En attente",color:"#3B82F6",bg:"rgba(96,165,250,0.1)"},
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
@@ -1211,13 +1247,15 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
           {(()=>{
             const pData=allPlayers[(bet.player||"").toLowerCase().trim()]||allPlayers[bet.player]||null;
             const photoUrl=pData&&pData.photo_url;
+            const teamLogo=pData&&pData.team?NBA_TEAM_LOGOS[pData.team]:null;
             return(
-              <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                 {photoUrl
                   ? <img src={photoUrl} style={{width:37,height:37,objectFit:"cover"}} alt={bet.player}
                       onError={e=>{e.target.style.display="none";}}/>
                   : <GameLogo game={bet.game} size={37}/>
                 }
+                {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:14,height:14,objectFit:"contain",background:"rgba(0,0,0,.6)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
               </div>
             );
           })()}
@@ -1227,6 +1265,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             {/* L1 : Joueur — Kills — Map */}
             <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4,flexWrap:"wrap"}}>
               <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+              {(()=>{const pd=allPlayers[(bet.player||"").toLowerCase().trim()];const tl=pd&&pd.team?NBA_TEAM_LOGOS[pd.team]:null;return tl?<img src={tl} style={{width:16,height:16,objectFit:"contain",flexShrink:0,marginLeft:2}} onError={e=>e.target.style.display="none"} alt=""/>:null;})()}
               {bet.role&&<PositionLogo role={bet.role} size={14}/>}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
               {bet.isLive&&<span style={{fontSize:8,fontWeight:800,color:"#fb7185",background:"rgba(251,113,133,.12)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,113,133,.25)",letterSpacing:.3,flexShrink:0}}>LIVE</span>}
@@ -4916,7 +4955,7 @@ export default function App(){
                   {/* Sélection du gagnant — apparaît quand les 2 joueurs sont choisis */}
                   {duelForm.player1&&duelForm.player2&&(
                     <div style={{marginBottom:14}}>
-                      <div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Qui va avoir le plus de kills ?</div>
+                      <div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Qui va avoir le plus de points ?</div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                         <button onClick={()=>setDuelForm(f=>({...f,winner:"player1"}))}
                           style={{padding:"12px 8px",borderRadius:12,border:"2px solid "+(duelForm.winner==="player1"?"#F59E0B":"#1F2937"),background:duelForm.winner==="player1"?"rgba(245,158,11,0.12)":"#111827",color:duelForm.winner==="player1"?"#F59E0B":"#9CA3AF",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all .2s",textTransform:"capitalize"}}>
@@ -4975,7 +5014,7 @@ export default function App(){
 
                   {/* PP kills Duel */}
                   <div style={{marginTop:10,background:"rgba(139,92,246,.06)",border:"1px solid rgba(139,92,246,.15)",borderRadius:10,padding:"10px 12px"}}>
-                    <div style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>PrizePicks — Lignes kills</div>
+                    <div style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>PrizePicks — Lignes Stats</div>
                     <div style={{display:"flex",gap:5,marginBottom:8}}>
                       {["H1+H2","Match","H1+H2+OT"].map(function(mt){
                         var on=duelForm.ppMapType===mt;
@@ -5225,11 +5264,11 @@ export default function App(){
                   <div style={{display:"flex",alignItems:"center",gap:8,borderRadius:13,border:"1px solid rgba(255,255,255,.06)",background:"rgba(8,14,28,.9)",overflow:"hidden",height:50}}>
                     <div style={{height:"100%",width:46,borderRight:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       {form.autoInfo.game==="NBA"
-                        ? <img src={NBA_LOGO_B64} style={{width:36,height:36,objectFit:"contain"}} alt="NBA"/>
+                        ? <img src={NBA_LEAGUE_LOGO} style={{width:36,height:36,objectFit:"contain"}} alt="NBA" onError={e=>e.target.style.display="none"}/>
                         : <GameLogo game={form.autoInfo.game} size={22}/>
                       }
                     </div>
-                    <select id="kills-select" value={form.description} onChange={e=>{const val=e.target.value;const is3Pts=val.includes("Headshot");setForm(f=>({...f,description:val,isHeadshot:is3Pts}));if(e.target.value){setTimeout(()=>{const el=document.getElementById("odds-input-field");if(el)el.focus();},80);}}}
+                    <select id="stat-select" value={form.description} onChange={e=>{const val=e.target.value;const is3Pts=val.includes("Headshot");setForm(f=>({...f,description:val,isHeadshot:is3Pts}));if(e.target.value){setTimeout(()=>{const el=document.getElementById("odds-input-field");if(el)el.focus();},80);}}}
                       style={{flex:1,height:"100%",background:"transparent",border:"none",padding:"0 12px 0 4px",color:form.description?"#a8c4ff":"#5a6880",fontSize:14,fontFamily:"Inter,sans-serif",fontWeight:500,outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}>
                       <option value="" style={{color:"#6B7280",background:"#0d1428"}}>Choisir une ligne...</option>
                       {opts.map(o=><option key={o} value={o} style={{color:"#E5E7EB",background:"#0d1428"}}>{o}</option>)}
@@ -8172,7 +8211,7 @@ export default function App(){
     if(analyseFSport!=="all"&&b.sport!==analyseFSport)return false;
     if(analyseFSource!=="all"&&b.source!==analyseFSource)return false;
     if(analyseFDir!=="All"&&b.direction!==analyseFDir)return false;
-    if(analyseFStat!=="all"&&(b.stat||"kills")!==analyseFStat)return false;
+    if(analyseFStat!=="all"&&(b.stat||"points")!==analyseFStat)return false;
     if(analyseFHeure){
       const t=b.match_time||b.start_time||null;
       if(!t)return false;
