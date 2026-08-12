@@ -788,9 +788,9 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.1)"}
                 onMouseLeave={e=>e.currentTarget.style.background=isSelected?"rgba(124,58,237,0.08)":"transparent"}>
                 {/* Photo joueur */}
-                <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
+                <div style={{width:48,height:48,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
                   {p.photo_url
-                    ?<img src={p.photo_url} style={{width:44,height:55,objectFit:"cover",objectPosition:"top center",marginTop:-3}} alt={key} onError={e=>{e.target.style.display="none";}}/>
+                    ?<img src={optimizePhotoUrl(p.photo_url)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",imageRendering:"high-quality"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
                     :<GameLogo game={p.game} size={36}/>
                   }
                   {p.team&&NBA_TEAM_LOGOS[p.team]&&<img src={NBA_TEAM_LOGOS[p.team]} style={{position:"absolute",bottom:0,right:0,width:15,height:15,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
@@ -1273,16 +1273,18 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
           {/* Logo sport — légèrement plus grand */}
           {(()=>{
             const pData=allPlayers[(bet.player||"").toLowerCase().trim()]||allPlayers[bet.player]||null;
-            const photoUrl=pData&&pData.photo_url;
+            const photoUrl=pData&&optimizePhotoUrl(pData.photo_url);
             const teamLogo=pData&&pData.team?NBA_TEAM_LOGOS[pData.team]:null;
             return(
-              <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+              <div style={{width:52,height:52,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                 {photoUrl
-                  ? <img src={photoUrl} style={{width:48,height:60,objectFit:"cover",objectPosition:"top center",marginTop:-4}} alt={bet.player}
+                  ? <img src={photoUrl}
+                      style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 15%",imageRendering:"high-quality"}}
+                      alt={bet.player}
                       onError={e=>{e.target.style.display="none";}}/>
-                  : <GameLogo game={bet.game} size={37}/>
+                  : <GameLogo game={bet.game} size={40}/>
                 }
-                {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:16,height:16,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
+                {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:1,right:1,width:16,height:16,objectFit:"contain",background:"rgba(0,0,0,.75)",borderRadius:3,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
               </div>
             );
           })()}
@@ -2257,6 +2259,22 @@ function MesParisView({
 }
 
 
+
+
+// ── Optimise URL photo joueur pour affichage miniature ───────────────────────
+function optimizePhotoUrl(url){
+  if(!url) return url;
+  // NBA CDN : passer de 1040x760 à 260x190 (même qualité, plus petit, mieux cadrée)
+  if(url.includes("cdn.nba.com/headshots/nba/latest/1040x760/")){
+    return url.replace("/1040x760/","/260x190/");
+  }
+  // ESPN full → ESPN combiner avec crop portrait
+  if(url.includes("espncdn.com/i/headshots/nba/players/full/")){
+    const id=url.split("/").pop().replace(".png","");
+    return `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${id}.png&w=200&h=145&scale=crop`;
+  }
+  return url;
+}
 
 // ── Composant Annonce (joueurs out) ─────────────────────────────────────────
 function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
