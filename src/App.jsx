@@ -481,12 +481,28 @@ function getLolRoleLogo(role){
 }
 function PositionLogo({role,size=16}){
   if(!role)return null;
-  const posColors={PG:"#a78bfa",SG:"#60a5fa",SF:"#34d399",PF:"#fb923c",C:"#f472b6"};
-  const col=posColors[role?.toUpperCase()]||"#94a3b8";
-  return <span style={{fontSize:size-2,fontWeight:700,color:col,background:"rgba(255,255,255,0.06)",padding:"1px 4px",borderRadius:3,border:`1px solid ${col}33`,letterSpacing:.5,flexShrink:0}}>{role?.toUpperCase()}</span>;
-  const src=getLolRoleLogo(role); // dead code kept for compat
-  if(!src)return null;
-  return <img src={src} alt={role} style={{width:size,height:size,borderRadius:3,objectFit:"contain",flexShrink:0}}/>;
+  const posMap={
+    PG:{col:"#a78bfa",bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.35)"},
+    SG:{col:"#60a5fa",bg:"rgba(96,165,250,.15)",border:"rgba(96,165,250,.35)"},
+    SF:{col:"#34d399",bg:"rgba(52,211,153,.15)",border:"rgba(52,211,153,.35)"},
+    PF:{col:"#fb923c",bg:"rgba(251,146,60,.15)",border:"rgba(251,146,60,.35)"},
+    C: {col:"#f472b6",bg:"rgba(244,114,182,.15)",border:"rgba(244,114,182,.35)"},
+  };
+  const p=posMap[role?.toUpperCase()]||{col:"#94a3b8",bg:"rgba(148,163,184,.1)",border:"rgba(148,163,184,.25)"};
+  const fs=Math.max(8,size-4);
+  return(
+    <span style={{
+      display:"inline-flex",alignItems:"center",justifyContent:"center",
+      fontSize:fs,fontWeight:800,color:p.col,
+      background:p.bg,
+      padding:`${Math.max(2,size/8)}px ${Math.max(4,size/4)}px`,
+      borderRadius:Math.max(4,size/3),
+      border:`1.5px solid ${p.border}`,
+      letterSpacing:.5,flexShrink:0,lineHeight:1,
+      boxShadow:`0 0 6px ${p.col}22`,
+      textShadow:`0 0 8px ${p.col}66`,
+    }}>{role?.toUpperCase()}</span>
+  );
 }
 function FmtProfit({v,fontSize=12,fontWeight=800}){
   const pos=v>=0;
@@ -771,21 +787,32 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                 style={{display:"flex",alignItems:"center",gap:9,padding:"9px 13px",cursor:"pointer",borderBottom:"1px solid #1F2937",background:isSelected?"rgba(124,58,237,0.08)":"transparent"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.1)"}
                 onMouseLeave={e=>e.currentTarget.style.background=isSelected?"rgba(124,58,237,0.08)":"transparent"}>
-                {tag==="recent"&&<span style={{fontSize:10,color:"#6B7280"}}>🕐</span>}
-                {freq>0&&<span style={{fontSize:9,color:"#A78BFA",background:"rgba(124,58,237,0.1)",padding:"1px 5px",borderRadius:4,fontWeight:700,flexShrink:0}}>{freq}p</span>}
-                <GameLogo game={p.game} size={16}/>
-                <div style={{flex:1}}>
-                  <span style={{fontWeight:700,fontSize:14,color:"#E5E7EB",textTransform:"capitalize"}}>{key}</span>
-                  <span style={{fontSize:11,color:"#9CA3AF",marginLeft:7}}>{p.team}</span>
+                {/* Photo joueur */}
+                <div style={{width:36,height:36,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
+                  {p.photo_url
+                    ?<img src={p.photo_url} style={{width:36,height:36,objectFit:"cover",objectPosition:"top center"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
+                    :<GameLogo game={p.game} size={36}/>
+                  }
+                  {p.team&&NBA_TEAM_LOGOS[p.team]&&<img src={NBA_TEAM_LOGOS[p.team]} style={{position:"absolute",bottom:0,right:0,width:13,height:13,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:2,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <span style={{fontWeight:700,fontSize:14,color:"#E5E7EB",textTransform:"capitalize"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+                  <div style={{fontSize:11,color:"#6B7280",marginTop:1,display:"flex",alignItems:"center",gap:4}}>
+                    {p.team&&<span style={{color:"#9CA3AF"}}>{p.team.split(" ").pop()}</span>}
+                    {tag==="recent"&&<span style={{color:"#4B5563"}}>· récent</span>}
+                    {freq>1&&<span style={{color:"#A78BFA"}}>· {freq}p</span>}
+                  </div>
                 </div>
                 {(()=>{
                   const t=activeTourneys[p.game];
                   const hasTourney=t&&(!t.end||new Date(t.end)>=new Date());
                   return(
                     <div style={{display:"flex",gap:4,alignItems:"center"}}>
-                      {p.league&&!hasTourney&&<span style={{fontSize:10,fontWeight:600,color:"#A78BFA",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",padding:"1px 5px",borderRadius:4}}>{p.league}</span>}
-                      {hasTourney&&<span style={{fontSize:10,fontWeight:600,color:"#F59E0B",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",padding:"1px 5px",borderRadius:4}}>{t.name}</span>}
-                      <span style={{fontSize:10,fontWeight:600,color:"#3B82F6",background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.15)",padding:"1px 5px",borderRadius:4}}>{p.role}</span>
+                      {p.game==="NBA"
+                        ?<img src={NBA_LEAGUE_LOGO} style={{width:20,height:20,objectFit:"contain"}} onError={e=>e.target.style.display="none"} alt="NBA"/>
+                        :<span style={{fontSize:9,fontWeight:700,color:"#A78BFA",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",padding:"1px 5px",borderRadius:4}}>{p.game}</span>
+                      }
+                      {p.role&&<PositionLogo role={p.role} size={14}/>}
                       {isSelected&&<span style={{color:"#00E676",fontSize:14,fontWeight:700,marginLeft:2}}>✓</span>}
                     </div>
                   );
@@ -1251,7 +1278,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             return(
               <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                 {photoUrl
-                  ? <img src={photoUrl} style={{width:37,height:37,objectFit:"cover"}} alt={bet.player}
+                  ? <img src={photoUrl} style={{width:37,height:37,objectFit:"cover",objectPosition:"top center"}} alt={bet.player}
                       onError={e=>{e.target.style.display="none";}}/>
                   : <GameLogo game={bet.game} size={37}/>
                 }
@@ -1338,10 +1365,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                       {currentVal
                         ?<>{tLogo
                           ?<img src={tLogo} alt={currentVal} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",borderRadius:2}}/>
-                          :<span style={{fontSize:11}}>🏆</span>}
+                          :<img src={NBA_LEAGUE_LOGO} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",borderRadius:2}} onError={e=>e.target.style.display="none"} alt="NBA"/>}
                           <span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>{displayLabel}</span>
                         </>
-                        :<span style={{fontSize:11,color:"#3a4a5e",opacity:.6}}>🏆</span>}
+                        :<img src={NBA_LEAGUE_LOGO} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",opacity:.4,borderRadius:2}} onError={e=>e.target.style.display="none"} alt=""/>}
                     </span>
                     {/* Select invisible par-dessus */}
                     <select
@@ -6445,14 +6472,30 @@ export default function App(){
                 const catColors={Points:"#a78bfa",Rebounds:"#fb923c",Assists:"#60a5fa","3 Pts":"#34d399"};
                 return(
                   <div>
-                    <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
                       {statCats.map(c=>{
                         const on=selCat===c.label;
-                        const col=catColors[c.label]||"#a78bfa";
+                        const catIcons={Points:"🏀",Rebounds:"💪",Assists:"🎯","3 Pts":"🎯"};
+                        const catEmojis={Points:"🏀",Rebounds:"🔄",Assists:"✋","3 Pts":"3️⃣"};
+                        const catColMap={Points:"#a78bfa",Rebounds:"#fb923c",Assists:"#60a5fa","3 Pts":"#34d399"};
+                        const col=catColMap[c.label]||"#a78bfa";
+                        const r=parseInt(col.slice(1,3),16),g=parseInt(col.slice(3,5),16),b=parseInt(col.slice(5,7),16);
                         return(
                           <button key={c.label} onClick={()=>setSelCat(on?null:c.label)}
-                            style={{padding:"5px 10px",borderRadius:8,border:"1.5px solid "+(on?col+"88":"rgba(255,255,255,.08)"),background:on?"rgba("+parseInt(col.slice(1,3),16)+","+parseInt(col.slice(3,5),16)+","+parseInt(col.slice(5,7),16)+",.12)":"rgba(255,255,255,.02)",color:on?col:"#6b7280",fontSize:11,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                            {c.label}
+                            style={{
+                              padding:"8px 4px",borderRadius:10,
+                              border:"1.5px solid "+(on?col:"rgba(255,255,255,.06)"),
+                              background:on?`rgba(${r},${g},${b},.15)`:"rgba(255,255,255,.02)",
+                              color:on?col:"#5a6478",
+                              fontSize:11,fontWeight:on?800:500,
+                              cursor:"pointer",fontFamily:"Inter,sans-serif",
+                              transition:"all .15s",display:"flex",flexDirection:"column",
+                              alignItems:"center",gap:3,
+                              boxShadow:on?`0 0 10px rgba(${r},${g},${b},.2)`:"none",
+                            }}>
+                            <span style={{fontSize:16}}>{catEmojis[c.label]||"📊"}</span>
+                            <span>{c.label}</span>
+                            {on&&<span style={{fontSize:8,opacity:.7}}>{c.range[0]}–{c.range[1]}</span>}
                           </button>
                         );
                       })}
