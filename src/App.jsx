@@ -513,12 +513,13 @@ const GAME_COLORS={
   Lega:{accent:"#00529B",bg:"rgba(0,82,155,0.08)",border:"rgba(0,82,155,0.25)",logo:""},
   HEBA:{accent:"#1E90FF",bg:"rgba(30,144,255,0.08)",border:"rgba(30,144,255,0.25)",logo:""},
 };
+const GAME_CFG=GAME_COLORS;
 const STATUS_CFG={
   pending:{label:"En attente",color:"#3B82F6",bg:"rgba(96,165,250,0.1)"},
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
   lost:{label:"Perdu",color:"#EF4444",bg:"rgba(248,113,113,0.1)"},
 };
-const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:"",isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[]};
+const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:"",isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[],selCat:null};
 const EMPTY_MAP_ROW={odds:"",stake:"",status:"pending",enabled:true};
 
 function toDateKey(dt){
@@ -1207,12 +1208,19 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
         <div style={{display:"flex",alignItems:"center",gap:11}}>
 
           {/* Logo sport — légèrement plus grand */}
-          <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {bet.game==="NBA"
-              ? <img src={NBA_LOGO_B64} style={{width:33,height:33,objectFit:"contain"}} alt="NBA"/>
-              : <GameLogo game={bet.game} size={37}/>
-            }
-          </div>
+          {(()=>{
+            const pData=allPlayers[bet.player]||findPlayer(bet.player);
+            const photoUrl=pData&&pData.photo_url;
+            return(
+              <div style={{width:37,height:37,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {photoUrl
+                  ? <img src={photoUrl} style={{width:37,height:37,objectFit:"cover"}} alt={bet.player}
+                      onError={e=>{e.target.style.display="none";}}/>
+                  : <GameLogo game={bet.game} size={37}/>
+                }
+              </div>
+            );
+          })()}
 
           {/* Centre — 2 lignes */}
           <div style={{flex:1,minWidth:0}}>
@@ -1224,7 +1232,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
               {bet.isLive&&<span style={{fontSize:8,fontWeight:800,color:"#fb7185",background:"rgba(251,113,133,.12)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,113,133,.25)",letterSpacing:.3,flexShrink:0}}>LIVE</span>}
               {bet.isHeadshot&&<img src={HEADSHOT_LOGO_B64} alt="HS" style={{width:13,height:13,objectFit:"contain",flexShrink:0,filter:"brightness(0) invert(1)",opacity:.7,verticalAlign:"middle"}}/>}
               {descLine&&<><span style={{color:"#2e3d50",fontSize:10,lineHeight:1,flexShrink:0,margin:"0 1px"}}>-</span><span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,flexShrink:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
-              {bet.mapTag&&<><span style={{color:"#2e3d50",fontSize:10,lineHeight:1,flexShrink:0,margin:"0 1px"}}>-</span><span style={{fontSize:9,fontWeight:700,color:"#fbbf24",background:"rgba(251,191,36,.1)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,191,36,.2)",flexShrink:0}}>{bet.mapTag}</span></>}
+
             </div>
             {/* L2 : Cote · BK · Mise · Ligue — plus visible */}
             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
@@ -4037,7 +4045,7 @@ export default function App(){
                             <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:3,flexWrap:"wrap"}}>
                               <span style={{fontWeight:800,fontSize:14,color:"#f0f4ff",textTransform:"capitalize",flexShrink:0}}>{b.player}</span>
                               {descLine&&<><span style={{color:"#2e3d50",fontSize:10,margin:"0 1px"}}>-</span><span style={{fontSize:11,color:"#8a9eb8",flexShrink:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
-                              {b.mapTag&&<><span style={{color:"#2e3d50",fontSize:10,margin:"0 1px"}}>-</span><span style={{fontSize:9,fontWeight:700,color:"#fbbf24",background:"rgba(251,191,36,.1)",padding:"1px 4px",borderRadius:3,border:"1px solid rgba(251,191,36,.2)",flexShrink:0}}>{b.mapTag}</span></>}
+                              
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
                               <span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>@{b.odds}</span>
@@ -5180,16 +5188,6 @@ export default function App(){
 
 
 
-            {/* ── 2b. ANNONCE — Joueurs out ── */}
-            {form.autoInfo&&form.autoInfo.team&&(
-              <AnnonceBlock
-                team={form.autoInfo.team}
-                playerName={form.player}
-                allPlayers={allPlayers}
-                outs={form.announceOuts||[]}
-                onOutsChange={outs=>setForm(f=>({...f,announceOuts:outs}))}
-              />
-            )}
 
             {/* ── 3. SÉLECTION ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
@@ -5200,7 +5198,24 @@ export default function App(){
               {form.autoInfo&&(()=>{
                 const game=form.autoInfo.game;
                 let opts=[];
-                {opts=[...Array.from({length:50},(_,i)=>(i+0.5).toFixed(1)+" Points"),...Array.from({length:15},(_,i)=>(i+0.5).toFixed(1)+" 3 Pts"),...Array.from({length:20},(_,i)=>(i+0.5).toFixed(1)+" Assists"),...Array.from({length:20},(_,i)=>(i+0.5).toFixed(1)+" Rebounds")];}
+                // Catégories basket avec plages
+                const statCats=[
+                  {label:"Points",range:[3.5,35.5],step:1},
+                  {label:"Rebounds",range:[0.5,15.5],step:1},
+                  {label:"Assists",range:[0.5,15.5],step:1},
+                  {label:"3 Pts",range:[0.5,6.5],step:1},
+                ];
+                const selCat=form.selCat||null;
+                const setSelCat=cat=>setForm(f=>({...f,selCat:cat}));
+                if(selCat){
+                  const cat=statCats.find(c=>c.label===selCat);
+                  if(cat){
+                    const steps=Math.round((cat.range[1]-cat.range[0])/cat.step)+1;
+                    opts=[...Array.from({length:steps},(_,i)=>((cat.range[0]+i*cat.step).toFixed(1)+" "+cat.label))];
+                  }
+                } else {
+                  opts=[...Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))+" Points"),...Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" 3 Pts"),...Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Assists"),...Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Rebounds")];
+                }
                 
                 
                 
@@ -5348,6 +5363,18 @@ export default function App(){
 
 
             
+
+                        {/* ── 2b. ANNONCE — Joueurs out ── */}
+            {form.autoInfo&&form.autoInfo.team&&(
+              <AnnonceBlock
+                team={form.autoInfo.team}
+                playerName={form.player}
+                allPlayers={allPlayers}
+                outs={form.announceOuts||[]}
+                onOutsChange={outs=>setForm(f=>({...f,announceOuts:outs}))}
+              />
+            )}
+
 
                         {/* ── 7. STATUT ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid "+(lockedStatus?"rgba(245,158,11,.25)":"rgba(139,92,246,.2)"),padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
@@ -6189,7 +6216,7 @@ export default function App(){
                                           <span style={{fontWeight:800,fontSize:13,color:"#f0f4ff",textTransform:"capitalize",flexShrink:0}}>{b.player}</span>
                                           <span style={{color:"#2e3d50",fontSize:10,margin:"0 1px"}}>-</span>
                                           <span style={{fontSize:11,color:"#8a9eb8",fontWeight:500}}>{(b.description||"").replace(/^(Over|Under)\s/,"")}</span>
-                                          {b.mapTag&&<><span style={{color:"#2e3d50",fontSize:10}}>-</span><span style={{fontSize:9,fontWeight:700,color:"#fbbf24",background:"rgba(251,191,36,.1)",padding:"1px 4px",borderRadius:3,border:"1px solid rgba(251,191,36,.2)"}}>{b.mapTag}</span></>}
+                                          
                                         </div>
                                         <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
                                           <span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>@{b.odds}</span>
@@ -6376,8 +6403,21 @@ export default function App(){
                   );
                 }
                 // 4 separate tables by game
+                const catColors={Points:"#a78bfa",Rebounds:"#fb923c",Assists:"#60a5fa","3 Pts":"#34d399"};
                 return(
                   <div>
+                    <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                      {statCats.map(c=>{
+                        const on=selCat===c.label;
+                        const col=catColors[c.label]||"#a78bfa";
+                        return(
+                          <button key={c.label} onClick={()=>setSelCat(on?null:c.label)}
+                            style={{padding:"5px 10px",borderRadius:8,border:"1.5px solid "+(on?col+"88":"rgba(255,255,255,.08)"),background:on?"rgba("+parseInt(col.slice(1,3),16)+","+parseInt(col.slice(3,5),16)+","+parseInt(col.slice(5,7),16)+",.12)":"rgba(255,255,255,.02)",color:on?col:"#6b7280",fontSize:11,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                            {c.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                     {/* Metric selector dropdown */}
                     <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
                       <div style={{position:"relative",display:"inline-block"}}>
