@@ -4735,35 +4735,48 @@ export default function App(){
 
 
             {/* ── BET TYPE ── */}
-            <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:10}}> Type de bet</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                {[
-                  {id:"pts",label:"Points",emoji:"",col:"#a78bfa"},
-                  {id:"reb",label:"Rebonds",emoji:"",col:"#fb923c"},
-                  {id:"ast",label:"Passes",emoji:"",col:"#60a5fa"},
-                  {id:"pts_reb",label:"Pts + Reb",emoji:"",col:"#f472b6"},
-                  {id:"pts_ast",label:"Pts + Passes",emoji:"",col:"#34d399"},
-                  {id:"pts_reb_ast",label:"Pts+Reb+Ast",emoji:"",col:"#fbbf24"},
-                  {id:"3pts",label:"3 Points",emoji:"",col:"#34d399"},
-                ].map(bt=>{
-                  const on=form.betType===bt.id;
-                  return(
-                    <button key={bt.id} onClick={()=>setForm(f=>({...f,betType:on?null:bt.id}))}
-                      style={{
-                        display:"flex",alignItems:"center",gap:6,
-                        padding:"8px 10px",borderRadius:10,
-                        border:"1.5px solid "+(on?bt.col:"rgba(255,255,255,.06)"),
-                        background:on?"rgba("+parseInt(bt.col.slice(1,3),16)+","+parseInt(bt.col.slice(3,5),16)+","+parseInt(bt.col.slice(5,7),16)+",.12)":"rgba(255,255,255,.02)",
-                        color:on?bt.col:"#5a6478",
-                        fontSize:11,fontWeight:on?800:500,
-                        cursor:"pointer",fontFamily:"Inter,sans-serif",
-                        textAlign:"left",transition:"all .15s",
-                        boxShadow:on?"0 0 8px "+bt.col+"33":"none",
-                      }}><span style={{fontSize:14}}>{bt.emoji}</span><span>{bt.label}</span>
-                      {on&&<span style={{marginLeft:"auto",fontSize:10}}>✓</span>}
-                    </button>
-                  );
-                })}
-              </div></div>
+            <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"12px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>Type de bet</div>
+              {(()=>{
+                const BET_TYPES=[
+                  {id:"pts",   label:"PTS",    full:"Points",      col:"#a78bfa", min:3.5,  max:35.5},
+                  {id:"reb",   label:"REB",    full:"Rebonds",     col:"#fb923c", min:0.5,  max:15.5},
+                  {id:"ast",   label:"AST",    full:"Passes",      col:"#60a5fa", min:0.5,  max:15.5},
+                  {id:"3pts",  label:"3PT",    full:"3 Points",    col:"#34d399", min:0.5,  max:6.5},
+                  {id:"pts_reb",     label:"P+R",  full:"Pts+Reb",     col:"#f472b6", min:4.0,  max:51.0},
+                  {id:"pts_ast",     label:"P+A",  full:"Pts+Passes",  col:"#38bdf8", min:4.0,  max:51.0},
+                  {id:"pts_reb_ast", label:"P+R+A",full:"Pts+Reb+Ast", col:"#fbbf24", min:4.5,  max:66.5},
+                ];
+                const on=form.betType;
+                return(
+                  <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:2}}>
+                    {BET_TYPES.map(bt=>{
+                      const active=on===bt.id;
+                      const col=bt.col;
+                      return(
+                        <button key={bt.id}
+                          onClick={()=>setForm(f=>({...f,betType:active?null:bt.id,description:""}))}
+                          style={{
+                            flexShrink:0,
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            padding:"7px 12px",
+                            borderRadius:10,
+                            border:"1.5px solid "+(active?"#a78bfa":"rgba(255,255,255,.07)"),
+                            background:active?"rgba(167,139,250,.15)":"rgba(255,255,255,.02)",
+                            color:active?"#a78bfa":"#4a5568",
+                            cursor:"pointer",fontFamily:"Inter,sans-serif",
+                            transition:"all .15s",
+                            minWidth:42,
+                            boxShadow:active?"0 0 12px rgba(167,139,250,.3)":"none",
+                          }}>
+                          <span style={{fontSize:11,fontWeight:900,letterSpacing:.3}}>{bt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
 
             {/* ── 3. SÉLECTION ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:9}}>
@@ -4774,20 +4787,19 @@ export default function App(){
                 const game=form.autoInfo.game;
                 let opts=[];
                 // Options selon betType sélectionné
+                // Plages : PT=3.5-35.5, REB=0.5-15.5, AST=0.5-15.5, 3PT=0.5-6.5
+                // Combinées = somme des min/max de chaque stat
                 const BET_OPTS={
-                  pts: Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))+" Points"),
-                  reb: Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Rebounds"),
-                  ast: Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Assists"),
-                  "3pts": Array.from({length:13},(_,i)=>((i+0.5).toFixed(1))+" 3 Pts"),
-                  pts_reb: [
-                    ...Array.from({length:20},(_,i)=>((i+5.5).toFixed(1))+" Pts+Reb"),
-                  ],
-                  pts_ast: [
-                    ...Array.from({length:20},(_,i)=>((i+5.5).toFixed(1))+" Pts+Ast"),
-                  ],
-                  pts_reb_ast: [
-                    ...Array.from({length:20},(_,i)=>((i+8.5).toFixed(1))+" Pts+Reb+Ast"),
-                  ],
+                  pts:     Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))+" Points"),
+                  reb:     Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Rebounds"),
+                  ast:     Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Assists"),
+                  "3pts":  Array.from({length:13},(_,i)=>((i+0.5).toFixed(1))+" 3 Pts"),
+                  // PR: min=3.5+0.5=4.0, max=35.5+15.5=51.0 → 48 valeurs
+                  pts_reb: Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))+" Pts+Reb"),
+                  // PA: min=3.5+0.5=4.0, max=35.5+15.5=51.0 → 48 valeurs
+                  pts_ast: Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))+" Pts+Ast"),
+                  // PRA: min=3.5+0.5+0.5=4.5, max=35.5+15.5+15.5=66.5 → 63 valeurs
+                  pts_reb_ast: Array.from({length:63},(_,i)=>((i+4.5).toFixed(1))+" Pts+Reb+Ast"),
                 };
                 if(form.betType&&BET_OPTS[form.betType]){
                   opts=BET_OPTS[form.betType];
