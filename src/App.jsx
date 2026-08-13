@@ -7156,7 +7156,24 @@ export default function App(){
             </div>
 
             {/* ── PP BOARD ANALYZER ── */}
-            <PPReferenceTable/></div>
+            <PPReferenceTable/>
+
+            {/* ── LISTE JOUEURS ── */}
+            <div style={{marginTop:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>Joueurs ({Object.keys(allPlayers).length})</div>
+              </div>
+              <PlayerSearchPanel
+                allPlayers={allPlayers}
+                custom={players}
+                setPlayers={setPlayers}
+                setEditingPlayer={setEditingPlayer}
+                blacklist={blacklist}
+                toggleBlacklist={toggleBlacklist}
+                onSaveBulk={()=>{}}
+              />
+            </div>
+          </div>
         )}
 
         {modalTourney&&(()=>{
@@ -7377,27 +7394,105 @@ export default function App(){
 
         {/* ── MODAL EDIT PLAYER ── */}
         {editingPlayer&&(
-          <div className="moverlay" onClick={()=>setEditingPlayer(null)}><div className="modal" onClick={e=>e.stopPropagation()}><div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Modifier le joueur</div><div style={{fontSize:11,color:"#6B7280",marginBottom:12,fontWeight:500}}>
-                Pseudo d'origine : <span style={{color:"#A78BFA",textTransform:"capitalize"}}>{editingPlayer.key}</span></div>
+          <div className="moverlay" onClick={()=>setEditingPlayer(null)}>
+            <div className="modal" onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Modifier le joueur</div>
+              <div style={{fontSize:11,color:"#6B7280",marginBottom:14,fontWeight:500}}>
+                <span style={{color:"#A78BFA",textTransform:"capitalize"}}>{editingPlayer.key}</span>
+              </div>
 
-              {/* Champ nom/pseudo */}
-              <div style={{marginBottom:8}}><div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Pseudo</div><input className="ifield" placeholder="Pseudo du joueur..." value={editingPlayer.data.displayName!==undefined?editingPlayer.data.displayName:editingPlayer.key}
-                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,displayName:e.target.value}}))}/><div style={{fontSize:10,color:"#6B7280",marginTop:4}}>Renomme le joueur (ex: corriger une faute de frappe)</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}><select className="ifield" value={editingPlayer.data.game}
-                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,game:e.target.value,role:"",league:""}}))}>{ALL_GAMES.map(g=><option key={g} value={g}>{g}</option>)}</select>
-                {LEAGUES_BY_GAME[editingPlayer.data.game]?(
-                  <select className="ifield" value={editingPlayer.data.league||""}
-                    onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,league:e.target.value}}))}><option value="">Ligue...</option>
-                    {LEAGUES_BY_GAME[editingPlayer.data.game].map(l=><option key={l} value={l}>{l}</option>)}
-                  </select>
-                ):(
-                  <input className="ifield" placeholder="Ligue (opt.)" value={editingPlayer.data.league||""}
-                    onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,league:e.target.value}}))}/>
-                )}
-              </div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}><select className="ifield" value={editingPlayer.data.role||""}
-                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,role:e.target.value}}))}><option value="">Position...</option>
-                  {["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)}
-                </select><input className="ifield" placeholder="Équipe *" value={editingPlayer.data.team||""}
-                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,team:e.target.value}}))}/></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>setEditingPlayer(null)}
+              {/* Photo + infos actuelles */}
+              {(()=>{
+                const pd=allPlayers[editingPlayer.key]||{};
+                const photo=pd.photo_url?optimizePhotoUrl(pd.photo_url):null;
+                const teamLogo=pd.team?NBA_TEAM_LOGOS[pd.team]:null;
+                return(
+                  <div style={{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:10,padding:"10px 12px",marginBottom:14}}>
+                    <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",position:"relative"}}>
+                      {photo?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 0%"}} onError={e=>e.target.style.display="none"} alt=""/>
+                            :<img src={NBA_LEAGUE_LOGO} style={{width:36,height:36,objectFit:"contain",margin:"4px auto",display:"block"}} alt="NBA"/>}
+                      {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:14,height:14,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:2,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
+                    </div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",textTransform:"capitalize"}}>{editingPlayer.key}</div>
+                      <div style={{fontSize:11,color:"#6b7280",marginTop:2}}>
+                        {editingPlayer.data.team||"—"} · {editingPlayer.data.role||"—"} · {editingPlayer.data.league||"NBA"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Équipe */}
+              <div style={{marginBottom:8}}>
+                <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Équipe</div>
+                <select className="ifield" style={{width:"100%"}} value={editingPlayer.data.team||""}
+                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,team:e.target.value}}))}>
+                  <option value="">Choisir une équipe...</option>
+                  <option key="Atlanta Hawks" value="Atlanta Hawks">Atlanta Hawks</option>
+                    <option key="Boston Celtics" value="Boston Celtics">Boston Celtics</option>
+                    <option key="Brooklyn Nets" value="Brooklyn Nets">Brooklyn Nets</option>
+                    <option key="Charlotte Hornets" value="Charlotte Hornets">Charlotte Hornets</option>
+                    <option key="Chicago Bulls" value="Chicago Bulls">Chicago Bulls</option>
+                    <option key="Cleveland Cavaliers" value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                    <option key="Dallas Mavericks" value="Dallas Mavericks">Dallas Mavericks</option>
+                    <option key="Denver Nuggets" value="Denver Nuggets">Denver Nuggets</option>
+                    <option key="Detroit Pistons" value="Detroit Pistons">Detroit Pistons</option>
+                    <option key="Golden State Warriors" value="Golden State Warriors">Golden State Warriors</option>
+                    <option key="Houston Rockets" value="Houston Rockets">Houston Rockets</option>
+                    <option key="Indiana Pacers" value="Indiana Pacers">Indiana Pacers</option>
+                    <option key="LA Clippers" value="LA Clippers">LA Clippers</option>
+                    <option key="Los Angeles Lakers" value="Los Angeles Lakers">Los Angeles Lakers</option>
+                    <option key="Memphis Grizzlies" value="Memphis Grizzlies">Memphis Grizzlies</option>
+                    <option key="Miami Heat" value="Miami Heat">Miami Heat</option>
+                    <option key="Milwaukee Bucks" value="Milwaukee Bucks">Milwaukee Bucks</option>
+                    <option key="Minnesota Timberwolves" value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                    <option key="New Orleans Pelicans" value="New Orleans Pelicans">New Orleans Pelicans</option>
+                    <option key="New York Knicks" value="New York Knicks">New York Knicks</option>
+                    <option key="Oklahoma City Thunder" value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                    <option key="Orlando Magic" value="Orlando Magic">Orlando Magic</option>
+                    <option key="Philadelphia 76ers" value="Philadelphia 76ers">Philadelphia 76ers</option>
+                    <option key="Phoenix Suns" value="Phoenix Suns">Phoenix Suns</option>
+                    <option key="Portland Trail Blazers" value="Portland Trail Blazers">Portland Trail Blazers</option>
+                    <option key="Sacramento Kings" value="Sacramento Kings">Sacramento Kings</option>
+                    <option key="San Antonio Spurs" value="San Antonio Spurs">San Antonio Spurs</option>
+                    <option key="Toronto Raptors" value="Toronto Raptors">Toronto Raptors</option>
+                    <option key="Utah Jazz" value="Utah Jazz">Utah Jazz</option>
+                    <option key="Washington Wizards" value="Washington Wizards">Washington Wizards</option>
+                </select>
+              </div>
+
+              {/* Position */}
+              <div style={{marginBottom:8}}>
+                <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Position</div>
+                <div style={{display:"flex",gap:6}}>
+                  {[["PG","1"],["SG","2"],["SF","3"],["PF","4"],["C","5"]].map(([pos,num])=>{
+                    const on=editingPlayer.data.role===pos;
+                    return(
+                      <button key={pos} onClick={()=>setEditingPlayer(ep=>({...ep,data:{...ep.data,role:pos}}))}
+                        style={{flex:1,padding:"8px 4px",borderRadius:9,border:"1.5px solid "+(on?"#a78bfa":"rgba(255,255,255,.08)"),background:on?"rgba(167,139,250,.15)":"rgba(255,255,255,.02)",color:on?"#a78bfa":"#4a5568",fontSize:11,fontWeight:on?800:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                        <div style={{fontSize:13,fontWeight:900}}>{num}</div>
+                        <div style={{fontSize:9,marginTop:1}}>{pos}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ligue */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Ligue</div>
+                <select className="ifield" style={{width:"100%"}} value={editingPlayer.data.league||"NBA"}
+                  onChange={e=>setEditingPlayer(ep=>({...ep,data:{...ep.data,league:e.target.value}}))}>
+                  <option value="NBA">NBA</option>
+                  <option value="EuroLeague">EuroLeague</option>
+                  <option value="Pro A">Pro A</option>
+                  <option value="ACB">ACB</option>
+                  <option value="Bundesliga">Bundesliga</option>
+                  <option value="Lega">Lega</option>
+                  <option value="HEBA">HEBA</option>
+                </select>
+              </div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>setEditingPlayer(null)}
                   style={{padding:"12px",background:"#1F2937",border:"none",borderRadius:10,color:"#94A3B8",fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                   Annuler
                 </button><button onClick={()=>{
