@@ -1193,15 +1193,17 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Centre — 2 lignes */}
           <div style={{flex:1,minWidth:0}}>
-            {/* L1 : Joueur — Kills — Map */}
-            <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4,flexWrap:"wrap"}}><span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
-              {(()=>{const pd=allPlayers[(bet.player||"").toLowerCase().trim()];const tl=pd&&pd.team?NBA_TEAM_LOGOS[pd.team]:null;return tl?<img src={tl} style={{width:16,height:16,objectFit:"contain",flexShrink:0,marginLeft:2}} onError={e=>e.target.style.display="none"} alt=""/>:null;})()}
-              {(NBA_POS_CORRECTIONS[(bet.player||"").toLowerCase().trim()]||bet.role)&&<PositionLogo role={NBA_POS_CORRECTIONS[(bet.player||"").toLowerCase().trim()]||bet.role} size={14}/>}
+            {/* L1 : Joueur + logo ligue */}
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,flexWrap:"wrap"}}>
+              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+              {/* Logo ligue en haut */}
+              {bet.game==="EuroLeague"
+                ?<img src={EL_LOGO_B64} style={{width:16,height:16,objectFit:"contain",flexShrink:0}} alt="EL"/>
+                :<img src={NBA_LEAGUE_LOGO} style={{width:16,height:16,objectFit:"contain",flexShrink:0}} alt="NBA" onError={e=>e.target.style.display="none"}/>
+              }
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
               {bet.isLive&&<span style={{fontSize:8,fontWeight:800,color:"#fb7185",background:"rgba(251,113,133,.12)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,113,133,.25)",letterSpacing:.3,flexShrink:0}}>LIVE</span>}
-              {bet.isHeadshot&&<img src={HEADSHOT_LOGO_B64} alt="HS" style={{width:13,height:13,objectFit:"contain",flexShrink:0,filter:"brightness(0) invert(1)",opacity:.7,verticalAlign:"middle"}}/>}
-              {descLine&&<><span style={{color:"#2e3d50",fontSize:10,lineHeight:1,flexShrink:0,margin:"0 1px"}}>-</span><span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,flexShrink:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
-
+              {descLine&&<><span style={{color:"#2e3d50",fontSize:10,lineHeight:1,flexShrink:0,margin:"0 1px"}}>·</span><span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,flexShrink:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
             </div>
             {/* L2 : Cote · BK · Mise · Ligue — plus visible */}
             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px"}}>@{bet.odds}</span>
@@ -1265,11 +1267,8 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                     {/* Affichage custom : logo + nom */}
                     <span style={{display:"inline-flex",alignItems:"center",gap:3,pointerEvents:"none"}}>
                       {currentVal
-                        ?<>{tLogo
-                          ?<img src={tLogo} alt={currentVal} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",borderRadius:2}}/>
-                          :<img src={NBA_LEAGUE_LOGO} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",borderRadius:2}} onError={e=>e.target.style.display="none"} alt="NBA"/>}
-                          <span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>{displayLabel}</span></>
-                        :<img src={NBA_LEAGUE_LOGO} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",opacity:.4,borderRadius:2}} onError={e=>e.target.style.display="none"} alt=""/>}
+                        ?<><span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>{displayLabel}</span></>
+                        :null}
                     </span>
                     {/* Select invisible par-dessus */}
                     <select
