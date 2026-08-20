@@ -432,28 +432,25 @@ function getLolRoleLogo(role){
   if(r==="jungle"||r==="jungler"||r==="jun"||r==="jgl")return LOL_ROLE_JUN;
   return null;
 }
+const POS_LABELS={PG:"Point Guard",SG:"Small Guard",SF:"Small Forward",PF:"Power Forward",C:"Center"};
+const POS_COLORS={PG:{col:"#a78bfa",bg:"rgba(167,139,250,.12)",border:"rgba(167,139,250,.3)"},SG:{col:"#60a5fa",bg:"rgba(96,165,250,.12)",border:"rgba(96,165,250,.3)"},SF:{col:"#34d399",bg:"rgba(52,211,153,.12)",border:"rgba(52,211,153,.3)"},PF:{col:"#fb923c",bg:"rgba(251,146,60,.12)",border:"rgba(251,146,60,.3)"},C:{col:"#f472b6",bg:"rgba(244,114,182,.12)",border:"rgba(244,114,182,.3)"}};
 function PositionLogo({role,size=16}){
   if(!role)return null;
-  const posMap={
-    PG:{num:"1",col:"#a78bfa",bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.35)"},
-    SG:{num:"2",col:"#60a5fa",bg:"rgba(96,165,250,.15)",border:"rgba(96,165,250,.35)"},
-    SF:{num:"3",col:"#34d399",bg:"rgba(52,211,153,.15)",border:"rgba(52,211,153,.35)"},
-    PF:{num:"4",col:"#fb923c",bg:"rgba(251,146,60,.15)",border:"rgba(251,146,60,.35)"},
-    C: {num:"5",col:"#f472b6",bg:"rgba(244,114,182,.15)",border:"rgba(244,114,182,.35)"},
-  };
-  const p=posMap[role?.toUpperCase()]||{num:"?",col:"#94a3b8",bg:"rgba(148,163,184,.1)",border:"rgba(148,163,184,.25)"};
-  const fs=Math.max(8,size-3);
+  const key=role?.toUpperCase();
+  const label=POS_LABELS[key]||role;
+  const p=POS_COLORS[key]||{col:"#94a3b8",bg:"rgba(148,163,184,.1)",border:"rgba(148,163,184,.25)"};
+  const fs=Math.max(8,size-4);
   return(
     <span style={{
       display:"inline-flex",alignItems:"center",justifyContent:"center",
-      fontSize:fs,fontWeight:900,color:p.col,
+      fontSize:fs,fontWeight:700,color:p.col,
       background:p.bg,
-      width:Math.max(16,size+2),height:Math.max(16,size+2),
-      borderRadius:"50%",
-      border:`1.5px solid ${p.border}`,
-      flexShrink:0,lineHeight:1,
-      boxShadow:`0 0 6px ${p.col}33`,
-    }}>{p.num}</span>
+      padding:"1px 5px",
+      borderRadius:5,
+      border:`1px solid ${p.border}`,
+      flexShrink:0,lineHeight:1.4,
+      whiteSpace:"nowrap",
+    }}>{label}</span>
   );
 }
 function FmtProfit({v,fontSize=12,fontWeight=800}){
@@ -785,20 +782,8 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                 style={{display:"flex",alignItems:"center",gap:9,padding:"9px 13px",cursor:"pointer",borderBottom:"1px solid #1F2937",background:isSelected?"rgba(124,58,237,0.08)":"transparent"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.1)"}
                 onMouseLeave={e=>e.currentTarget.style.background=isSelected?"rgba(124,58,237,0.08)":"transparent"}>
-                {/* Photo joueur */}
-                <div style={{width:36,height:36,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",position:"relative"}}>
-                  {p.photo_url
-                    ?<img src={optimizePhotoUrl(p.photo_url)} style={{width:37,height:37,objectFit:"cover",objectPosition:"50% 0%"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
-                    :<GameLogo game={p.game} size={36}/>
-                  }
-                  {(()=>{
-                    const tl=p.game==="EuroLeague"
-                      ?EL_TEAM_LOGOS[p.team]
-                      :NBA_TEAM_LOGOS[p.team];
-                    return tl?<img src={tl} style={{position:"absolute",bottom:0,right:0,width:15,height:15,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:3,padding:1}} alt=""/>:null;
-                  })()}
-                </div><div style={{flex:1,minWidth:0}}><span style={{fontWeight:700,fontSize:14,color:"#E5E7EB",textTransform:"capitalize"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span><div style={{fontSize:11,color:"#6B7280",marginTop:1,display:"flex",alignItems:"center",gap:4}}>
-                    {p.team&&<span style={{color:"#9CA3AF"}}>{p.team.split(" ").pop()}</span>}
+                <div style={{flex:1,minWidth:0}}><span style={{fontWeight:700,fontSize:14,color:"#E5E7EB"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span><div style={{fontSize:11,color:"#6B7280",marginTop:1,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+                    {p.team&&(()=>{const tl=p.game==="EuroLeague"?EL_TEAM_LOGOS[p.team]:NBA_TEAM_LOGOS[p.team];return(<><span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#9CA3AF"}}>{tl&&<img src={tl} style={{width:13,height:13,objectFit:"contain"}} alt=""/>}{p.team}</span></>);})()}
                     {tag==="recent"&&<span style={{color:"#4B5563"}}>· récent</span>}
                     {freq>1&&<span style={{color:"#A78BFA"}}>· {freq}p</span>}
                   </div></div>
@@ -1187,255 +1172,129 @@ const LEAGUE_LOGOS={
 const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSplit,bkPhotos=EMPTY_OBJ,onSave,allTourneys=[],savedTourneys={},allPlayers={}}){
   const [open,setOpen]=useState(false);
   const [confirmDel,setConfirmDel]=useState(false);
+  const [clvOpen,setClvOpen]=useState(false);
+  const [clvCut,setClvCut]=useState("");
+  const [clvOdds,setClvOdds]=useState("");
   const sc=STATUS_CFG[bet.status]||{color:"#3B82F6",label:bet.status};
   const isPending=bet.status==="pending";
   const isWon=bet.status==="won";
   const isLost=bet.status==="lost";
   const profitColor=isPending?"#ffffff":isWon?"#00E676":"#EF4444";
   const profitTxt=isPending?"En cours":((bet.profit||0)>=0?"+":" ")+(bet.profit||0).toFixed(2)+"$";
-  const borderCol=isPending?"rgba(255,255,255,0.06)":isWon?"rgba(34,197,94,0.35)":"rgba(248,113,113,0.35)";
   const bkLogo=BK_LOGOS[bet.bookmaker]||bkPhotos[bet.bookmaker]||null;
-  // Fix double Over/Under : bet.description contient déjà "Over X Kills" — on affiche seulement description
   const descLine=bet.description||"";
+  const hasAnnounce=bet.announceOuts&&bet.announceOuts.length>0;
+  const glowStyle=!isPending&&(isWon?"0 0 10px rgba(34,197,94,.18)":"0 0 8px rgba(239,68,68,.14)");
 
-  const hasPP=bet.ppEdge!=null&&bet.ppMapType;
-  const glowStyle=!isPending&&(isWon
-    ?"0 0 10px rgba(34,197,94,.18)":"0 0 8px rgba(239,68,68,.14)");
+  const clvValue=(()=>{
+    if(!clvCut||!clvOdds||!bet.odds)return null;
+    const betOddsV=parseFloat(bet.odds);
+    const cutOddsV=parseFloat(clvOdds);
+    if(isNaN(betOddsV)||isNaN(cutOddsV)||cutOddsV<=1)return null;
+    const betProb=1/betOddsV;
+    const cutProb=1/cutOddsV;
+    return ((betProb-cutProb)/cutProb*100).toFixed(1);
+  })();
+
+  const teamLogoSrc=(()=>{
+    const pData=allPlayers[(bet.player||"").toLowerCase().trim()];
+    const team=(pData&&pData.team)||bet.team;
+    if(!team)return null;
+    if(bet.game==="EuroLeague")return EL_TEAM_LOGOS[team]||null;
+    if(bet.game==="NBA")return NBA_TEAM_LOGOS[team]||null;
+    return null;
+  })();
+
   return(
     <div style={{borderBottom:"1px solid rgba(255,255,255,.1)",WebkitTapHighlightColor:"transparent",contain:"layout style",borderLeft:"2.5px solid "+(isPending?"#60a5fa":isWon?"#00E676":"#f43f5e"),background:"transparent",position:"relative",transition:"all .15s"}}><div onClick={()=>setOpen(v=>!v)} style={{padding:"11px 13px 11px 12px",cursor:"pointer",userSelect:"none",WebkitUserSelect:"none"}}><div style={{display:"flex",alignItems:"center",gap:11}}>
 
-          {/* Logo sport — légèrement plus grand */}
-          {(()=>{
-            const pData=allPlayers[(bet.player||"").toLowerCase().trim()]||allPlayers[bet.player]||null;
-            const photoUrl=pData&&optimizePhotoUrl(pData.photo_url);
-            const teamLogo=pData&&pData.team?(pData.game==="EuroLeague"?EL_TEAM_LOGOS[pData.team]:NBA_TEAM_LOGOS[pData.team]):null;
-            return(
-              <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                {photoUrl
-                  ? <img src={photoUrl}
-                      style={{width:37,height:37,objectFit:"cover",objectPosition:"50% 0%"}}
-                      alt={bet.player}
-                      onError={e=>{e.target.style.display="none";}}/>
-                  : <GameLogo game={bet.game} size={40}/>
-                }
-              </div>
-            );
-          })()}
+          {/* Logo équipe ou championnat */}
+          <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {teamLogoSrc
+              ? <img src={teamLogoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team} onError={e=>{e.target.style.display="none";}}/>
+              : <GameLogo game={bet.game} size={30}/>
+            }
+          </div>
 
-          {/* Centre — 2 lignes */}
+          {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
-            {/* L1 : Joueur + logo ligue */}
             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,flexWrap:"wrap"}}>
               <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
-              {/* Logo ligue en haut — EuroLeague ou championnat national */}
-              {(()=>{
-                const pData=allPlayers[(bet.player||"").toLowerCase().trim()];
-                const team=pData?.team||"";
-                const natKey=EL_TEAM_NATIONAL_LEAGUE[team];
-                const isNational=natKey&&bet.league&&bet.league!=="EuroLeague";
-                if(bet.game==="EuroLeague"&&isNational&&NATIONAL_LEAGUE_LOGOS[natKey]){
-                  return <img src={NATIONAL_LEAGUE_LOGOS[natKey]} style={{width:16,height:16,objectFit:"contain",flexShrink:0}} alt={bet.league}/>;
-                }
-                if(bet.game==="EuroLeague"){
-                  return <img src={EL_LOGO_B64} style={{width:16,height:16,objectFit:"contain",flexShrink:0}} alt="EL"/>;
-                }
-                return <img src={NBA_LEAGUE_LOGO} style={{width:16,height:16,objectFit:"contain",flexShrink:0}} alt="NBA" onError={e=>e.target.style.display="none"}/>;
-              })()}
+              {hasAnnounce&&(<span style={{fontSize:8,fontWeight:800,color:"#34d399",background:"rgba(52,211,153,.12)",border:"1px solid rgba(52,211,153,.3)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span>)}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
-              {bet.isLive&&<span style={{fontSize:8,fontWeight:800,color:"#fb7185",background:"rgba(251,113,133,.12)",padding:"1px 5px",borderRadius:4,border:"1px solid rgba(251,113,133,.25)",letterSpacing:.3,flexShrink:0}}>LIVE</span>}
               {descLine&&<><span style={{color:"#2e3d50",fontSize:10,lineHeight:1,flexShrink:0,margin:"0 1px"}}>·</span><span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,flexShrink:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
             </div>
-            {/* L2 : Cote · BK · Mise · Ligue — plus visible */}
-            <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px"}}>@{bet.odds}</span>
+            <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
+              <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px"}}>@{bet.odds}</span>
               {(bkLogo||bet.bookmaker)&&<span style={{color:"#3a4e62",margin:"0 5px",fontSize:12,lineHeight:1}}>·</span>}
-              {bkLogo
-                ? (<img src={bkLogo} alt={bet.bookmaker} style={{width:15,height:15,borderRadius:3,objectFit:"cover",flexShrink:0}}/>)
-                : bet.bookmaker ? (<span style={{fontSize:12,fontWeight:700,color:"#7a9cbd"}}>{bet.bookmaker}</span>) : null
-              }
-              {(bet.splits||[]).map((sp,i)=>{
-                const spLogo=BK_LOGOS[sp.bookmaker]||bkPhotos[sp.bookmaker]||null;
-                if(!spLogo)return(<span key={i} style={{fontSize:12,fontWeight:700,color:"#7a9cbd",marginLeft:3}}>{sp.bookmaker}</span>);
-                  return(<img key={i} src={spLogo} alt={sp.bookmaker} style={{width:13,height:13,borderRadius:3,objectFit:"cover",flexShrink:0,marginLeft:3}}/>);
-              })}
+              {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:15,height:15,borderRadius:3,objectFit:"cover",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:12,fontWeight:700,color:"#7a9cbd"}}>{bet.bookmaker}</span>):null}
               {bet.stake&&<><span style={{color:"#3a4e62",margin:"0 5px",fontSize:12,lineHeight:1}}>·</span><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd"}}>{bet.stake}$</span></>}
-              {hasPP&&<><span style={{color:"#3a4e62",margin:"0 5px",fontSize:12,lineHeight:1}}>·</span><img src={PP_LOGO_B64} alt="PP" style={{width:12,height:12,borderRadius:2,objectFit:"cover",flexShrink:0,verticalAlign:"middle"}}/><span style={{fontSize:12,fontWeight:700,color:bet.ppEdge>=0?"rgba(167,139,250,.85)":"#f87171",marginLeft:3}}>{bet.ppEdge>0?"+":""}{bet.ppEdge}</span></>}
-              {/* Tournament/League — affichage custom + select invisible */}
-              {(()=>{
-                const lolLeagues=["LCK","LEC","LCS","LPL"];
-                const valLeagues=["Americas","EMEA","Pacific"];
-                const currentVal=bet.tournament||bet.league||"";
-                const tLogo=(function(){
-                  var lc=(currentVal).toLowerCase();
-                  var tkey=null;
-                  if(lc.includes("world cup")||lc.includes("ewc"))tkey="EWC";
-                  else if(lc.includes("the international")||lc.startsWith("ti "))tkey="TheInternational";
-                  else if(lc.includes("riyadh"))tkey="Riyadh Masters";
-                  else if(lc.includes("dreamleague")||lc.includes("dream league"))tkey="DreamLeague";
-                  else if(lc.includes("iem"))tkey="IEM";
-                  else if(lc.includes("pgl"))tkey="PGL";
-                  else if(lc.includes("blast"))tkey="BLAST";
-                  else if(lc.includes("esl"))tkey="ESL";
-                  else if(lc.includes("lck"))tkey="LCK";
-                  else if(lc.includes("lpl"))tkey="LPL";
-                  else if(lc.includes("lec"))tkey="LEC";
-                  else if(lc.includes("lcs"))tkey="LCS";
-                  else if(lc.includes("americas"))tkey="Americas";
-                  else if(lc.includes("emea"))tkey="EMEA";
-                  else if(lc.includes("pacific"))tkey="Pacific";
-                  else if(lc.includes("xse pro")||lc.includes("xse"))tkey="XSE Pro League";
-                  else if(lc.includes("stake ranked")||lc.includes("starladder"))tkey="Stake Ranked";
-                  else if(lc.includes("msi")||lc.includes("mid-season")||lc.includes("mid season"))tkey="MSI";
-                  else if(lc.includes("valorant champions")||lc.includes("vct champions"))tkey="Valorant Champions";
-                  else if(lc.includes("worlds")||lc.includes("world 20"))tkey="LCK";
-                  return tkey?LEAGUE_LOGOS[tkey]:null;
-                })();
-                const displayLabel=currentVal?(function(){
-                  var lc=currentVal.toLowerCase();
-                  return(lc.includes("world cup")||lc.includes("ewc"))?"EWC":currentVal.split(" ")[0];
-                })():null;
-                const handleChange=function(e){
-                  e.stopPropagation();
-                  const val=e.target.value;
-                  const isLeague=lolLeagues.includes(val)||valLeagues.includes(val);
-                  if(isLeague){if(onSave)onSave(Object.assign({},bet,{league:val,tournament:"",updatedAt:Date.now()}));}
-                  else{if(onSave)onSave(Object.assign({},bet,{tournament:val,updatedAt:Date.now()}));}
-                };
-                return(
-                  <span style={{display:"inline-flex",alignItems:"center",gap:3,marginLeft:4,position:"relative",cursor:"pointer"}}
-                    onClick={e=>e.stopPropagation()}>
-                    {currentVal&&<span style={{color:"#3a4e62",margin:"0 2px",fontSize:12,lineHeight:1}}>·</span>}
-                    {/* Affichage custom : logo + nom */}
-                    <span style={{display:"inline-flex",alignItems:"center",gap:3,pointerEvents:"none"}}>
-                      {currentVal
-                        ?<><span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>{displayLabel}</span></>
-                        :null}
-                    </span>
-                    {/* Select invisible par-dessus */}
-                    <select
-                      value={currentVal}
-                      onChange={handleChange}
-                      style={{
-                        position:"absolute",inset:0,opacity:0,cursor:"pointer",
-                        width:"100%",height:"100%",border:"none",background:"transparent",
-                        fontSize:12,
-                      }}><option value="">— Aucun —</option>
-                      {true&&<optgroup label="Ligues">
-                        {["LCK","LEC","LCS","LPL"].map(l=><option key={l} value={l}>{l}</option>)}
-                      </optgroup>}
-                      {false&&<optgroup label="Ligues">
-                        {["Americas","EMEA","Pacific"].map(l=><option key={l} value={l}>{l}</option>)}
-                      </optgroup>}
-                      {((savedTourneys&&savedTourneys[bet.game]&&savedTourneys[bet.game].length>0)
-                        ?(savedTourneys[bet.game]):(allTourneys||[]))
-                        .length>0&&<optgroup label="Tournois">
-                        {((savedTourneys&&savedTourneys[bet.game]&&savedTourneys[bet.game].length>0)
-                          ?(savedTourneys[bet.game]):(allTourneys||[]))
-                          .map(function(t){return <option key={t} value={t}>{t}</option>;})}
-                      </optgroup>}
-                    </select></span>
-                );
-              })()}
-            </div></div>
+              {bet.tipster&&<><span style={{color:"#3a4e62",margin:"0 5px",fontSize:12}}>·</span><span style={{fontSize:11,color:"#a78bfa",fontWeight:600}}>{bet.tipster}</span></>}
+            </div>
+          </div>
 
-          {/* Droite : profit seul */}
-          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,minWidth:56}}><div style={{fontWeight:800,fontSize:14,color:profitColor,fontFamily:"Inter,sans-serif",letterSpacing:"-.4px",lineHeight:1,textShadow:isPending?"none":glowStyle||"none"}}>{profitTxt}</div><svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transition:"transform .2s",transform:open?"rotate(180deg)":"none",opacity:.25}}><path d="M2 3.5L5 6.5L8 3.5" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div></div></div>
+          {/* Droite : profit */}
+          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,minWidth:56}}>
+            <div style={{fontWeight:800,fontSize:14,color:profitColor,fontFamily:"Inter,sans-serif",letterSpacing:"-.4px",lineHeight:1,textShadow:isPending?"none":glowStyle||"none"}}>{profitTxt}</div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transition:"transform .2s",transform:open?"rotate(180deg)":"none",opacity:.25}}><path d="M2 3.5L5 6.5L8 3.5" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </div></div>
 
-      {/* ── Actions déployées ── */}
       {open&&(
         <div style={{borderTop:"1px solid rgba(255,255,255,.06)",background:"rgba(5,8,18,.6)"}}>
 
-          {/* Date + Tournament */}
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px 0",flexWrap:"wrap"}}>
-            {/* Date cliquable */}
-            <label style={{cursor:"pointer",position:"relative",display:"inline-flex",alignItems:"center"}}><span style={{fontSize:11,color:"#4a5a6e",fontWeight:600,textDecoration:"underline dotted",textDecorationColor:"#3a4a5e"}}>
-                {(()=>{const dt=bet.datetime?String(bet.datetime):"";if(!dt||dt.includes("NaN")||!/^\d{4}-\d{2}-\d{2}/.test(dt))return "📅 Date";const mo=parseInt(dt.slice(5,7))-1;const mn=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"][mo]||"";return dt.slice(8,10)+" "+mn+" "+dt.slice(0,4)+" · "+dt.slice(11,16);})()}
-              </span><input
-                type="datetime-local"
-                defaultValue={(bet.datetime&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(bet.datetime)))?String(bet.datetime).slice(0,16):""}
-                onChange={function(e){
-                  const newDt=e.target.value;
-                  if(!newDt)return;
-                  const saved=Object.assign({},bet,{datetime:newDt,updatedAt:Date.now()});
-                  if(onSave)onSave(saved);
-                  // Override pour survivre au pull Supabase
-                  try{const ov=JSON.parse(localStorage.getItem("v7_overrides")||"{}");ov[String(bet.id)]={datetime:newDt,updatedAt:Date.now()};localStorage.setItem("v7_overrides",JSON.stringify(ov));}catch(e2){}
-                }}
-                style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent"}}
-              /></label>
-            {/* Tournament inline edit */}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:"auto"}}><select
-                value={bet.tournament||bet.league||""}
-                onChange={function(e){
-                  const val=e.target.value;
-                  // Si c'est une ligue (LCK/LEC/etc), met à jour league et vide tournament
-                  const lolLeagues=["LCK","LEC","LCS","LPL"];
-                  const valLeagues=["Americas","EMEA","Pacific"];
-                  const isLeague=lolLeagues.includes(val)||valLeagues.includes(val);
-                  if(isLeague){if(onSave)onSave(Object.assign({},bet,{league:val,tournament:"",updatedAt:Date.now()}));}
-                  else{if(onSave)onSave(Object.assign({},bet,{tournament:val,updatedAt:Date.now()}));}
-                }}
-                style={{background:"rgba(18,12,30,.98)",border:"1px solid rgba(251,191,36,.3)",borderRadius:7,padding:"3px 8px",color:"#fbbf24",fontSize:11,fontFamily:"Inter,sans-serif",outline:"none",minWidth:90,maxWidth:180,cursor:"pointer"}}><option value="">— Aucun —</option>
-                {/* Ligues selon le jeu */}
-                {true&&<optgroup label="Ligues">
-                  {["LCK","LEC","LCS","LPL"].map(l=><option key={l} value={l}>{l}</option>)}
-                </optgroup>}
-                {false&&<optgroup label="Ligues">
-                  {["Americas","EMEA","Pacific"].map(l=><option key={l} value={l}>{l}</option>)}
-                </optgroup>}
-                {/* Tournois du suivi */}
-                {((savedTourneys&&savedTourneys[bet.game]&&savedTourneys[bet.game].length>0)
-                  ?(savedTourneys[bet.game])
-                  :(allTourneys||[]))
-                  .length>0&&<optgroup label="Tournois">
-                  {((savedTourneys&&savedTourneys[bet.game]&&savedTourneys[bet.game].length>0)
-                    ?(savedTourneys[bet.game])
-                    :(allTourneys||[]))
-                    .map(function(t){return <option key={t} value={t}>{t}</option>;})}
-                </optgroup>}
-              </select></div></div>
+          {/* Date */}
+          <div style={{padding:"8px 14px 0"}}>
+            <label style={{cursor:"pointer",position:"relative",display:"inline-flex",alignItems:"center"}}>
+              <span style={{fontSize:11,color:"#4a5a6e",fontWeight:600,textDecoration:"underline dotted",textDecorationColor:"#3a4a5e"}}>
+                {(()=>{const dt=bet.datetime?String(bet.datetime):"";if(!dt||dt.includes("NaN")||!/^\d{4}-\d{2}-\d{2}/.test(dt))return"📅 Date";const mo=parseInt(dt.slice(5,7))-1;const mn=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"][mo]||"";return dt.slice(8,10)+" "+mn+" "+dt.slice(0,4)+" · "+dt.slice(11,16);})()}
+              </span>
+              <input type="datetime-local" defaultValue={(bet.datetime&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(bet.datetime)))?String(bet.datetime).slice(0,16):""} onChange={function(e){const newDt=e.target.value;if(!newDt)return;if(onSave)onSave(Object.assign({},bet,{datetime:newDt,updatedAt:Date.now()}));try{const ov=JSON.parse(localStorage.getItem("v7_overrides")||"{}");ov[String(bet.id)]={datetime:newDt,updatedAt:Date.now()};localStorage.setItem("v7_overrides",JSON.stringify(ov));}catch(e2){}}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent"}}/>
+            </label>
+          </div>
 
-          {/* Répartition BK */}
-          {bet.splits&&bet.splits.length>0&&(
-            <div style={{margin:"8px 14px 0",background:"rgba(8,14,28,.8)",borderRadius:10,padding:"8px 12px",border:"1px solid rgba(255,255,255,.05)"}}><div style={{fontSize:9,color:"#4a5a6e",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Répartition</div><div style={{display:"flex",flexDirection:"column",gap:3}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{color:"#7a8a9a"}}>{bet.bookmaker}</span><span style={{color:"#c8d4e8",fontWeight:600}}>{(bet.stake-(bet.splits||[]).reduce((s,x)=>s+x.stake,0)).toFixed(0)}$ @{bet.odds}</span></div>
-                {(bet.splits||[]).map((sp,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{color:"#7a8a9a"}}>{sp.bookmaker}</span><span style={{color:"#c8d4e8",fontWeight:600}}>{sp.stake}$ @{sp.odds}</span></div>
-                ))}
-                <div style={{borderTop:"1px solid rgba(255,255,255,.05)",paddingTop:4,marginTop:2,display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{color:"#4a5a6e"}}>Total</span><span style={{color:"#c8d4e8",fontWeight:700}}>{bet.stake}$</span></div></div></div>
-          )}
+          {/* CLV */}
+          <div style={{margin:"8px 14px 0"}}>
+            <button onClick={()=>setClvOpen(v=>!v)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid rgba(96,165,250,.3)",background:clvOpen?"rgba(96,165,250,.12)":"transparent",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+              📊 CLV {clvValue!==null&&<span style={{color:parseFloat(clvValue)>=0?"#34d399":"#f87171",marginLeft:3}}>{parseFloat(clvValue)>=0?"+":""}{clvValue}%</span>}
+            </button>
+            {clvOpen&&(
+              <div style={{marginTop:8,padding:"10px 12px",background:"rgba(8,14,28,.9)",borderRadius:10,border:"1px solid rgba(96,165,250,.2)"}}>
+                <div style={{fontSize:10,color:"#6B7280",marginBottom:8,fontWeight:600}}>Paris: {bet.overUnder} {bet.description} @{bet.odds}</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  <div><div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase"}}>Cut clôture</div>
+                    <input type="number" step="0.5" placeholder="ex: 8.5" value={clvCut} onChange={e=>setClvCut(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"6px 8px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                  <div><div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase"}}>Cote clôture</div>
+                    <input type="number" step="0.01" placeholder="ex: 1.70" value={clvOdds} onChange={e=>setClvOdds(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"6px 8px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                </div>
+                {clvValue!==null&&(
+                  <div style={{padding:"8px 10px",borderRadius:8,background:parseFloat(clvValue)>=0?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",border:"1px solid "+(parseFloat(clvValue)>=0?"rgba(52,211,153,.3)":"rgba(248,113,113,.3)"),display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{fontSize:10,color:"#9CA3AF"}}>CLV (edge vs fermeture)</div>
+                    <div style={{fontSize:20,fontWeight:800,color:parseFloat(clvValue)>=0?"#34d399":"#f87171"}}>{parseFloat(clvValue)>=0?"+":""}{clvValue}%</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Statut */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 14px 0"}}><button onClick={()=>{onStatus(bet.id,"won");setOpen(false);}}
-              style={{padding:"13px",borderRadius:12,border:isWon?"none":"1px solid rgba(0,230,118,.2)",background:isWon?"rgba(0,230,118,.18)":"rgba(0,230,118,.05)",color:"#00E676",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",borderTop:isWon?"2px solid #00E676":"none"}}>
-              ✓ Gagné
-            </button><button onClick={()=>{onStatus(bet.id,"lost");setOpen(false);}}
-              style={{padding:"13px",borderRadius:12,border:isLost?"none":"1px solid rgba(239,68,68,.2)",background:isLost?"rgba(239,68,68,.15)":"rgba(239,68,68,.04)",color:"#f87171",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",borderTop:isLost?"2px solid #f87171":"none"}}>
-              ✗ Perdu
-            </button></div>
-          {!isPending&&(
-            <div style={{padding:"6px 14px 0"}}><button onClick={()=>{onStatus(bet.id,"pending");setOpen(false);}}
-                style={{width:"100%",padding:"9px",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",background:"transparent",color:isPending?"#93c5fd":"#4a5a6e",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                ↩ Remettre en attente
-              </button></div>
-          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 14px 0"}}>
+            <button onClick={()=>{onStatus(bet.id,"won");setOpen(false);}} style={{padding:"13px",borderRadius:12,border:isWon?"none":"1px solid rgba(0,230,118,.2)",background:isWon?"rgba(0,230,118,.18)":"rgba(0,230,118,.05)",color:"#00E676",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>✓ Gagné</button>
+            <button onClick={()=>{onStatus(bet.id,"lost");setOpen(false);}} style={{padding:"13px",borderRadius:12,border:isLost?"none":"1px solid rgba(239,68,68,.2)",background:isLost?"rgba(239,68,68,.15)":"rgba(239,68,68,.04)",color:"#f87171",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>✗ Perdu</button>
+          </div>
+          {!isPending&&(<div style={{padding:"6px 14px 0"}}><button onClick={()=>{onStatus(bet.id,"pending");setOpen(false);}} style={{width:"100%",padding:"9px",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",background:"transparent",color:"#4a5a6e",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>↩ Remettre en attente</button></div>)}
 
           {/* Actions */}
-          <div style={{display:"flex",gap:7,padding:"8px 14px 12px"}}><button onClick={()=>{onEdit(bet);setOpen(false);}}
-              style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#9CA3AF",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:13}}>
-              Modifier
-            </button><button onClick={()=>{onDuplicate(bet);setOpen(false);}}
-              style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#9CA3AF",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:13}}>
-              Dupliquer
-            </button><button onClick={()=>{onSplit(bet);setOpen(false);}}
-              style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(167,139,250,.3)",background:"rgba(124,58,237,.08)",color:"#a78bfa",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:13}}>
-              + BK
-            </button>
+          <div style={{display:"flex",gap:7,padding:"8px 14px 12px"}}>
+            <button onClick={()=>{onEdit(bet);setOpen(false);}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#9CA3AF",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:13}}>Modifier</button>
             {!confirmDel
-              ?(<button onClick={()=>setConfirmDel(true)}
-                  style={{width:44,padding:"11px 0",borderRadius:10,border:"1px solid rgba(239,68,68,.2)",background:"transparent",color:"#5a3030",cursor:"pointer",fontFamily:"Inter,sans-serif",fontSize:16}}>🗑</button>)
-              :(<button onClick={()=>{onDelete(bet.id);}}
-                  style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",background:"linear-gradient(135deg,#dc2626,#ef4444)",color:"#fff",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:13}}>Confirmer</button>)
+              ?(<button onClick={()=>setConfirmDel(true)} style={{width:44,padding:"11px 0",borderRadius:10,border:"1px solid rgba(239,68,68,.2)",background:"transparent",color:"#5a3030",cursor:"pointer",fontFamily:"Inter,sans-serif",fontSize:16}}>🗑</button>)
+              :(<button onClick={()=>{onDelete(bet.id);}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",background:"linear-gradient(135deg,#dc2626,#ef4444)",color:"#fff",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:13}}>Confirmer</button>)
             }
-          </div></div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1618,63 +1477,35 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
               </button>
             );
           })}
-        </div><div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Nouvelle date</div><input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={{width:"100%",background:"#0B1220",border:"1px solid #1F2937",borderRadius:10,padding:"10px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",colorScheme:"dark",boxSizing:"border-box"}}/></div><div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Tournoi</div>
-          {(()=>{
-            // Build list of tournaments from selected bets grouped by game
-            const selBets=[...selected].map(id=>bets.find(b=>b.id===id)).filter(Boolean);
-            const games=[...new Set(selBets.map(b=>b.game).filter(Boolean))];
-            // All tournaments: from bets + from savedTourneys
-            const byGame={};
-            bets.forEach(function(b){if(!b.tournament)return;if(!byGame[b.game])byGame[b.game]=new Set();byGame[b.game].add(b.tournament);});
-            // Also add savedTourneys
-            Object.entries(savedTourneys||{}).forEach(function(e){
-              var g=e[0],ts=e[1];
-              if(!byGame[g])byGame[g]=new Set();
-              (ts||[]).forEach(function(t){byGame[g].add(t);});
-            });
-            // Add leagues as tournament options for LoL/Valorant
-            bets.forEach(function(b){
-              var effT=effectiveTournament(b);
-              if(effT&&!b.tournament){ // basket: all leagues
-                if(!byGame[b.game])byGame[b.game]=new Set();
-                byGame[b.game].add(effT);
-              }
-            });
-            const options=[];
-            (games.length>0?games:Object.keys(byGame)).forEach(function(g){(byGame[g]||new Set()).forEach(function(t){options.push({game:g,tournament:t});});});
-            const GAME_ICONS={"NBA":"[NBA]","EuroLeague":"[EL]","Pro A":"[ProA]","ACB":"[ACB]","Bundesliga":"[BBL]","Lega":"[Lega]","HEBA":"[HEBA]"};
-            var allOpts=[{game:"",tournament:"__AUCUN__",label:"📅 Sans tournoi",val:"__AUCUN__"}].concat(options.map(function(o){return{game:o.game,tournament:o.tournament,label:o.tournament,val:o.tournament};}));
-            var selected_opt=allOpts.find(function(o){return o.val===newTournament;})||null;
-            return(
-              <div style={{position:"relative"}}>
-                {/* Trigger button */}
-                <button onClick={function(){setTourneyOpen(function(v){return !v;});}}
-                  style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:10,border:"1px solid "+(newTournament?"rgba(167,139,250,.5)":"#1F2937"),background:"#0B1220",color:newTournament?"#c4b5fd":"#6B7280",fontSize:13,fontWeight:newTournament?700:400,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                  {selected_opt&&selected_opt.game?<GameLogo game={selected_opt.game} size={16}/>:selected_opt&&selected_opt.val==="__AUCUN__"?<span>📅</span>:null}
-                  <span style={{flex:1}}>{selected_opt?selected_opt.label:"— Choisir un tournoi —"}</span><span style={{fontSize:10,color:"#4a5a6e"}}>{tourneyOpen?"▲":"▼"}</span></button>
-                {/* Dropdown list */}
-                {tourneyOpen&&(
-                  <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#0d1528",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,zIndex:999,maxHeight:200,overflowY:"auto",boxShadow:"0 8px 32px rgba(0,0,0,.5)"}}><button onClick={function(){setNewTournament("");setTourneyOpen(false);}}
-                      style={{width:"100%",padding:"9px 12px",display:"flex",alignItems:"center",gap:8,border:"none",borderBottom:"1px solid rgba(255,255,255,.05)",background:"transparent",color:"#4a5a6e",fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                      — Aucun —
-                    </button>
-                    {allOpts.map(function(o,i){
-                      var isOn=newTournament===o.val;
-                      return(
-                        <button key={i} onClick={function(){setNewTournament(o.val);setTourneyOpen(false);}}
-                          style={{width:"100%",padding:"9px 12px",display:"flex",alignItems:"center",gap:8,border:"none",borderBottom:i<allOpts.length-1?"1px solid rgba(255,255,255,.04)":"none",background:isOn?"rgba(124,58,237,.15)":"transparent",color:isOn?"#c4b5fd":"#E5E7EB",fontSize:12,fontWeight:isOn?700:400,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                          {o.game?<GameLogo game={o.game} size={15}/>:<span style={{fontSize:13}}>{o.val==="__AUCUN__"?"📅":""}</span>}
-                          <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.label}</span>
-                          {isOn&&<span style={{color:"#a78bfa",fontSize:11}}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+        </div><div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Nouvelle date</div><input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={{width:"100%",background:"#0B1220",border:"1px solid #1F2937",borderRadius:10,padding:"10px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",colorScheme:"dark",boxSizing:"border-box"}}/></div><div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Ligue</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {[
+              {val:"",label:"Toutes",logo:null},
+              {val:"NBA",label:"NBA",logo:<img src={NBA_LEAGUE_LOGO} style={{width:18,height:18,objectFit:"contain"}} alt="NBA"/>},
+              {val:"EuroLeague",label:"EuroLeague",logo:<GameLogo game="EuroLeague" size={18}/>},
+              {val:"europe",label:"Ligues européennes",logo:<span style={{fontSize:14}}>🏀</span>},
+            ].map(opt=>{
+              const isOn=newTournament===(opt.val||"__ALL__")||(opt.val===""&&!newTournament);
+              const isEu=opt.val==="europe";
+              const matchesEu=isEu&&newTournament&&!["NBA","EuroLeague"].includes(newTournament);
+              const active=opt.val===""?!newTournament:isEu?matchesEu:newTournament===opt.val;
+              return(
+                <button key={opt.val} onClick={()=>{
+                  if(opt.val==="")setNewTournament("");
+                  else if(isEu){/* set first european league found */
+                    const euLeagues=["Pro A","ACB","Bundesliga","Lega","HEBA"];
+                    const found=euLeagues.find(l=>bets.some(b=>b.game===l||b.league===l))||"Pro A";
+                    setNewTournament(found);
+                  } else setNewTournament(opt.val);
+                }}
+                  style={{display:"flex",alignItems:"center",gap:5,padding:"6px 11px",borderRadius:9,border:"1.5px solid "+(active?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:active?"rgba(124,58,237,.15)":"transparent",color:active?"#c4b5fd":"#6B7280",fontSize:11,fontWeight:active?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  {opt.logo}{opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         {bookmakers.length>0&&(
           <div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Bookmaker</div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {bookmakers.map(bk=>{
@@ -1691,38 +1522,6 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
             {newBK&&<div style={{fontSize:11,color:"#A78BFA",fontWeight:600,marginTop:6}}>✓ {newBK}</div>}
           </div>
         )}
-        {/* ── Action rapide: supprimer PP de tous les bets live ── */}
-        {(function(){
-          var livePPcount=bets.filter(function(b){return b.isLive&&(b.ppEdge!=null||b.ppMapType);}).length;
-          if(livePPcount===0)return null;
-          return(
-            <div style={{marginBottom:10,padding:"10px 12px",background:"rgba(251,113,133,.08)",border:"1px solid rgba(251,113,133,.25)",borderRadius:12,display:"flex",alignItems:"center",gap:10}}><div style={{flex:1}}><div style={{fontSize:12,fontWeight:700,color:"#fb7185"}}>🔴 {livePPcount} paris live avec PP Edge</div><div style={{fontSize:10,color:"#6B7280",marginTop:2}}>Supprimer le PP edge en 1 clic</div></div><button onClick={removeAllLivePP} disabled={saving}
-                style={{padding:"8px 14px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#fb7185,#f87171)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0,whiteSpace:"nowrap"}}>
-                Tout supprimer
-              </button></div>
-          );
-        })()}
-        <div style={{display:"flex",gap:5,marginBottom:6}}>
-          {[
-            {k:"live",l:"Live",icon:<span style={{width:8,height:8,borderRadius:"50%",background:"#fb7185",display:"inline-block",marginRight:4}}/>,active:searchLive,col:"#fb7185",border:"rgba(251,113,133,.4)",bg:"rgba(251,113,133,.1)",toggle:function(){setSearchLive(function(v){return !v;});}},
-            {k:"pp",icon:<img src={PP_LOGO_B64} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle"}}/>,l:"PP Edge",active:searchHasPP,col:"#c4b5fd",border:"rgba(167,139,250,.4)",bg:"rgba(124,58,237,.1)",toggle:function(){setSearchHasPP(function(v){return !v;});}},
-            {k:"hs",icon:<img src={HEADSHOT_LOGO_B64} style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",filter:"brightness(0) invert(1)"}}/>,l:"Headshot",active:searchHeadshot,col:"#fbbf24",border:"rgba(251,191,36,.4)",bg:"rgba(251,191,36,.1)",toggle:function(){setSearchHeadshot(function(v){return !v;});}},
-          ].map(function(f){return(
-            <button key={f.k} onClick={f.toggle}
-              style={{flex:1,padding:"7px 4px",borderRadius:8,border:"1px solid "+(f.active?f.border:"rgba(255,255,255,.07)"),background:f.active?f.bg:"transparent",color:f.active?f.col:"#6B7280",fontSize:10,fontWeight:f.active?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-              {f.icon}{f.l}
-            </button>
-          );})}</div>
-        {/* Map filter */}
-        <div style={{display:"flex",gap:4,marginBottom:6,flexWrap:"wrap"}}>
-          {["","Q1","Q2","Q3","Q4","H1","H2","Match"].map(function(m){
-            var on=searchMap===m;
-            return <button key={m||"all"} onClick={function(){setSearchMap(on?"":m);}}
-              style={{padding:"4px 10px",borderRadius:7,border:"1px solid "+(on?"rgba(167,139,250,.4)":"rgba(255,255,255,.06)"),background:on?"rgba(124,58,237,.12)":"transparent",color:on?"#c4b5fd":"#6B7280",fontSize:10,fontWeight:on?700:400,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-              {m||"Toutes maps"}
-            </button>;
-          })}
-        </div>
         {/* Status filter */}
         <div><div style={{fontSize:11,color:"#9CA3AF",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Résultat</div><div style={{display:"flex",gap:6}}>
             {[{k:"",l:"Tous"},{k:"won",l:"✓ Gagnés"},{k:"lost",l:"✗ Perdus"},{k:"pending",l:" En attente"}].map(function(s){
@@ -1745,14 +1544,13 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
             style={{width:"100%",padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             "Rechercher"
           </button>
-          {(searchTournament||searchBK||searchDate||searchLive||searchHasPP||searchHeadshot||searchMap)&&(
+          {(searchTournament||searchBK||searchDate)&&(
             <div style={{fontSize:11,color:"#fbbf24",marginTop:5,textAlign:"center"}}>
               {Object.values(sortedByDay).flat().length} paris trouvés
               {searchTournament==="__NONE__"?" · sans tournoi":searchTournament?" · "+searchTournament:""}
               {searchBK?" · "+searchBK:""}
               {searchDate?" · "+searchDate:""}
-              {searchLive?" · Live":""}{searchHasPP?" · PP":""}{searchHeadshot?" · HS":""}{searchMap?" · "+searchMap:""}
-              <button onClick={function(){setSearchTournament("");setSearchBK("");setSearchDate("");setSearchStatus("");setSearchLive(false);setSearchHasPP(false);setSearchHeadshot(false);setSearchMap("");}}
+              <button onClick={function(){setSearchTournament("");setSearchBK("");setSearchDate("");setSearchStatus("");}}
                 style={{marginLeft:8,fontSize:10,color:"#f87171",background:"none",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>✕ Effacer</button></div>
           )}
         </div></div>
@@ -1768,7 +1566,14 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
                 const dayBets=sortedByDay[dk]||[];
                 const allDaySel=dayBets.length>0&&dayBets.every(b=>selected.has(b.id));
                 return(
-                  <div key={dk} style={{marginBottom:8,borderRadius:10,overflow:"hidden",border:"1px solid #1F2937"}}><div style={{padding:"8px 12px",background:"#111827",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{fmtDay(dk)}</span><button onClick={()=>toggleDay(dk)} style={{fontSize:11,fontWeight:700,color:allDaySel?"#A78BFA":"#6B7280",background:allDaySel?"rgba(124,58,237,0.15)":"rgba(255,255,255,0.04)",border:"1px solid "+(allDaySel?"rgba(124,58,237,0.4)":"#1F2937"),borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <div key={dk} style={{marginBottom:8,borderRadius:10,overflow:"hidden",border:"1px solid #1F2937"}}><div style={{padding:"8px 12px",background:"#111827",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{fmtDay(dk)}</span>
+                      {/* League logos */}
+                      <div style={{display:"flex",gap:3}}>
+                        {[...new Set(dayBets.map(b=>b.game).filter(Boolean))].map(g=>(
+                          <GameLogo key={g} game={g} size={14}/>
+                        ))}
+                      </div>
+                    </div><button onClick={()=>toggleDay(dk)} style={{fontSize:11,fontWeight:700,color:allDaySel?"#A78BFA":"#6B7280",background:allDaySel?"rgba(124,58,237,0.15)":"rgba(255,255,255,0.04)",border:"1px solid "+(allDaySel?"rgba(124,58,237,0.4)":"#1F2937"),borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                         {allDaySel?"✓ Tous":"Tout sélect."}
                       </button></div>
                     {dayBets.map(b=>{
@@ -1845,9 +1650,9 @@ function MesParisView({
     if(fMaxOdds&&b.odds>parseFloat(fMaxOdds))return false;
     if(fMinStake&&b.stake<parseFloat(fMinStake))return false;
     if(fMaxStake&&b.stake>parseFloat(fMaxStake))return false;
-    if(fDuel&&!(b.description&&b.description.includes("Duel")))return false;
+    if(fDuel&&(b.announceOuts&&b.announceOuts.length>0))return false;
     if(fLive&&!b.isLive)return false;
-    if(fHeadshot&&!b.isHeadshot)return false;
+    if(fHeadshot&&!(b.announceOuts&&b.announceOuts.length>0))return false;
     if(fTourneys&&fTourneys.size>0&&!fTourneys.has(effectiveTournament(b,allPlayers)||"Hors tournoi"))return false;
     if(fPlayer&&!(b.player||"").toLowerCase().includes(fPlayer.toLowerCase()))return false;
     if(fMinPP!==""&&(b.ppEdge==null||b.ppEdge<parseFloat(fMinPP)))return false;
@@ -2267,6 +2072,11 @@ export default function App(){
   const [form,setForm]=useState({...EMPTY_FORM,datetime:nowDT()});
   const [stickyBK,setStickyBK]=useState(false);
   const [lockedStatus,setLockedStatus]=useState(null);
+  const [tipsterName,setTipsterName]=useState("");
+  const [lockedTipster,setLockedTipster]=useState(false);
+  const [combineMode,setCombineMode]=useState(false);
+  const [combineLegs,setCombineLegs]=useState([{player:"",description:"",overUnder:"Over"}]);
+  const [teamBetMode,setTeamBetMode]=useState(false);
   const [view,setViewRaw]=useState("home");
   const [viewPending,setViewPending]=useState(false);
   const setView=v=>{
@@ -3478,7 +3288,10 @@ export default function App(){
       ppMapType:form.ppMapType||null,
       ppLine:ppFinalLine||null,
       ppEdge:ppEdge,
+      tipster:tipsterName||null,
+      announceOuts:form.announceOuts||[],
     };
+    if(!lockedTipster)setTipsterName("");
     setBets(b=>{
       const updated=[newBet,...b];
       // Write to localStorage immediately to prevent stale reads
@@ -4286,7 +4099,7 @@ export default function App(){
                 </button></div></div>
 
             {/* Période */}
-            <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span className="add-label" style={{marginBottom:0}}>📅 Période</span>
+            <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span className="add-label" style={{marginBottom:0}}>Période</span>
                 {(fDateFrom||fDateTo)&&(
                   <button onClick={()=>{setFDateFrom("");setFDateTo("");}}
                     style={{padding:"3px 10px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:6,color:"#EF4444",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
@@ -4295,17 +4108,28 @@ export default function App(){
                 )}
               </div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><div style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:10,color:"#6B7280",fontWeight:600}}>Du</span><input type="date" className="ifield" value={fDateFrom} onChange={e=>setFDateFrom(e.target.value)} style={{height:36,fontSize:13,padding:"0 10px"}}/></div><div style={{display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:10,color:"#6B7280",fontWeight:600}}>Au</span><input type="date" className="ifield" value={fDateTo} onChange={e=>setFDateTo(e.target.value)} style={{height:36,fontSize:13,padding:"0 10px"}}/></div></div></div>
 
+            {/* Joueur */}
+            <div className="add-card" style={{position:"relative"}}><span className="add-label">Joueur</span><input className="ifield" placeholder="Rechercher..." value={fPlayer} onChange={e=>setFPlayer(e.target.value)}/>
+              {fPlayer&&<button onClick={()=>setFPlayer("")} style={{position:"absolute",right:24,bottom:22,background:"none",border:"none",color:"#9CA3AF",cursor:"pointer",fontSize:16}}>x</button>}
+            </div>
+
             {/* Statut */}
             <div className="add-card"><span className="add-label">Statut</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
                 {[{k:"All",label:"Tous"},{k:"pending",label:" Attente"},{k:"won",label:"✓ Gagnés"},{k:"lost",label:"✗ Perdus"}].map(t=>(
                   <button key={t.k} className={"fchip "+(fStatus===t.k?"on":"")} onClick={()=>setFStatus(t.k)}>{t.label}</button>
                 ))}
-              </div></div><div className="add-card"><span className="add-label">Jeu</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              </div></div>
+
+            {/* Ligue */}
+            <div className="add-card"><span className="add-label">Ligue</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
                 {ALL_GAMES.map(g=>(
                   <button key={g} className={"fchip "+(fGames.includes(g)?"on":"")} onClick={()=>toggleArr(fGames,setFGames,g)} style={{display:"flex",alignItems:"center",gap:5}}><GameLogo game={g} size={14}/> {g}
                   </button>
                 ))}
-              </div></div><div className="add-card"><span className="add-label">Bookmaker</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              </div></div>
+
+            {/* Bookmaker */}
+            <div className="add-card"><span className="add-label">Bookmaker</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
                 {visibleBKs.map(bk=>{
                   const logo=BK_LOGOS[bk]||bkPhotos[bk]||null;
                   const isOn=fBKs.includes(bk);
@@ -4321,61 +4145,28 @@ export default function App(){
                     </button>
                   );
                 })}
-              </div></div><div className="add-card"><span className="add-label">Over / Under</span><div style={{display:"flex",gap:7}}>
+              </div></div>
+
+            {/* Over / Under */}
+            <div className="add-card"><span className="add-label">Over / Under</span><div style={{display:"flex",gap:7}}>
                 {[{val:"All",label:"Tous"},{val:"Over",label:"Over"},{val:"Under",label:"Under"}].map(opt=>(
                   <button key={opt.val} className={"fchip "+(fOverUnder===opt.val?"on":"")} onClick={()=>setFOverUnder(opt.val)}>{opt.label}</button>
                 ))}
-              </div></div><div className="add-card" style={{position:"relative"}}><span className="add-label">Joueur</span><input className="ifield" placeholder="Rechercher..." value={fPlayer} onChange={e=>setFPlayer(e.target.value)}/>
-              {fPlayer&&<button onClick={()=>setFPlayer("")} style={{position:"absolute",right:24,bottom:22,background:"none",border:"none",color:"#9CA3AF",cursor:"pointer",fontSize:16}}>x</button>}
-            </div><div className="add-card"><span className="add-label">Position / Rôle</span>
-              {(()=>{
-                // Rôles disponibles selon jeux sélectionnés
-                const ROLES_BY_GAME={
-                  NBA:["PG","SG","SF","PF","C"],
-                  EuroLeague:["PG","SG","SF","PF","C"],
-                  "Pro A":["PG","SG","SF","PF","C"],
-                  ACB:["PG","SG","SF","PF","C"],
-                  Bundesliga:["PG","SG","SF","PF","C"],
-                  Lega:["PG","SG","SF","PF","C"],
-                  HEBA:["PG","SG","SF","PF","C"],
-                };
-                // Si un jeu est sélectionné → montre ses rôles, sinon tous
-                let roles=[];
-                if(fGames.length>0){
-                  fGames.forEach(g=>{if(ROLES_BY_GAME[g])roles=[...new Set([...roles,...ROLES_BY_GAME[g]])]});
-                } else {
-                  Object.values(ROLES_BY_GAME).forEach(r=>roles=[...new Set([...roles,...r])]);
-                }
-                return(
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><button className={"fchip "+(fRole==="All"?"on":"")} onClick={()=>setFRole("All")}>Tous</button>
-                    {roles.map(r=>(
-                      <button key={r} className={"fchip "+(fRole===r?"on":"")} onClick={()=>setFRole(fRole===r?"All":r)}>{r}</button>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div><div className="add-card"><span className="add-label">Ligue</span>
-              {(()=>{
-                let leagues=[];
-                if(fGames.length>0){
-                  fGames.forEach(g=>{if(LEAGUES_BY_GAME[g])leagues=[...new Set([...leagues,...LEAGUES_BY_GAME[g]])]});
-                } else {
-                  Object.values(LEAGUES_BY_GAME).forEach(l=>leagues=[...new Set([...leagues,...l])]);
-                }
-                if(leagues.length===0)return <div style={{fontSize:11,color:"#6B7280"}}>Sélectionne une ligue pour filtrer</div>;
-                return(
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><button className={"fchip "+(fLeague==="All"?"on":"")} onClick={()=>setFLeague("All")}>Toutes</button>
-                    {leagues.map(l=>(
-                      <button key={l} className={"fchip "+(fLeague===l?"on":"")} onClick={()=>setFLeague(fLeague===l?"All":l)} style={{display:"flex",alignItems:"center",gap:5}}><LeagueLogo league={l} size={14}/>{l}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div><div className="add-card"><span className="add-label">Type de pari</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}><button className={"fchip "+(fDuel?"on":"")} onClick={()=>setFDuel(v=>!v)}>⚔️ Duel</button><button className={"fchip "+(fLive?"on":"")} onClick={()=>setFLive(v=>!v)} style={{display:"flex",alignItems:"center",gap:5}}>
-                  🔴 Live
-                </button><button className={"fchip "+(fHeadshot?"on":"")} onClick={()=>setFHeadshot(v=>!v)} style={{display:"flex",alignItems:"center",gap:5}}><img src={HEADSHOT_LOGO_B64} alt="HS" style={{width:13,height:13,objectFit:"contain",filter:"brightness(0) invert(1)",opacity:.8}}/> Headshot
-                </button></div></div>
+              </div></div>
+
+            {/* Annoncé */}
+            <div className="add-card"><span className="add-label">Annoncé</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                {[{k:"all",l:"Tous"},{k:"yes",l:"✓ Annoncé"},{k:"no",l:"Non annoncé"}].map(({k,l})=>{
+                  const isOn=(k==="yes"&&fHeadshot)||(k==="no"&&fDuel)||(k==="all"&&!fHeadshot&&!fDuel);
+                  return(
+                    <button key={k} className={"fchip "+(isOn?"on":"")} onClick={()=>{
+                      if(k==="all"){setFHeadshot(false);setFDuel(false);}
+                      else if(k==="yes"){setFHeadshot(true);setFDuel(false);}
+                      else{setFDuel(true);setFHeadshot(false);}
+                    }}>{l}</button>
+                  );
+                })}
+              </div></div>
 
             {/* ── Filtre cote min/max ── */}
             <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span className="add-label">Cote</span>
@@ -4390,7 +4181,6 @@ export default function App(){
                     className="ifield" style={{marginBottom:0,fontSize:14}}/></div><div><div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>Max</div><input type="number" step="0.01" min="1" placeholder="ex: 2.00"
                     value={fMaxOdds} onChange={e=>setFMaxOdds(e.target.value)}
                     className="ifield" style={{marginBottom:0,fontSize:14}}/></div></div>
-              {/* Stats live pour la plage sélectionnée */}
               {(fMinOdds||fMaxOdds)&&(()=>{
                 const inRange=filteredBets.filter(b=>b.status!=="pending");
                 const profit=inRange.reduce((s,b)=>s+(b.profit||0),0);
@@ -4406,12 +4196,6 @@ export default function App(){
                 );
               })()}
             </div>
-            {/* ── Filtre Map ── */}
-            <div className="add-card"><span className="add-label">Map</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-                {[{v:"all",l:"Toutes"},{v:"none",l:"Sans tag"},{v:"Q1",l:"Q1"},{v:"Q2",l:"Q2"},{v:"Q3",l:"Q3"},{v:"Q4",l:"Q4"},{v:"H1",l:"H1"},{v:"H2",l:"H2"},{v:"Match",l:"Match"}].map(({v,l})=>(
-                  <button key={v} className={"fchip "+(fMapFilter===v?"on":"")} onClick={()=>setFMapFilter(v)}>{l}</button>
-                ))}
-              </div></div>
 
             {/* ── Filtre Mise min/max ── */}
             <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span className="add-label">Mise ($)</span>
@@ -4424,78 +4208,6 @@ export default function App(){
                     className="ifield" style={{marginBottom:0,fontSize:14}}/></div><div><div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>Max</div><input type="number" step="1" min="0" placeholder="ex: 100"
                     value={fMaxStake} onChange={e=>setFMaxStake(e.target.value)}
                     className="ifield" style={{marginBottom:0,fontSize:14}}/></div></div></div>
-
-
-            {/* PP Edge filter */}
-            <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{display:"flex",alignItems:"center",gap:6}}><img src={PP_LOGO_B64} style={{width:14,height:14,objectFit:"contain",verticalAlign:"middle"}}/><span className="add-label" style={{marginBottom:0}}>PP Edge</span></span>
-                {(fMinPP!==""||fMaxPP!=="")&&(
-                  <button onClick={()=>{setFMinPP("");setFMaxPP("");}}
-                    style={{fontSize:10,color:"#EF4444",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>× Effacer</button>
-                )}
-              </div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><div><div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>Min (ex: 0)</div><input type="number" step="0.01" placeholder="ex: 0"
-                    value={fMinPP} onChange={e=>setFMinPP(e.target.value)}
-                    className="ifield" style={{marginBottom:0,fontSize:14}}/></div><div><div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>Max (ex: 1)</div><input type="number" step="0.01" placeholder="ex: 1"
-                    value={fMaxPP} onChange={e=>setFMaxPP(e.target.value)}
-                    className="ifield" style={{marginBottom:0,fontSize:14}}/></div></div>
-              {(fMinPP!==""||fMaxPP!=="")&&(()=>{
-                const inR=filteredBets.filter(b=>b.status!=="pending"&&b.ppEdge!=null);
-                if(inR.length===0)return <div style={{fontSize:11,color:"#6B7280",marginTop:6}}>Aucun bet PP dans cette plage</div>;
-                const profit=inR.reduce((s,b)=>s+(b.profit||0),0);
-                const wr=inR.length>0?((inR.filter(b=>b.status==="won").length/inR.length)*100).toFixed(0):0;
-                return(
-                  <div style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",borderRadius:8,padding:"7px 10px",marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:11,color:"#9CA3AF"}}>{inR.length} paris PP · {wr}% WR</div><div style={{fontSize:14,fontWeight:700,color:profit>=0?"#00E676":"#EF4444"}}>{profit>=0?"+":""}{profit.toFixed(0)}$</div></div>
-                );
-              })()}
-            </div>
-            
-            {/* Tournoi — apparaît si un jeu est sélectionné */}
-            {(()=>{
-              const tourneysForGame=[...new Set(
-                bets
-                  .filter(b=>(fGames.length===0||fGames.includes(b.game))&&effectiveTournament(b,allPlayers))
-                  .map(b=>effectiveTournament(b,allPlayers))
-              )];
-              // Add "Hors tournoi" if any bets have no effective tournament
-              const hasHors=bets.filter(b=>(fGames.length===0||fGames.includes(b.game))&&!effectiveTournament(b,allPlayers)).length>0;
-              const allOptions=[...(hasHors?["Hors tournoi"]:[]),...tourneysForGame];
-              if(allOptions.length===0)return null;
-              const toggleT=(t)=>setFTourneys(prev=>{
-                const n=new Set(prev);
-                if(n.has(t))n.delete(t); else n.add(t);
-                return n;
-              });
-              return(
-                <div className="add-card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span className="add-label" style={{marginBottom:0}}>Tournoi</span>
-                    {fTourneys.size>0&&(
-                      <button onClick={()=>setFTourneys(new Set())}
-                        style={{fontSize:10,color:"#EF4444",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>
-                        × Effacer ({fTourneys.size})
-                      </button>
-                    )}
-                  </div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                    {allOptions.map(t=>{
-                      const isOn=fTourneys.has(t);
-                      const isHors=t==="Hors tournoi";
-                      return(
-                        <button key={t} onClick={()=>toggleT(t)}
-                          style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+(isOn?(isHors?"#6B7280":"#7C3AED"):"#1F2937"),
-                            background:isOn?(isHors?"rgba(107,114,128,0.12)":"rgba(124,58,237,0.12)"):"transparent",
-                            color:isOn?(isHors?"#9CA3AF":"#A78BFA"):"#6B7280",
-                            fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
-                            transition:"all .15s ease"}}>
-                          {isHors?"📅":""} {t}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {fTourneys.size>0&&(
-                    <div style={{fontSize:10,color:"#6B7280",marginTop:6}}>
-                      {fTourneys.size} sélectionné{fTourneys.size>1?"s":""} — résultats combinés
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
             <div style={{display:"flex",gap:9,marginBottom:8}}><button onClick={()=>{setFGames([]);setFBKs([]);setFPlayer("");setFStatus("All");setFOverUnder("All");setFLive(false);setFHeadshot(false);setFDuel(false);setFMinOdds("");setFMaxOdds("");setFMinStake("");setFMaxStake("");setFMapFilter("all");setFRole("All");setFLeague("All");setFTourneys(new Set());setFiltresPage(1);}} style={{flex:1,padding:"11px",background:"#111827",border:"1px solid #1F2937",borderRadius:10,color:"#9CA3AF",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600,fontSize:13}}>
                 Réinitialiser
               </button><button onClick={()=>setView("mesparis")} style={{flex:1,padding:"11px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:10,color:"#fff",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:13}}>
@@ -4530,23 +4242,20 @@ export default function App(){
 
             {/* ── Top bar ── */}
             <div style={{padding:"14px 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.05)"}}><div style={{display:"flex",alignItems:"center",gap:12}}><button onClick={()=>setView("home")} style={{background:"none",border:"none",color:"#fff",fontSize:28,cursor:"pointer",lineHeight:1,padding:0,fontFamily:"Inter,sans-serif"}}>‹</button><div><div style={{fontSize:22,fontWeight:900,letterSpacing:-.5,color:"#eef3ff"}}>
-                    {editingBet?"Modifier pari":duelMode?"Duel ⚔️":sessionMode?"Session multi-map":"Ajouter un pari"}
-                  </div><div style={{fontSize:13,fontWeight:500,color:"#9aa4bb",marginTop:2}}>Configure ton pari esport</div></div></div><div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    {editingBet?"Modifier pari":combineMode?"Combiné":teamBetMode?"Pari Équipe":sessionMode?"Session multi-map":"Ajouter un pari"}
+                  </div></div></div><div style={{display:"flex",gap:6,alignItems:"center"}}>
                 {editingBet&&(
                   <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:""});}}
                     style={{fontSize:11,color:"#6B7280",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600}}>
                     × Annuler
                   </button>
                 )}
-                <button onClick={()=>setForm(f=>({...f,isLive:!f.isLive}))}
-                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(form.isLive?"#EF4444":"rgba(255,255,255,0.1)"),background:form.isLive?"#EF4444":"rgba(255,255,255,0.04)",color:form.isLive?"#fff":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  {form.isLive?"🔴 LIVE":"LIVE"}
-                </button><button onClick={()=>{setDuelMode(v=>!v);setSessionMode(false);}}
-                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(duelMode?"#F59E0B":"rgba(255,255,255,0.1)"),background:duelMode?"rgba(245,158,11,0.12)":"rgba(255,255,255,0.04)",color:duelMode?"#F59E0B":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  ⚔️
-                </button><button onClick={()=>{setSessionMode(v=>!v);setDuelMode(false);setCasinoMode(false);}}
-                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(sessionMode?"#7C3AED":"rgba(255,255,255,0.1)"),background:sessionMode?"rgba(124,58,237,0.12)":"rgba(255,255,255,0.04)",color:sessionMode?"#A78BFA":"#9CA3AF",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  Multi
+                <button onClick={()=>{setCombineMode(v=>!v);setTeamBetMode(false);setDuelMode(false);setSessionMode(false);}}
+                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(combineMode?"#34d399":"rgba(255,255,255,0.1)"),background:combineMode?"rgba(52,211,153,0.12)":"rgba(255,255,255,0.04)",color:combineMode?"#34d399":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  🔗 Combiner
+                </button><button onClick={()=>{setTeamBetMode(v=>!v);setCombineMode(false);setDuelMode(false);setSessionMode(false);}}
+                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(teamBetMode?"#60a5fa":"rgba(255,255,255,0.1)"),background:teamBetMode?"rgba(96,165,250,0.12)":"rgba(255,255,255,0.04)",color:teamBetMode?"#60a5fa":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  🏀 Équipe
                 </button></div></div><div style={{padding:"10px 14px 20px"}}>
 
 
@@ -4710,11 +4419,78 @@ export default function App(){
                         </button>
                       );
                     })}
-                  </div></div>
+                  </div>
+                  {/* Desktop slider */}
+                  {visibleBKs.length>1&&(
+                    <div style={{marginTop:8,display:"none"}} className="desktop-only">
+                      <style>{`.desktop-only{display:none!important}@media(min-width:640px){.desktop-only{display:block!important}}`}</style>
+                      <input type="range" min={0} max={visibleBKs.length-1}
+                        value={visibleBKs.indexOf(form.bookmaker)>=0?visibleBKs.indexOf(form.bookmaker):0}
+                        onChange={e=>setForm(f=>({...f,bookmaker:visibleBKs[parseInt(e.target.value)]}))}
+                        style={{width:"100%",accentColor:"#7C3AED",cursor:"pointer"}}/>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#4a5568",marginTop:2}}>
+                        {visibleBKs.map(bk=><span key={bk} style={{color:form.bookmaker===bk?"#a78bfa":"#4a5568",fontWeight:form.bookmaker===bk?700:400}}>{bk.slice(0,4)}</span>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })()}
 
-            {!duelMode&&<>
+            {/* ── TEAM BET MODE ── */}
+            {teamBetMode&&(
+              <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(96,165,250,0.2)",padding:"14px 16px",marginBottom:10}}>
+                <div style={{fontSize:12,color:"#60a5fa",fontWeight:700,marginBottom:12}}>🏀 Pari Équipe</div>
+                <div style={{marginBottom:10}}><div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Équipe</div>
+                  <input className="ifield" placeholder="ex: Lakers, Celtics..." value={form.player} onChange={e=>setForm(f=>({...f,player:e.target.value}))} style={{marginBottom:0}}/>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+                  <button onClick={()=>setForm(f=>({...f,overUnder:"Over",description:"Victoire"}))}
+                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.description==="Victoire"?"#22c55e":"rgba(34,197,94,.2)"),background:form.description==="Victoire"?"rgba(34,197,94,.14)":"rgba(34,197,94,.03)",color:form.description==="Victoire"?"#22e875":"#4e7060",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    ✓ Victoire
+                  </button>
+                  <button onClick={()=>setForm(f=>({...f,overUnder:"Over",description:"Handicap"}))}
+                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.description==="Handicap"?"#f59e0b":"rgba(245,158,11,.2)"),background:form.description==="Handicap"?"rgba(245,158,11,.14)":"rgba(245,158,11,.03)",color:form.description==="Handicap"?"#fbbf24":"#6b5a30",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    ± Handicap
+                  </button>
+                </div>
+                {form.description==="Handicap"&&(
+                  <input className="ifield" placeholder="ex: -3.5 points" value={form.player_handicap||""} onChange={e=>setForm(f=>({...f,player_handicap:e.target.value,description:"Handicap "+e.target.value}))} style={{marginBottom:8}}/>
+                )}
+              </div>
+            )}
+
+            {/* ── COMBINE MODE ── */}
+            {combineMode&&(
+              <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(52,211,153,0.2)",padding:"14px 16px",marginBottom:10}}>
+                <div style={{fontSize:12,color:"#34d399",fontWeight:700,marginBottom:12}}>🔗 Paris combinés</div>
+                {combineLegs.map((leg,i)=>(
+                  <div key={i} style={{marginBottom:10,padding:"10px 12px",borderRadius:12,border:"1px solid rgba(255,255,255,.06)",background:"rgba(8,14,28,.6)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <span style={{fontSize:11,color:"#9CA3AF",fontWeight:700}}>Sélection {i+1}</span>
+                      {combineLegs.length>2&&<button onClick={()=>setCombineLegs(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13}}>×</button>}
+                    </div>
+                    <input className="ifield" placeholder="Joueur..." value={leg.player} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,player:e.target.value}:x))} style={{marginBottom:6}}/>
+                    <input className="ifield" placeholder="Sélection (ex: 24.5 Points)..." value={leg.description} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,description:e.target.value}:x))} style={{marginBottom:6}}/>
+                    <div style={{display:"flex",gap:6}}>
+                      {["Over","Under"].map(ou=>(
+                        <button key={ou} onClick={()=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,overUnder:ou}:x))}
+                          style={{flex:1,padding:"6px",borderRadius:8,border:"1.5px solid "+(leg.overUnder===ou?(ou==="Over"?"#22c55e":"#3b82f6"):"rgba(255,255,255,.07)"),background:leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.12)":"rgba(59,130,246,.12)"):"transparent",color:leg.overUnder===ou?(ou==="Over"?"#22c55e":"#60a5fa"):"#6B7280",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                          {ou==="Over"?"▲ Over":"▼ Under"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={()=>setCombineLegs(l=>[...l,{player:"",description:"",overUnder:"Over"}])}
+                  style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed rgba(52,211,153,.3)",borderRadius:10,color:"#34d399",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif",marginBottom:8}}>
+                  + Ajouter une sélection
+                </button>
+                <div style={{fontSize:10,color:"#6B7280",marginBottom:6}}>Cote & Mise totale ↓</div>
+              </div>
+            )}
+
+            {!duelMode&&!teamBetMode&&!combineMode&&<>
             {/* ── 2. JOUEUR ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
                   
@@ -4772,18 +4548,20 @@ export default function App(){
 
                   {/* ── Infos joueur (droite) ── */}
                   <div style={{flex:1,padding:"14px 12px 12px 6px",display:"flex",flexDirection:"column",justifyContent:"center",gap:6,minWidth:0}}><div style={{fontSize:19,fontWeight:700,letterSpacing:-.3,color:"#f0f4ff",lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                      {form.autoInfo.name||form.player}
-                    </div><div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}><GameLogo game={form.autoInfo.game} size={16}/>
+                      {(form.autoInfo.name||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
+                    </div><div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                       {form.autoInfo.team&&(
-                        <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:12,fontWeight:700,color:"#c8d4e8"}}>
-                            {form.autoInfo.team_logo_url&&(
-                              <img src={form.autoInfo.team_logo_url} alt="" style={{width:13,height:13,objectFit:"contain",verticalAlign:"middle",marginRight:4,opacity:.9}} onError={e=>e.target.style.display='none'}/>
-                            )}
-                            {form.autoInfo.team}
-                          </span></>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:700,color:"#c8d4e8"}}>
+                          {form.autoInfo.team_logo_url&&(
+                            <img src={form.autoInfo.team_logo_url} alt="" style={{width:14,height:14,objectFit:"contain",opacity:.9}} onError={e=>e.target.style.display='none'}/>
+                          )}
+                          {form.autoInfo.team}
+                        </span>
                       )}
+                      {form.autoInfo.team&&<span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>}
+                      <GameLogo game={form.autoInfo.game} size={16}/>
                       {form.autoInfo.role&&(
-                        <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,color:"#7a8fa8",fontWeight:600}}>{form.autoInfo.role}</span></>
+                        <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><PositionLogo role={form.autoInfo.role} size={13}/></>
                       )}
                     </div>
                     {(()=>{const t=activeTourneys[form.autoInfo.game];const isExpired=t&&t.end&&new Date(t.end)<new Date();if(!t||isExpired)return null;return <span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"2px 7px",borderRadius:5,background:"rgba(124,58,237,.1)",color:"#a78bfa",fontWeight:600,fontSize:10,border:"1px solid rgba(124,58,237,.2)",alignSelf:"flex-start"}}> {t.name}</span>})()}
@@ -4990,6 +4768,19 @@ export default function App(){
             )}
 
 
+
+
+            {/* ── TIPSTER ── */}
+            <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid "+(lockedTipster?"rgba(245,158,11,.25)":"rgba(139,92,246,.2)"),padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
+                  Tipster
+                </div><button onClick={()=>setLockedTipster(v=>!v)}
+                  style={{padding:"3px 9px",background:lockedTipster?"rgba(245,158,11,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(lockedTipster?"rgba(245,158,11,.3)":"rgba(255,255,255,0.06)"),borderRadius:7,color:lockedTipster?"#F59E0B":"#555e72",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  {lockedTipster?"🔒 Locké":"🔓 Locker"}
+                </button></div>
+              <input className="ifield" placeholder="Nom du tipster (optionnel)..." value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={{marginBottom:0}}/>
+              {lockedTipster&&tipsterName&&<div style={{fontSize:10,color:"#F59E0B",marginTop:6,fontWeight:600}}>🔒 Tipster "{tipsterName}" verrouillé pour les prochains paris</div>}
+            </div>
+
                         {/* ── 7. STATUT ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid "+(lockedStatus?"rgba(245,158,11,.25)":"rgba(139,92,246,.2)"),padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
                   
@@ -5066,7 +4857,7 @@ export default function App(){
                         {/* Contenu */}
                         <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
                           {/* Ligne 1 : nom joueur (principal) */}
-                          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18,fontWeight:800,color:"#f0f4ff",letterSpacing:-.4,lineHeight:1}}>{(form.autoInfo&&form.autoInfo.name)||form.player}</span>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18,fontWeight:800,color:"#f0f4ff",letterSpacing:-.4,lineHeight:1}}>{((form.autoInfo&&form.autoInfo.name)||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
                             {(form.autoInfo&&form.autoInfo.team_logo_url)&&(
                               <img src={form.autoInfo.team_logo_url} alt="" onError={e=>e.target.style.display="none"} style={{width:14,height:14,objectFit:"contain",opacity:.7,flexShrink:0}}/>
                             )}
@@ -5156,8 +4947,8 @@ export default function App(){
             })()}
 
 
-            </>
-            }
+            </>}
+
 
             </div>{/* end padding wrapper */}
           </div>
