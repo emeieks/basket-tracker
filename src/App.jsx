@@ -4640,7 +4640,7 @@ export default function App(){
                           </span>
                         );
                       })()}
-                      {form.autoInfo.team&&<span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>}
+                      <span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>
                       <GameLogo game={form.autoInfo.game} size={15}/>
                       {form.autoInfo.role&&(
                         <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,fontWeight:600,color:"#7a9cbd"}}>{form.autoInfo.role}</span></>
