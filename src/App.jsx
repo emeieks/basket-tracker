@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from "react";
 
 
 // ── Normalize datetime helper ─────────────────────────────────────────────
@@ -56,7 +56,7 @@ async function supaPullBets() {
   let all = [];
   let offset = 0;
   while(true) {
-    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge&order=datetime.desc&limit=${limit}&offset=${offset}&archived=is.false`);
+    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge,tipster&order=datetime.desc&limit=${limit}&offset=${offset}&archived=is.false`);
     if(!batch || batch.length === 0) break;
     all = [...all, ...batch];
     if(batch.length < limit) break;
@@ -83,12 +83,13 @@ async function supaPushBets(bets) {
   const now=Date.now();
   const rows = bets.map(({id,player,description,overUnder,odds,stake,bookmaker,
     status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,
-    ppMapType,ppLine,ppEdge})=>
+    ppMapType,ppLine,ppEdge,tipster})=>
     ({id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,
       team,datetime:safeDT(datetime),isHeadshot:!!isHeadshot,isLive:!!isLive,mapTag,profit,tournament,
       splits:splits&&splits.length>0?JSON.stringify(splits):null,
       updatedAt:updatedAt||now,archived:false,
-      pp_map_type:ppMapType||null,pp_line:ppLine||null,pp_edge:ppEdge!=null?ppEdge:null}));
+      pp_map_type:ppMapType||null,pp_line:ppLine||null,pp_edge:ppEdge!=null?ppEdge:null,
+      tipster:tipster||null}));
   // Chunk en 500
   for(let i=0;i<rows.length;i+=500){
     await supaFetch("/rest/v1/bets",{
@@ -1620,6 +1621,7 @@ function MesParisView({
   savedTourneys={},
   onMarkPush,
   allPlayers={},
+  fTipster="All",setFTipster,
 }){
   const [collapsedMonths,setCollapsedMonths]=useState(new Set());
   const [selectOpen,setSelectOpen]=useState(false); // separate overlay
@@ -1645,8 +1647,8 @@ function MesParisView({
     return{allByDay:abd,allByMonth:abm,allMonthKeys:amk};
   },[bets]);
 
-  const activeFilters=fGames.length+fBKs.length+(fMinOdds?1:0)+(fMaxOdds?1:0)+(fMinStake?1:0)+(fMaxStake?1:0)+(fMapFilter&&fMapFilter!=="all"?1:0)+(fDuel?1:0)+(fLive?1:0)+(fHeadshot?1:0)+(fStatus&&fStatus!=="All"?1:0)+(fOverUnder&&fOverUnder!=="All"?1:0)+(fRole&&fRole!=="All"?1:0)+(fLeague&&fLeague!=="All"?1:0)+(fTourneys&&fTourneys.size>0?1:0)+(fDateFrom?1:0)+(fDateTo?1:0);
-  const clearFilters=()=>{setFGames([]);setFBKs([]);setFMinOdds("");setFMaxOdds("");setFMinStake("");setFMaxStake("");setFMapFilter("all");setFDuel(false);setFLive(false);setFHeadshot(false);setFStatus("All");setFOverUnder("All");setFRole("All");setFLeague("All");if(setFTourneys)setFTourneys(new Set());setFDateFrom("");setFDateTo("");};
+  const activeFilters=fGames.length+fBKs.length+(fMinOdds?1:0)+(fMaxOdds?1:0)+(fMinStake?1:0)+(fMaxStake?1:0)+(fMapFilter&&fMapFilter!=="all"?1:0)+(fDuel?1:0)+(fLive?1:0)+(fHeadshot?1:0)+(fStatus&&fStatus!=="All"?1:0)+(fOverUnder&&fOverUnder!=="All"?1:0)+(fRole&&fRole!=="All"?1:0)+(fLeague&&fLeague!=="All"?1:0)+(fTourneys&&fTourneys.size>0?1:0)+(fDateFrom?1:0)+(fDateTo?1:0)+(fTipster&&fTipster!=="All"?1:0);
+  const clearFilters=()=>{setFGames([]);setFBKs([]);setFMinOdds("");setFMaxOdds("");setFMinStake("");setFMaxStake("");setFMapFilter("all");setFDuel(false);setFLive(false);setFHeadshot(false);setFStatus("All");setFOverUnder("All");setFRole("All");setFLeague("All");if(setFTourneys)setFTourneys(new Set());setFDateFrom("");setFDateTo("");if(setFTipster)setFTipster("All");};
 
   const filtered=useMemo(()=>bets.filter(b=>{
     if(fStatus&&fStatus!=="All"&&b.status!==fStatus)return false;
@@ -1666,8 +1668,9 @@ function MesParisView({
     if(fPlayer&&!(b.player||"").toLowerCase().includes(fPlayer.toLowerCase()))return false;
     if(fMinPP!==""&&(b.ppEdge==null||b.ppEdge<parseFloat(fMinPP)))return false;
     if(fMaxPP!==""&&(b.ppEdge==null||b.ppEdge>parseFloat(fMaxPP)))return false;
+    if(fTipster&&fTipster!=="All"&&(b.tipster||null)!==fTipster)return false;
     return true;
-  }),[bets,fStatus,fGames,fBKs,fOverUnder,fRole,fLeague,fMinOdds,fMaxOdds,fMinStake,fMaxStake,fDuel,fLive,fHeadshot,fTourneys,fPlayer,fMinPP,fMaxPP]);
+  }),[bets,fStatus,fGames,fBKs,fOverUnder,fRole,fLeague,fMinOdds,fMaxOdds,fMinStake,fMaxStake,fDuel,fLive,fHeadshot,fTourneys,fPlayer,fMinPP,fMaxPP,fTipster]);
 
   const allTourneys=useMemo(()=>[...new Set(bets.map(b=>b.tournament).filter(Boolean))].sort(),[bets]);
   const onSave=useCallback(function(b){
@@ -1765,6 +1768,29 @@ function MesParisView({
           {fStatus!=="All"&&<button onClick={()=>setFStatus("All")} style={{padding:"5px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,.07)",background:"transparent",color:"#4a5a6e",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>✕</button>}
         </div>
       )}
+
+      {/* ── TIPSTER FILTER DROPDOWN ── */}
+      {(()=>{
+        const allTipstersInBets=[...new Set(bets.map(b=>b.tipster).filter(Boolean))].sort();
+        if(allTipstersInBets.length===0)return null;
+        return(
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <span style={{fontSize:11,color:"#6B7280",fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>🎯 Tipster</span>
+            <select
+              value={fTipster}
+              onChange={e=>setFTipster(e.target.value)}
+              style={{flex:1,background:"rgba(14,20,38,.98)",border:"1px solid "+(fTipster!=="All"?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),borderRadius:9,padding:"6px 10px",color:fTipster!=="All"?"#a78bfa":"#9CA3AF",fontSize:12,fontFamily:"Inter,sans-serif",fontWeight:fTipster!=="All"?700:500,outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+              <option value="All">Tous les tipsers</option>
+              {allTipstersInBets.map(t=>(
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            {fTipster!=="All"&&(
+              <button onClick={()=>setFTipster("All")} style={{background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:14,padding:"0 4px",flexShrink:0}}>✕</button>
+            )}
+          </div>
+        );
+      })()}
 
       {bets.length===0&&<div style={{color:"#6B7280",fontSize:14,padding:30,textAlign:"center"}}>Aucun pari enregistré</div>}
       {globalSearch&&filtered.length===0&&bets.length>0&&<div style={{color:"#6B7280",fontSize:13,padding:"20px",textAlign:"center"}}>Aucun résultat pour « {globalSearch} »</div>}
@@ -2195,6 +2221,7 @@ export default function App(){
   const [fMaxStake,setFMaxStake]=useState("");
   const [fMinPP,setFMinPP]=useState("");
   const [fMaxPP,setFMaxPP]=useState("");
+  const [fTipster,setFTipster]=useState("All");
   const [fMapFilter,setFMapFilter]=useState("all");
   const [deletedBets,setDeletedBets]=useState([]);
   const [showCorbeille,setShowCorbeille]=useState(false);
@@ -4014,6 +4041,7 @@ export default function App(){
             savedTourneys={savedTourneys}
             onMarkPush={function(){lastPushRef.current=Date.now();}}
             allPlayers={allPlayers}
+            fTipster={fTipster} setFTipster={setFTipster}
           />
         )}
         {view==="calendrier"&&(
@@ -7218,7 +7246,6 @@ export default function App(){
               )}
             </div>
 
-div>
           </div>
         )}
 
