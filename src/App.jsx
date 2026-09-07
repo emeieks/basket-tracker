@@ -2588,6 +2588,7 @@ export default function App(){
   const [lockedStatus,setLockedStatus]=useState(null);
   const [tipsterName,setTipsterName]=useState("");
   const [lockedTipster,setLockedTipster]=useState(false);
+  const [savedTipsters,setSavedTipsters]=useState(()=>{try{return JSON.parse(localStorage.getItem("v7_saved_tipsers")||"[]");}catch(e){return[];}});
   const [combineMode,setCombineMode]=useState(false);
   const [combineLegs,setCombineLegs]=useState([{player:"",description:"",overUnder:"Over"}]);
   const [teamBetMode,setTeamBetMode]=useState(false);
@@ -2843,12 +2844,12 @@ export default function App(){
       localStorage.setItem("v7_saved_tourneys_bk",JSON.stringify(savedTourneys));
       // Serialize testFilter (Sets → Arrays for JSON)
       const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
-      if(supaUrl&&supaKey){
-        const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),archived:false,splits:null};
-        fetch(supaUrl+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":supaKey,"Authorization":"Bearer "+supaKey,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
+      if(SUPA_URL&&SUPA_KEY){
+        const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),archived:false,splits:null};
+        fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
       }
     }catch(e){}
-  },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,loaded]);
+  },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters,loaded]);
 
   // ── Save: localStorage (debounced) ───────────────────────────────────────
   useEffect(()=>{
@@ -2991,6 +2992,14 @@ export default function App(){
                 merged[g]=[...new Set([...localList,...remoteList])];
               });
               try{localStorage.setItem("v7_saved_tourneys",JSON.stringify(merged));}catch(e){}
+              return merged;
+            });
+          }
+          // Restore savedTipsters — union local + remote
+          if(s.savedTipsters&&s.savedTipsters.length>0){
+            setSavedTipsters(prev=>{
+              const merged=[...new Set([...(prev||[]),...s.savedTipsters])];
+              try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(merged));}catch(e){}
               return merged;
             });
           }
@@ -5323,12 +5332,35 @@ export default function App(){
 
             {/* ── TIPSTER ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid "+(lockedTipster?"rgba(245,158,11,.25)":"rgba(139,92,246,.2)"),padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
-                  Tipster
+                  🎯 Tipster
                 </div><button onClick={()=>setLockedTipster(v=>!v)}
                   style={{padding:"3px 9px",background:lockedTipster?"rgba(245,158,11,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(lockedTipster?"rgba(245,158,11,.3)":"rgba(255,255,255,0.06)"),borderRadius:7,color:lockedTipster?"#F59E0B":"#555e72",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                   {lockedTipster?"🔒 Locké":"🔓 Locker"}
                 </button></div>
-              <input className="ifield" placeholder="Nom du tipster (optionnel)..." value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={{marginBottom:0}}/>
+              {savedTipsters.length>0?(
+                <div style={{display:"flex",gap:6,flexDirection:"column"}}>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {savedTipsters.map(t=>{
+                      const on=tipsterName===t;
+                      return(
+                        <button key={t} onClick={()=>setTipsterName(on?"":t)}
+                          style={{padding:"6px 13px",borderRadius:20,border:"1.5px solid "+(on?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",color:on?"#a78bfa":"#6B7280",fontSize:12,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                          {on?"✓ ":""}{t}
+                        </button>
+                      );
+                    })}
+                    <button onClick={()=>setTipsterName(prev=>savedTipsters.includes(prev)?"":prev)}
+                      style={{padding:"6px 13px",borderRadius:20,border:"1.5px solid "+(tipsterName&&!savedTipsters.includes(tipsterName)?"rgba(167,139,250,.5)":"rgba(255,255,255,.06)"),background:tipsterName&&!savedTipsters.includes(tipsterName)?"rgba(124,58,237,.1)":"transparent",color:tipsterName&&!savedTipsters.includes(tipsterName)?"#a78bfa":"#4a5a6e",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                      ✏️ Manuel
+                    </button>
+                  </div>
+                  {(!savedTipsters.includes(tipsterName)||tipsterName==="")&&(
+                    <input className="ifield" placeholder="Ou saisir manuellement…" value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={{marginBottom:0}}/>
+                  )}
+                </div>
+              ):(
+                <input className="ifield" placeholder="Nom du tipster (optionnel)..." value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={{marginBottom:0}}/>
+              )}
               {lockedTipster&&tipsterName&&<div style={{fontSize:10,color:"#F59E0B",marginTop:6,fontWeight:600}}>🔒 Tipster "{tipsterName}" verrouillé pour les prochains paris</div>}
             </div>
 
@@ -5525,7 +5557,7 @@ export default function App(){
 
             {/* ── TESTING PANEL ── */}
             {statsTab==="tipsers"&&(()=>{
-              // Build stats per tipster
+              // Build stats per tipster — fusionne savedTipsters + ceux dans les paris
               const tipsterMap={};
               settled.forEach(b=>{
                 const t=b.tipster;
@@ -5541,12 +5573,16 @@ export default function App(){
                   if(b.status==="won")gm.won++;
                 }
               });
+              // Ajouter les savedTipsters qui n'ont pas encore de paris
+              savedTipsters.forEach(t=>{
+                if(!tipsterMap[t])tipsterMap[t]={name:t,count:0,won:0,profit:0,staked:0,byGame:{}};
+              });
               const tipsters=Object.values(tipsterMap).sort((a,b2)=>b2.profit-a.profit);
               if(tipsters.length===0)return(
                 <div style={{textAlign:"center",padding:"40px 20px",color:"#4a5a6e"}}>
                   <div style={{fontSize:24,marginBottom:8}}>🎯</div>
                   <div style={{fontSize:13,fontWeight:600}}>Aucun tipster pour l'instant</div>
-                  <div style={{fontSize:11,marginTop:4}}>Attribue un tipster lors de l'ajout d'un pari</div>
+                  <div style={{fontSize:11,marginTop:4}}>Crée des tipsers dans l'onglet Suivi</div>
                 </div>
               );
               return(
@@ -7547,36 +7583,53 @@ export default function App(){
             {/* ── TIPSERS ── */}
             {(()=>{
               const allTipstersInBets=[...new Set(bets.map(b=>b.tipster).filter(Boolean))];
+              // Fusionner: savedTipsters + ceux dans les paris (sans doublons)
+              const allTipsters=[...new Set([...savedTipsters,...allTipstersInBets])].sort();
               return(
                 <div style={{marginBottom:8}}>
                   <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:8,letterSpacing:.5}}>🎯 Tipsers</div>
                   <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:13,overflow:"hidden",marginBottom:6}}>
-                    {allTipstersInBets.length===0&&(
-                      <div style={{padding:"14px",fontSize:11,color:"#4a5a6e",textAlign:"center"}}>Aucun tipster — attribue-en lors de l'ajout de paris</div>
+                    {allTipsters.length===0&&(
+                      <div style={{padding:"14px",fontSize:11,color:"#4a5a6e",textAlign:"center"}}>Aucun tipster — crée-en un ci-dessous</div>
                     )}
-                    {allTipstersInBets.map((tip,i)=>{
+                    {allTipsters.map((tip,i)=>{
                       const tipBets=bets.filter(b=>b.tipster===tip);
                       const settled=tipBets.filter(b=>b.status!=="pending");
                       const won=settled.filter(b=>b.status==="won").length;
                       const profit=settled.reduce((s,b)=>s+(b.profit||0),0);
                       const wr=settled.length>0?(won/settled.length*100):0;
+                      const isSaved=savedTipsters.includes(tip);
                       return(
-                        <div key={tip} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<allTipstersInBets.length-1?"1px solid #1F2937":"none"}}>
+                        <div key={tip} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<allTipsters.length-1?"1px solid #1F2937":"none"}}>
                           <span style={{fontSize:18,flexShrink:0}}>🎯</span>
                           <div style={{flex:1}}>
-                            <div style={{fontWeight:700,fontSize:13,color:"#a78bfa"}}>{tip}</div>
-                            <div style={{fontSize:10,color:"#6B7280"}}>{settled.length} paris · {wr.toFixed(0)}% WR · {profit>=0?"+":""}{profit.toFixed(0)}$</div>
+                            <div style={{fontWeight:700,fontSize:13,color:"#a78bfa",display:"flex",alignItems:"center",gap:6}}>
+                              {tip}
+                              {settled.length===0&&isSaved&&<span style={{fontSize:9,color:"#4a5a6e",fontWeight:500,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",borderRadius:4,padding:"1px 5px"}}>aucun pari</span>}
+                            </div>
+                            <div style={{fontSize:10,color:"#6B7280"}}>{settled.length>0?`${settled.length} paris · ${wr.toFixed(0)}% WR · ${profit>=0?"+":""}${profit.toFixed(0)}$`:"Pas encore de paris"}</div>
                           </div>
                           <button onClick={()=>{
                             const newName=prompt("Renommer le tipster "+tip+":",tip);
                             if(!newName||!newName.trim()||newName.trim()===tip)return;
-                            setBets(prev=>prev.map(b=>b.tipster===tip?{...b,tipster:newName.trim(),updatedAt:Date.now()}:b));
-                            showToast(tip+" → "+newName.trim());
+                            const n=newName.trim();
+                            // Renommer dans bets
+                            setBets(prev=>prev.map(b=>b.tipster===tip?{...b,tipster:n,updatedAt:Date.now()}:b));
+                            // Renommer dans savedTipsters
+                            const updated=savedTipsters.map(t=>t===tip?n:t);
+                            setSavedTipsters(updated);
+                            try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                            showToast(tip+" → "+n);
                           }} style={{width:30,height:30,background:"rgba(59,130,246,.08)",border:"1px solid rgba(59,130,246,.2)",borderRadius:7,color:"#3B82F6",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
                           <button onClick={()=>{
-                            if(!window.confirm("Retirer le tipster "+tip+" de tous ses paris ?"))return;
-                            setBets(prev=>prev.map(b=>b.tipster===tip?{...b,tipster:null,updatedAt:Date.now()}:b));
-                            showToast(tip+" retiré","#EF4444");
+                            if(!window.confirm("Supprimer le tipster "+tip+" ?"))return;
+                            // Retirer des paris
+                            if(tipBets.length>0)setBets(prev=>prev.map(b=>b.tipster===tip?{...b,tipster:null,updatedAt:Date.now()}:b));
+                            // Retirer de savedTipsters
+                            const updated=savedTipsters.filter(t=>t!==tip);
+                            setSavedTipsters(updated);
+                            try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                            showToast(tip+" supprimé","#EF4444");
                           }} style={{width:30,height:30,background:"rgba(239,68,68,.06)",border:"1px solid rgba(239,68,68,.18)",borderRadius:7,color:"#EF4444",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
                         </div>
                       );
@@ -7585,7 +7638,12 @@ export default function App(){
                   <button onClick={()=>{
                     const name=prompt("Nom du tipster à créer:");
                     if(!name||!name.trim())return;
-                    showToast("Tipster créé — assigne-le lors de l'ajout d'un pari");
+                    const n=name.trim();
+                    if(savedTipsters.includes(n)){showToast(n+" existe déjà","#F59E0B");return;}
+                    const updated=[...savedTipsters,n];
+                    setSavedTipsters(updated);
+                    try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                    showToast("🎯 "+n+" ajouté","#A78BFA");
                   }} style={{width:"100%",padding:"10px",background:"rgba(167,139,250,.08)",border:"1px dashed rgba(167,139,250,.3)",borderRadius:10,color:"#a78bfa",cursor:"pointer",fontSize:13,fontFamily:"Inter,sans-serif",fontWeight:600}}>
                     + Ajouter un tipster
                   </button>
