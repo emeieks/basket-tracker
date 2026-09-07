@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forward
 
 // ── Normalize datetime helper ─────────────────────────────────────────────
 
-// Logo NBA — bouclier tricolore SVG pré-encodé
-const NBA_LOGO_B64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MCA4MCI+PGRlZnM+PGNsaXBQYXRoIGlkPSJuYmEtcyI+PHBhdGggZD0iTTMwIDJDMTYgNiA0IDExIDQgMTVMNCA0OEM0IDYzIDMwIDc4IDMwIDc4QzMwIDc4IDU2IDYzIDU2IDQ4TDU2IDE1QzU2IDExIDQ0IDYgMzAgMloiLz48L2NsaXBQYXRoPjwvZGVmcz48cGF0aCBkPSJNMzAgMkMxNiA2IDQgMTEgNCAxNUw0IDQ4QzQgNjMgMzAgNzggMzAgNzhDMzAgNzggNTYgNjMgNTYgNDhMNTYgMTVDNTYgMTEgNDQgNiAzMCAyWiIgZmlsbD0iI0M4MTAyRSIvPjxyZWN0IHg9IjQiIHk9IjIiIHdpZHRoPSIyNiIgaGVpZ2h0PSI3NiIgY2xpcC1wYXRoPSJ1cmwoI25iYS1zKSIgZmlsbD0iI0M4MTAyRSIvPjxyZWN0IHg9IjMwIiB5PSIyIiB3aWR0aD0iMjYiIGhlaWdodD0iNzYiIGNsaXAtcGF0aD0idXJsKCNuYmEtcykiIGZpbGw9IiMxRDQyQUEiLz48cmVjdCB4PSIyMCIgeT0iMiIgd2lkdGg9IjIwIiBoZWlnaHQ9Ijc2IiBjbGlwLXBhdGg9InVybCgjbmJhLXMpIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjMwIiB5PSI1MyIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLEFyaWFsIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjEyIiBmaWxsPSIjQzgxMDJFIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5OQkE8L3RleHQ+PC9zdmc+";
+// Logo NBA — SVG officiel Wikipedia, fond blanc supprimé, cercle
+const NBA_LOGO_B64 = "https://upload.wikimedia.org/wikipedia/fr/8/87/NBA_Logo.svg";
 
 function normalizeDT(dt,id){
   const p=v=>String(v).padStart(2,"0");
@@ -121,7 +121,11 @@ const L={
   HEBA:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDA0QkE4Ii8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjI4IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IRUJBPC90ZXh0Pjwvc3ZnPg=="
 };
 function GameLogo({game,size=18}){
-  if(game==="NBA")return <img src={NBA_LOGO_B64} alt="NBA" style={{width:size,height:size*1.25,objectFit:"contain",display:"block",flexShrink:0}}/>;
+  if(game==="NBA")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff",flexShrink:0}}>
+      <img src={NBA_LOGO_B64} alt="NBA" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );
   if(game==="EuroLeague")return <img src={EL_LOGO_B64} alt="EuroLeague" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="Pro A")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#003189",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>FR</span>;
   if(game==="ACB")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#DA421F",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>ES</span>;
@@ -1169,16 +1173,15 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
-            {/* Ligne 1 : Nom joueur + logo ligue + splits badge */}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
-              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
-              <GameLogo game={bet.game} size={13}/>
+            {/* Ligne 1 : Nom joueur + logo ligue + stat */}
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
+              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+              <GameLogo game={bet.game} size={14}/>
+              {descLine&&<span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
             </div>
-            {/* Ligne 2 : stat · @odds · bk logo · mise · tag ANNONCE */}
+            {/* Ligne 2 : @odds · bk logo · mise · tag ANNONCE */}
             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"nowrap",overflow:"hidden"}}>
-              {descLine&&<span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120,flexShrink:1}}>{descLine}</span>}
-              <span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span>
               <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
               {(bkLogo||bet.bookmaker)&&<span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span>}
               {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:14,height:14,objectFit:"contain",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>):null}
