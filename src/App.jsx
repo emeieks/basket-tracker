@@ -127,10 +127,12 @@ function GameLogo({game,size=18}){
     </span>
   );
   if(game==="EuroLeague")return <img src={EL_LOGO_B64} alt="EuroLeague" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
-  if(game==="Pro A")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#003189",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>FR</span>;
-  if(game==="ACB")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#DA421F",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>ES</span>;
-  if(game==="Bundesliga")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#005AA0",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>DE</span>;
-  if(game==="Lega")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#006B38",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>IT</span>;
+  if(game==="Pro A")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBXpNrh-XoYgHEbQOwD6o1oawOHmbDmDjgN5UW5psHuEJ1qG_X1_hUYY8&s=10" alt="Pro A" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="ACB")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHba4RJ-Vnfw7Tmz6lpvavCaoXCjLzlPExXlEcZJmZHQZmQ21d6oX02y8&s=10" alt="ACB" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="Bundesliga")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDW9tDc-bCNxHCLjgIbxlRE4xjZ6qjjKz9pLEpPZ29Vgjr0qMzLm4elEY&s=10" alt="BBL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="Lega")return <img src="https://upload.wikimedia.org/wikipedia/en/9/9d/LegaBasket_Serie_A_Logo.png" alt="Lega" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="EuroCup")return <img src="https://upload.wikimedia.org/wikipedia/en/c/c3/Eurocup_new_logo.png" alt="EuroCup" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="BCL")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
   const src=L[game];
   if(!src) return null;
@@ -397,7 +399,7 @@ const BK_LOGOS={
 
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const ALL_GAMES=["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"];
+const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
 const LEAGUES_BY_GAME={
   NBA:["Eastern Conference","Western Conference","NBA Finals"],
   EuroLeague:["Regular Season","Final Four","Play-In"],
@@ -440,6 +442,8 @@ const QUICK_STAKES=[50,62,75,87,100];
 const GAME_COLORS={
   NBA:{accent:"#C9082A",bg:"rgba(201,8,42,0.08)",border:"rgba(201,8,42,0.25)",logo:"https://www.nba.com/resources/static/team/v2/league/nba-logoman-75-word_white.svg"},
   EuroLeague:{accent:"#0057A8",bg:"rgba(0,87,168,0.08)",border:"rgba(0,87,168,0.25)",logo:"https://upload.wikimedia.org/wikipedia/en/thumb/9/9c/EuroLeague_logo.png/120px-EuroLeague_logo.png"},
+  "EuroCup":{accent:"#e8c84a",bg:"rgba(232,200,74,0.08)",border:"rgba(232,200,74,0.25)",logo:""},
+  "BCL":{accent:"#4a90d9",bg:"rgba(74,144,217,0.08)",border:"rgba(74,144,217,0.25)",logo:""},
   "Pro A":{accent:"#FF6900",bg:"rgba(255,105,0,0.08)",border:"rgba(255,105,0,0.25)",logo:""},
   ACB:{accent:"#E30613",bg:"rgba(227,6,19,0.08)",border:"rgba(227,6,19,0.25)",logo:""},
   Bundesliga:{accent:"#009DE0",bg:"rgba(0,157,224,0.08)",border:"rgba(0,157,224,0.25)",logo:""},
@@ -537,11 +541,28 @@ const NBA_LEAGUE_LOGO = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagu
 
 // ── Équipes ligues européennes basket ────────────────────────────────────────
 const EURO_TEAMS={
-  "Pro A":["JL Bourg","Paris Basketball","LDLC ASVEL","Cholet Basket","Nanterre 92","Metropolitans 92","Monaco","Roanne","Le Mans Sarthe","Orléans Loiret","Pau-Lacq-Orthez","Limoges CSP","Elan Chalon","Gravelines-Dunkerque","Strasbourg","Fos Provence","Champagne Basket","Châlons-Reims","Nancy","Hyères-Toulon"],
-  "ACB":["Real Madrid","FC Barcelona","Baskonia Vitoria","Valencia Basket","Gran Canaria","Unicaja Málaga","Joventut","Breogán","Manresa","Zaragoza","Fuenlabrada","Obradoiro","Murcia","Bilbao Basket","Surne Bilbao","Tenerife","Betis","Estudiantes","Lenovo Tenerife","San Pablo Burgos"],
-  "Lega":["EA7 Olimpia Milano","Virtus Bologna","Fenix Trento","Dolomiti Energia Trento","Umana Reyer Venezia","Pallacanestro Varese","Tortona","Brescia","Reggiana","Brindisi","Napoli","Pesaro","Trieste","Treviso","Cremona","Scafati","Pistoia","Forlì","Udine","Nardò"],
-  "Bundesliga":["Bayern München","Alba Berlin","Bonn","Würzburg","Hamburg Towers","Ulm","Frankfurt","Bamberg","Göttingen","Chemnitz","Gießen","MHP Riesen Ludwigsburg","Braunschweig","Rostock Seawolves","Heidelberg","ratiopharm Ulm","Syntainics MBC","Veolia Towers","Jena","Tübingen"],
-  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahce Beko","Anadolu Efes","Olympiacos","Panathinaikos","Partizan","Crvena zvezda","Maccabi Tel Aviv","EA7 Olimpia Milano","Virtus Bologna","Monaco","Baskonia","Bayern München","Alba Berlin","Asvel Villeurbanne","Valencia Basket","Paris Basketball","Zalgiris Kaunas","Strasbourg","Zaragoza"],
+  // ── Championnat français Pro A (Betclic Élite) ────────────────────────────
+  "Pro A":["Paris Basketball","LDLC ASVEL","JL Bourg","Cholet Basket","Nanterre 92","Metropolitans 92","Monaco","Roanne","Le Mans Sarthe","Orléans Loiret","Pau-Lacq-Orthez","Limoges CSP","Elan Chalon","Gravelines-Dunkerque","SIG Strasbourg","Fos Provence","Champagne Basket","Châlons-Reims","Nancy","Hyères-Toulon"],
+  // ── Championnat espagnol ACB ──────────────────────────────────────────────
+  "ACB":["Real Madrid","FC Barcelona","Baskonia","Valencia Basket","Gran Canaria","Unicaja","Joventut Badalona","Breogán","Manresa","Zaragoza","Fuenlabrada","Obradoiro","UCAM Murcia","Bilbao Basket","Surne Bilbao","La Laguna Tenerife","Betis","Estudiantes","Burgos","Galatasaray"],
+  // ── Championnat italien Lega Basket Serie A ───────────────────────────────
+  "Lega":["EA7 Olimpia Milano","Virtus Bologna","Dolomiti Energia Trento","Umana Reyer Venezia","Pallacanestro Varese","Tortona","Brescia","Reggiana","Napoli Basketball","Trieste","Treviso","Cremona","Scafati","Pistoia","Forlì","Udine","Brindisi","Pesaro","Roma Basketball","Trapani"],
+  // ── Championnat allemand BBL ──────────────────────────────────────────────
+  "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Würzburg","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","Heidelberg","ratiopharm Ulm","Syntainics MBC","Veolia Towers","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
+  // ── EuroLeague 2026-27 (20 équipes) ──────────────────────────────────────
+  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahce","Anadolu Efes","Olympiacos","Panathinaikos","Partizan","Crvena zvezda","Maccabi Tel Aviv","EA7 Olimpia Milano","Virtus Bologna","Besiktas","Baskonia","Bayern München","Alba Berlin","LDLC ASVEL","Valencia Basket","Paris Basketball","Zalgiris Kaunas","Dubai Basketball","Hapoel Tel Aviv"],
+  // ── EuroCup 2026-27 (32 équipes) ─────────────────────────────────────────
+  "EuroCup":["Monaco","JL Bourg","Dolomiti Energia Trento","Umana Reyer Venezia","Le Mans Sarthe","Nanterre 92","Aris Thessaloniki","PAOK Thessaloniki","Hapoel Jerusalem","BAXI Manresa","La Laguna Tenerife","Lietkabelis Panevezys","London Lions","Napoli Basketball","Neptūnas Klaipeda","NINERS Chemnitz","ratiopharm Ulm","Recoletas Salud Burgos","Riga Zelli","Roma Basketball","Rostock Seawolves","Siauliai","Skyliners Frankfurt","Slask Wroclaw","Tofas Bursa","Türk Telekom","U-BT Cluj-Napoca","Baglietto Derthona Tortona","Bahcesehir Koleji","Balkan Botevgrad","Buducnost VOLI","Cedevita Olimpija"],
+  // ── Basketball Champions League BCL 2026-27 (32 équipes) ─────────────────
+  "BCL":["Rytas Vilnius","Unicaja","Joventut Badalona","UCAM Murcia","Alba Berlin","AEK","Nanterre 92","Telekom Baskets Bonn","BMA365 Bamberg","Peristeri","Igokea m:tel","Hapoel Holon","SIG Strasbourg","Pallacanestro Varese","Surne Bilbao","Galatasaray","Spartak Office Shoes","ERA Nymburk","Cibona","Windrose Giants Antwerp","Falco KC Szombathely","FC Porto","Legia Warszawa","Sabah BC","Trabzonspor","BK KVIS Pardubice","ALBA Berlin","Élan Chalon","Cholet","Limoges CSP","Gravelines-Dunkerque","Fribourg Olympic"],
+};
+
+const NBA_TEAMS=["Atlanta Hawks","Boston Celtics","Brooklyn Nets","Charlotte Hornets","Chicago Bulls","Cleveland Cavaliers","Dallas Mavericks","Denver Nuggets","Detroit Pistons","Golden State Warriors","Houston Rockets","Indiana Pacers","LA Clippers","Los Angeles Lakers","Memphis Grizzlies","Miami Heat","Milwaukee Bucks","Minnesota Timberwolves","New Orleans Pelicans","New York Knicks","Oklahoma City Thunder","Orlando Magic","Philadelphia 76ers","Phoenix Suns","Portland Trail Blazers","Sacramento Kings","San Antonio Spurs","Toronto Raptors","Utah Jazz","Washington Wizards"];
+
+// Map ligue → liste d'équipes pour le formulaire d'ajout joueur
+const ALL_LEAGUE_TEAMS={
+  "NBA": NBA_TEAMS,
+  ...EURO_TEAMS,
 };
 
 const STATUS_CFG={
@@ -1460,7 +1481,7 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
               style={{padding:"5px 8px",borderRadius:8,border:"1.5px solid "+(!newTournament?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:!newTournament?"rgba(124,58,237,.15)":"transparent",color:!newTournament?"#c4b5fd":"#6B7280",fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
               Toutes
             </button>
-            {["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
+            {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
               const active=newTournament===g;
               return(
                 <button key={g} onClick={()=>setNewTournament(active?"":g)} title={g}
@@ -1940,7 +1961,7 @@ function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
 // ── AnnonceStatsView ─────────────────────────────────────────────────────────
 function AnnonceStatsView({bets, allPlayers}){
   const settled=bets.filter(b=>b.status!=="pending");
-  const ALL_GAMES=["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"];
+  const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
   const POS_LIST=[
     {key:"PG",label:"Point Guard",color:"#a78bfa"},
     {key:"SG",label:"Small Guard",color:"#60a5fa"},
@@ -2224,7 +2245,7 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
   const STORAGE_KEY="v7_victoire_bets";
   function loadVB(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return[];}}
   function saveVB(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
-  const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague"];
+  const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
   const HANDICAP_VALUES=[];for(let v=0.5;v<=34.5;v+=0.5)HANDICAP_VALUES.push(v);
   function getDefaultCompet(date){const d=date?new Date(date):new Date();const dow=d.getDay();return(dow>=2&&dow<=5)?"euro":"champ";}
   const [vBets,setVBets]=useState(loadVB);
@@ -2727,7 +2748,7 @@ export default function App(){
   const [playerSortKey,setPlayerSortKey]=useState("profit");
   const [playerMinBets,setPlayerMinBets]=useState(1);
   const [testingOpen,setTestingOpen]=useState(false);
-  const DEFAULT_TEST_FILTER={games:new Set(["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"]),headshot:"all",live:"all",oddsMin:"",oddsMax:"",hideTourneys:new Set(),hideLeagues:new Set(),hideRoles:new Set(),ppEdgeMin:"",ppEdgeMax:"",overUnder:"all"};
+  const DEFAULT_TEST_FILTER={games:new Set(["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"]),headshot:"all",live:"all",oddsMin:"",oddsMax:"",hideTourneys:new Set(),hideLeagues:new Set(),hideRoles:new Set(),ppEdgeMin:"",ppEdgeMax:"",overUnder:"all"};
   const [testFilterDraft,setTestFilterDraft]=useState(DEFAULT_TEST_FILTER); // what user edits
   const [testFilter,setTestFilter]=useState(DEFAULT_TEST_FILTER); // what actually drives stats
   const [candleTF,setCandleTF]=useState("day");
@@ -2995,8 +3016,8 @@ export default function App(){
           if(s.testFilter){
             try{
               const tf=s.testFilter;
-              setTestFilter({...tf,games:new Set(tf.games||["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"]),hideTourneys:new Set(tf.hideTourneys||[]),hideLeagues:new Set(tf.hideLeagues||[]),hideRoles:new Set(tf.hideRoles||[])});
-              setTestFilterDraft({...tf,games:new Set(tf.games||["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"]),hideTourneys:new Set(tf.hideTourneys||[]),hideLeagues:new Set(tf.hideLeagues||[]),hideRoles:new Set(tf.hideRoles||[])});
+              setTestFilter({...tf,games:new Set(tf.games||["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"]),hideTourneys:new Set(tf.hideTourneys||[]),hideLeagues:new Set(tf.hideLeagues||[]),hideRoles:new Set(tf.hideRoles||[])});
+              setTestFilterDraft({...tf,games:new Set(tf.games||["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"]),hideTourneys:new Set(tf.hideTourneys||[]),hideLeagues:new Set(tf.hideLeagues||[]),hideRoles:new Set(tf.hideRoles||[])});
             }catch(e){}
           }
           // Merge savedTourneys instead of overwriting — keep local additions
@@ -4064,25 +4085,21 @@ export default function App(){
   }
 
   function savePlayer(){
-    if(!pform.name.trim())return;
+    if(!pform.name.trim()||!pform.game)return;
     const rawName=pform.name.toLowerCase().trim();
-    // Clé unique = game:name pour éviter conflits entre jeux (ex: Bach CS2 vs Bach Dota2)
     const key=rawName;
-    const autoGame=pform.team&&Object.values({...{"Atlanta Hawks":"NBA","Boston Celtics":"NBA","Brooklyn Nets":"NBA","Charlotte Hornets":"NBA","Chicago Bulls":"NBA","Cleveland Cavaliers":"NBA","Dallas Mavericks":"NBA","Denver Nuggets":"NBA","Detroit Pistons":"NBA","Golden State Warriors":"NBA","Houston Rockets":"NBA","Indiana Pacers":"NBA","LA Clippers":"NBA","Los Angeles Lakers":"NBA","Memphis Grizzlies":"NBA","Miami Heat":"NBA","Milwaukee Bucks":"NBA","Minnesota Timberwolves":"NBA","New Orleans Pelicans":"NBA","New York Knicks":"NBA","Oklahoma City Thunder":"NBA","Orlando Magic":"NBA","Philadelphia 76ers":"NBA","Phoenix Suns":"NBA","Portland Trail Blazers":"NBA","Sacramento Kings":"NBA","San Antonio Spurs":"NBA","Toronto Raptors":"NBA","Utah Jazz":"NBA","Washington Wizards":"NBA"}}).length?"NBA":pform.game;
-    const data={game:"NBA",league:pform.league||"NBA",role:pform.role||pform.position||"",team:pform.team,name:pform.name.trim()};
-    // Si un joueur du même nom existe déjà dans un jeu différent, on garde les deux via un merge
+    const data={game:pform.game,league:pform.league||pform.game,role:pform.role||pform.position||"",team:pform.team,name:pform.name.trim()};
     setPlayers(p=>{
       const existing=p[key];
       if(existing&&existing.game&&existing.game!==pform.game){
-        // Stocker avec clé préfixée par le jeu pour éviter conflit
-        const gKey=pform.game.toLowerCase()+":"+rawName;
+        const gKey=pform.game.toLowerCase().replace(/\s+/g,"_")+":"+rawName;
         supaUpsertPlayer({name:gKey,...data}).catch(function(){});
         return{...p,[gKey]:data};
       }
       supaUpsertPlayer({name:key,...data}).catch(function(){});
       return{...p,[key]:data};
     });
-    setPform({name:"",game:"NBA",league:"",position:"",team:""});
+    setPform({name:"",game:"NBA",league:"",role:"",team:""});
     setModalPlayer(false);
     showToast(pform.name+" ajouté ✓");
   }
@@ -4341,7 +4358,7 @@ export default function App(){
 
                 {/* Jeux */}
                 <div><div style={{fontSize:9,color:"#6B7280",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Jeux</div><div style={{display:"flex",gap:6}}>
-                    {["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
+                    {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
                       const on=homeChartFilters.games.includes(g);
                       const cfg=GAME_CFG[g]||{accent:"#A78BFA"};
                       const acc=cfg.accent||"#A78BFA";
@@ -5704,7 +5721,7 @@ export default function App(){
 
                   {/* JEUX */}
                   <Sec label="Jeux inclus"><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                      {["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
+                      {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].map(g=>{
                         const on=f.games.has(g);
                         return(
                           <button key={g} onClick={()=>{const ng=new Set(f.games);on?ng.delete(g):ng.add(g);set("games",ng);}}
@@ -5901,7 +5918,7 @@ export default function App(){
               function snapE6(e){return Math.round(e*6)/6;}
               const fmt=(v,unit)=>(v>=0?"+":"-")+Math.abs(unit==="$"?Math.round(v):unit==="%"?Math.abs(v).toFixed(1):Math.abs(v).toFixed(2))+(unit||"");
 
-              const GAMES=["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].filter(g=>ppBets.some(b=>b.game===g));
+              const GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].filter(g=>ppBets.some(b=>b.game===g));
               const MAP_TYPES=["H1+H2","Match","H1+H2+OT"];
 
               // Apply filters to ppBets for matrix
@@ -7978,9 +7995,48 @@ export default function App(){
 
         {/* ── MODAL ADD PLAYER ── */}
         {modalPlayer&&(
-          <div className="moverlay" onClick={()=>setModalPlayer(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div style={{fontSize:15,fontWeight:700,marginBottom:14}}> Ajouter un joueur NBA</div><input className="ifield" placeholder="Prénom Nom (ex: lebron james)" value={pform.name} onChange={e=>setPform(p=>({...p,name:e.target.value}))} style={{marginBottom:8}}/><div style={{marginBottom:8}}><select className="ifield" style={{width:"100%"}} value={pform.team} onChange={e=>setPform(p=>({...p,team:e.target.value,game:"NBA",league:"NBA"}))}><option value="">Équipe NBA *</option><option key="Atlanta Hawks" value="Atlanta Hawks">Atlanta Hawks</option><option key="Boston Celtics" value="Boston Celtics">Boston Celtics</option><option key="Brooklyn Nets" value="Brooklyn Nets">Brooklyn Nets</option><option key="Charlotte Hornets" value="Charlotte Hornets">Charlotte Hornets</option><option key="Chicago Bulls" value="Chicago Bulls">Chicago Bulls</option><option key="Cleveland Cavaliers" value="Cleveland Cavaliers">Cleveland Cavaliers</option><option key="Dallas Mavericks" value="Dallas Mavericks">Dallas Mavericks</option><option key="Denver Nuggets" value="Denver Nuggets">Denver Nuggets</option><option key="Detroit Pistons" value="Detroit Pistons">Detroit Pistons</option><option key="Golden State Warriors" value="Golden State Warriors">Golden State Warriors</option><option key="Houston Rockets" value="Houston Rockets">Houston Rockets</option><option key="Indiana Pacers" value="Indiana Pacers">Indiana Pacers</option><option key="LA Clippers" value="LA Clippers">LA Clippers</option><option key="Los Angeles Lakers" value="Los Angeles Lakers">Los Angeles Lakers</option><option key="Memphis Grizzlies" value="Memphis Grizzlies">Memphis Grizzlies</option><option key="Miami Heat" value="Miami Heat">Miami Heat</option><option key="Milwaukee Bucks" value="Milwaukee Bucks">Milwaukee Bucks</option><option key="Minnesota Timberwolves" value="Minnesota Timberwolves">Minnesota Timberwolves</option><option key="New Orleans Pelicans" value="New Orleans Pelicans">New Orleans Pelicans</option><option key="New York Knicks" value="New York Knicks">New York Knicks</option><option key="Oklahoma City Thunder" value="Oklahoma City Thunder">Oklahoma City Thunder</option><option key="Orlando Magic" value="Orlando Magic">Orlando Magic</option><option key="Philadelphia 76ers" value="Philadelphia 76ers">Philadelphia 76ers</option><option key="Phoenix Suns" value="Phoenix Suns">Phoenix Suns</option><option key="Portland Trail Blazers" value="Portland Trail Blazers">Portland Trail Blazers</option><option key="Sacramento Kings" value="Sacramento Kings">Sacramento Kings</option><option key="San Antonio Spurs" value="San Antonio Spurs">San Antonio Spurs</option><option key="Toronto Raptors" value="Toronto Raptors">Toronto Raptors</option><option key="Utah Jazz" value="Utah Jazz">Utah Jazz</option><option key="Washington Wizards" value="Washington Wizards">Washington Wizards</option></select></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}><select className="ifield" value={pform.role} onChange={e=>setPform(p=>({...p,role:e.target.value}))}><option value="">Position...</option>
-                  {[["PG","1 — Point Guard"],["SG","2 — Shooting Guard"],["SF","3 — Small Forward"],["PF","4 — Power Forward"],["C","5 — Center"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}
-                </select><select className="ifield" value={pform.league} onChange={e=>setPform(p=>({...p,league:e.target.value}))}><option value="NBA">NBA</option><option value="EuroLeague">EuroLeague</option><option value="Pro A">Pro A</option><option value="ACB">ACB</option></select></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>setModalPlayer(false)} style={{padding:"12px",background:"#1F2937",border:"none",borderRadius:10,color:"#94A3B8",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button><button onClick={savePlayer} disabled={!pform.name||!pform.team} style={{padding:"12px",background:pform.name&&pform.team?"linear-gradient(135deg,#00E676,#0EA5E9)":"#1F2937",border:"none",borderRadius:10,color:pform.name&&pform.team?"#0B1220":"#9CA3AF",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Ajouter</button></div></div></div>
+          <div className="moverlay" onClick={()=>setModalPlayer(false)}><div className="modal" onClick={e=>e.stopPropagation()} style={{maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
+              <span>🏀</span> Ajouter un joueur
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du joueur *</div>
+              <input className="ifield" placeholder="Ex: Victor Wembanyama" value={pform.name} onChange={e=>setPform(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue *</div>
+              <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={pform.game} onChange={e=>setPform(p=>({...p,game:e.target.value,league:e.target.value,team:""}))}>
+                {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe *</div>
+              <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={pform.team} onChange={e=>setPform(p=>({...p,team:e.target.value}))}>
+                <option value="">Choisir une équipe…</option>
+                {(ALL_LEAGUE_TEAMS[pform.game]||[]).slice().sort().map(t=>(
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Poste</div>
+              <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={pform.role||""} onChange={e=>setPform(p=>({...p,role:e.target.value}))}>
+                <option value="">Poste (optionnel)</option>
+                {pform.game==="NBA"
+                  ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
+                  :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
+                }
+              </select>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button onClick={()=>setModalPlayer(false)} style={{padding:"12px",background:"#1F2937",border:"none",borderRadius:10,color:"#94A3B8",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+              <button onClick={savePlayer} disabled={!pform.name||!pform.team} style={{padding:"12px",background:pform.name&&pform.team?"linear-gradient(135deg,#7C3AED,#3B82F6)":"#1F2937",border:"none",borderRadius:10,color:pform.name&&pform.team?"#fff":"#9CA3AF",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                ✓ Ajouter
+              </button>
+            </div>
+          </div></div>
         )}
 
         {/* ── MODAL EDIT PLAYER ── */}
@@ -8397,7 +8453,7 @@ function PPBoardAnalyzer(){
       {open&&<div style={{background:"#0D1117",border:"1px solid #1F2937",borderTop:"none",borderRadius:"0 0 13px 13px",padding:"16px"}}>
         {/* Game filter */}
         <div style={{display:"flex",gap:6,marginBottom:14}}>
-          {["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].map(function(g){
+          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].map(function(g){
             var on=gameFilter===g;
             return <button key={g} onClick={function(){setGameFilter(g);}}
               style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?"rgba(124,58,237,.5)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.15)":"transparent",color:on?"#c4b5fd":"#6B7280",fontSize:11,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
@@ -8658,7 +8714,7 @@ function PPRatioCompiler(){
 
         {/* Game + MapType */}
         <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
-          {["NBA","EuroLeague","Pro A","ACB","Bundesliga","Lega","HEBA"].map(function(g){
+          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"].map(function(g){
             return <button key={g} onClick={function(){setGame(g);}} style={pillStyle(game===g)}>
               {g}
             </button>;
