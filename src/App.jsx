@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forward
 
 // ── Normalize datetime helper ─────────────────────────────────────────────
 
-// Logo NBA — SVG officiel Wikipedia, fond blanc supprimé, cercle
+// Logo NBA - SVG officiel Wikipedia, fond blanc supprimé, cercle
 const NBA_LOGO_B64 = "https://upload.wikimedia.org/wikipedia/fr/8/87/NBA_Logo.svg";
 
 function normalizeDT(dt,id){
@@ -27,7 +27,7 @@ function normalizeDT(dt,id){
 }
 function normalizeBet(b){return{...b,datetime:normalizeDT(b.datetime,b.id)};}
 
-// ── Supabase — sync sans login ────────────────────────────────────────────
+// ── Supabase - sync sans login ────────────────────────────────────────────
 const SUPA_URL = "https://khjljfeknwwktfjjznhp.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoamxqZmVrbnd3a3Rmamp6bmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDg5NjgsImV4cCI6MjEwMjA4NDk2OH0.v4H36n7prn6hVwT90nWF3yW-cxyzvmmFbW5EgH6bZX4";
 
@@ -55,7 +55,7 @@ async function supaPullBets() {
   let all = [];
   let offset = 0;
   while(true) {
-    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge,tipster&order=datetime.desc&limit=${limit}&offset=${offset}&archived=is.false`);
+    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge&order=datetime.desc&limit=${limit}&offset=${offset}&archived=is.false`);
     if(!batch || batch.length === 0) break;
     all = [...all, ...batch];
     if(batch.length < limit) break;
@@ -199,7 +199,7 @@ function BankrollChart({points,h=150}){
   );
 }
 
-// ── CandleChart — graphique style bourse ────────────────────────────────
+// ── CandleChart - graphique style bourse ────────────────────────────────
 function CandleChart({points,h=155,tf="day"}){
   if(!points||points.length<2)return(
     <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:13}}>Pas assez de données</div>
@@ -508,7 +508,7 @@ const EL_TEAM_LOGOS = {
   "Zalgiris Kaunas": "https://media-cdn.incrowdsports.com/0aa09358-3847-4c4e-b228-3582ee4e536d.png?width=168&resizeType=fill&format=webp"
 };
 
-// ── TEAM_LOGOS — map globale par nom de club (toutes ligues) ─────────────────
+// ── TEAM_LOGOS - map globale par nom de club (toutes ligues) ─────────────────
 // Un club peut jouer dans plusieurs ligues (ex: JL Bourg → Pro A + EuroCup)
 // Le logo est cherché par nom de club uniquement, ligue indépendante.
 // Colle les URLs ici pour chaque club.
@@ -696,7 +696,7 @@ const EURO_TEAMS={
   "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Fitness First Würzburg Baskets","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
   // ── EuroLeague 2026-27 (20 équipes officielles Wikipedia) ────────────────
   "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","Alba Berlin","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
-  // ── EuroCup 2026-27 (32 équipes — Monaco exclu 01/09/2026) ───────────────
+  // ── EuroCup 2026-27 (32 équipes - Monaco exclu 01/09/2026) ───────────────
   "EuroCup":["JL Bourg","Le Mans Sarthe","Türk Telekom","Skyliners Frankfurt","Budućnost VOLI","U-BT Cluj-Napoca","PAOK","Bahçeşehir Koleji","Cedevita Olimpija","Baglietto Derthona","Aris Thessaloniki","Hapoel Midtown Jerusalem","ratiopharm Ulm","Dolomiti Energia Trento","Neptūnas Klaipeda","La Laguna Tenerife","NINERS Chemnitz","Umana Reyer Venezia","Lietkabelis Panevezys","London Lions","Maxima Roma","BAXI Manresa","Balkan Botevgrad","Šiauliai","Napoli Basketball","Recoletas Salud Burgos","Rostock Seawolves","Śląsk Wrocław","Roma Basketball","Bosna BH Telecom","Rīgas Zeļļi","Tofaş"],
   // ── BCL 2026-27 (30 direct + 2 qualifications) ───────────────────────────
   "BCL":["Asisa Joventut","Slavia Prague ERA NBK","Trabzonspor","UCAM Murcia","KVIS Pardubice","Galatasaray MCT","Surne Bilbao","AEK","Sabah BC","Unicaja","Peristeri Betsson","Windrose Giants Antwerp","Nanterre 92","Hapoel Netanel Holon","Igokea m:tel","Cholet","Bnei Penlink Herzliya","Cibona","SIG Strasbourg","Pallacanestro Reggiana","Alba Berlin","Pallacanestro Varese","Legia Warszawa","BMA365 Bamberg","Juventus Utena","FC Porto","Telekom Baskets Bonn","Rytas Vilnius","Spartak Office Shoes","Falco KC Szombathely"],
@@ -704,114 +704,206 @@ const EURO_TEAMS={
 
 // ── Clubs multi-ligues 2026-27 (données officielles) ─────────────────────────
 const MULTI_LEAGUE_CLUBS={
-  // ── France (Pro A) ────────────────────────────────────────────────────────
-  "LDLC ASVEL":["Pro A","EuroLeague"],
-  "Paris Basketball":["Pro A","EuroLeague"],
-  "JL Bourg":["Pro A","EuroCup"],
-  "Le Mans Sarthe":["Pro A","EuroCup"],
-  "Nanterre 92":["Pro A","BCL"],
-  "Cholet":["Pro A","BCL"],
-  "SIG Strasbourg":["Pro A","BCL"],
-  "Élan Chalon":["Pro A","BCL"],
-  // ── Espagne (ACB) ─────────────────────────────────────────────────────────
-  "Real Madrid":["ACB","EuroLeague"],
-  "FC Barcelona":["ACB","EuroLeague"],
-  "Kosner Baskonia":["ACB","EuroLeague"],
-  "Valencia Basket":["ACB","EuroLeague"],
-  "Unicaja":["ACB","BCL"],
-  "Asisa Joventut":["ACB","BCL"],
-  "UCAM Murcia":["ACB","BCL"],
-  "Surne Bilbao":["ACB","BCL"],
-  "La Laguna Tenerife":["ACB","EuroCup"],
-  "BAXI Manresa":["ACB","EuroCup"],
-  "Recoletas Salud Burgos":["ACB","EuroCup"],
-  // ── Italie (Lega) ─────────────────────────────────────────────────────────
-  "Olimpia Milano":["Lega","EuroLeague"],
-  "EA7 Olimpia Milano":["Lega","EuroLeague"],
-  "Virtus Olidata Bologna":["Lega","EuroLeague"],
-  "Virtus Bologna":["Lega","EuroLeague"],
-  "Dolomiti Energia Trento":["Lega","EuroCup"],
-  "Umana Reyer Venezia":["Lega","EuroCup"],
-  "Baglietto Derthona":["Lega","EuroCup"],
-  "Napoli Basketball":["Lega","EuroCup"],
-  "Pallacanestro Varese":["Lega","BCL"],
-  "Pallacanestro Reggiana":["Lega","BCL"],
-  // ── Allemagne (Bundesliga) ────────────────────────────────────────────────
-  "Bayern München":["Bundesliga","EuroLeague"],
-  "FC Bayern Munich":["Bundesliga","EuroLeague"],
-  "Alba Berlin":["Bundesliga","EuroLeague","BCL"],
-  "Telekom Baskets Bonn":["Bundesliga","BCL"],
-  "BMA365 Bamberg":["Bundesliga","BCL"],
-  "Skyliners Frankfurt":["Bundesliga","EuroCup"],
-  "NINERS Chemnitz":["Bundesliga","EuroCup"],
-  "ratiopharm Ulm":["Bundesliga","EuroCup"],
-  "Rostock Seawolves":["Bundesliga","EuroCup"],
-  // ── Turquie (BSL — pas dans ligues affichées mais EuroLeague/EuroCup) ─────
-  "Fenerbahçe Tarfin":["EuroLeague"],
-  "Fenerbahce":["EuroLeague"],
-  "Anadolu Efes":["EuroLeague"],
-  "Beşiktaş Gain":["EuroLeague"],
-  "Besiktas":["EuroLeague"],
-  "Türk Telekom":["EuroCup"],
-  "Bahçeşehir Koleji":["EuroCup"],
-  // ── Grèce (HEBA) ──────────────────────────────────────────────────────────
-  "Olympiacos":["HEBA","EuroLeague"],
-  "Panathinaikos AKTOR":["HEBA","EuroLeague"],
-  "Panathinaikos":["HEBA","EuroLeague"],
-  "Aris Thessaloniki":["HEBA","EuroCup"],
-  "PAOK":["HEBA","EuroCup"],
-  "Peristeri Betsson":["HEBA","BCL"],
-  "AEK":["HEBA","BCL"],
-  // ── Serbie/Balkans ────────────────────────────────────────────────────────
-  "Partizan Mozzart Bet":["EuroLeague"],
-  "Partizan":["EuroLeague"],
-  "Crvena zvezda Meridianbet":["EuroLeague"],
-  "Crvena zvezda":["EuroLeague"],
-  "Budućnost VOLI":["EuroCup"],
-  "Cedevita Olimpija":["EuroCup"],
-  "Igokea m:tel":["BCL"],
-  "Cibona":["BCL"],
-  "Spartak Office Shoes":["BCL"],
-  // ── Israël ────────────────────────────────────────────────────────────────
-  "Maccabi Rapyd Tel Aviv":["EuroLeague"],
-  "Maccabi Tel Aviv":["EuroLeague"],
-  "Hapoel IBI Tel Aviv":["EuroLeague"],
-  "Hapoel Tel Aviv":["EuroLeague"],
-  "Hapoel Midtown Jerusalem":["EuroCup"],
-  "Hapoel Netanel Holon":["BCL"],
-  "Bnei Penlink Herzliya":["BCL"],
-  // ── Lituanie ─────────────────────────────────────────────────────────────
-  "Žalgiris":["EuroLeague"],
-  "Zalgiris Kaunas":["EuroLeague"],
-  "Lietkabelis Panevezys":["EuroCup"],
-  "Neptūnas Klaipeda":["EuroCup"],
-  "Rytas Vilnius":["BCL"],
-  "Juventus Utena":["BCL"],
-  // ── Autres EuroCup ────────────────────────────────────────────────────────
-  "Dubai Basketball":["EuroLeague"],
-  "London Lions":["EuroCup"],
-  "U-BT Cluj-Napoca":["EuroCup"],
-  "Šiauliai":["EuroCup"],
-  "Rīgas Zeļļi":["EuroCup"],
-  "Tofaş":["EuroCup"],
-  "Bosna BH Telecom":["EuroCup"],
-  "Balkan Botevgrad":["EuroCup"],
-  "Śląsk Wrocław":["EuroCup"],
-  "Roma Basketball":["Lega","EuroCup"],
-  "Maxima Roma":["EuroCup"],
-  // ── Autres BCL ────────────────────────────────────────────────────────────
-  "Galatasaray MCT":["BCL"],
-  "Galatasaray":["ACB","BCL"],
-  "Trabzonspor":["BCL"],
-  "FC Porto":["BCL"],
-  "Legia Warszawa":["BCL"],
-  "Windrose Giants Antwerp":["BCL"],
-  "Falco KC Szombathely":["BCL"],
-  "ERA Nymburk":["BCL"],
-  "Sabah BC":["BCL"],
-  "Slavia Prague ERA NBK":["BCL"],
-  "KVIS Pardubice":["BCL"],
-  "Peristeri":["BCL"],
+  // ────────────────────────────────────────────────────────────────────────
+  // FRANCE - Pro A
+  // ────────────────────────────────────────────────────────────────────────
+  "LDLC ASVEL":         ["Pro A","EuroLeague"],
+  "Paris Basketball":   ["Pro A","EuroLeague"],
+  "JL Bourg":           ["Pro A","EuroCup"],
+  "Le Mans Sarthe":     ["Pro A","EuroCup"],
+  "Nanterre 92":        ["Pro A","BCL"],
+  "Cholet":             ["Pro A","BCL"],
+  "SIG Strasbourg":     ["Pro A","BCL"],
+  "Élan Chalon":        ["Pro A","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ESPAGNE - ACB
+  // ────────────────────────────────────────────────────────────────────────
+  "Real Madrid":               ["ACB","EuroLeague"],
+  "FC Barcelona":              ["ACB","EuroLeague"],
+  "Kosner Baskonia":           ["ACB","EuroLeague"],
+  "Valencia Basket":           ["ACB","EuroLeague"],
+  "Unicaja":                   ["ACB","BCL"],
+  "Asisa Joventut":            ["ACB","BCL"],
+  "UCAM Murcia":               ["ACB","BCL"],
+  "Surne Bilbao":              ["ACB","BCL"],
+  "La Laguna Tenerife":        ["ACB","EuroCup"],
+  "BAXI Manresa":              ["ACB","EuroCup"],
+  "Recoletas Salud Burgos":    ["ACB","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ITALIE - Lega Basket Serie A
+  // ────────────────────────────────────────────────────────────────────────
+  "Olimpia Milano":            ["Lega","EuroLeague"],
+  "EA7 Olimpia Milano":        ["Lega","EuroLeague"],
+  "Virtus Olidata Bologna":    ["Lega","EuroLeague"],
+  "Virtus Bologna":            ["Lega","EuroLeague"],
+  "Dolomiti Energia Trento":   ["Lega","EuroCup"],
+  "Umana Reyer Venezia":       ["Lega","EuroCup"],
+  "Baglietto Derthona":        ["Lega","EuroCup"],
+  "Napoli Basketball":         ["Lega","EuroCup"],
+  "Roma Basketball":           ["Lega","EuroCup"],
+  "Pallacanestro Varese":      ["Lega","BCL"],
+  "Pallacanestro Reggiana":    ["Lega","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ALLEMAGNE - Bundesliga
+  // ────────────────────────────────────────────────────────────────────────
+  "Bayern München":            ["Bundesliga","EuroLeague"],
+  "FC Bayern Munich":          ["Bundesliga","EuroLeague"],
+  "Alba Berlin":               ["Bundesliga","EuroLeague","BCL"],
+  "Telekom Baskets Bonn":      ["Bundesliga","BCL"],
+  "BMA365 Bamberg":            ["Bundesliga","BCL"],
+  "Skyliners Frankfurt":       ["Bundesliga","EuroCup"],
+  "NINERS Chemnitz":           ["Bundesliga","EuroCup"],
+  "ratiopharm Ulm":            ["Bundesliga","EuroCup"],
+  "Rostock Seawolves":         ["Bundesliga","EuroCup"],
+  "Fitness First Würzburg Baskets":["Bundesliga","BCL"],
+  "Rasta Vechta":              ["Bundesliga","BCL"],
+  "MHP Riesen Ludwigsburg":    ["Bundesliga"],
+  "MLP Academics Heidelberg":  ["Bundesliga"],
+  "Hamburg Towers":            ["Bundesliga"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // TURQUIE - BSL (Turkish Basketball Super League)
+  // ────────────────────────────────────────────────────────────────────────
+  "Fenerbahçe Tarfin":         ["BSL","EuroLeague"],
+  "Fenerbahce":                ["BSL","EuroLeague"],
+  "Anadolu Efes":              ["BSL","EuroLeague"],
+  "Beşiktaş Gain":             ["BSL","EuroLeague"],
+  "Besiktas":                  ["BSL","EuroLeague"],
+  "Türk Telekom":              ["BSL","EuroCup"],
+  "Bahçeşehir Koleji":         ["BSL","EuroCup"],
+  "Trabzonspor":               ["BSL","BCL"],
+  "Galatasaray MCT":           ["BSL","BCL"],
+  "Galatasaray":               ["BSL","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // GRÈCE - HEBA (Greek Basketball League)
+  // ────────────────────────────────────────────────────────────────────────
+  "Olympiacos":                ["HEBA","EuroLeague"],
+  "Panathinaikos AKTOR":       ["HEBA","EuroLeague"],
+  "Panathinaikos":             ["HEBA","EuroLeague"],
+  "Aris Thessaloniki":         ["HEBA","EuroCup"],
+  "PAOK":                      ["HEBA","EuroCup"],
+  "Peristeri Betsson":         ["HEBA","BCL"],
+  "Peristeri":                 ["HEBA","BCL"],
+  "AEK":                       ["HEBA","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // SERBIE - KLS (Košarkaška liga Srbije)
+  // ────────────────────────────────────────────────────────────────────────
+  "Partizan Mozzart Bet":      ["KLS","EuroLeague"],
+  "Partizan":                  ["KLS","EuroLeague"],
+  "Crvena zvezda Meridianbet": ["KLS","EuroLeague"],
+  "Crvena zvezda":             ["KLS","EuroLeague"],
+  "Spartak Office Shoes":      ["KLS","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ISRAËL - Premier League (Israeli Premier League)
+  // ────────────────────────────────────────────────────────────────────────
+  "Maccabi Rapyd Tel Aviv":    ["IPL","EuroLeague"],
+  "Maccabi Tel Aviv":          ["IPL","EuroLeague"],
+  "Hapoel IBI Tel Aviv":       ["IPL","EuroLeague"],
+  "Hapoel Tel Aviv":           ["IPL","EuroLeague"],
+  "Hapoel Midtown Jerusalem":  ["IPL","EuroCup"],
+  "Hapoel Netanel Holon":      ["IPL","BCL"],
+  "Bnei Penlink Herzliya":     ["IPL","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // LITUANIE - LKL (Lietuvos krepšinio lyga)
+  // ────────────────────────────────────────────────────────────────────────
+  "Žalgiris":                  ["LKL","EuroLeague"],
+  "Zalgiris Kaunas":           ["LKL","EuroLeague"],
+  "Lietkabelis Panevezys":     ["LKL","EuroCup"],
+  "Neptūnas Klaipeda":         ["LKL","EuroCup"],
+  "Rytas Vilnius":             ["LKL","BCL"],
+  "Juventus Utena":            ["LKL","BCL"],
+  "Šiauliai":                  ["LKL","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // SLOVÉNIE - Liga Nova KBM
+  // ────────────────────────────────────────────────────────────────────────
+  "Cedevita Olimpija":         ["Liga Nova KBM","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // BOSNIE - BiH Liga
+  // ────────────────────────────────────────────────────────────────────────
+  "Bosna BH Telecom":          ["BiH Liga","EuroCup"],
+  "Igokea m:tel":              ["BiH Liga","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // BULGARIE
+  // ────────────────────────────────────────────────────────────────────────
+  "Balkan Botevgrad":          ["NBL Bulgaria","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // CROATIE
+  // ────────────────────────────────────────────────────────────────────────
+  "Cibona":                    ["HT Premijer liga","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ROUMANIE
+  // ────────────────────────────────────────────────────────────────────────
+  "U-BT Cluj-Napoca":          ["LNBM Romania","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // LETTONIE
+  // ────────────────────────────────────────────────────────────────────────
+  "Rīgas Zeļļi":               ["LBL Latvia","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // POLOGNE
+  // ────────────────────────────────────────────────────────────────────────
+  "Śląsk Wrocław":             ["PLK Poland","EuroCup"],
+  "Legia Warszawa":            ["PLK Poland","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // REPUBLIQUE TCHÈQUE
+  // ────────────────────────────────────────────────────────────────────────
+  "Slavia Prague ERA NBK":     ["NBL Czech","BCL"],
+  "KVIS Pardubice":            ["NBL Czech","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // BELGIQUE
+  // ────────────────────────────────────────────────────────────────────────
+  "Windrose Giants Antwerp":   ["EBL Belgium","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // PORTUGAL
+  // ────────────────────────────────────────────────────────────────────────
+  "FC Porto":                  ["LPB Portugal","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // HONGRIE
+  // ────────────────────────────────────────────────────────────────────────
+  "Falco KC Szombathely":      ["Nemzeti Liga Hungary","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // AZERBAÏDJAN
+  // ────────────────────────────────────────────────────────────────────────
+  "Sabah BC":                  ["ABSL Azerbaijan","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // REPUBLIQUE TCHÈQUE / SLOVAQUIE
+  // ────────────────────────────────────────────────────────────────────────
+  "ERA Nymburk":               ["NBL Czech","BCL"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ROYAUME-UNI
+  // ────────────────────────────────────────────────────────────────────────
+  "London Lions":              ["BBL UK","EuroCup"],
+
+  // ────────────────────────────────────────────────────────────────────────
+  // ÉMIRATS ARABES UNIS
+  // ────────────────────────────────────────────────────────────────────────
+  "Dubai Basketball":          ["EuroLeague"],   // franchise EuroLeague pure, pas de championnat national
+
+  // ────────────────────────────────────────────────────────────────────────
+  // DIVERS EuroCup sans ligue nationale dans l'app
+  // ────────────────────────────────────────────────────────────────────────
+  "Tofaş":                     ["BSL","EuroCup"],
+  "Maxima Roma":               ["Lega","EuroCup"],
 };
 
 
@@ -900,7 +992,7 @@ function NumPad({value,onChange,placeholder,step,id}){
           onChange(v);
         }}
         onBlur={e=>{
-          // Convert shorthand odds only (e.g. 175 → 1.75) — NOT for stake fields (step="1")
+          // Convert shorthand odds only (e.g. 175 → 1.75) - NOT for stake fields (step="1")
           if(step==="1")return;
           if(step!=="0.01")return;
           let v=e.target.value.replace(/,/g,".").replace(/[^0-9.]/g,"");
@@ -1291,7 +1383,7 @@ const EditBetModal=memo(function EditBetModal({bet,bookmakers,onSave,onClose,cal
         {/* Live toggle */}
         <div style={{marginBottom:16}}><button onClick={()=>setEbLive(v=>!v)}
             style={{width:"100%",padding:"11px",borderRadius:10,border:"1.5px solid "+(ebLive?"#EF4444":"#1F2937"),background:ebLive?"rgba(239,68,68,0.1)":"transparent",color:ebLive?"#EF4444":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span style={{width:8,height:8,borderRadius:"50%",background:ebLive?"#EF4444":"#374151",boxShadow:ebLive?"0 0 6px rgba(239,68,68,0.8)":"none"}}/>
-            {ebLive?"🔴 LIVE — Pari en direct":"LIVE — Pari prématch"}
+            {ebLive?"🔴 LIVE - Pari en direct":"LIVE - Pari prématch"}
           </button></div>
 
         {/* Boutons */}
@@ -1574,7 +1666,7 @@ function NavIconSuivi({active}){
   return(<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3" fill={active?"rgba(167,139,250,0.1)":"none"}/><circle cx="5" cy="17" r="2.2" fill={active?"rgba(167,139,250,0.08)":"none"}/><circle cx="19" cy="17" r="2.2" fill={active?"rgba(167,139,250,0.08)":"none"}/><path d="M12 11c-4 0-6 2-6 4"/><path d="M12 11c4 0 6 2 6 4"/></svg>);
 }
 
-// ── TipsterIcon — icône SVG "tipster" dans le style du site ──────────────────
+// ── TipsterIcon - icône SVG "tipster" dans le style du site ──────────────────
 function TipsterIcon({size=16,color="#a78bfa",strokeWidth=1.6}){
   return(
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,display:"block"}}>
@@ -1582,14 +1674,14 @@ function TipsterIcon({size=16,color="#a78bfa",strokeWidth=1.6}){
       <circle cx="9" cy="7" r="3" fill={color+"18"}/>
       {/* Corps */}
       <path d="M3 21v-1a6 6 0 0 1 6-6h1"/>
-      {/* Graphe tendance montante — signal tipster */}
+      {/* Graphe tendance montante - signal tipster */}
       <polyline points="14,17 17,13 19,15 22,10" strokeWidth={strokeWidth+0.2}/>
       <polyline points="19,10 22,10 22,13" fill="none"/>
     </svg>
   );
 }
 
-// ── SelectionModal — sélection multiple + date + tournoi ────────────────────
+// ── SelectionModal - sélection multiple + date + tournoi ────────────────────
 function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDay,monthKeys,byMonth,allByDay,allByMonth,allMonthKeys,bookmakers=[],BK_LOGOS={},bkPhotos={},savedTourneys={},onAfterPush,allPlayers={}}){
   const [selected,setSelected]=useState(new Set());
   const [newDate,setNewDate]=useState("");
@@ -1825,7 +1917,7 @@ function SelectionModal({bets,onClose,setBets,supaPushBets,showToast,fmtDay,byDa
                       return(
                         <div key={b.id} onClick={()=>toggle(b.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:isSel?"rgba(124,58,237,0.08)":"transparent",borderTop:"1px solid #1F2937",cursor:"pointer",userSelect:"none",WebkitUserSelect:"none"}}><div style={{width:20,height:20,borderRadius:5,border:"2px solid "+(isSel?"#7C3AED":"#374151"),background:isSel?"rgba(124,58,237,0.25)":"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                             {isSel&&<span style={{fontSize:11,color:"#A78BFA",fontWeight:900}}>✓</span>}
-                          </div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,overflow:"hidden"}}><GameLogo game={b.game} size={16}/><span style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.player} <span style={{color:"#6B7280",fontWeight:400,fontSize:12}}>— {b.description}</span></span></div><div style={{fontSize:11,color:"#6B7280",marginTop:2}}>@{b.odds} · {b.stake}$ · {b.datetime?String(b.datetime).slice(0,10):""}</div></div><div style={{fontSize:13,fontWeight:700,color:b.status==="won"?"#00E676":b.status==="lost"?"#EF4444":"#3B82F6",flexShrink:0}}>
+                          </div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,overflow:"hidden"}}><GameLogo game={b.game} size={16}/><span style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.player} <span style={{color:"#6B7280",fontWeight:400,fontSize:12}}>- {b.description}</span></span></div><div style={{fontSize:11,color:"#6B7280",marginTop:2}}>@{b.odds} · {b.stake}$ · {b.datetime?String(b.datetime).slice(0,10):""}</div></div><div style={{fontSize:13,fontWeight:700,color:b.status==="won"?"#00E676":b.status==="lost"?"#EF4444":"#3B82F6",flexShrink:0}}>
                             {b.status==="pending"?"@"+b.odds:((b.profit||0)>=0?"+":"")+(b.profit||0).toFixed(0)+"$"}
                           </div></div>
                       );
@@ -2107,7 +2199,7 @@ function optimizePhotoUrl(url){
   if(!url) return url;
   // NBA CDN : passer de 1040x760 à 260x190 (même qualité, plus petit, mieux cadrée)
   if(url.includes("cdn.nba.com/headshots/nba/latest/1040x760/")){
-    return url // garder 1040x760 — meilleure qualité sur Retina;
+    return url // garder 1040x760 - meilleure qualité sur Retina;
   }
   // ESPN full → ESPN combiner avec crop portrait
   if(url.includes("espncdn.com/i/headshots/nba/players/full/")){
@@ -2438,7 +2530,7 @@ function AnnonceNBATracker({bets,allPlayers}){
           )}
           {ownTeam&&(
             <div style={{marginTop:10}}>
-              <div style={{fontSize:11,color:"#6B7280",marginBottom:6,fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Joueurs OUT — quelle équipe ?</div>
+              <div style={{fontSize:11,color:"#6B7280",marginBottom:6,fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Joueurs OUT - quelle équipe ?</div>
               <div style={{display:"flex",gap:6,marginBottom:8}}>
                 {[{k:"own",l:ownTeam||"Mon équipe"},{k:"opp",l:"Équipe adverse"}].map(s=>(
                   <button key={s.k} onClick={()=>setTeamSide(s.k)} style={{flex:1,padding:"7px",borderRadius:8,border:"1.5px solid "+(teamSide===s.k?"rgba(124,58,237,.4)":"rgba(255,255,255,.07)"),background:teamSide===s.k?"rgba(124,58,237,.1)":"transparent",color:teamSide===s.k?"#a78bfa":"#6B7280",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{s.l}</button>
@@ -2794,7 +2886,7 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
                 {LINE_VALUES.map(v=><option key={v} value={String(v)}>{v.toFixed(1)}</option>)}
               </select>
             </div>
-            <div style={{fontSize:11,color:s.direction==="Over"?"#22C55E":"#60a5fa",fontWeight:700,marginTop:6}}>{s.direction} {parseFloat(s.value).toFixed(1)} {s.betType} — {s.player}</div>
+            <div style={{fontSize:11,color:s.direction==="Over"?"#22C55E":"#60a5fa",fontWeight:700,marginTop:6}}>{s.direction} {parseFloat(s.value).toFixed(1)} {s.betType} - {s.player}</div>
           </div>
         ))}
         {/* Cote + Mise + Statut */}
@@ -2850,7 +2942,7 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
   );
 }
 
-// ── LeagueEditor — section Édit dans Suivi ────────────────────────────────────
+// ── LeagueEditor - section Édit dans Suivi ────────────────────────────────────
 const POSITION_ORDER=["PG","SG","G","Guard","Point Guard","Shooting Guard","SF","Small Forward","Wing","PF","Power Forward","F","Forward","C","Center","Big",""];
 function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?98:r;}
 
@@ -2860,7 +2952,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [editingPlayer,setEditingPlayerLocal]=useState(null);
   const [editForm,setEditForm]=useState({});
 
-  const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+  const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA","BSL","KLS","IPL","LKL","BBL UK","BiH Liga","HT Premijer liga","NBL Bulgaria","LNBM Romania","LBL Latvia","PLK Poland","EBL Belgium","LPB Portugal","Nationale Liga Hungary","ABSL Azerbaijan","NBL Czech","Liga Nova KBM"];
 
   const leagueData=useMemo(()=>{
     const map={};
@@ -2881,7 +2973,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
       const primaryLeague=p.game||"NBA";
       const team=p.team||"";
       if(!team){
-        // Joueur sans équipe — ligue principale seulement
+        // Joueur sans équipe - ligue principale seulement
         if(!map[primaryLeague])map[primaryLeague]={};
         if(!map[primaryLeague]["Sans équipe"])map[primaryLeague]["Sans équipe"]=[];
         map[primaryLeague]["Sans équipe"].push({key,data:p});
@@ -3063,7 +3155,96 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   );
 }
 
-// ── AddPlayerForm — composant séparé (hooks autorisés) ───────────────────────
+// ── Team name aliases - normalise noms vers officiels 2026-27 ──────────────────
+const TEAM_ALIASES={
+  // EuroLeague - noms officiels vs noms historiques
+  "Anadolu Efes Istanbul":"Anadolu Efes",
+  "Efes Pilsen":"Anadolu Efes",
+  "Fenerbahce Istanbul":"Fenerbahçe Tarfin",
+  "Fenerbahce Beko":"Fenerbahçe Tarfin",
+  "Besiktas Istanbul":"Beşiktaş Gain",
+  "Besiktas JK":"Beşiktaş Gain",
+  "Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet",
+  "Crvena zvezda mts":"Crvena zvezda Meridianbet",
+  "Red Star Belgrade":"Crvena zvezda Meridianbet",
+  "Partizan Belgrade":"Partizan Mozzart Bet",
+  "Partizan NIS":"Partizan Mozzart Bet",
+  "Maccabi Tel Aviv":"Maccabi Rapyd Tel Aviv",
+  "Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv",
+  "Hapoel Tel Aviv":"Hapoel IBI Tel Aviv",
+  "Armani Olimpia Milan":"Olimpia Milano",
+  "AX Armani Exchange Milan":"Olimpia Milano",
+  "EA7 Emporio Armani Milan":"Olimpia Milano",
+  "EA7 Olimpia Milano":"Olimpia Milano",
+  "Virtus Bologna":"Virtus Olidata Bologna",
+  "Segafredo Virtus Bologna":"Virtus Olidata Bologna",
+  "Virtus Segafredo Bologna":"Virtus Olidata Bologna",
+  "Zalgiris Kaunas":"Žalgiris",
+  "Zalgiris":"Žalgiris",
+  "FC Bayern Munich":"Bayern München",
+  "Bayern Munich":"Bayern München",
+  "FC Bayern München":"Bayern München",
+  "Asvel Villeurbanne":"LDLC ASVEL",
+  "ASVEL Villeurbanne":"LDLC ASVEL",
+  "LDLC ASVEL Villeurbanne":"LDLC ASVEL",
+  "LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL",
+  "Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia",
+  "Baskonia Vitoria-Gasteiz":"Kosner Baskonia",
+  "Baskonia":"Kosner Baskonia",
+  "TD Systems Baskonia":"Kosner Baskonia",
+  "Panathinaikos AKTOR Athens":"Panathinaikos AKTOR",
+  "Panathinaikos Athens":"Panathinaikos AKTOR",
+  "Panathinaikos":"Panathinaikos AKTOR",
+  "Olympiacos Piraeus":"Olympiacos",
+  "Olympiakos":"Olympiacos",
+  "Joventut Badalona":"Asisa Joventut",
+  "Joventut":"Asisa Joventut",
+  "Recoletas San Pablo Burgos":"Recoletas Salud Burgos",
+  "San Pablo Burgos":"Recoletas Salud Burgos",
+  "Manresa":"BAXI Manresa",
+  "BAXI Manresa":"BAXI Manresa",
+  "Kids&Us Manresa":"BAXI Manresa",
+  "Casademont Zaragoza":"Casademont Zaragoza",
+  "Torku Konyaspor":"Anadolu Efes",
+  // EuroCup
+  "Buducnost VOLI":"Budućnost VOLI",
+  "Buducnost":"Budućnost VOLI",
+  "Cedevita Olimpija Ljubljana":"Cedevita Olimpija",
+  "Hapoel Jerusalem":"Hapoel Midtown Jerusalem",
+  "Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem",
+  "Lietkabelis":"Lietkabelis Panevezys",
+  "Neptūnas":"Neptūnas Klaipeda",
+  "Neptunas":"Neptūnas Klaipeda",
+  "Riga Zelli":"Rīgas Zeļļi",
+  "Siauliai":"Šiauliai",
+  "Slask Wroclaw":"Śląsk Wrocław",
+  "Tofas Bursa":"Tofaş",
+  "Turk Telekom":"Türk Telekom",
+  "Bahcesehir Koleji":"Bahçeşehir Koleji",
+  "Niners Chemnitz":"NINERS Chemnitz",
+  "Baglietto Derthona Tortona":"Baglietto Derthona",
+  "Derthona Basket":"Baglietto Derthona",
+  "Napoli Basket":"Napoli Basketball",
+  "U-BT Cluj-Napoca":"U-BT Cluj-Napoca",
+  "Le Mans":"Le Mans Sarthe",
+  "JL Bourg-en-Bresse":"JL Bourg",
+  "Cosea JL Bourg":"JL Bourg",
+  // BCL
+  "Peristeri":"Peristeri Betsson",
+  "Rytas":"Rytas Vilnius",
+  "Rytas Vilnius":"Rytas Vilnius",
+  "Slavia Prague":"Slavia Prague ERA NBK",
+  "ERA Nymburk":"ERA Nymburk",
+  "KVIS Pardubice":"KVIS Pardubice",
+  "Elan Chalon":"Élan Chalon",
+  "Élan Chalon-sur-Saône":"Élan Chalon",
+  "Strasbourg IG":"SIG Strasbourg",
+  "Nanterre":"Nanterre 92",
+  "Gravelines Dunkerque":"Gravelines-Dunkerque",
+  "BCM Gravelines":"Gravelines-Dunkerque",
+};
+
+// ── AddPlayerForm - composant séparé (hooks autorisés) ───────────────────────
 function AddPlayerForm({setPlayers,showToast}){
   const [addOpen,setAddOpen]=useState(false);
   const [lf,setLf]=useState({name:"",game:"NBA",league:"NBA",team:"",role:""});
@@ -3175,7 +3356,7 @@ export default function App(){
     },0);
   };
   const [loaded,setLoaded]=useState(false);
-  // Les joueurs viennent uniquement de Supabase — pas de localStorage
+  // Les joueurs viennent uniquement de Supabase - pas de localStorage
   const [toast,setToast]=useState(null);
   // betConfirm removed
   const [showCal,setShowCal]=useState(false);
@@ -3359,20 +3540,27 @@ export default function App(){
       // Charger les joueurs depuis Supabase (table "players")
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
+          // Map ancien nom → nom officiel 2026-27 pour dédupliquer
+
           const obj = {};
           rows.forEach(p => {
-            const key = p.name.toLowerCase().replace(/[čćžšđ]/g, c=>({č:'c',ć:'c',ž:'z',š:'s',đ:'d'}[c]||c)).trim();
+            // Normaliser le nom de l'équipe
+            const normalizedTeam=TEAM_ALIASES[p.team]||p.team;
+            const normalizedGame=p.game;
+            const pNorm={...p,team:normalizedTeam,game:normalizedGame};
+
+            const key = pNorm.name.toLowerCase().replace(/[čćžšđ]/g, c=>({č:'c',ć:'c',ž:'z',š:'s',đ:'d'}[c]||c)).trim();
             const entry = {
-              id: p.id,
-              name: p.name,
-              game: p.game,
-              league: p.league,
-              role: p.role,
-              team: p.team,
-              photo_url: p.photo_url || null,
-              team_logo_url: p.team_logo_url || null,
-              avatar_url: p.avatar_url || null,
-              avatar_file: p.avatar_file || null,
+              id: pNorm.id,
+              name: pNorm.name,
+              game: pNorm.game,
+              league: pNorm.league,
+              role: pNorm.role,
+              team: pNorm.team,
+              photo_url: pNorm.photo_url || null,
+              team_logo_url: pNorm.team_logo_url || null,
+              avatar_url: pNorm.avatar_url || null,
+              avatar_file: pNorm.avatar_file || null,
             };
             // Si doublon, garder celui qui a une équipe
             if(obj[key] && !entry.team) return;
@@ -3490,7 +3678,7 @@ export default function App(){
     return()=>clearTimeout(t);
   },[bets,loaded]);
 
-  // ── Supabase: pull — Supabase est la source de vérité ───────────────────
+  // ── Supabase: pull - Supabase est la source de vérité ───────────────────
   const pullFromSupa=useCallback(async function(silentArg){
     // Block pull for 15s after a push to avoid race condition
     if(Date.now()-lastPushRef.current<15000){setSyncing(false);return;}
@@ -3556,7 +3744,7 @@ export default function App(){
               setTestFilterDraft({...tf,games:new Set(tf.games||["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"]),hideTourneys:new Set(tf.hideTourneys||[]),hideLeagues:new Set(tf.hideLeagues||[]),hideRoles:new Set(tf.hideRoles||[])});
             }catch(e){}
           }
-          // Merge savedTourneys instead of overwriting — keep local additions
+          // Merge savedTourneys instead of overwriting - keep local additions
           if(s.savedTourneys&&Object.keys(s.savedTourneys).length>0){
             setSavedTourneys(prev=>{
               const merged={};
@@ -3571,7 +3759,7 @@ export default function App(){
               return merged;
             });
           }
-          // Restore savedTipsters — union local + remote
+          // Restore savedTipsters - union local + remote
           if(s.savedTipsters&&s.savedTipsters.length>0){
             setSavedTipsters(prev=>{
               const merged=[...new Set([...(prev||[]),...s.savedTipsters])];
@@ -3662,7 +3850,7 @@ export default function App(){
     return merged;
   },[players,blacklist]);
 
-  // Fréquence de bets par joueur — pour trier les suggestions PlayerAC
+  // Fréquence de bets par joueur - pour trier les suggestions PlayerAC
   const allBetsByPlayer=useMemo(function(){
     const m={};
     bets.forEach(b=>{const k=(b.player||"").toLowerCase().trim();if(k){if(!m[k])m[k]=[];m[k].push(b);}});
@@ -3703,7 +3891,7 @@ export default function App(){
     return mibActive||f.games.size<7||f.headshot!=="all"||f.live!=="all"||f.overUnder!=="all"||!!f.oddsMin||!!f.oddsMax||f.hideTourneys.size>0||f.hideLeagues.size>0||f.hideRoles.size>0||!!f.ppEdgeMin||!!f.ppEdgeMax;
   },[testFilter,mibActive]);
 
-  // Filtre pur hors composant — pas de capture de closure React
+  // Filtre pur hors composant - pas de capture de closure React
   const filteredByTest=useCallback((base)=>{
     let r=base;
     // MIB filter
@@ -3780,7 +3968,7 @@ export default function App(){
       for(let i=chron.length-2;i>=0;i--){if(chron[i].status===last)curStreak++;else break;}
     }
 
-    // 3. Calibration PP Edge — chiffres ronds (0.5, 0.75, 1.0, etc.)
+    // 3. Calibration PP Edge - chiffres ronds (0.5, 0.75, 1.0, etc.)
     const edgeBuckets={};
     settledFiltered.filter(b=>b.ppEdge!=null).forEach(b=>{
       const key=snapEdge(b.ppEdge).toFixed(2);
@@ -3799,7 +3987,7 @@ export default function App(){
         profit:v.profit
       }));
 
-    // 4. Signaux — combinaisons Over/Under × Jeu
+    // 4. Signaux - combinaisons Over/Under × Jeu
     const signals={};
     settledFiltered.forEach(b=>{
       if(!b.overUnder||b.overUnder==="")return;
@@ -3812,7 +4000,7 @@ export default function App(){
       .map(s=>({...s,wr:Math.round(s.won*100/s.cnt),roi:s.staked>0?Math.round(s.profit/s.staked*1000)/10:0}))
       .sort((a,b)=>b.profit-a.profit);
 
-    // 5. Seuil de rentabilité par tranche de cote — simplifié
+    // 5. Seuil de rentabilité par tranche de cote - simplifié
     const oddsBuckets={};
     settledFiltered.forEach(b=>{
       const o=b.odds||0;
@@ -3929,10 +4117,10 @@ export default function App(){
       const totalStake=b.stake;
       const splits=b.splits||[];
       if(splits.length===0){
-        // No split — all goes to main bookmaker
+        // No split - all goes to main bookmaker
         add(b.bookmaker||"Autre",totalStake,b.profit,b.odds,b.status==="won");
       } else {
-        // Split — distribute proportionally by stake
+        // Split - distribute proportionally by stake
         const splitStakeTotal=splits.reduce((s,sp)=>s+sp.stake,0);
         const mainStake=totalStake-splitStakeTotal;
         // Main bookmaker share
@@ -4307,7 +4495,7 @@ export default function App(){
     const desc=form.description?form.overUnder+" "+form.description:form.overUnder;
     const tname=(()=>{const t=activeTourneys[info.game];return(t&&(!t.end||new Date(t.end)>=new Date()))?t.name:"";})();
     if(editingBet){
-      // Mode édition — remplace le pari existant avec tous les champs
+      // Mode édition - remplace le pari existant avec tous les champs
       const newDatetime=form.datetime||nowDT();
       const ppFinalLineEdit=form.ppDescription||(()=>{
         const bk=parseFloat(form.description);
@@ -4462,7 +4650,7 @@ export default function App(){
     const tname=(()=>{const t=activeTourneys[infoW.game];return(t&&(!t.end||new Date(t.end)>=new Date()))?t.name:"";})();
     const bet={
       id:now,player:winnerName,
-      description:"Duel vs "+loserName+" — Plus de kills",
+      description:"Duel vs "+loserName+" - Plus de kills",
       overUnder:"Over",odds,stake,
       bookmaker:duelForm.bookmaker,status:"pending",
       game:infoW.game,league:infoW.league,role:infoW.role,team:infoW.team,
@@ -4777,7 +4965,7 @@ export default function App(){
 
         {/* ── BANNIÈRE MODE TEST GLOBAL ── */}
         {isTestActive&&(
-          <div style={{position:"fixed",top:0,left:0,right:0,zIndex:600,background:"linear-gradient(90deg,rgba(234,179,8,.95),rgba(202,138,4,.95))",padding:"5px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 2px 12px rgba(234,179,8,.4)"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13}}>🧪</span><span style={{fontSize:11,fontWeight:800,color:"#1a1000",letterSpacing:.3}}>MODE TEST ACTIF — simulation en cours</span><span style={{fontSize:10,color:"rgba(0,0,0,.5)",marginLeft:2}}>
+          <div style={{position:"fixed",top:0,left:0,right:0,zIndex:600,background:"linear-gradient(90deg,rgba(234,179,8,.95),rgba(202,138,4,.95))",padding:"5px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 2px 12px rgba(234,179,8,.4)"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13}}>🧪</span><span style={{fontSize:11,fontWeight:800,color:"#1a1000",letterSpacing:.3}}>MODE TEST ACTIF - simulation en cours</span><span style={{fontSize:10,color:"rgba(0,0,0,.5)",marginLeft:2}}>
                 {[testFilter.games.size<4&&`${testFilter.games.size} jeux`,testFilter.headshot!=="all"&&(testFilter.headshot==="yes"?"HS only":"sans HS"),testFilter.live!=="all"&&(testFilter.live==="yes"?"Live only":"sans Live"),testFilter.overUnder!=="all"&&testFilter.overUnder,testFilter.hideRoles.size>0&&`${testFilter.hideRoles.size} pos. masquées`,testFilter.hideTourneys.size>0&&`${testFilter.hideTourneys.size} tournois masqués`].filter(Boolean).join(" · ")}
               </span></div><button onClick={()=>{setTestFilter(DEFAULT_TEST_FILTER);setTestFilterDraft(DEFAULT_TEST_FILTER);}}
               style={{background:"rgba(0,0,0,.15)",border:"none",borderRadius:5,padding:"2px 8px",color:"#1a1000",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
@@ -5075,7 +5263,7 @@ export default function App(){
 
             {/* Calendrier grand format */}
             <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,padding:"12px",marginBottom:14}}>
-              {/* Jours de la semaine — commence Lundi */}
+              {/* Jours de la semaine - commence Lundi */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:6}}>
                 {["L","M","M","J","V","S","D"].map((d,i)=>(
                   <div key={i} style={{textAlign:"center",fontSize:11,color:"#6B7280",fontWeight:700,padding:"4px 0",textTransform:"uppercase"}}>{d}</div>
@@ -5178,7 +5366,7 @@ export default function App(){
               const selectedDayBets=(calGames.length>0?calFilteredBets.filter(b=>toDateKey(b.datetime)===calSelected):byDay[calSelected])||[];
               const dp=dailyProfit[calSelected];
               return(
-                <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:14,padding:"12px 14px",marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{calSelected.split("-").reverse().join("/")} — {selectedDayBets.length} paris</div>
+                <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:14,padding:"12px 14px",marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{calSelected.split("-").reverse().join("/")} - {selectedDayBets.length} paris</div>
                     {dp!==undefined&&<span style={{fontWeight:800,fontSize:14,color:dp>=0?"#00E676":"#EF4444"}}>{dp>=0?"+":""}{dp.toFixed(2)}$</span>}
                   </div><div style={{background:"#0B1220",borderRadius:10,overflow:"hidden",border:"1px solid #1F2937"}}>
                     {selectedDayBets.map(b=>{
@@ -5413,7 +5601,7 @@ export default function App(){
                     </select><span style={{color:"#6B7280",fontSize:16}}>⌄</span></div></div>
 
                 {/* Joueur 1 vs Joueur 2 */}
-                <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",marginBottom:10}}><div style={{fontSize:12,color:"#F59E0B",fontWeight:700,marginBottom:12,letterSpacing:.5}}>⚔️ Duel — Plus de kills sur cette map</div>
+                <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",marginBottom:10}}><div style={{fontSize:12,color:"#F59E0B",fontWeight:700,marginBottom:12,letterSpacing:.5}}>⚔️ Duel - Plus de kills sur cette map</div>
 
                   {/* Joueurs */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"start",marginBottom:14}}><div><div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Joueur 1</div><PlayerAC value={duelForm.player1} onChange={v=>setDuelForm(f=>({...f,player1:v,winner:""}))} allPlayers={allPlayers} activeTourneys={activeTourneys} betFreq={betFreq} onConfirm={()=>{}}/>
@@ -5430,7 +5618,7 @@ export default function App(){
                       )}
                     </div></div>
 
-                  {/* Sélection du gagnant — apparaît quand les 2 joueurs sont choisis */}
+                  {/* Sélection du gagnant - apparaît quand les 2 joueurs sont choisis */}
                   {duelForm.player1&&duelForm.player2&&(
                     <div style={{marginBottom:14}}><div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Qui va avoir le plus de points ?</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>setDuelForm(f=>({...f,winner:"player1"}))}
                           style={{padding:"12px 8px",borderRadius:12,border:"2px solid "+(duelForm.winner==="player1"?"#F59E0B":"#1F2937"),background:duelForm.winner==="player1"?"rgba(245,158,11,0.12)":"#111827",color:duelForm.winner==="player1"?"#F59E0B":"#9CA3AF",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all .2s",textTransform:"capitalize"}}>
@@ -5466,11 +5654,11 @@ export default function App(){
                       ))}
                     </div><button onClick={()=>setDuelForm(f=>({...f,isLive:!f.isLive}))}
                       style={{width:"100%",padding:"9px",borderRadius:10,border:"1.5px solid "+(duelForm.isLive?"#fb7185":"#1F2937"),background:duelForm.isLive?"rgba(251,113,133,0.12)":"transparent",color:duelForm.isLive?"#fb7185":"#6B7280",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      {duelForm.isLive?<><span style={{width:8,height:8,borderRadius:"50%",background:"#fb7185",display:"inline-block"}}/>LIVE — En cours</> : "🔴 Marquer comme Live"}
+                      {duelForm.isLive?<><span style={{width:8,height:8,borderRadius:"50%",background:"#fb7185",display:"inline-block"}}/>LIVE - En cours</> : "🔴 Marquer comme Live"}
                     </button></div>
 
                   {/* PP kills Duel */}
-                  <div style={{marginTop:10,background:"rgba(139,92,246,.06)",border:"1px solid rgba(139,92,246,.15)",borderRadius:10,padding:"10px 12px"}}><div style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>PrizePicks — Lignes Stats</div><div style={{display:"flex",gap:5,marginBottom:8}}>
+                  <div style={{marginTop:10,background:"rgba(139,92,246,.06)",border:"1px solid rgba(139,92,246,.15)",borderRadius:10,padding:"10px 12px"}}><div style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>PrizePicks - Lignes Stats</div><div style={{display:"flex",gap:5,marginBottom:8}}>
                       {["H1+H2","Match","H1+H2+OT"].map(function(mt){
                         var on=duelForm.ppMapType===mt;
                         return <button key={mt} onClick={function(){setDuelForm(function(f){return Object.assign({},f,{ppMapType:on?"":mt,ppLine_player1:"",ppLine_player2:""});});}}
@@ -5799,7 +5987,7 @@ export default function App(){
                           }}
                         />
                       );
-                      // Avatar par défaut — initiale avec glow
+                      // Avatar par défaut - initiale avec glow
                       return(
                         <div style={{position:"relative",zIndex:1,width:64,height:64,borderRadius:"50%",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:800,color:"#fff",textTransform:"uppercase",marginBottom:16,boxShadow:"0 0 24px rgba(124,58,237,.5)"}}>
                           {(form.autoInfo.name||form.player).charAt(0)}
@@ -5856,7 +6044,7 @@ export default function App(){
                       Changer
                     </button></div></div>
               )}
-              {form.player&&!form.autoInfo&&!form.tbConfirmed&&<div style={{marginTop:7,fontSize:11,color:"#F59E0B",fontWeight:600}}>⚠ Joueur non reconnu — tu peux quand même enregistrer.</div>}
+              {form.player&&!form.autoInfo&&!form.tbConfirmed&&<div style={{marginTop:7,fontSize:11,color:"#F59E0B",fontWeight:600}}>⚠ Joueur non reconnu - tu peux quand même enregistrer.</div>}
               {form.player&&!form.autoInfo&&form.tbConfirmed&&(
                 <div style={{marginTop:7,padding:"10px 14px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div>
@@ -6051,7 +6239,7 @@ export default function App(){
 
             
 
-                        {/* ── 2b. ANNONCE — Joueurs out ── */}
+                        {/* ── 2b. ANNONCE - Joueurs out ── */}
             {form.autoInfo&&form.autoInfo.team&&(
               <AnnonceBlock
                 team={form.autoInfo.team}
@@ -6214,14 +6402,14 @@ export default function App(){
                     const ppEdge=form.ppEdge;
                     if(ppEdge==null||ppEdge>=0||form.ppMapType==="HIDE")return null;
                     return(
-                      <div style={{marginBottom:8,padding:"8px 12px",borderRadius:10,background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.3)",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>Edge PP négatif ({ppEdge>0?"+":""}{ppEdge.toFixed(2)}) — EV-</span></div>
+                      <div style={{marginBottom:8,padding:"8px 12px",borderRadius:10,background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.3)",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>Edge PP négatif ({ppEdge>0?"+":""}{ppEdge.toFixed(2)}) - EV-</span></div>
                     );
                   })()}
 
                   {(function(){
                     var ppEdge=form.ppEdge;
                     if(ppEdge==null||ppEdge>=0||form.ppMapType==="HIDE")return null;
-                    return(<div style={{marginBottom:8,padding:"8px 12px",borderRadius:10,background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.3)",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>Edge PP négatif ({ppEdge>0?"+":""}{ppEdge.toFixed(2)}) — EV-</span></div>);
+                    return(<div style={{marginBottom:8,padding:"8px 12px",borderRadius:10,background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.3)",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>Edge PP négatif ({ppEdge>0?"+":""}{ppEdge.toFixed(2)}) - EV-</span></div>);
                   })()}
                   {(function(){
                     var odds=parseFloat(form.odds)||0;
@@ -6286,7 +6474,7 @@ export default function App(){
 
             {/* ── TESTING PANEL ── */}
             {statsTab==="tipsers"&&(()=>{
-              // Build stats per tipster — fusionne savedTipsters + ceux dans les paris
+              // Build stats per tipster - fusionne savedTipsters + ceux dans les paris
               const tipsterMap={};
               settled.forEach(b=>{
                 const t=b.tipster;
@@ -6477,7 +6665,7 @@ export default function App(){
                       ↺ Reset
                     </button></div>
 
-                  {isDirty&&<div style={{marginTop:8,fontSize:10,color:"#f59e0b",textAlign:"center",opacity:.7}}>Changements non appliqués — clique sur  Appliquer</div>}
+                  {isDirty&&<div style={{marginTop:8,fontSize:10,color:"#f59e0b",textAlign:"center",opacity:.7}}>Changements non appliqués - clique sur  Appliquer</div>}
                 </div>
               );
             })()}
@@ -6500,15 +6688,15 @@ export default function App(){
               const globalWR=settledFiltered.length>0?(settledFiltered.filter(b=>b.status==="won").length/settledFiltered.length*100):0;
               return(
               <div style={{marginBottom:14}}>
-                {/* Ligne 1 — Profit + ROI */}
+                {/* Ligne 1 - Profit + ROI */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}><div style={{background:"linear-gradient(135deg,rgba(34,197,94,.08),rgba(16,185,129,.04))",border:"1px solid rgba(34,197,94,.15)",borderRadius:14,padding:"14px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,#00E676,#16a34a)"}}/><div style={{fontSize:8,color:"#4a6a50",textTransform:"uppercase",letterSpacing:1.2,marginBottom:5,fontWeight:700}}>Profit net</div><div style={{fontSize:24,fontWeight:800,color:totalProfit>=0?"#22C55E":"#EF4444",letterSpacing:-.5,lineHeight:1}}>{totalProfit>=0?"+":""}{totalProfit.toFixed(0)}$</div><div style={{fontSize:10,color:"#4a6a50",marginTop:4,fontWeight:500}}>{settledFiltered.length} paris résolus</div></div><div style={{background:"linear-gradient(135deg,rgba(59,130,246,.08),rgba(99,102,241,.04))",border:"1px solid rgba(59,130,246,.15)",borderRadius:14,padding:"14px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,#3b82f6,#6366f1)"}}/><div style={{fontSize:8,color:"#3a5270",textTransform:"uppercase",letterSpacing:1.2,marginBottom:5,fontWeight:700}}>ROI global</div><div style={{fontSize:24,fontWeight:800,color:globalROI>=0?"#60a5fa":"#EF4444",letterSpacing:-.5,lineHeight:1}}>{globalROI>=0?"+":""}{globalROI.toFixed(1)}%</div><div style={{fontSize:10,color:"#3a5270",marginTop:4,fontWeight:500}}>{totalStaked.toFixed(0)}$ misés</div></div></div>
-                {/* Ligne 2 — WR + Série/Meilleur mois */}
+                {/* Ligne 2 - WR + Série/Meilleur mois */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><div style={{background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.06)",borderRadius:14,padding:"12px 14px"}}><div style={{fontSize:8,color:"#5a6880",textTransform:"uppercase",letterSpacing:1.2,marginBottom:5,fontWeight:700}}>Win Rate</div><div style={{fontSize:24,fontWeight:800,color:globalWR>=55?"#22C55E":globalWR<45?"#EF4444":"#9CA3AF",letterSpacing:-.5,lineHeight:1}}>{globalWR.toFixed(1)}%</div><div style={{fontSize:10,color:"#4a5a6e",marginTop:4,fontWeight:500}}>{settledFiltered.filter(b=>b.status==="won").length}W · {settledFiltered.filter(b=>b.status==="lost").length}L</div></div><div style={{background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.06)",borderRadius:14,padding:"12px 14px"}}><div style={{fontSize:8,color:"#5a6880",textTransform:"uppercase",letterSpacing:1.2,marginBottom:5,fontWeight:700}}>{currentStreak>1?"Série en cours":"Meilleur mois"}</div>
                     {currentStreak>1
                       ? <><div style={{fontSize:24,fontWeight:800,color:streakType==="won"?"#22C55E":"#EF4444",letterSpacing:-.5,lineHeight:1}}>{currentStreak}</div><div style={{fontSize:10,color:"#4a5a6e",marginTop:4,fontWeight:500}}>{streakType==="won"?"victoires":"défaites"} consécutives</div></>
                       : bestMonth
                         ? <><div style={{fontSize:20,fontWeight:800,color:"#22C55E",letterSpacing:-.3,lineHeight:1}}>+{bestMonth[1].toFixed(0)}$</div><div style={{fontSize:10,color:"#4a6a50",marginTop:4,fontWeight:500}}>{bestMonth[0]}</div></>
-                        : <div style={{fontSize:20,fontWeight:800,color:"#3a4a5e"}}>—</div>
+                        : <div style={{fontSize:20,fontWeight:800,color:"#3a4a5e"}}>-</div>
                     }
                   </div></div></div>
               );
@@ -6557,7 +6745,7 @@ export default function App(){
 
             {/* ── COMPARATEUR GLOBAL OVER/UNDER ── */}
             {(globalOverUnderStats.overS||globalOverUnderStats.underS)&&(
-              <div style={{background:"linear-gradient(135deg,rgba(10,16,30,.98),rgba(8,14,24,.99))",border:"1px solid rgba(99,130,200,.12)",borderRadius:16,padding:"12px 14px",marginBottom:16}}><div style={{fontSize:10,color:"#4a5a6e",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>Over / Under — Tous jeux</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <div style={{background:"linear-gradient(135deg,rgba(10,16,30,.98),rgba(8,14,24,.99))",border:"1px solid rgba(99,130,200,.12)",borderRadius:16,padding:"12px 14px",marginBottom:16}}><div style={{fontSize:10,color:"#4a5a6e",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>Over / Under - Tous jeux</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[{key:"over",label:"▲ Over",s:globalOverUnderStats.overS,color:"#22C55E",bg:"rgba(34,197,94,0.05)",border:"rgba(34,197,94,0.12)",activeBorder:"rgba(34,197,94,0.45)"},{key:"under",label:"▼ Under",s:globalOverUnderStats.underS,color:"#60a5fa",bg:"rgba(59,130,246,0.05)",border:"rgba(59,130,246,0.12)",activeBorder:"rgba(96,165,250,0.45)"}].map(({key,label,s,color,bg,border,activeBorder})=>{
                     if(!s)return null;
                     const active=ouDrill===key;
@@ -6576,7 +6764,7 @@ export default function App(){
                   const maxAbs=Math.max(...byGame.map(g=>Math.abs(g.profit)));
                   return(
                     <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(255,255,255,.06)"}}><div style={{fontSize:9,color:"#4a5a6e",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",marginBottom:8}}>
-                        Résultats par jeu — {ouDrill==="over"?"Over":"Under"}
+                        Résultats par jeu - {ouDrill==="over"?"Over":"Under"}
                       </div><div style={{display:"flex",flexDirection:"column",gap:6}}>
                         {byGame.map(g=>{
                           const barW=maxAbs>0?Math.abs(g.profit)/maxAbs*100:0;
@@ -6705,7 +6893,7 @@ export default function App(){
                     </button>
 
                     {/* Over / Under summary */}
-                    <div style={{background:"rgba(6,10,20,.99)",border:"1px solid rgba(139,92,246,.25)",borderRadius:14,overflow:"hidden",marginBottom:10}}><div style={{padding:"9px 14px",background:"rgba(139,92,246,.07)",borderBottom:"1px solid rgba(139,92,246,.15)"}}><span style={{fontSize:11,fontWeight:800,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:1}}>Over / Under — Edge +{edge.toFixed(2)}</span></div><ColHeaders/>
+                    <div style={{background:"rgba(6,10,20,.99)",border:"1px solid rgba(139,92,246,.25)",borderRadius:14,overflow:"hidden",marginBottom:10}}><div style={{padding:"9px 14px",background:"rgba(139,92,246,.07)",borderBottom:"1px solid rgba(139,92,246,.15)"}}><span style={{fontSize:11,fontWeight:800,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:1}}>Over / Under - Edge +{edge.toFixed(2)}</span></div><ColHeaders/>
                       {soS&&<StatRow s={soS} label="Over" isEdge={false} noLine={!suS}/>}
                       {suS&&<StatRow s={suS} label="Under" isEdge={false} noLine={true}/>}
                     </div>
@@ -6798,7 +6986,7 @@ export default function App(){
                               <div key={e}><StatRow key={e} s={s} label={"+"+e.toFixed(2)} isEdge={true} noLine={false} onClick={function(){setEdgeDrill(isExpanded?null:{mt,game,edge:e,fromHeat:false});}}/>
                                 {/* PP Lines breakdown when expanded */}
                                 {isExpanded&&sortedPPLines.length>0&&(
-                                  <div style={{background:"rgba(0,0,0,.3)",borderBottom:"1px solid rgba(139,92,246,.1)"}}><div style={{padding:"6px 14px 4px",display:"flex",alignItems:"center",gap:6}}><img src={PP_LOGO_B64} style={{width:12,height:12,objectFit:"contain"}}/><span style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.6}}>Lignes PP — clique pour voir les paris</span></div>
+                                  <div style={{background:"rgba(0,0,0,.3)",borderBottom:"1px solid rgba(139,92,246,.1)"}}><div style={{padding:"6px 14px 4px",display:"flex",alignItems:"center",gap:6}}><img src={PP_LOGO_B64} style={{width:12,height:12,objectFit:"contain"}}/><span style={{fontSize:9,color:"#6a5a8e",fontWeight:700,textTransform:"uppercase",letterSpacing:.6}}>Lignes PP - clique pour voir les paris</span></div>
                                     {sortedPPLines.map(function(lg){
                                       var ls=calc(lg.data);
                                       if(!ls)return null;
@@ -6861,7 +7049,7 @@ export default function App(){
                   return(
                     <div><button onClick={()=>setPpStatsDrill(prev=>({...(prev||{}),heatDrill:null}))}
                         style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:"#c4b5fd",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:10,padding:0}}>
-                        ← {mt} — {game}
+                        ← {mt} - {game}
                       </button><div style={{background:"rgba(6,10,20,.99)",border:"1px solid rgba(139,92,246,.2)",borderRadius:14,overflow:"hidden"}}><ColHeaders/>
                         {gameEdges.map((e,i)=>{
                           const s=calc(matrix[mt][game][e.toFixed(2)]);if(!s)return null;
@@ -6912,7 +7100,7 @@ export default function App(){
                                         const s=d?calc(d):null;
                                         const cellBg=s?metric.bg(s):"transparent";
                                         const cellColor=s?metric.color(s):"#151e2c";
-                                        const cellVal=s?metric.fmt(s):"—";
+                                        const cellVal=s?metric.fmt(s):"-";
                                         return(
                                           <td key={e} onClick={()=>s&&setEdgeDrill({mt,game,edge:e})}
                                             style={{background:cellBg,borderRight:"1px solid #0d1628",borderBottom:ri<arr.length-1?"1px solid #0d1628":"none",padding:"5px 3px",cursor:s?"pointer":"default",textAlign:"center",verticalAlign:"middle",minWidth:44}}><div style={{fontSize:11,fontWeight:800,color:cellColor}}>{cellVal}</div>
@@ -7150,7 +7338,7 @@ export default function App(){
                   const sorted=sortFn(advancedStats.signalList,signalSort);
                   return(
                     <div style={cardStyle}>
-                      {secTitle("","Signaux","Quoi garder · quoi couper — min 5 paris par combinaison")}
+                      {secTitle("","Signaux","Quoi garder · quoi couper - min 5 paris par combinaison")}
                       <div style={{display:"grid",gridTemplateColumns:"1fr 32px 40px 40px 70px 60px",gap:4,padding:"5px 14px",background:"rgba(0,0,0,.3)"}}>
                         {[["game","Type","left"],["cnt","N","center"],["wr","WR","center"],["roi","ROI","center"],["profit","Profit","right"],["signal","Signal","right"]].map(([k,l,a])=>(
                           k==="signal"
@@ -7229,7 +7417,7 @@ export default function App(){
                                       {s.cnt>0
                                         ?<div style={{width:"72%",height:barH+"%",background:color,borderRadius:"3px 3px 0 0",opacity:.8,minHeight:4,boxShadow:pos?"0 0 8px rgba(34,197,94,.3)":"0 0 8px rgba(239,68,68,.3)"}}/>
                                         :<div style={{width:"72%",height:4,background:"rgba(255,255,255,.04)",borderRadius:2}}/>}
-                                    </div><div style={{fontSize:10,fontWeight:800,color:s.cnt>0?(pos?color:"#EF4444"):"#3a4a5e"}}>{s.cnt>0?metricFmt(v):"—"}</div><div style={{fontSize:8,color:"#3a4a5e",marginTop:2}}>{s.cnt}p</div></div>
+                                    </div><div style={{fontSize:10,fontWeight:800,color:s.cnt>0?(pos?color:"#EF4444"):"#3a4a5e"}}>{s.cnt>0?metricFmt(v):"-"}</div><div style={{fontSize:8,color:"#3a4a5e",marginTop:2}}>{s.cnt}p</div></div>
                                 );
                               })}
                             </div></div>
@@ -7345,7 +7533,7 @@ export default function App(){
             )}
 
             {statsTab==="jeux"&&<>
-            {/* ── PAR JEU — accordéons regroupés ── */}
+            {/* ── PAR JEU - accordéons regroupés ── */}
             {ALL_GAMES.map(game=>{
               const gs=perGameStats[game];
               if(!gs)return null;
@@ -7765,12 +7953,12 @@ export default function App(){
           const totalStk=betsF.reduce((s,b)=>s+(b.stake||0),0);
           const gWR=betsF.length>0?(betsF.filter(b=>b.status==="won").length/betsF.length*100):0;
           const gROI=totalStk>0?(totalP/totalStk*100):0;
-          const pageTitle=filterType?({role:"Position",map:"Map",tourney:"Tournoi",bk:"Bookmaker",kill:"Points",player:"Joueur"}[filterType]||filterType)+" — "+filterValue:(league?game+" · "+league:game);
+          const pageTitle=filterType?({role:"Position",map:"Map",tourney:"Tournoi",bk:"Bookmaker",kill:"Points",player:"Joueur"}[filterType]||filterType)+" - "+filterValue:(league?game+" · "+league:game);
 
           const pc=v=>(v||0)>=0?"#00E676":"#EF4444";
           const wrc=v=>(v||0)>=55?"#00E676":(v||0)<45?"#EF4444":"#9CA3AF";
 
-          // Simple table row — label | N paris | WR% | Profit
+          // Simple table row - label | N paris | WR% | Profit
           // ── Composants drill-down ──
           const TRow=({label,s,indent=false})=>!s?null:(
             <div style={{display:"flex",alignItems:"center",padding:indent?"7px 12px 7px 24px":"9px 12px",borderBottom:"1px solid #1A2235",background:indent?"rgba(255,255,255,0.01)":"transparent"}}><div style={{flex:1,minWidth:0}}><div style={{fontSize:indent?11:13,fontWeight:indent?500:600,color:indent?"#9CA3AF":"#E5E7EB"}}>{label}</div></div><span style={{fontSize:11,color:"#6B7280",minWidth:36,textAlign:"right"}}>{s.n}p</span><span style={{fontSize:12,fontWeight:700,color:wrc(s.wr),minWidth:44,textAlign:"right"}}>{s.wr.toFixed(0)}%</span><span style={{fontSize:13,fontWeight:800,color:pc(s.profit),minWidth:66,textAlign:"right"}}>{s.profit>=0?"+":""}{(s.profit||0).toFixed(0)}$</span></div>
@@ -7873,9 +8061,9 @@ export default function App(){
                 )}
 
 
-                {/* Top 5 pertes position+kills — LoL uniquement */}
+                {/* Top 5 pertes position+kills - LoL uniquement */}
                 {isEuro&&top5Losses.length>0&&(
-                  <div style={{marginBottom:12,borderRadius:12,overflow:"hidden",border:"1px solid rgba(239,68,68,0.2)"}}><div style={{fontSize:9,color:"#EF4444",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",padding:"9px 12px",background:"rgba(239,68,68,0.06)",borderBottom:"1px solid rgba(239,68,68,0.15)"}}> Top 5 pertes — Position · Ligne</div><Header/>
+                  <div style={{marginBottom:12,borderRadius:12,overflow:"hidden",border:"1px solid rgba(239,68,68,0.2)"}}><div style={{fontSize:9,color:"#EF4444",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",padding:"9px 12px",background:"rgba(239,68,68,0.06)",borderBottom:"1px solid rgba(239,68,68,0.15)"}}> Top 5 pertes - Position · Ligne</div><Header/>
                     {top5Losses.map((r,i)=>(
                       <div key={r.key} style={{display:"flex",alignItems:"center",padding:"9px 12px",borderBottom:"1px solid #1A2235",background:i===0?"rgba(239,68,68,0.04)":"transparent"}}><div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:"#E5E7EB"}}>{r.key}</div></div><span style={{fontSize:11,color:"#6B7280",minWidth:36,textAlign:"right"}}>{r.n}p</span><span style={{fontSize:12,fontWeight:700,color:wrc(r.wr),minWidth:44,textAlign:"right"}}>{r.wr.toFixed(0)}%</span><span style={{fontSize:13,fontWeight:800,color:"#EF4444",minWidth:66,textAlign:"right"}}>{(r.profit||0).toFixed(0)}$</span></div>
                     ))}
@@ -8000,14 +8188,14 @@ export default function App(){
                 });
                 const sortedLines=(obj)=>Object.keys(obj).map(Number).sort((a,b)=>a-b);
                 const mv2=(d,m)=>{
-                  if(!d||d.cnt===0)return{txt:"—",color:"#3a4a5e"};
+                  if(!d||d.cnt===0)return{txt:"-",color:"#3a4a5e"};
                   const wr=Math.round(d.won*100/d.cnt);
                   const roi=d.staked>0?Math.round(d.profit*1000/d.staked)/10:0;
                   if(m==="roi")return{txt:(roi>=0?"+":"")+roi.toFixed(1)+"%",color:roi>=0?"#00E676":"#f87171"};
                   if(m==="profit")return{txt:(d.profit>=0?"+":"")+d.profit.toFixed(0)+"$",color:d.profit>=0?"#00E676":"#f87171"};
                   if(m==="wr")return{txt:wr+"%",color:wr>=55?"#00E676":wr<45?"#f87171":"#9CA3AF"};
                   if(m==="n")return{txt:String(d.cnt),color:"#7a9cbd"};
-                  return{txt:"—",color:"#3a4a5e"};
+                  return{txt:"-",color:"#3a4a5e"};
                 };
                 const colLabel=METRICS2.find(function(mx){return mx.k===metric2;})?METRICS2.find(function(mx){return mx.k===metric2;}).label:"ROI";
                 const hasOver=sortedLines(overByLine).length>0;
@@ -8026,7 +8214,7 @@ export default function App(){
                     </div>
                     {/* OVER table */}
                     {hasOver&&(
-                      <div style={{marginBottom:10,borderRadius:12,overflow:"hidden",border:"1px solid rgba(139,92,246,.25)"}}><div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"rgba(107,33,245,.1)",borderBottom:"1px solid rgba(139,92,246,.2)"}}><img src={PP_LOGO_B64} alt="PP" style={{width:16,height:16,borderRadius:3,objectFit:"cover",flexShrink:0}}/><span style={{fontSize:10,color:"#c4b5fd",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>OVER {killVal2.toFixed(1)} — Lignes PP jouées</span></div><div style={{display:"grid",gridTemplateColumns:"70px 1fr 40px 80px",padding:"5px 12px",background:"#0A1020",borderBottom:"1px solid #1A2235"}}><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Ligne PP</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>Paris</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>WR</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"right"}}>{colLabel}</span></div>
+                      <div style={{marginBottom:10,borderRadius:12,overflow:"hidden",border:"1px solid rgba(139,92,246,.25)"}}><div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"rgba(107,33,245,.1)",borderBottom:"1px solid rgba(139,92,246,.2)"}}><img src={PP_LOGO_B64} alt="PP" style={{width:16,height:16,borderRadius:3,objectFit:"cover",flexShrink:0}}/><span style={{fontSize:10,color:"#c4b5fd",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>OVER {killVal2.toFixed(1)} - Lignes PP jouées</span></div><div style={{display:"grid",gridTemplateColumns:"70px 1fr 40px 80px",padding:"5px 12px",background:"#0A1020",borderBottom:"1px solid #1A2235"}}><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Ligne PP</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>Paris</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>WR</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"right"}}>{colLabel}</span></div>
                         {sortedLines(overByLine).map((ppLine,i)=>{
                           const key=ppLine.toFixed(1);
                           const d=overByLine[key];
@@ -8040,7 +8228,7 @@ export default function App(){
                     )}
                     {/* UNDER table */}
                     {hasUnder&&(
-                      <div style={{marginBottom:10,borderRadius:12,overflow:"hidden",border:"1px solid rgba(139,92,246,.25)"}}><div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"rgba(107,33,245,.1)",borderBottom:"1px solid rgba(139,92,246,.2)"}}><img src={PP_LOGO_B64} alt="PP" style={{width:16,height:16,borderRadius:3,objectFit:"cover",flexShrink:0}}/><span style={{fontSize:10,color:"#c4b5fd",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>UNDER {killVal2.toFixed(1)} — Lignes PP jouées</span></div><div style={{display:"grid",gridTemplateColumns:"70px 1fr 40px 80px",padding:"5px 12px",background:"#0A1020",borderBottom:"1px solid #1A2235"}}><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Ligne PP</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>Paris</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>WR</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"right"}}>{colLabel}</span></div>
+                      <div style={{marginBottom:10,borderRadius:12,overflow:"hidden",border:"1px solid rgba(139,92,246,.25)"}}><div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"rgba(107,33,245,.1)",borderBottom:"1px solid rgba(139,92,246,.2)"}}><img src={PP_LOGO_B64} alt="PP" style={{width:16,height:16,borderRadius:3,objectFit:"cover",flexShrink:0}}/><span style={{fontSize:10,color:"#c4b5fd",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>UNDER {killVal2.toFixed(1)} - Lignes PP jouées</span></div><div style={{display:"grid",gridTemplateColumns:"70px 1fr 40px 80px",padding:"5px 12px",background:"#0A1020",borderBottom:"1px solid #1A2235"}}><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Ligne PP</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>Paris</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"center"}}>WR</span><span style={{fontSize:9,color:"#3D4A5C",fontWeight:700,textTransform:"uppercase",letterSpacing:.5,textAlign:"right"}}>{colLabel}</span></div>
                         {sortedLines(underByLine).map((ppLine,i)=>{
                           const key=ppLine.toFixed(1);
                           const d=underByLine[key];
@@ -8326,7 +8514,7 @@ export default function App(){
                   <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:8,letterSpacing:.5}}><TipsterIcon size={14} color="#a78bfa"/> Tipsers</div>
                   <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:13,overflow:"hidden",marginBottom:6}}>
                     {allTipsters.length===0&&(
-                      <div style={{padding:"14px",fontSize:11,color:"#4a5a6e",textAlign:"center"}}>Aucun tipster — crée-en un ci-dessous</div>
+                      <div style={{padding:"14px",fontSize:11,color:"#4a5a6e",textAlign:"center"}}>Aucun tipster - crée-en un ci-dessous</div>
                     )}
                     {allTipsters.map((tip,i)=>{
                       const tipBets=bets.filter(b=>b.tipster===tip);
@@ -8477,7 +8665,7 @@ export default function App(){
                     <div style={{textAlign:"center",color:"#4B5563",fontSize:12,padding:"16px 0"}}>Aucun pari supprimé récemment</div>
                   )}
                   {deletedBets.map((b,i)=>(
-                    <div key={b.id+"_"+i} style={{background:"#111827",border:"1px solid #1F2937",borderRadius:10,padding:"10px 13px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6}}><GameLogo game={b.game} size={13}/><span style={{fontSize:13,fontWeight:700,color:"#9CA3AF",textTransform:"capitalize"}}>{b.player}</span><span style={{fontSize:11,color:"#6B7280"}}>— {b.description}</span></div><div style={{fontSize:10,color:"#4B5563",marginTop:2}}>@{b.odds} · {b.stake}$ · {b.bookmaker||"—"}</div><div style={{fontSize:9,color:"#374151",marginTop:1}}>Supprimé {b.deletedAt?new Date(b.deletedAt).toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}):""}</div></div><button onClick={()=>{
+                    <div key={b.id+"_"+i} style={{background:"#111827",border:"1px solid #1F2937",borderRadius:10,padding:"10px 13px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6}}><GameLogo game={b.game} size={13}/><span style={{fontSize:13,fontWeight:700,color:"#9CA3AF",textTransform:"capitalize"}}>{b.player}</span><span style={{fontSize:11,color:"#6B7280"}}>- {b.description}</span></div><div style={{fontSize:10,color:"#4B5563",marginTop:2}}>@{b.odds} · {b.stake}$ · {b.bookmaker||"-"}</div><div style={{fontSize:9,color:"#374151",marginTop:1}}>Supprimé {b.deletedAt?new Date(b.deletedAt).toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}):""}</div></div><button onClick={()=>{
                         const restored={...b};delete restored.deletedAt;
                         setBets(prev=>[restored,...prev]);
                         setDeletedBets(prev=>prev.filter((_,idx)=>idx!==i));
@@ -8497,7 +8685,7 @@ export default function App(){
           const game=modalTourney;
           const cfg=GAME_CFG[game]||{};
           return(
-            <div className="moverlay" onClick={()=>setModalTourney(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}><GameLogo game={game} size={20}/><div style={{fontSize:15,fontWeight:700}}>Ajouter un tournoi — {game}</div></div><div style={{fontSize:11,color:"#6B7280",marginBottom:16}}>Le tournoi sera disponible dans le menu déroulant. Tu pourras l'activer quand tu veux.</div>
+            <div className="moverlay" onClick={()=>setModalTourney(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}><GameLogo game={game} size={20}/><div style={{fontSize:15,fontWeight:700}}>Ajouter un tournoi - {game}</div></div><div style={{fontSize:11,color:"#6B7280",marginBottom:16}}>Le tournoi sera disponible dans le menu déroulant. Tu pourras l'activer quand tu veux.</div>
 
                 {/* Champ nom */}
                 <div style={{marginBottom:10}}><div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Nom du tournoi</div><input id={"tourney-name-"+game} className="ifield" placeholder="ex: PGL Astana 2026" style={{marginBottom:0}}/></div>
@@ -8654,7 +8842,7 @@ export default function App(){
                   style={{width:"100%",padding:"11px",background:bulkDatetime?"linear-gradient(135deg,#7C3AED,#0EA5E9)":"#1F2937",border:"none",borderRadius:9,color:bulkDatetime?"#fff":"#9CA3AF",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                   {bulkDatetime?"Appliquer la date à "+store.count+" paris":"Choisir une date"}
                 </button></div>
-              {/* Tournoi — menu déroulant */}
+              {/* Tournoi - menu déroulant */}
               {(()=>{
                 const allT=[...new Set(Object.values(savedTourneys).flat())].filter(Boolean);
                 if(allT.length===0)return null;
@@ -8772,7 +8960,7 @@ export default function App(){
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",textTransform:"capitalize"}}>{editingPlayer.key}</div>
                       <div style={{fontSize:11,color:"#6b7280",marginTop:2}}>
-                        {editingPlayer.data.team||"—"} · {editingPlayer.data.role||"—"} · {editingPlayer.data.league||"NBA"}
+                        {editingPlayer.data.team||"-"} · {editingPlayer.data.role||"-"} · {editingPlayer.data.league||"NBA"}
                       </div>
                     </div>
                   </div>
@@ -8876,7 +9064,7 @@ export default function App(){
               {/* Header */}
               <div style={{padding:"18px 20px 14px",background:"linear-gradient(135deg,#111827,#0D1626)",borderBottom:"1px solid #1F2937"}}><div style={{fontSize:18,fontWeight:800,color:"#E5E7EB",letterSpacing:"-0.3px"}}>+ Bookmaker</div><div style={{fontSize:11,color:"#4B5563",marginTop:2}}>La mise s'additionne au pari existant</div></div><div style={{padding:"16px 20px 20px",display:"flex",flexDirection:"column",gap:14}}>
 
-                {/* Pari source — compact card */}
+                {/* Pari source - compact card */}
                 <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"12px 14px",border:"1px solid #1F2937"}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><GameLogo game={splitModal.game} size={16}/><span style={{fontSize:14,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize"}}>{splitModal.player}</span><span style={{fontSize:12,color:"#6B7280"}}>{splitModal.description}</span></div><div style={{display:"flex",flexDirection:"column",gap:4}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:"#9CA3AF"}}>{splitModal.bookmaker}</span><span style={{color:"#E5E7EB",fontWeight:600}}>{(splitModal.stake-(splitModal.splits||[]).reduce((s,x)=>s+x.stake,0)).toFixed(0)}$ <span style={{color:"#6B7280"}}>@{splitModal.odds}</span></span></div>
                     {(splitModal.splits||[]).map((sp,i)=>(
                       <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:"#9CA3AF"}}>{sp.bookmaker}</span><span style={{color:"#E5E7EB",fontWeight:600}}>{sp.stake}$ <span style={{color:"#6B7280"}}>@{sp.odds}</span></span></div>
@@ -8900,7 +9088,7 @@ export default function App(){
                       );
                     })}
                   </div>
-                  {splitForm.bookmaker&&<div style={{fontSize:11,color:"#A78BFA",fontWeight:600,marginTop:8}}>✓ {splitForm.bookmaker}{(splitModal.splits||[]).find(s=>s.bookmaker===splitForm.bookmaker)?" — modifier le split":""}</div>}
+                  {splitForm.bookmaker&&<div style={{fontSize:11,color:"#A78BFA",fontWeight:600,marginTop:8}}>✓ {splitForm.bookmaker}{(splitModal.splits||[]).find(s=>s.bookmaker===splitForm.bookmaker)?" - modifier le split":""}</div>}
                 </div>
 
                 {/* Cote + Mise côte à côte */}
@@ -8963,7 +9151,7 @@ export default function App(){
           <div className="moverlay" onClick={()=>{setSupaModal(false);setSupaError("");}}><div className="modal" onClick={e=>e.stopPropagation()}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}><span style={{fontSize:22}}>☁️</span><div><div style={{fontSize:15,fontWeight:700,color:"#E5E7EB"}}>Cloud Sync</div><div style={{fontSize:11,color:"#6B7280"}}>Sync automatique entre tous tes appareils</div></div></div>
 
               {/* Status */}
-              <div style={{background:supaOk?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.06)",border:"1px solid "+(supaOk?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.15)"),borderRadius:10,padding:"12px 14px",marginBottom:14}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{width:7,height:7,borderRadius:"50%",background:supaOk?"#00E676":"#EF4444",boxShadow:"0 0 6px "+(supaOk?"rgba(34,197,94,0.8)":"rgba(239,68,68,0.6)")}}/><span style={{fontSize:12,fontWeight:700,color:supaOk?"#00E676":"#EF4444"}}>{syncing?"Synchronisation…":supaOk?"Connecté à Supabase":"Hors ligne — vérifie ta connexion"}</span></div><div style={{fontSize:11,color:"#6B7280"}}>{bets.length} paris en local · sync auto toutes les 5s</div></div>
+              <div style={{background:supaOk?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.06)",border:"1px solid "+(supaOk?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.15)"),borderRadius:10,padding:"12px 14px",marginBottom:14}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{width:7,height:7,borderRadius:"50%",background:supaOk?"#00E676":"#EF4444",boxShadow:"0 0 6px "+(supaOk?"rgba(34,197,94,0.8)":"rgba(239,68,68,0.6)")}}/><span style={{fontSize:12,fontWeight:700,color:supaOk?"#00E676":"#EF4444"}}>{syncing?"Synchronisation…":supaOk?"Connecté à Supabase":"Hors ligne - vérifie ta connexion"}</span></div><div style={{fontSize:11,color:"#6B7280"}}>{bets.length} paris en local · sync auto toutes les 5s</div></div>
 
               {/* Integrity check */}
               <div style={{marginBottom:14}}><button onClick={async()=>{
@@ -8989,7 +9177,7 @@ export default function App(){
                       <><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}><div style={{background:"rgba(124,58,237,0.08)",borderRadius:8,padding:"8px 12px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#A78BFA"}}>{integrityReport.local}</div><div style={{fontSize:10,color:"#6B7280",marginTop:2}}>Local (iPhone)</div></div><div style={{background:"rgba(34,197,94,0.08)",borderRadius:8,padding:"8px 12px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#00E676"}}>{integrityReport.remote}</div><div style={{fontSize:10,color:"#6B7280",marginTop:2}}>Supabase (Cloud)</div></div></div>
                         {integrityReport.onlyLocal.length===0&&integrityReport.onlyRemote.length===0?(
                           <div style={{display:"flex",alignItems:"center",gap:6,color:"#00E676",fontSize:12,fontWeight:700}}>
-                            ✓ Parfait — local et cloud sont identiques
+                            ✓ Parfait - local et cloud sont identiques
                           </div>
                         ):(
                           <>
@@ -9074,7 +9262,7 @@ export default function App(){
 
 
 
-// ── ErrorBoundary — prevents full black screen on JS crash ─────────────────
+// ── ErrorBoundary - prevents full black screen on JS crash ─────────────────
 class ErrorBoundary extends React.Component{
   constructor(props){super(props);this.state={hasError:false,error:null};}
   static getDerivedStateFromError(e){return{hasError:true,error:e};}
@@ -9197,9 +9385,9 @@ function PPBoardAnalyzer(){
                 </tr></thead><tbody>
                 {rows.map(function(r,i){
                   var dc=diffCol(r.diff);
-                  var signal=r.diff===null?"—":r.diff>=1?<span style={{background:"rgba(0,230,118,.12)",color:"#00E676",padding:"2px 7px",borderRadius:5,fontSize:10,fontWeight:700}}>Over Map3</span>:r.diff<=-1?<span style={{background:"rgba(248,113,113,.12)",color:"#f87171",padding:"2px 7px",borderRadius:5,fontSize:10,fontWeight:700}}>Under Map3</span>:<span style={{color:"#9CA3AF",fontSize:10}}>Cohérent</span>;
+                  var signal=r.diff===null?"-":r.diff>=1?<span style={{background:"rgba(0,230,118,.12)",color:"#00E676",padding:"2px 7px",borderRadius:5,fontSize:10,fontWeight:700}}>Over Map3</span>:r.diff<=-1?<span style={{background:"rgba(248,113,113,.12)",color:"#f87171",padding:"2px 7px",borderRadius:5,fontSize:10,fontWeight:700}}>Under Map3</span>:<span style={{color:"#9CA3AF",fontSize:10}}>Cohérent</span>;
                   return(
-                    <tr key={i} style={{borderTop:"1px solid rgba(255,255,255,.04)"}}><td style={{padding:"9px 10px",fontWeight:700,color:"#E5E7EB",textTransform:"capitalize"}}>{r.player}</td><td style={{padding:"9px 10px",fontWeight:700,color:"#c4b5fd"}}>{r.line12!==null?r.line12:"—"}</td><td style={{padding:"9px 10px",color:"#6B7280"}}>{r.theoretical!==null?r.theoretical:"—"}</td><td style={{padding:"9px 10px",fontWeight:700,color:"#c4b5fd"}}>{r.map3!==null?r.map3:"—"}</td><td style={{padding:"9px 10px",fontWeight:700,color:dc}}>{r.diff!==null?(r.diff>0?"+":"")+r.diff:"—"}</td><td style={{padding:"9px 10px"}}>{signal}</td></tr>
+                    <tr key={i} style={{borderTop:"1px solid rgba(255,255,255,.04)"}}><td style={{padding:"9px 10px",fontWeight:700,color:"#E5E7EB",textTransform:"capitalize"}}>{r.player}</td><td style={{padding:"9px 10px",fontWeight:700,color:"#c4b5fd"}}>{r.line12!==null?r.line12:"-"}</td><td style={{padding:"9px 10px",color:"#6B7280"}}>{r.theoretical!==null?r.theoretical:"-"}</td><td style={{padding:"9px 10px",fontWeight:700,color:"#c4b5fd"}}>{r.map3!==null?r.map3:"-"}</td><td style={{padding:"9px 10px",fontWeight:700,color:dc}}>{r.diff!==null?(r.diff>0?"+":"")+r.diff:"-"}</td><td style={{padding:"9px 10px"}}>{signal}</td></tr>
                   );
                 })}
               </tbody></table></div></div>}
@@ -9518,7 +9706,7 @@ function PPRatioCompiler(){
                       var delta=c-al/divisor;
                       var dc=delta>0.01?"#00E676":delta<-0.01?"#f87171":"#9CA3AF";
                       var deltaStr=delta>0.01?"+"+delta.toFixed(2):delta<-0.01?delta.toFixed(2):"≈0";
-                      if(cnt===0)return <td key={c} style={{padding:"9px 8px",textAlign:"center",color:"#1a2a3a"}}>—</td>;
+                      if(cnt===0)return <td key={c} style={{padding:"9px 8px",textAlign:"center",color:"#1a2a3a"}}>-</td>;
                       var bg=cnt===maxCnt?"rgba(124,58,237,.25)":pct>=20?"rgba(124,58,237,.1)":"rgba(124,58,237,.04)";
                       return <td key={c} style={{padding:"6px 8px",textAlign:"center"}}><div style={{background:bg,borderRadius:7,padding:"4px 6px",display:"inline-flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:36}}><span style={{fontSize:12,fontWeight:700,color:"#c4b5fd"}}>{cnt}×</span><span style={{fontSize:9,color:"#6B7280"}}>{pct}%</span><span style={{fontSize:9,fontWeight:700,color:dc}}>{deltaStr}</span></div></td>;
                     })}
