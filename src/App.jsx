@@ -3509,14 +3509,14 @@ export default function App(){
       // Charger les joueurs depuis Supabase (table "players")
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
-          // Map ancien nom → nom officiel 2026-27 pour dédupliquer
+          // Aliases pour normaliser les anciens noms d'équipes
+          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
 
           const obj = {};
           rows.forEach(p => {
-            // Normaliser le nom de l'équipe
+            // Normaliser le nom de l'équipe si alias existe
             const normalizedTeam=TEAM_ALIASES[p.team]||p.team;
-            const normalizedGame=p.game;
-            const pNorm={...p,team:normalizedTeam,game:normalizedGame};
+            const pNorm={...p,team:normalizedTeam};
 
             const key = pNorm.name.toLowerCase().replace(/[čćžšđ]/g, c=>({č:'c',ć:'c',ž:'z',š:'s',đ:'d'}[c]||c)).trim();
             const entry = {
