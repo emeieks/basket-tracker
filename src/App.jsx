@@ -695,7 +695,7 @@ const EURO_TEAMS={
   // ── BBL / Bundesliga (Allemagne) ─────────────────────────────────────────
   "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Fitness First Würzburg Baskets","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
   // ── EuroLeague 2026-27 (20 équipes officielles Wikipedia) ────────────────
-  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","Alba Berlin","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
+  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
   // ── EuroCup 2026-27 (32 équipes - Monaco exclu 01/09/2026) ───────────────
   "EuroCup":["JL Bourg","Le Mans Sarthe","Türk Telekom","Skyliners Frankfurt","Budućnost VOLI","U-BT Cluj-Napoca","PAOK","Bahçeşehir Koleji","Cedevita Olimpija","Baglietto Derthona","Aris Thessaloniki","Hapoel Midtown Jerusalem","ratiopharm Ulm","Dolomiti Energia Trento","Neptūnas Klaipeda","La Laguna Tenerife","NINERS Chemnitz","Umana Reyer Venezia","Lietkabelis Panevezys","London Lions","Maxima Roma","BAXI Manresa","Balkan Botevgrad","Šiauliai","Napoli Basketball","Recoletas Salud Burgos","Rostock Seawolves","Śląsk Wrocław","Roma Basketball","Bosna BH Telecom","Rīgas Zeļļi","Tofaş"],
   // ── BCL 2026-27 (30 direct + 2 qualifications) ───────────────────────────
@@ -751,7 +751,7 @@ const MULTI_LEAGUE_CLUBS={
   // ────────────────────────────────────────────────────────────────────────
   "Bayern München":            ["Bundesliga","EuroLeague"],
   "FC Bayern Munich":          ["Bundesliga","EuroLeague"],
-  "Alba Berlin":               ["Bundesliga","EuroLeague","BCL"],
+  "Alba Berlin":               ["Bundesliga","BCL"],
   "Telekom Baskets Bonn":      ["Bundesliga","BCL"],
   "BMA365 Bamberg":            ["Bundesliga","BCL"],
   "Skyliners Frankfurt":       ["Bundesliga","EuroCup"],
@@ -2946,10 +2946,11 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
 const POSITION_ORDER=["PG","SG","G","Guard","Point Guard","Shooting Guard","SF","Small Forward","Wing","PF","Power Forward","F","Forward","C","Center","Big",""];
 function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?98:r;}
 
-function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,onClose}){
+function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,onClose,clickY}){
   const [team,setTeam]=useState(playerData.team||"");
   const [role,setRole]=useState(playerData.role||"");
   const [league,setLeague]=useState(playerData.game||"NBA");
+  const [saving,setSaving]=useState(false);
   const isNBA=league==="NBA";
   const positions=isNBA?["PG","SG","SF","PF","C"]:["Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"];
   const teamList=(ALL_LEAGUE_TEAMS[league]||[]).slice().sort();
@@ -2957,74 +2958,82 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
   const sel={width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"12px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",appearance:"none",WebkitAppearance:"none"};
 
-  function save(){
+  // Position: appear near click, but keep on screen
+  const winH=typeof window!=="undefined"?window.innerHeight:800;
+  const modalH=420;
+  let top=clickY?clickY-20:winH/2-modalH/2;
+  if(top+modalH>winH-20) top=winH-modalH-20;
+  if(top<60) top=60;
+
+  async function save(){
+    setSaving(true);
     const updated={...playerData,team,role,game:league};
-    setPlayers(p=>{
-      supaUpsertPlayer({name:playerKey,...updated}).catch(()=>{});
-      return{...p,[playerKey]:updated};
-    });
-    showToast((playerData.name||playerKey)+" mis a jour","#A78BFA");
+    try{
+      await supaUpsertPlayer({name:playerKey,...updated});
+    }catch(e){console.error(e);}
+    setPlayers(p=>({...p,[playerKey]:updated}));
+    showToast((playerData.name||playerKey)+" mis à jour","#A78BFA");
+    setSaving(false);
     onClose();
   }
 
   return(
-    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.75)",padding:"16px"}} onClick={onClose}>
-      <div style={{width:"100%",maxWidth:440,background:"#0a0f1e",borderRadius:20,border:"1px solid rgba(255,255,255,.12)",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-        <div style={{width:36,height:4,background:"rgba(255,255,255,.15)",borderRadius:2,margin:"12px auto 0"}}/>
+    <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.6)"}} onClick={onClose}>
+      <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",top,width:"calc(100% - 32px)",maxWidth:420,background:"#0a0f1e",borderRadius:18,border:"1px solid rgba(255,255,255,.12)",boxShadow:"0 20px 60px rgba(0,0,0,.8)"}} onClick={e=>e.stopPropagation()}>
 
         {/* Player header */}
-        <div style={{padding:"14px 18px 16px",display:"flex",alignItems:"center",gap:14,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+        <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
           {photo?(
-            <img src={photo} loading="lazy" style={{width:54,height:54,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"} alt=""/>
+            <img src={photo} loading="lazy" style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"} alt=""/>
           ):(
-            <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(124,58,237,.2)",border:"2px solid rgba(124,58,237,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <span style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{(playerData.name||playerKey).charAt(0).toUpperCase()}</span>
+            <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(124,58,237,.2)",border:"2px solid rgba(124,58,237,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{(playerData.name||playerKey).charAt(0).toUpperCase()}</span>
             </div>
           )}
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{playerData.name||playerKey}</div>
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:4,flexWrap:"wrap"}}>
-              {teamLogo&&<img src={teamLogo} alt="" style={{width:14,height:14,objectFit:"contain"}} loading="lazy"/>}
-              <span style={{fontSize:11,color:"#6B7280"}}>{team||"Sans equipe"}</span>
-              {role&&<span style={{fontSize:10,color:"#a78bfa",background:"rgba(124,58,237,.15)",padding:"1px 7px",borderRadius:8,fontWeight:600}}>{role}</span>}
+            <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{playerData.name||playerKey}</div>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3}}>
+              {teamLogo&&<img src={teamLogo} alt="" style={{width:13,height:13,objectFit:"contain"}} loading="lazy"/>}
+              <span style={{fontSize:11,color:"#6B7280"}}>{team||"Sans équipe"}</span>
+              {role&&<span style={{fontSize:10,color:"#a78bfa",background:"rgba(124,58,237,.15)",padding:"1px 6px",borderRadius:8,fontWeight:600}}>{role}</span>}
             </div>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#6B7280",fontSize:22,cursor:"pointer",padding:"0 4px",flexShrink:0}}>×</button>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#6B7280",fontSize:20,cursor:"pointer",padding:"0 2px",flexShrink:0}}>×</button>
         </div>
 
-        <div style={{padding:"14px 18px 24px",display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{padding:"12px 16px 16px",display:"flex",flexDirection:"column",gap:10}}>
           {/* Ligue */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Ligue</div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Ligue</div>
             <div style={{position:"relative"}}>
               <select style={sel} value={league} onChange={e=>{setLeague(e.target.value);setTeam("");}}>
                 {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=><option key={g} value={g}>{g}</option>)}
               </select>
-              <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:12,pointerEvents:"none"}}>▾</span>
+              <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
             </div>
           </div>
 
           {/* Equipe */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Equipe</div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Équipe</div>
             <div style={{position:"relative"}}>
               <select style={sel} value={team} onChange={e=>setTeam(e.target.value)}>
-                <option value="">Choisir une equipe...</option>
+                <option value="">Choisir une équipe...</option>
                 {teamList.map(t=><option key={t} value={t}>{t}</option>)}
               </select>
-              <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:12,pointerEvents:"none"}}>▾</span>
+              <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
             </div>
           </div>
 
           {/* Position */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Position</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Position</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
               {positions.map(pos=>{
                 const on=role===pos;
                 return(
                   <button key={pos} onClick={()=>setRole(on?"":pos)}
-                    style={{padding:"7px 13px",borderRadius:20,border:"1.5px solid "+(on?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.02)",color:on?"#a78bfa":"#6B7280",fontWeight:on?700:500,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    style={{padding:"6px 11px",borderRadius:18,border:"1.5px solid "+(on?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.02)",color:on?"#a78bfa":"#6B7280",fontWeight:on?700:500,fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                     {on?"✓ ":""}{pos}
                   </button>
                 );
@@ -3032,10 +3041,12 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
             </div>
           </div>
 
-          {/* Save */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:4}}>
-            <button onClick={onClose} style={{padding:"14px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,color:"#9CA3AF",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
-            <button onClick={save} style={{padding:"14px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:14,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif",boxShadow:"0 6px 20px rgba(124,58,237,.3)"}}>Enregistrer</button>
+          {/* Boutons */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:2}}>
+            <button onClick={onClose} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+            <button onClick={save} disabled={saving} style={{padding:"12px",background:saving?"rgba(124,58,237,.4)":"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+              {saving?"Sauvegarde...":"Enregistrer"}
+            </button>
           </div>
         </div>
       </div>
@@ -3134,6 +3145,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
           allPlayers={allPlayers}
           setPlayers={setPlayers}
           showToast={showToast}
+          clickY={editingPlayer.clickY}
           onClose={()=>setEditingPlayer(null)}
         />
       )}
@@ -3229,7 +3241,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                           {teamPlayers.length===0?(
                             <div style={{padding:"10px 24px",fontSize:11,color:"#4a5a6e"}}>Aucun joueur enregistre</div>
                           ):[...teamPlayers].sort((a,b)=>posRank(a.data.role)-posRank(b.data.role)||(a.data.name||"").localeCompare(b.data.name||"")).map(({key,data})=>(
-                            <button key={key} onClick={()=>setEditingPlayer({key,data})}
+                            <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                               {data.photo_url?(
                                 <img src={data.photo_url} loading="lazy" style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
