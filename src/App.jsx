@@ -508,7 +508,152 @@ const EL_TEAM_LOGOS = {
   "Zalgiris Kaunas": "https://media-cdn.incrowdsports.com/0aa09358-3847-4c4e-b228-3582ee4e536d.png?width=168&resizeType=fill&format=webp"
 };
 
-// ── Logos ligues nationales EuroLeague ─────────────────────────────────────
+// ── TEAM_LOGOS — map globale par nom de club (toutes ligues) ─────────────────
+// Un club peut jouer dans plusieurs ligues (ex: JL Bourg → Pro A + EuroCup)
+// Le logo est cherché par nom de club uniquement, ligue indépendante.
+// Colle les URLs ici pour chaque club.
+const TEAM_LOGOS = {
+  // ── Pro A ──────────────────────────────────────────────────────────────────
+  "Paris Basketball":        "",
+  "LDLC ASVEL":              "",
+  "JL Bourg":                "",
+  "Cholet Basket":           "",
+  "Nanterre 92":             "",
+  "Metropolitans 92":        "",
+  "Monaco":                  "",
+  "Roanne":                  "",
+  "Le Mans Sarthe":          "",
+  "Orléans Loiret":          "",
+  "Pau-Lacq-Orthez":         "",
+  "Limoges CSP":             "",
+  "Elan Chalon":             "",
+  "Gravelines-Dunkerque":    "",
+  "SIG Strasbourg":          "",
+  "Fos Provence":            "",
+  "Champagne Basket":        "",
+  "Châlons-Reims":           "",
+  "Nancy":                   "",
+  "Hyères-Toulon":           "",
+
+  // ── ACB ────────────────────────────────────────────────────────────────────
+  "Real Madrid":             "",
+  "FC Barcelona":            "",
+  "Baskonia":                "",
+  "Valencia Basket":         "",
+  "Gran Canaria":            "",
+  "Unicaja":                 "",
+  "Joventut Badalona":       "",
+  "Breogán":                 "",
+  "Manresa":                 "",
+  "BAXI Manresa":            "",
+  "Zaragoza":                "",
+  "Fuenlabrada":             "",
+  "Obradoiro":               "",
+  "UCAM Murcia":             "",
+  "Bilbao Basket":           "",
+  "Surne Bilbao":            "",
+  "La Laguna Tenerife":      "",
+  "Betis":                   "",
+  "Estudiantes":             "",
+  "Burgos":                  "",
+  "Recoletas Salud Burgos":  "",
+
+  // ── Lega ───────────────────────────────────────────────────────────────────
+  "EA7 Olimpia Milano":      "",
+  "Virtus Bologna":          "",
+  "Dolomiti Energia Trento": "",
+  "Umana Reyer Venezia":     "",
+  "Pallacanestro Varese":    "",
+  "Tortona":                 "",
+  "Baglietto Derthona Tortona":"",
+  "Brescia":                 "",
+  "Reggiana":                "",
+  "Napoli Basketball":       "",
+  "Trieste":                 "",
+  "Treviso":                 "",
+  "Cremona":                 "",
+  "Scafati":                 "",
+  "Pistoia":                 "",
+  "Forlì":                   "",
+  "Udine":                   "",
+  "Brindisi":                "",
+  "Pesaro":                  "",
+  "Roma Basketball":         "",
+  "Trapani":                 "",
+
+  // ── Bundesliga ─────────────────────────────────────────────────────────────
+  "Bayern München":          "",
+  "Alba Berlin":             "",
+  "Telekom Baskets Bonn":    "",
+  "Hamburg Towers":          "",
+  "Würzburg":                "",
+  "Skyliners Frankfurt":     "",
+  "BMA365 Bamberg":          "",
+  "NINERS Chemnitz":         "",
+  "MHP Riesen Ludwigsburg":  "",
+  "Rostock Seawolves":       "",
+  "Heidelberg":              "",
+  "ratiopharm Ulm":          "",
+  "Syntainics MBC":          "",
+  "Veolia Towers":           "",
+  "Jena":                    "",
+  "Tübingen":                "",
+  "Göttingen":               "",
+  "Gießen":                  "",
+  "Braunschweig":            "",
+  "Dresden":                 "",
+
+  // ── EuroLeague ─────────────────────────────────────────────────────────────
+  "Fenerbahce":              "",
+  "Anadolu Efes":            "",
+  "Olympiacos":              "",
+  "Panathinaikos":           "",
+  "Partizan":                "",
+  "Crvena zvezda":           "",
+  "Maccabi Tel Aviv":        "",
+  "Besiktas":                "",
+  "Zalgiris Kaunas":         "",
+  "Dubai Basketball":        "",
+  "Hapoel Tel Aviv":         "",
+
+  // ── EuroCup ────────────────────────────────────────────────────────────────
+  "Aris Thessaloniki":       "",
+  "PAOK Thessaloniki":       "",
+  "Hapoel Jerusalem":        "",
+  "Lietkabelis Panevezys":   "",
+  "London Lions":            "",
+  "Neptūnas Klaipeda":       "",
+  "Riga Zelli":              "",
+  "Siauliai":                "",
+  "Slask Wroclaw":           "",
+  "Tofas Bursa":             "",
+  "Türk Telekom":            "",
+  "U-BT Cluj-Napoca":        "",
+  "Bahcesehir Koleji":       "",
+  "Balkan Botevgrad":        "",
+  "Buducnost VOLI":          "",
+  "Cedevita Olimpija":       "",
+
+  // ── BCL ────────────────────────────────────────────────────────────────────
+  "Rytas Vilnius":           "",
+  "AEK":                     "",
+  "Peristeri":               "",
+  "Igokea m:tel":            "",
+  "Hapoel Holon":            "",
+  "Galatasaray":             "",
+  "Spartak Office Shoes":    "",
+  "ERA Nymburk":             "",
+  "Cibona":                  "",
+  "Windrose Giants Antwerp": "",
+  "Falco KC Szombathely":    "",
+  "FC Porto":                "",
+  "Legia Warszawa":          "",
+  "Sabah BC":                "",
+  "Trabzonspor":             "",
+  "BK KVIS Pardubice":       "",
+  "Fribourg Olympic":        "",
+};
+
 const NATIONAL_LEAGUE_LOGOS = {
   "BSL": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeCNib_l5_Jelu9gRgxXxC0e5GTwqpCLAXegxG_Xdk0g&s=10",
   "LBA": "https://www.proballers.com/media/league/40.svg",
@@ -541,21 +686,65 @@ const NBA_LEAGUE_LOGO = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagu
 
 // ── Équipes ligues européennes basket ────────────────────────────────────────
 const EURO_TEAMS={
-  // ── Championnat français Pro A (Betclic Élite) ────────────────────────────
-  "Pro A":["Paris Basketball","LDLC ASVEL","JL Bourg","Cholet Basket","Nanterre 92","Metropolitans 92","Monaco","Roanne","Le Mans Sarthe","Orléans Loiret","Pau-Lacq-Orthez","Limoges CSP","Elan Chalon","Gravelines-Dunkerque","SIG Strasbourg","Fos Provence","Champagne Basket","Châlons-Reims","Nancy","Hyères-Toulon"],
-  // ── Championnat espagnol ACB ──────────────────────────────────────────────
-  "ACB":["Real Madrid","FC Barcelona","Baskonia","Valencia Basket","Gran Canaria","Unicaja","Joventut Badalona","Breogán","Manresa","Zaragoza","Fuenlabrada","Obradoiro","UCAM Murcia","Bilbao Basket","Surne Bilbao","La Laguna Tenerife","Betis","Estudiantes","Burgos","Galatasaray"],
-  // ── Championnat italien Lega Basket Serie A ───────────────────────────────
-  "Lega":["EA7 Olimpia Milano","Virtus Bologna","Dolomiti Energia Trento","Umana Reyer Venezia","Pallacanestro Varese","Tortona","Brescia","Reggiana","Napoli Basketball","Trieste","Treviso","Cremona","Scafati","Pistoia","Forlì","Udine","Brindisi","Pesaro","Roma Basketball","Trapani"],
-  // ── Championnat allemand BBL ──────────────────────────────────────────────
-  "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Würzburg","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","Heidelberg","ratiopharm Ulm","Syntainics MBC","Veolia Towers","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
-  // ── EuroLeague 2026-27 (20 équipes) ──────────────────────────────────────
-  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahce","Anadolu Efes","Olympiacos","Panathinaikos","Partizan","Crvena zvezda","Maccabi Tel Aviv","EA7 Olimpia Milano","Virtus Bologna","Besiktas","Baskonia","Bayern München","Alba Berlin","LDLC ASVEL","Valencia Basket","Paris Basketball","Zalgiris Kaunas","Dubai Basketball","Hapoel Tel Aviv"],
-  // ── EuroCup 2026-27 (32 équipes) ─────────────────────────────────────────
-  "EuroCup":["Monaco","JL Bourg","Dolomiti Energia Trento","Umana Reyer Venezia","Le Mans Sarthe","Nanterre 92","Aris Thessaloniki","PAOK Thessaloniki","Hapoel Jerusalem","BAXI Manresa","La Laguna Tenerife","Lietkabelis Panevezys","London Lions","Napoli Basketball","Neptūnas Klaipeda","NINERS Chemnitz","ratiopharm Ulm","Recoletas Salud Burgos","Riga Zelli","Roma Basketball","Rostock Seawolves","Siauliai","Skyliners Frankfurt","Slask Wroclaw","Tofas Bursa","Türk Telekom","U-BT Cluj-Napoca","Baglietto Derthona Tortona","Bahcesehir Koleji","Balkan Botevgrad","Buducnost VOLI","Cedevita Olimpija"],
-  // ── Basketball Champions League BCL 2026-27 (32 équipes) ─────────────────
-  "BCL":["Rytas Vilnius","Unicaja","Joventut Badalona","UCAM Murcia","Alba Berlin","AEK","Nanterre 92","Telekom Baskets Bonn","BMA365 Bamberg","Peristeri","Igokea m:tel","Hapoel Holon","SIG Strasbourg","Pallacanestro Varese","Surne Bilbao","Galatasaray","Spartak Office Shoes","ERA Nymburk","Cibona","Windrose Giants Antwerp","Falco KC Szombathely","FC Porto","Legia Warszawa","Sabah BC","Trabzonspor","BK KVIS Pardubice","ALBA Berlin","Élan Chalon","Cholet","Limoges CSP","Gravelines-Dunkerque","Fribourg Olympic"],
+  // ── Pro A / Betclic Élite (France) ───────────────────────────────────────
+  "Pro A":["Paris Basketball","LDLC ASVEL","JL Bourg","Cholet","Nanterre 92","Metropolitans 92","Le Mans Sarthe","Roanne","Orléans Loiret","Pau-Lacq-Orthez","Limoges CSP","Élan Chalon","Gravelines-Dunkerque","SIG Strasbourg","Fos Provence","Champagne Basket","Châlons-Reims","Nancy","Hyères-Toulon","Aix-Maurienne"],
+  // ── ACB (Espagne) ────────────────────────────────────────────────────────
+  "ACB":["Real Madrid","FC Barcelona","Kosner Baskonia","Valencia Basket","Dreamland Gran Canaria","Unicaja","Asisa Joventut","Río Breogán","BAXI Manresa","Casademont Zaragoza","Fuenlabrada","Obradoiro","UCAM Murcia","Bilbao Basket","Surne Bilbao","La Laguna Tenerife","Betis","Morabanc Andorra","Recoletas Salud Burgos","Estudiantes"],
+  // ── Lega Basket Serie A (Italie) ─────────────────────────────────────────
+  "Lega":["Olimpia Milano","Virtus Olidata Bologna","Dolomiti Energia Trento","Umana Reyer Venezia","Pallacanestro Varese","Baglietto Derthona","Germani Brescia","Pallacanestro Reggiana","Napoli Basketball","Trieste","Treviso","Vanoli Cremona","Scafati","Pistoia","Forlì","Udine","Brindisi","Pesaro","Roma Basketball","Trapani Shark"],
+  // ── BBL / Bundesliga (Allemagne) ─────────────────────────────────────────
+  "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Fitness First Würzburg Baskets","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
+  // ── EuroLeague 2026-27 (20 équipes officielles Wikipedia) ────────────────
+  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","Alba Berlin","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
+  // ── EuroCup 2026-27 (32 équipes — Monaco exclu 01/09/2026) ───────────────
+  "EuroCup":["JL Bourg","Le Mans Sarthe","Türk Telekom","Skyliners Frankfurt","Budućnost VOLI","U-BT Cluj-Napoca","PAOK","Bahçeşehir Koleji","Cedevita Olimpija","Baglietto Derthona","Aris Thessaloniki","Hapoel Midtown Jerusalem","ratiopharm Ulm","Dolomiti Energia Trento","Neptūnas Klaipeda","La Laguna Tenerife","NINERS Chemnitz","Umana Reyer Venezia","Lietkabelis Panevezys","London Lions","Maxima Roma","BAXI Manresa","Balkan Botevgrad","Šiauliai","Napoli Basketball","Recoletas Salud Burgos","Rostock Seawolves","Śląsk Wrocław","Roma Basketball","Bosna BH Telecom","Rīgas Zeļļi","Tofaş"],
+  // ── BCL 2026-27 (30 direct + 2 qualifications) ───────────────────────────
+  "BCL":["Asisa Joventut","Slavia Prague ERA NBK","Trabzonspor","UCAM Murcia","KVIS Pardubice","Galatasaray MCT","Surne Bilbao","AEK","Sabah BC","Unicaja","Peristeri Betsson","Windrose Giants Antwerp","Nanterre 92","Hapoel Netanel Holon","Igokea m:tel","Cholet","Bnei Penlink Herzliya","Cibona","SIG Strasbourg","Pallacanestro Reggiana","Alba Berlin","Pallacanestro Varese","Legia Warszawa","BMA365 Bamberg","Juventus Utena","FC Porto","Telekom Baskets Bonn","Rytas Vilnius","Spartak Office Shoes","Falco KC Szombathely"],
 };
+
+// ── Clubs multi-ligues 2026-27 (données officielles) ─────────────────────────
+const MULTI_LEAGUE_CLUBS={
+  // France
+  "LDLC ASVEL":["Pro A","EuroLeague"],
+  "Paris Basketball":["Pro A","EuroLeague"],
+  "JL Bourg":["Pro A","EuroCup"],
+  "Le Mans Sarthe":["Pro A","EuroCup"],
+  "Nanterre 92":["Pro A","BCL"],
+  "Cholet":["Pro A","BCL"],
+  "SIG Strasbourg":["Pro A","BCL"],
+  "Élan Chalon":["Pro A","BCL"],
+  // Espagne
+  "Real Madrid":["ACB","EuroLeague"],
+  "FC Barcelona":["ACB","EuroLeague"],
+  "Kosner Baskonia":["ACB","EuroLeague"],
+  "Valencia Basket":["ACB","EuroLeague"],
+  "Unicaja":["ACB","BCL"],
+  "Asisa Joventut":["ACB","BCL"],
+  "UCAM Murcia":["ACB","BCL"],
+  "Surne Bilbao":["ACB","BCL"],
+  "La Laguna Tenerife":["ACB","EuroCup"],
+  "BAXI Manresa":["ACB","EuroCup"],
+  "Recoletas Salud Burgos":["ACB","EuroCup"],
+  // Italie
+  "Olimpia Milano":["Lega","EuroLeague"],
+  "Virtus Olidata Bologna":["Lega","EuroLeague"],
+  "Dolomiti Energia Trento":["Lega","EuroCup"],
+  "Umana Reyer Venezia":["Lega","EuroCup"],
+  "Baglietto Derthona":["Lega","EuroCup"],
+  "Napoli Basketball":["Lega","EuroCup"],
+  "Pallacanestro Varese":["Lega","BCL"],
+  "Pallacanestro Reggiana":["Lega","BCL"],
+  // Allemagne
+  "Bayern München":["Bundesliga","EuroLeague"],
+  "Alba Berlin":["Bundesliga","EuroLeague","BCL"],
+  "Telekom Baskets Bonn":["Bundesliga","BCL"],
+  "BMA365 Bamberg":["Bundesliga","BCL"],
+  "Skyliners Frankfurt":["Bundesliga","EuroCup"],
+  "NINERS Chemnitz":["Bundesliga","EuroCup"],
+  "ratiopharm Ulm":["Bundesliga","EuroCup"],
+  "Rostock Seawolves":["Bundesliga","EuroCup"],
+};
+
 
 const NBA_TEAMS=["Atlanta Hawks","Boston Celtics","Brooklyn Nets","Charlotte Hornets","Chicago Bulls","Cleveland Cavaliers","Dallas Mavericks","Denver Nuggets","Detroit Pistons","Golden State Warriors","Houston Rockets","Indiana Pacers","LA Clippers","Los Angeles Lakers","Memphis Grizzlies","Miami Heat","Milwaukee Bucks","Minnesota Timberwolves","New Orleans Pelicans","New York Knicks","Oklahoma City Thunder","Orlando Magic","Philadelphia 76ers","Phoenix Suns","Portland Trail Blazers","Sacramento Kings","San Antonio Spurs","Toronto Raptors","Utah Jazz","Washington Wizards"];
 
@@ -789,7 +978,7 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                   }
                 </div>
                 <div style={{flex:1,minWidth:0}}><span style={{fontWeight:700,fontSize:14,color:"#E5E7EB"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span><div style={{fontSize:11,color:"#6B7280",marginTop:1,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
-                    {p.team&&(()=>{const tl=p.game==="EuroLeague"?EL_TEAM_LOGOS[p.team]:NBA_TEAM_LOGOS[p.team];return(<><span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#9CA3AF"}}>{tl&&<img src={tl} style={{width:13,height:13,objectFit:"contain"}} alt=""/>}{p.team}</span></>);})()}
+                    {p.team&&(()=>{const tl=TEAM_LOGOS[p.team]||EL_TEAM_LOGOS[p.team]||NBA_TEAM_LOGOS[p.team];return(<><span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#9CA3AF"}}>{tl&&<img src={tl} style={{width:13,height:13,objectFit:"contain"}} alt=""/>}{p.team}</span></>);})()}
                     {tag==="recent"&&<span style={{color:"#4B5563"}}>· récent</span>}
                     {freq>1&&<span style={{color:"#A78BFA"}}>· {freq}p</span>}
                   </div></div>
@@ -1176,9 +1365,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     const pData=allPlayers[(bet.player||"").toLowerCase().trim()];
     const team=(pData&&pData.team)||bet.team;
     if(!team)return null;
-    if(bet.game==="EuroLeague")return EL_TEAM_LOGOS[team]||null;
-    if(bet.game==="NBA")return NBA_TEAM_LOGOS[team]||null;
-    return null;
+    return TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
   })();
 
   return(
@@ -2588,6 +2775,185 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
             )}
             <button onClick={()=>deleteCombo(cb.id)} style={{background:"none",border:"none",color:"#3a4a5e",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif",padding:0}}>🗑 Supprimer</button>
           </div></div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── LeagueEditor — section Édit dans Suivi ────────────────────────────────────
+const POSITION_ORDER=["PG","SG","SF","PF","C","Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big","G","F",""];
+function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?99:r;}
+
+function LeagueEditor({allPlayers,setPlayers,showToast}){
+  const [openLeague,setOpenLeague]=useState(null);
+  const [openTeam,setOpenTeam]=useState(null);
+  const [editingPlayer,setEditingPlayerLocal]=useState(null); // {key, data}
+  const [editForm,setEditForm]=useState({});
+
+  const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+
+  // Build league→teams→players from allPlayers
+  const leagueData=useMemo(()=>{
+    const map={};
+    LEAGUES.forEach(lg=>{map[lg]={};});
+    Object.entries(allPlayers).forEach(([key,p])=>{
+      const lg=p.game||"NBA";
+      if(!map[lg])map[lg]={};
+      const team=p.team||"Sans équipe";
+      if(!map[lg][team])map[lg][team]=[];
+      map[lg][team].push({key,data:p});
+    });
+    // Also add teams from EURO_TEAMS / NBA_TEAMS that have 0 players (still show)
+    return map;
+  },[allPlayers]);
+
+  function openEdit(key,data){
+    setEditingPlayerLocal({key,data});
+    setEditForm({name:data.name||key,game:data.game||"NBA",team:data.team||"",role:data.role||""});
+  }
+
+  function saveEdit(){
+    if(!editingPlayer)return;
+    const{key}=editingPlayer;
+    const updated={...allPlayers[key],...editForm};
+    setPlayers(p=>{
+      supaUpsertPlayer({name:key,...updated}).catch(()=>{});
+      return{...p,[key]:updated};
+    });
+    showToast(editForm.name+" mis à jour","#A78BFA");
+    setEditingPlayerLocal(null);
+  }
+
+  const inp={width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"10px 12px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"};
+
+  return(
+    <div style={{marginBottom:16}}>
+      {/* Header */}
+      <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",marginBottom:10,letterSpacing:.3}}>📋 Édit</div>
+
+      {/* Edit modal */}
+      {editingPlayer&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setEditingPlayerLocal(null)}>
+          <div style={{width:"100%",maxWidth:480,background:"#0d1225",borderRadius:"20px 20px 0 0",padding:"20px 16px 32px",border:"1px solid rgba(255,255,255,.1)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:36,height:4,background:"rgba(255,255,255,.15)",borderRadius:2,margin:"0 auto 20px"}}/>
+            <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",marginBottom:16}}>{editingPlayer.data.name||editingPlayer.key}</div>
+
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom</div>
+              <input style={inp} value={editForm.name||""} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))}/>
+            </div>
+
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue</div>
+              <select style={{...inp,cursor:"pointer"}} value={editForm.game||"NBA"} onChange={e=>setEditForm(f=>({...f,game:e.target.value,team:""}))}>
+                {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=><option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe</div>
+              <select style={{...inp,cursor:"pointer"}} value={editForm.team||""} onChange={e=>setEditForm(f=>({...f,team:e.target.value}))}>
+                <option value="">Choisir…</option>
+                {(ALL_LEAGUE_TEAMS[editForm.game||"NBA"]||[]).slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Position</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {((editForm.game||"NBA")==="NBA"?["PG","SG","SF","PF","C"]:["Guard","Wing","Forward","Big","Center"]).map(pos=>(
+                  <button key={pos} onClick={()=>setEditForm(f=>({...f,role:pos}))}
+                    style={{padding:"7px 14px",borderRadius:20,border:"1.5px solid "+((editForm.role||"")===pos?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:(editForm.role||"")===pos?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",color:(editForm.role||"")===pos?"#a78bfa":"#6B7280",fontWeight:(editForm.role||"")===pos?700:500,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    {pos}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button onClick={()=>setEditingPlayerLocal(null)}
+                style={{padding:"13px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                Annuler
+              </button>
+              <button onClick={saveEdit}
+                style={{padding:"13px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* League list */}
+      {LEAGUES.map(lg=>{
+        const teams=leagueData[lg]||{};
+        const teamCount=Object.keys(teams).length;
+        const playerCount=Object.values(teams).reduce((s,arr)=>s+arr.length,0);
+        const isOpen=openLeague===lg;
+        return(
+          <div key={lg} style={{marginBottom:6,borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,.07)"}}>
+            {/* League header */}
+            <button onClick={()=>{setOpenLeague(isOpen?null:lg);setOpenTeam(null);}}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:isOpen?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",borderBottom:isOpen?"1px solid rgba(255,255,255,.07)":"none"}}>
+              <GameLogo game={lg} size={18}/>
+              <span style={{flex:1,textAlign:"left",fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{lg}</span>
+              <span style={{fontSize:10,color:"#6B7280",fontWeight:500}}>{playerCount} joueurs</span>
+              <span style={{fontSize:11,color:isOpen?"#a78bfa":"#6B7280",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
+            </button>
+
+            {/* Teams list */}
+            {isOpen&&(
+              <div style={{background:"rgba(6,10,20,.8)"}}>
+                {Object.keys(teams).length===0?(
+                  <div style={{padding:"12px 14px",fontSize:11,color:"#4a5a6e"}}>Aucun joueur enregistré dans cette ligue</div>
+                ):Object.keys(teams).sort().map(team=>{
+                  const teamPlayers=teams[team];
+                  const isTeamOpen=openTeam===lg+":"+team;
+                  const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
+                  return(
+                    <div key={team} style={{borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                      {/* Team row */}
+                      <button onClick={()=>setOpenTeam(isTeamOpen?null:lg+":"+team)}
+                        style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"10px 14px 10px 20px",background:isTeamOpen?"rgba(255,255,255,.04)":"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                        {teamLogo?(
+                          <img src={teamLogo} alt={team} style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:4}} loading="lazy"/>
+                        ):(
+                          <div style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0}}/>
+                        )}
+                        <span style={{flex:1,textAlign:"left",fontSize:12,fontWeight:600,color:"#D1D5DB"}}>{team}</span>
+                        <span style={{fontSize:10,color:"#6B7280"}}>{teamPlayers.length}</span>
+                        <span style={{fontSize:10,color:isTeamOpen?"#a78bfa":"#6B7280",marginLeft:4}}>{isTeamOpen?"▲":"▼"}</span>
+                      </button>
+
+                      {/* Players list by position */}
+                      {isTeamOpen&&(
+                        <div style={{background:"rgba(0,0,0,.2)",paddingBottom:6}}>
+                          {[...teamPlayers].sort((a,b)=>posRank(a.data.role)-posRank(b.data.role)||(a.data.name||"").localeCompare(b.data.name||"")).map(({key,data})=>(
+                            <button key={key} onClick={()=>openEdit(key,data)}
+                              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 14px 8px 28px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                              {data.photo_url?(
+                                <img src={data.photo_url} alt={data.name} loading="lazy" style={{width:28,height:28,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+                              ):(
+                                <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  <span style={{fontSize:11,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                                </div>
+                              )}
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize"}}>{data.name||key}</div>
+                                {data.role&&<div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{data.role}</div>}
+                              </div>
+                              <span style={{fontSize:10,color:"#6B7280",flexShrink:0}}>✎</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -5108,36 +5474,32 @@ export default function App(){
               const tbHcp=form.tbHcp||"3.5";
               const hcpValues=[];for(let v=0.5;v<=40;v+=0.5)hcpValues.push(v.toFixed(1));
               const leagueTeams=ALL_LEAGUE_TEAMS[tbLeague]||[];
+              const desc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+              const canSubmit=!!(tbTeam&&form.bookmaker&&form.odds&&form.stake);
+              const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(0):null;
               return(
                 <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
-                  {/* Header */}
-                  <div style={{padding:"14px 16px 0",borderBottom:"1px solid rgba(255,255,255,.05)",paddingBottom:14}}>
+                  <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
                     <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Pari Équipe</div>
                   </div>
-
                   <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
-                    {/* Ligue */}
                     <div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Ligue</div>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                         {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
                           const on=tbLeague===lg;
-                          return(
-                            <button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(on?"rgba(255,255,255,.2)":"rgba(255,255,255,.06)"),background:on?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                              <GameLogo game={lg} size={12}/>
-                              <span style={{fontSize:11,fontWeight:on?700:500,color:on?"#E5E7EB":"#6B7280"}}>{lg}</span>
-                            </button>
-                          );
+                          return(<button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
+                            style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(on?"rgba(255,255,255,.2)":"rgba(255,255,255,.06)"),background:on?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                            <GameLogo game={lg} size={12}/>
+                            <span style={{fontSize:11,fontWeight:on?700:500,color:on?"#E5E7EB":"#6B7280"}}>{lg}</span>
+                          </button>);
                         })}
                       </div>
                     </div>
-
-                    {/* Équipe */}
                     <div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Équipe</div>
                       <div style={{position:"relative"}}>
-                        <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value,description:f.tbType==="victoire"?"Victoire "+e.target.value:e.target.value+" "+(f.tbSign||"+"+(f.tbHcp||"3.5"))}))}
+                        <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value,description:f.tbType==="victoire"?"Victoire "+e.target.value:e.target.value+" "+(f.tbSign||"+")+(f.tbHcp||"3.5")}))}
                           style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 40px 13px 14px",color:tbTeam?"#E5E7EB":"#4B5563",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",fontWeight:tbTeam?600:400}}>
                           <option value="">Choisir une équipe…</option>
                           {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
@@ -5145,33 +5507,23 @@ export default function App(){
                         <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
                       </div>
                     </div>
-
-                    {/* Type */}
                     <div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                         <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
-                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                          Victoire
-                        </button>
+                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Victoire</button>
                         <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
-                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                          Handicap
-                        </button>
+                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Handicap</button>
                       </div>
                     </div>
-
-                    {/* Handicap détail */}
                     {tbType==="handicap"&&(
                       <div>
-                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Valeur du handicap</div>
+                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Valeur</div>
                         <div style={{display:"grid",gridTemplateColumns:"96px 1fr",gap:8}}>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                             {["+","-"].map(s=>(
                               <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
-                                style={{padding:"13px 0",borderRadius:12,border:"1px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.4)":"rgba(248,113,113,.4)"):"rgba(255,255,255,.06)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.08)":"rgba(248,113,113,.08)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#4ade80":"#f87171"):"#6B7280",fontWeight:800,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                                {s}
-                              </button>
+                                style={{padding:"13px 0",borderRadius:12,border:"1px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.4)":"rgba(248,113,113,.4)"):"rgba(255,255,255,.06)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.08)":"rgba(248,113,113,.08)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#4ade80":"#f87171"):"#6B7280",fontWeight:800,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{s}</button>
                             ))}
                           </div>
                           <div style={{position:"relative"}}>
@@ -5184,22 +5536,44 @@ export default function App(){
                         </div>
                       </div>
                     )}
-
-                    {/* Résumé + Confirmer */}
                     {tbTeam&&(
-                      <div style={{background:"rgba(255,255,255,.03)",borderRadius:12,padding:"12px 14px",border:"1px solid rgba(255,255,255,.06)"}}>
-                        <div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Récapitulatif</div>
-                        <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",marginBottom:12}}>
-                          {tbType==="victoire"?("Victoire — "+tbTeam):(tbTeam+" "+tbSign+tbHcp+" pts")}
-                          <span style={{fontSize:11,color:"#6B7280",fontWeight:400,marginLeft:8}}>{tbLeague}</span>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        <div>
+                          <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Cote</div>
+                          <input type="number" step="0.01" placeholder="1.85" value={form.odds||""} onChange={e=>setForm(f=>({...f,odds:e.target.value}))}
+                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                         </div>
-                        <button onClick={()=>{
-                          const desc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
-                          setForm(f=>({...f,player:tbTeam,description:desc,overUnder:"Over",game:tbLeague,tbConfirmed:true}));
-                          setTeamBetMode(false);
-                        }}
-                          style={{width:"100%",padding:"13px",background:"linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.06))",border:"1px solid rgba(255,255,255,.15)",borderRadius:12,color:"#E5E7EB",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif",letterSpacing:.2}}>
-                          Confirmer ce pari →
+                        <div>
+                          <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Mise ($)</div>
+                          <input type="number" step="1" placeholder="50" value={form.stake||""} onChange={e=>setForm(f=>({...f,stake:e.target.value}))}
+                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                        </div>
+                      </div>
+                    )}
+                    {tbTeam&&(
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                        {[["pending","⏳","#3B82F6"],["won","✓","#22C55E"],["lost","✗","#EF4444"]].map(([s,ic,col])=>(
+                          <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
+                            style={{padding:"10px",borderRadius:10,border:"1px solid "+((form.status||"pending")===s?col+"66":"rgba(255,255,255,.06)"),background:(form.status||"pending")===s?col+"18":"rgba(255,255,255,.02)",color:(form.status||"pending")===s?col:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                            {ic} {s==="pending"?"Attente":s==="won"?"Gagné":"Perdu"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {tbTeam&&(
+                      <div>
+                        {gain&&<div style={{textAlign:"center",fontSize:12,color:"#6B7280",marginBottom:8}}>
+                          <span style={{color:"#E5E7EB",fontWeight:700}}>{desc}</span>
+                          {form.odds&&form.stake&&<span style={{color:"#4ade80",fontWeight:700,marginLeft:8}}>+{gain}$ potentiel</span>}
+                        </div>}
+                        <button disabled={!canSubmit}
+                          onClick={()=>{
+                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+                            setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending"}));
+                            setTimeout(()=>{ addBet(); setTeamBetMode(false); setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"})); },0);
+                          }}
+                          style={{width:"100%",height:56,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
+                          {canSubmit?"Ajouter à mes paris ✓":"Compléter le formulaire"}
                         </button>
                       </div>
                     )}
@@ -5207,43 +5581,75 @@ export default function App(){
                 </div>
               );
             })()}
-
             {/* ── COMBINE MODE ── */}
-            {combineMode&&(
-              <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
-                <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Paris combinés</div>
-                </div>
-                <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
-                {combineLegs.map((leg,i)=>(
-                  <div key={i} style={{borderRadius:12,border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.02)",overflow:"hidden"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-                      <span style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Sélection {i+1}</span>
-                      {combineLegs.length>2&&<button onClick={()=>setCombineLegs(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1,padding:"0 2px"}}>×</button>}
-                    </div>
-                    <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
-                      <input className="ifield" placeholder="Joueur…" value={leg.player} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,player:e.target.value}:x))} style={{marginBottom:0}}/>
-                      <input className="ifield" placeholder="Sélection (ex: 24.5 Points)…" value={leg.description} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,description:e.target.value}:x))} style={{marginBottom:0}}/>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                        {["Over","Under"].map(ou=>(
-                          <button key={ou} onClick={()=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,overUnder:ou}:x))}
-                            style={{padding:"10px",borderRadius:10,border:"1px solid "+(leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.35)":"rgba(96,165,250,.35)"):"rgba(255,255,255,.06)"),background:leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.07)":"rgba(96,165,250,.07)"):"transparent",color:leg.overUnder===ou?(ou==="Over"?"#4ade80":"#60a5fa"):"#6B7280",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            {ou==="Over"?"▲ Over":"▼ Under"}
-                          </button>
-                        ))}
+            {combineMode&&(()=>{
+              const canSubmitCombo=combineLegs.length>=2&&combineLegs.every(l=>l.player&&l.description)&&form.bookmaker&&form.odds&&form.stake;
+              const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(0):null;
+              return(
+                <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
+                  <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Paris combinés</div>
+                  </div>
+                  <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                    {combineLegs.map((leg,i)=>(
+                      <div key={i} style={{borderRadius:12,border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.02)",overflow:"hidden"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                          <span style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Sélection {i+1}</span>
+                          {combineLegs.length>2&&<button onClick={()=>setCombineLegs(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1,padding:"0 2px"}}>×</button>}
+                        </div>
+                        <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+                          <input className="ifield" placeholder="Joueur…" value={leg.player} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,player:e.target.value}:x))} style={{marginBottom:0}}/>
+                          <input className="ifield" placeholder="Sélection (ex: 24.5 Points)…" value={leg.description} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,description:e.target.value}:x))} style={{marginBottom:0}}/>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                            {["Over","Under"].map(ou=>(
+                              <button key={ou} onClick={()=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,overUnder:ou}:x))}
+                                style={{padding:"10px",borderRadius:10,border:"1px solid "+(leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.35)":"rgba(96,165,250,.35)"):"rgba(255,255,255,.06)"),background:leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.07)":"rgba(96,165,250,.07)"):"transparent",color:leg.overUnder===ou?(ou==="Over"?"#4ade80":"#60a5fa"):"#6B7280",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                                {ou==="Over"?"▲ Over":"▼ Under"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={()=>setCombineLegs(l=>[...l,{player:"",description:"",overUnder:"Over"}])}
+                      style={{width:"100%",padding:"11px",background:"transparent",border:"1px dashed rgba(255,255,255,.1)",borderRadius:12,color:"#6B7280",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif",fontWeight:600}}>
+                      + Ajouter une sélection
+                    </button>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                      <div>
+                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Cote combinée</div>
+                        <input type="number" step="0.01" placeholder="3.45" value={form.odds||""} onChange={e=>setForm(f=>({...f,odds:e.target.value}))}
+                          style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Mise ($)</div>
+                        <input type="number" step="1" placeholder="25" value={form.stake||""} onChange={e=>setForm(f=>({...f,stake:e.target.value}))}
+                          style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                       </div>
                     </div>
+                    {gain&&<div style={{textAlign:"center",fontSize:12,color:"#4ade80",fontWeight:700}}>+{gain}$ potentiel</div>}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                      {[["pending","⏳","#3B82F6"],["won","✓","#22C55E"],["lost","✗","#EF4444"]].map(([s,ic,col])=>(
+                        <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
+                          style={{padding:"10px",borderRadius:10,border:"1px solid "+((form.status||"pending")===s?col+"66":"rgba(255,255,255,.06)"),background:(form.status||"pending")===s?col+"18":"rgba(255,255,255,.02)",color:(form.status||"pending")===s?col:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                          {ic} {s==="pending"?"Attente":s==="won"?"Gagné":"Perdu"}
+                        </button>
+                      ))}
+                    </div>
+                    <button disabled={!canSubmitCombo}
+                      onClick={()=>{
+                        const comboDesc=combineLegs.map(l=>l.overUnder+" "+l.description+" ("+l.player+")").join(" | ");
+                        const comboPlayer=combineLegs.map(l=>l.player).join(", ");
+                        setForm(f=>({...f,player:comboPlayer,description:comboDesc,overUnder:"Over",game:"NBA",tbConfirmed:true,status:f.status||"pending"}));
+                        setTimeout(()=>{ addBet(); setCombineMode(false); setCombineLegs([{player:"",description:"",overUnder:"Over"},{player:"",description:"",overUnder:"Over"}]); setForm(f=>({...f,tbConfirmed:false,odds:"",stake:"",status:"pending"})); },0);
+                      }}
+                      style={{width:"100%",height:56,background:canSubmitCombo?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmitCombo?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmitCombo?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmitCombo?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
+                      {canSubmitCombo?"Ajouter à mes paris ✓":"Compléter le formulaire"}
+                    </button>
                   </div>
-                ))}
-                <button onClick={()=>setCombineLegs(l=>[...l,{player:"",description:"",overUnder:"Over"}])}
-                  style={{width:"100%",padding:"11px",background:"transparent",border:"1px dashed rgba(255,255,255,.1)",borderRadius:12,color:"#6B7280",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif",fontWeight:600}}>
-                  + Ajouter une sélection
-                </button>
-                <div style={{fontSize:10,color:"#4B5563",textAlign:"center"}}>Cote & mise dans la section ci-dessous</div>
                 </div>
-              </div>
-            )}
-
+              );
+            })()}
             {!duelMode&&!teamBetMode&&!combineMode&&<>
             {/* ── 2. JOUEUR ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
@@ -7789,6 +8195,9 @@ export default function App(){
 
             {/* ── AJOUTER JOUEUR ── */}
             <AddPlayerForm setPlayers={setPlayers} showToast={showToast}/>
+
+            {/* ── ÉDIT ── */}
+            <LeagueEditor allPlayers={allPlayers} setPlayers={setPlayers} showToast={showToast}/>
 
             {/* ── MODIFIER JOUEUR ── */}
             <div style={{marginBottom:16}}>
