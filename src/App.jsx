@@ -5033,27 +5033,95 @@ export default function App(){
             })()}
 
             {/* ── TEAM BET MODE ── */}
-            {teamBetMode&&(
-              <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(96,165,250,0.2)",padding:"14px 16px",marginBottom:10}}>
-                <div style={{fontSize:12,color:"#60a5fa",fontWeight:700,marginBottom:12}}>🏀 Pari Équipe</div>
-                <div style={{marginBottom:10}}><div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,fontWeight:600}}>Équipe</div>
-                  <input className="ifield" placeholder="ex: Lakers, Celtics..." value={form.player} onChange={e=>setForm(f=>({...f,player:e.target.value}))} style={{marginBottom:0}}/>
+            {teamBetMode&&(()=>{
+              const tbLeague=form.tbLeague||"NBA";
+              const tbTeam=form.tbTeam||"";
+              const tbType=form.tbType||"victoire";
+              const tbSign=form.tbSign||"+";
+              const tbHcp=form.tbHcp||"3.5";
+              const hcpValues=[];for(let v=0.5;v<=40;v+=0.5)hcpValues.push(v.toFixed(1));
+              const leagueTeams=ALL_LEAGUE_TEAMS[tbLeague]||[];
+              const descFinal=tbType==="victoire"
+                ?(tbTeam?"Victoire "+tbTeam:"Victoire")
+                :(tbTeam?tbTeam+" "+(tbSign==="-"?"-":"+")+tbHcp:tbSign+(tbSign==="-"?"-":"+")+tbHcp);
+              // Sync description dans form
+              if(form.description!==descFinal&&tbTeam)setTimeout(()=>setForm(f=>({...f,description:descFinal,player:tbTeam,game:tbLeague})),0);
+              return(
+                <div style={{background:"#0d1225",borderRadius:16,border:"1px solid rgba(96,165,250,0.18)",padding:"16px",marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                    <span style={{fontSize:14,fontWeight:800,color:"#60a5fa",letterSpacing:.2}}>🏀 Pari Équipe</span>
+                    {tbTeam&&<span style={{fontSize:11,color:"#6B7280",fontWeight:500}}>{tbTeam}</span>}
+                  </div>
+
+                  {/* Ligue */}
+                  <div style={{marginBottom:12}}>
+                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Ligue</div>
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                      {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
+                        const on=tbLeague===lg;
+                        return(
+                          <button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",game:lg}))}
+                            style={{display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(96,165,250,.5)":"rgba(255,255,255,.07)"),background:on?"rgba(96,165,250,.1)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                            <GameLogo game={lg} size={13}/>
+                            <span style={{fontSize:10,fontWeight:700,color:on?"#60a5fa":"#6B7280"}}>{lg}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Équipe */}
+                  <div style={{marginBottom:12}}>
+                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Équipe</div>
+                    <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value}))}
+                      style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 14px",color:tbTeam?"#E5E7EB":"#6B7280",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                      <option value="">Choisir une équipe…</option>
+                      {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Type de pari */}
+                  <div style={{marginBottom:tbType==="handicap"?12:0}}>
+                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Type de pari</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                      <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
+                        style={{height:50,borderRadius:11,border:"1.5px solid "+(tbType==="victoire"?"#22c55e":"rgba(34,197,94,.15)"),background:tbType==="victoire"?"rgba(34,197,94,.1)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#22e875":"#4e7060",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span style={{fontSize:16}}>✓</span> Victoire
+                      </button>
+                      <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
+                        style={{height:50,borderRadius:11,border:"1.5px solid "+(tbType==="handicap"?"#f59e0b":"rgba(245,158,11,.15)"),background:tbType==="handicap"?"rgba(245,158,11,.1)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6b5a30",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <span style={{fontSize:16}}>±</span> Handicap
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Handicap détail */}
+                  {tbType==="handicap"&&(
+                    <div style={{display:"grid",gridTemplateColumns:"88px 1fr",gap:8}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        {["+","-"].map(s=>(
+                          <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
+                            style={{height:46,borderRadius:9,border:"1.5px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.5)":"rgba(248,113,113,.5)"):"rgba(255,255,255,.08)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.1)":"rgba(248,113,113,.1)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#22C55E":"#f87171"):"#6B7280",fontWeight:900,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
+                        style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 14px",color:"#c4b5fd",fontSize:16,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                        {hcpValues.map(v=><option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Résumé */}
+                  {tbTeam&&(
+                    <div style={{marginTop:12,padding:"8px 12px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:8,fontSize:12,color:"#93c5fd",fontWeight:600}}>
+                      {tbType==="victoire"?("✓ Victoire "+tbTeam):("± "+tbTeam+" "+(tbSign==="-"?"-":"+")+tbHcp+" pts")}
+                    </div>
+                  )}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-                  <button onClick={()=>setForm(f=>({...f,overUnder:"Over",description:"Victoire"}))}
-                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.description==="Victoire"?"#22c55e":"rgba(34,197,94,.2)"),background:form.description==="Victoire"?"rgba(34,197,94,.14)":"rgba(34,197,94,.03)",color:form.description==="Victoire"?"#22e875":"#4e7060",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                    ✓ Victoire
-                  </button>
-                  <button onClick={()=>setForm(f=>({...f,overUnder:"Over",description:"Handicap"}))}
-                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.description==="Handicap"?"#f59e0b":"rgba(245,158,11,.2)"),background:form.description==="Handicap"?"rgba(245,158,11,.14)":"rgba(245,158,11,.03)",color:form.description==="Handicap"?"#fbbf24":"#6b5a30",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                    ± Handicap
-                  </button>
-                </div>
-                {form.description==="Handicap"&&(
-                  <input className="ifield" placeholder="ex: -3.5 points" value={form.player_handicap||""} onChange={e=>setForm(f=>({...f,player_handicap:e.target.value,description:"Handicap "+e.target.value}))} style={{marginBottom:8}}/>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* ── COMBINE MODE ── */}
             {combineMode&&(
@@ -5144,7 +5212,7 @@ export default function App(){
                   {/* ── Infos joueur (droite) ── */}
                   <div style={{flex:1,padding:"14px 12px 12px 6px",display:"flex",flexDirection:"column",justifyContent:"center",gap:6,minWidth:0}}><div style={{fontSize:19,fontWeight:700,letterSpacing:-.3,color:"#f0f4ff",lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                       {(form.autoInfo.name||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
-                    </div><div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                    </div><div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",position:"relative"}}>
                       {form.autoInfo.team&&(()=>{
                         const tl=form.autoInfo.game==="EuroLeague"?EL_TEAM_LOGOS[form.autoInfo.team]:form.autoInfo.game==="NBA"?NBA_TEAM_LOGOS[form.autoInfo.team]:null;
                         return(
@@ -5155,7 +5223,24 @@ export default function App(){
                         );
                       })()}
                       <span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>
-                      <GameLogo game={form.autoInfo.game} size={15}/>
+                      <button
+                        onClick={()=>setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}))}
+                        title="Changer la ligue"
+                        style={{display:"inline-flex",alignItems:"center",gap:4,background:"none",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"2px 6px",cursor:"pointer",position:"relative"}}>
+                        <GameLogo game={form.autoInfo.game} size={15}/>
+                        <span style={{fontSize:9,color:"#6B7280"}}>▾</span>
+                      </button>
+                      {form._lgPickerOpen&&(
+                        <div style={{position:"absolute",zIndex:100,top:"100%",left:0,marginTop:4,background:"#0d1225",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"8px",display:"flex",flexWrap:"wrap",gap:5,boxShadow:"0 8px 24px rgba(0,0,0,.6)",minWidth:220}}>
+                          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
+                            <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 9px",borderRadius:8,border:"1.5px solid "+(form.autoInfo.game===lg?"rgba(167,139,250,.5)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(124,58,237,.15)":"rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                              <GameLogo game={lg} size={13}/>
+                              <span style={{fontSize:10,fontWeight:700,color:form.autoInfo.game===lg?"#a78bfa":"#9CA3AF"}}>{lg}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {form.autoInfo.role&&(
                         <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,fontWeight:600,color:"#7a9cbd"}}>{form.autoInfo.role}</span></>
                       )}
@@ -7584,18 +7669,86 @@ export default function App(){
         {view==="players"&&(
           <div className="view-enter">
             {/* Header */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div><div style={{fontSize:18,fontWeight:800,color:"#E5E7EB",letterSpacing:-0.3}}>Suivi</div><div style={{display:"flex",gap:10,marginTop:3}}><span style={{fontSize:11,color:"#6B7280"}}>{Object.keys(allPlayers).length} joueurs</span>
+            <div style={{display:"flex",alignItems:"center",marginBottom:16}}>
+              <div>
+                <div style={{fontSize:18,fontWeight:800,color:"#E5E7EB",letterSpacing:-0.3}}>Suivi</div>
+                <div style={{display:"flex",gap:10,marginTop:3}}>
+                  <span style={{fontSize:11,color:"#6B7280"}}>{Object.keys(allPlayers).length} joueurs</span>
                   {customCount>0&&<span style={{fontSize:11,color:"#A78BFA",fontWeight:600}}>✎ {customCount} modifiés</span>}
-                </div></div><button onClick={()=>{setPform({name:"",game:"NBA",league:"",position:"",team:""});setModalPlayer(true);}}
-                style={{background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,padding:"10px 18px",color:"#fff",fontWeight:700,fontSize:13,fontFamily:"'Inter',sans-serif",cursor:"pointer",boxShadow:"0 4px 14px rgba(124,58,237,0.35)"}}>
-                Modifier joueur
-              </button></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── AJOUTER JOUEUR ── */}
+            {(()=>{
+              const [addOpen,setAddOpen]=React.useState(false);
+              const [lf,setLf]=React.useState({name:"",game:"NBA",league:"NBA",team:"",role:""});
+              return(
+                <div style={{marginBottom:16}}>
+                  <button onClick={()=>setAddOpen(v=>!v)}
+                    style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:addOpen?"rgba(124,58,237,.1)":"rgba(255,255,255,.03)",border:"1.5px solid "+(addOpen?"rgba(124,58,237,.35)":"rgba(255,255,255,.08)"),borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:addOpen?10:0}}>
+                    <span style={{fontSize:13,fontWeight:700,color:addOpen?"#a78bfa":"#E5E7EB"}}>+ Ajouter joueur</span>
+                    <span style={{fontSize:11,color:"#6B7280"}}>{addOpen?"✕":"▼"}</span>
+                  </button>
+                  {addOpen&&(
+                    <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(124,58,237,.2)",borderRadius:12,padding:"14px"}}>
+                      <div style={{marginBottom:10}}>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du joueur *</div>
+                        <input className="ifield" placeholder="Ex: Victor Wembanyama" value={lf.name} onChange={e=>setLf(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
+                      </div>
+                      <div style={{marginBottom:10}}>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue *</div>
+                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.game} onChange={e=>setLf(p=>({...p,game:e.target.value,league:e.target.value,team:""}))}>
+                          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{marginBottom:10}}>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe *</div>
+                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.team} onChange={e=>setLf(p=>({...p,team:e.target.value}))}>
+                          <option value="">Choisir une équipe…</option>
+                          {(ALL_LEAGUE_TEAMS[lf.game]||[]).slice().sort().map(t=>(
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{marginBottom:14}}>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Poste</div>
+                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.role} onChange={e=>setLf(p=>({...p,role:e.target.value}))}>
+                          <option value="">Poste (optionnel)</option>
+                          {lf.game==="NBA"
+                            ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
+                            :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
+                          }
+                        </select>
+                      </div>
+                      <button
+                        disabled={!lf.name.trim()||!lf.team}
+                        onClick={()=>{
+                          if(!lf.name.trim()||!lf.team)return;
+                          const rawName=lf.name.toLowerCase().trim();
+                          const data={game:lf.game,league:lf.league||lf.game,role:lf.role||"",team:lf.team,name:lf.name.trim()};
+                          setPlayers(p=>{
+                            supaUpsertPlayer({name:rawName,...data}).catch(()=>{});
+                            return{...p,[rawName]:data};
+                          });
+                          showToast(lf.name+" ajouté ✓","#A78BFA");
+                          setLf({name:"",game:"NBA",league:"NBA",team:"",role:""});
+                          setAddOpen(false);
+                        }}
+                        style={{width:"100%",padding:"12px",background:lf.name.trim()&&lf.team?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:lf.name.trim()&&lf.team?"#fff":"#9CA3AF",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                        ✓ Ajouter le joueur
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ── MODIFIER JOUEUR ── */}
-            <div style={{marginTop:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>Joueurs ({Object.keys(allPlayers).length})</div>
-              </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#60a5fa",marginBottom:10,letterSpacing:.3}}>✎ Modifier joueur</div>
               <PlayerSearchPanel
                 allPlayers={allPlayers}
                 custom={players}
