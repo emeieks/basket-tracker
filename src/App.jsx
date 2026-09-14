@@ -6025,7 +6025,7 @@ export default function App(){
                     <div style={{position:"absolute",top:0,right:0,bottom:0,width:32,background:"linear-gradient(to right,transparent,rgba(12,18,38,.99))",zIndex:2,pointerEvents:"none"}}/></div>
 
                   {/* ── Infos joueur (droite) ── */}
-                  <div style={{flex:1,padding:"14px 12px 12px 6px",display:"flex",flexDirection:"column",justifyContent:"center",gap:6,minWidth:0}}><div style={{fontSize:19,fontWeight:700,letterSpacing:-.3,color:"#f0f4ff",lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  <div style={{flex:1,padding:"14px 12px 12px 6px",display:"flex",flexDirection:"column",justifyContent:"center",gap:6,minWidth:0}} onClick={()=>form._lgPickerOpen&&setForm(f=>({...f,_lgPickerOpen:false}))}><div style={{fontSize:19,fontWeight:700,letterSpacing:-.3,color:"#f0f4ff",lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                       {(form.autoInfo.name||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
                     </div><div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",position:"relative"}}>
                       {form.autoInfo.team&&(()=>{
@@ -6039,25 +6039,35 @@ export default function App(){
                       })()}
                       <span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>
                       <button
-                        onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}));}}
+                        onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen,_lgPickerY:e.clientY,_lgPickerX:e.clientX}));}}
                         title="Changer la ligue"
                         style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:6,padding:"3px 7px",cursor:"pointer"}}>
                         <GameLogo game={form.autoInfo.game} size={14}/>
                         <span style={{fontSize:9,color:"#6B7280",lineHeight:1}}>▾</span>
                       </button>
-                      {form._lgPickerOpen&&(
-                        <div style={{position:"fixed",zIndex:999,background:"#0d1225",border:"1px solid rgba(255,255,255,.12)",borderRadius:14,padding:"10px",display:"flex",flexWrap:"wrap",gap:6,boxShadow:"0 16px 40px rgba(0,0,0,.7)",maxWidth:260,left:"50%",transform:"translateX(-50%)",top:"auto",marginTop:8}}
-                          onClick={e=>e.stopPropagation()}>
-                          <div style={{width:"100%",fontSize:9,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Changer la ligue</div>
-                          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
-                            <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(form.autoInfo.game===lg?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(255,255,255,.1)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                              <GameLogo game={lg} size={12}/>
-                              <span style={{fontSize:11,fontWeight:form.autoInfo.game===lg?700:500,color:form.autoInfo.game===lg?"#E5E7EB":"#9CA3AF"}}>{lg}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      {form._lgPickerOpen&&(()=>{
+                        const winH=window.innerHeight;
+                        const winW=window.innerWidth;
+                        const pickerH=280;
+                        const pickerW=220;
+                        const cy=form._lgPickerY||200;
+                        const top=cy+pickerH>winH-20?cy-pickerH-8:cy+8;
+                        const left=Math.min(Math.max((form._lgPickerX||winW/2)-pickerW/2,8),winW-pickerW-8);
+                        return(
+                          <div style={{position:"fixed",zIndex:9999,top,left,background:"#0d1225",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"10px",display:"flex",flexWrap:"wrap",gap:6,boxShadow:"0 16px 40px rgba(0,0,0,.8)",width:pickerW}}
+                            onClick={e=>e.stopPropagation()}>
+                            <div style={{width:"100%",fontSize:9,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Ligue du joueur</div>
+                            {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
+                              <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
+                                style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(form.autoInfo.game===lg?"rgba(255,255,255,.25)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(255,255,255,.12)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+                                <GameLogo game={lg} size={13}/>
+                                <span style={{fontSize:12,fontWeight:form.autoInfo.game===lg?700:500,color:form.autoInfo.game===lg?"#E5E7EB":"#9CA3AF"}}>{lg}</span>
+                                {form.autoInfo.game===lg&&<span style={{marginLeft:"auto",color:"#a78bfa",fontSize:11}}>✓</span>}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {form.autoInfo.role&&(
                         <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,fontWeight:600,color:"#7a9cbd"}}>{form.autoInfo.role}</span></>
                       )}
