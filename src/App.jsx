@@ -704,7 +704,7 @@ const EURO_TEAMS={
 
 // ── Clubs multi-ligues 2026-27 (données officielles) ─────────────────────────
 const MULTI_LEAGUE_CLUBS={
-  // France
+  // ── France (Pro A) ────────────────────────────────────────────────────────
   "LDLC ASVEL":["Pro A","EuroLeague"],
   "Paris Basketball":["Pro A","EuroLeague"],
   "JL Bourg":["Pro A","EuroCup"],
@@ -713,7 +713,7 @@ const MULTI_LEAGUE_CLUBS={
   "Cholet":["Pro A","BCL"],
   "SIG Strasbourg":["Pro A","BCL"],
   "Élan Chalon":["Pro A","BCL"],
-  // Espagne
+  // ── Espagne (ACB) ─────────────────────────────────────────────────────────
   "Real Madrid":["ACB","EuroLeague"],
   "FC Barcelona":["ACB","EuroLeague"],
   "Kosner Baskonia":["ACB","EuroLeague"],
@@ -725,17 +725,20 @@ const MULTI_LEAGUE_CLUBS={
   "La Laguna Tenerife":["ACB","EuroCup"],
   "BAXI Manresa":["ACB","EuroCup"],
   "Recoletas Salud Burgos":["ACB","EuroCup"],
-  // Italie
+  // ── Italie (Lega) ─────────────────────────────────────────────────────────
   "Olimpia Milano":["Lega","EuroLeague"],
+  "EA7 Olimpia Milano":["Lega","EuroLeague"],
   "Virtus Olidata Bologna":["Lega","EuroLeague"],
+  "Virtus Bologna":["Lega","EuroLeague"],
   "Dolomiti Energia Trento":["Lega","EuroCup"],
   "Umana Reyer Venezia":["Lega","EuroCup"],
   "Baglietto Derthona":["Lega","EuroCup"],
   "Napoli Basketball":["Lega","EuroCup"],
   "Pallacanestro Varese":["Lega","BCL"],
   "Pallacanestro Reggiana":["Lega","BCL"],
-  // Allemagne
+  // ── Allemagne (Bundesliga) ────────────────────────────────────────────────
   "Bayern München":["Bundesliga","EuroLeague"],
+  "FC Bayern Munich":["Bundesliga","EuroLeague"],
   "Alba Berlin":["Bundesliga","EuroLeague","BCL"],
   "Telekom Baskets Bonn":["Bundesliga","BCL"],
   "BMA365 Bamberg":["Bundesliga","BCL"],
@@ -743,6 +746,72 @@ const MULTI_LEAGUE_CLUBS={
   "NINERS Chemnitz":["Bundesliga","EuroCup"],
   "ratiopharm Ulm":["Bundesliga","EuroCup"],
   "Rostock Seawolves":["Bundesliga","EuroCup"],
+  // ── Turquie (BSL — pas dans ligues affichées mais EuroLeague/EuroCup) ─────
+  "Fenerbahçe Tarfin":["EuroLeague"],
+  "Fenerbahce":["EuroLeague"],
+  "Anadolu Efes":["EuroLeague"],
+  "Beşiktaş Gain":["EuroLeague"],
+  "Besiktas":["EuroLeague"],
+  "Türk Telekom":["EuroCup"],
+  "Bahçeşehir Koleji":["EuroCup"],
+  // ── Grèce (HEBA) ──────────────────────────────────────────────────────────
+  "Olympiacos":["HEBA","EuroLeague"],
+  "Panathinaikos AKTOR":["HEBA","EuroLeague"],
+  "Panathinaikos":["HEBA","EuroLeague"],
+  "Aris Thessaloniki":["HEBA","EuroCup"],
+  "PAOK":["HEBA","EuroCup"],
+  "Peristeri Betsson":["HEBA","BCL"],
+  "AEK":["HEBA","BCL"],
+  // ── Serbie/Balkans ────────────────────────────────────────────────────────
+  "Partizan Mozzart Bet":["EuroLeague"],
+  "Partizan":["EuroLeague"],
+  "Crvena zvezda Meridianbet":["EuroLeague"],
+  "Crvena zvezda":["EuroLeague"],
+  "Budućnost VOLI":["EuroCup"],
+  "Cedevita Olimpija":["EuroCup"],
+  "Igokea m:tel":["BCL"],
+  "Cibona":["BCL"],
+  "Spartak Office Shoes":["BCL"],
+  // ── Israël ────────────────────────────────────────────────────────────────
+  "Maccabi Rapyd Tel Aviv":["EuroLeague"],
+  "Maccabi Tel Aviv":["EuroLeague"],
+  "Hapoel IBI Tel Aviv":["EuroLeague"],
+  "Hapoel Tel Aviv":["EuroLeague"],
+  "Hapoel Midtown Jerusalem":["EuroCup"],
+  "Hapoel Netanel Holon":["BCL"],
+  "Bnei Penlink Herzliya":["BCL"],
+  // ── Lituanie ─────────────────────────────────────────────────────────────
+  "Žalgiris":["EuroLeague"],
+  "Zalgiris Kaunas":["EuroLeague"],
+  "Lietkabelis Panevezys":["EuroCup"],
+  "Neptūnas Klaipeda":["EuroCup"],
+  "Rytas Vilnius":["BCL"],
+  "Juventus Utena":["BCL"],
+  // ── Autres EuroCup ────────────────────────────────────────────────────────
+  "Dubai Basketball":["EuroLeague"],
+  "London Lions":["EuroCup"],
+  "U-BT Cluj-Napoca":["EuroCup"],
+  "Šiauliai":["EuroCup"],
+  "Rīgas Zeļļi":["EuroCup"],
+  "Tofaş":["EuroCup"],
+  "Bosna BH Telecom":["EuroCup"],
+  "Balkan Botevgrad":["EuroCup"],
+  "Śląsk Wrocław":["EuroCup"],
+  "Roma Basketball":["Lega","EuroCup"],
+  "Maxima Roma":["EuroCup"],
+  // ── Autres BCL ────────────────────────────────────────────────────────────
+  "Galatasaray MCT":["BCL"],
+  "Galatasaray":["ACB","BCL"],
+  "Trabzonspor":["BCL"],
+  "FC Porto":["BCL"],
+  "Legia Warszawa":["BCL"],
+  "Windrose Giants Antwerp":["BCL"],
+  "Falco KC Szombathely":["BCL"],
+  "ERA Nymburk":["BCL"],
+  "Sabah BC":["BCL"],
+  "Slavia Prague ERA NBK":["BCL"],
+  "KVIS Pardubice":["BCL"],
+  "Peristeri":["BCL"],
 };
 
 
@@ -2795,27 +2864,45 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
   const leagueData=useMemo(()=>{
     const map={};
-    LEAGUES.forEach(lg=>{map[lg]={};});
+    LEAGUES.forEach(lg=>{
+      map[lg]={};
+      // Pré-remplir toutes les équipes de chaque ligue (même vides)
+      const leagueTeams=ALL_LEAGUE_TEAMS[lg]||[];
+      leagueTeams.forEach(team=>{ map[lg][team]=[]; });
+    });
+
+    // Build lookup normalisé : nom en lowercase → nom officiel dans MULTI_LEAGUE_CLUBS
+    const multiLookup={};
+    Object.keys(MULTI_LEAGUE_CLUBS).forEach(name=>{
+      multiLookup[name.toLowerCase().replace(/[àâäéèêëîïôùûü]/g,c=>({à:"a",â:"a",ä:"a",é:"e",è:"e",ê:"e",ë:"e",î:"i",ï:"i",ô:"o",ù:"u",û:"u",ü:"u"}[c]||c)).trim()]=name;
+    });
 
     Object.entries(allPlayers).forEach(([key,p])=>{
       const primaryLeague=p.game||"NBA";
-      const team=p.team||"Sans équipe";
+      const team=p.team||"";
+      if(!team){
+        // Joueur sans équipe — ligue principale seulement
+        if(!map[primaryLeague])map[primaryLeague]={};
+        if(!map[primaryLeague]["Sans équipe"])map[primaryLeague]["Sans équipe"]=[];
+        map[primaryLeague]["Sans équipe"].push({key,data:p});
+        return;
+      }
 
-      // Trouver toutes les ligues de ce club via MULTI_LEAGUE_CLUBS
-      const clubLeagues=MULTI_LEAGUE_CLUBS[team]||null;
+      // Chercher dans MULTI_LEAGUE_CLUBS avec normalisation
+      const teamNorm=team.toLowerCase().replace(/[àâäéèêëîïôùûü]/g,c=>({à:"a",â:"a",ä:"a",é:"e",è:"e",ê:"e",ë:"e",î:"i",ï:"i",ô:"o",ù:"u",û:"u",ü:"u"}[c]||c)).trim();
+      const officialName=multiLookup[teamNorm]||null;
+      const clubLeagues=officialName?MULTI_LEAGUE_CLUBS[officialName]:null;
 
       if(clubLeagues){
-        // Joueur multi-ligues : apparaît dans CHAQUE ligue du club
         clubLeagues.forEach(lg=>{
           if(!map[lg])map[lg]={};
           if(!map[lg][team])map[lg][team]=[];
-          // Eviter les doublons
           if(!map[lg][team].find(x=>x.key===key)){
             map[lg][team].push({key,data:p});
           }
         });
       } else {
-        // Joueur ligue unique : ligue principale seulement
+        // Ligue principale seulement
         if(!map[primaryLeague])map[primaryLeague]={};
         if(!map[primaryLeague][team])map[primaryLeague][team]=[];
         map[primaryLeague][team].push({key,data:p});
