@@ -2968,8 +2968,8 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   }
 
   return(
-    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center",background:"rgba(0,0,0,.7)"}} onMouseDown={onClose}>
-      <div style={{width:"100%",maxWidth:500,background:"#0a0f1e",borderRadius:"22px 22px 0 0",border:"1px solid rgba(255,255,255,.12)",maxHeight:"88vh",overflowY:"auto"}} onMouseDown={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.75)",padding:"16px"}} onClick={onClose}>
+      <div style={{width:"100%",maxWidth:440,background:"#0a0f1e",borderRadius:20,border:"1px solid rgba(255,255,255,.12)",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
         <div style={{width:36,height:4,background:"rgba(255,255,255,.15)",borderRadius:2,margin:"12px auto 0"}}/>
 
         {/* Player header */}
@@ -3140,8 +3140,8 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
       {/* Delete team confirmation — inline */}
       {deletingTeam&&(
-        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)"}} onMouseDown={()=>setDeletingTeam(null)}>
-          <div style={{background:"#0d1225",borderRadius:18,padding:"22px 20px",maxWidth:320,width:"90%",border:"1px solid rgba(255,255,255,.1)"}} onMouseDown={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)",padding:16}} onClick={()=>setDeletingTeam(null)}>
+          <div style={{background:"#0d1225",borderRadius:18,padding:"22px 20px",maxWidth:320,width:"100%",border:"1px solid rgba(255,255,255,.1)"}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB",marginBottom:8}}>Retirer {deletingTeam.team} ?</div>
             <div style={{fontSize:12,color:"#6B7280",marginBottom:18}}>Les joueurs de cette equipe n'auront plus d'equipe assignee dans {deletingTeam.lg}.</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -3154,8 +3154,8 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
       {/* Add club modal */}
       {addTeamLeague&&(
-        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)"}} onMouseDown={()=>setAddTeamLeague(null)}>
-          <div style={{background:"#0d1225",borderRadius:18,padding:"22px 20px",maxWidth:320,width:"90%",border:"1px solid rgba(255,255,255,.1)"}} onMouseDown={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)",padding:16}} onClick={()=>setAddTeamLeague(null)}>
+          <div style={{background:"#0d1225",borderRadius:18,padding:"22px 20px",maxWidth:320,width:"100%",border:"1px solid rgba(255,255,255,.1)"}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB",marginBottom:4}}>Ajouter un club</div>
             <div style={{fontSize:11,color:"#6B7280",marginBottom:14}}>en {addTeamLeague} (club promu, nouveau club...)</div>
             <input
@@ -3190,11 +3190,11 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
             {isOpen&&(
               <div style={{background:"rgba(6,10,20,.8)"}}>
-                {/* Add club button */}
-                <button onClick={()=>{setAddTeamLeague(lg);setAddTeamName("");}}
+                {/* Add club button — pas pour NBA */}
+                {lg!=="NBA"&&<button onClick={()=>{setAddTeamLeague(lg);setAddTeamName("");}}
                   style={{width:"100%",padding:"9px 14px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.04)",color:"#22c55e",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",display:"flex",alignItems:"center",gap:6}}>
                   <span style={{fontSize:14,lineHeight:1}}>+</span> Ajouter un club dans {lg}
-                </button>
+                </button>}
 
                 {Object.keys(teams).length===0?(
                   <div style={{padding:"12px 14px",fontSize:11,color:"#4a5a6e"}}>Aucune equipe</div>
@@ -3216,12 +3216,12 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                           <span style={{fontSize:10,color:"#6B7280",flexShrink:0}}>{teamPlayers.length}</span>
                           <span style={{fontSize:10,color:isTeamOpen?"#a78bfa":"#6B7280",marginLeft:4,flexShrink:0}}>{isTeamOpen?"▲":"▼"}</span>
                         </button>
-                        {/* Remove team button - inline confirmation */}
-                        <button
+                        {/* Remove team — pas pour NBA */}
+                        {lg!=="NBA"&&<button
                           onClick={()=>setDeletingTeam({lg,team})}
                           style={{padding:"0 12px",height:42,background:"none",border:"none",color:"#4a5a6e",cursor:"pointer",fontSize:16,flexShrink:0,display:"flex",alignItems:"center"}}>
                           ×
-                        </button>
+                        </button>}
                       </div>
 
                       {isTeamOpen&&(
