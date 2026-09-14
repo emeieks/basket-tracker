@@ -2594,6 +2594,73 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
   );
 }
 
+// ── AddPlayerForm — composant séparé (hooks autorisés) ───────────────────────
+function AddPlayerForm({setPlayers,showToast}){
+  const [addOpen,setAddOpen]=useState(false);
+  const [lf,setLf]=useState({name:"",game:"NBA",league:"NBA",team:"",role:""});
+  return(
+    <div style={{marginBottom:16}}>
+      <button onClick={()=>setAddOpen(v=>!v)}
+        style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:addOpen?"rgba(124,58,237,.1)":"rgba(255,255,255,.03)",border:"1.5px solid "+(addOpen?"rgba(124,58,237,.35)":"rgba(255,255,255,.08)"),borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:addOpen?10:0}}>
+        <span style={{fontSize:13,fontWeight:700,color:addOpen?"#a78bfa":"#E5E7EB"}}>+ Ajouter joueur</span>
+        <span style={{fontSize:11,color:"#6B7280"}}>{addOpen?"✕":"▼"}</span>
+      </button>
+      {addOpen&&(
+        <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(124,58,237,.2)",borderRadius:12,padding:"14px"}}>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du joueur *</div>
+            <input className="ifield" placeholder="Ex: Victor Wembanyama" value={lf.name} onChange={e=>setLf(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue *</div>
+            <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.game} onChange={e=>setLf(p=>({...p,game:e.target.value,league:e.target.value,team:""}))}>
+              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe *</div>
+            <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.team} onChange={e=>setLf(p=>({...p,team:e.target.value}))}>
+              <option value="">Choisir une équipe…</option>
+              {(ALL_LEAGUE_TEAMS[lf.game]||[]).slice().sort().map(t=>(
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Poste</div>
+            <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.role} onChange={e=>setLf(p=>({...p,role:e.target.value}))}>
+              <option value="">Poste (optionnel)</option>
+              {lf.game==="NBA"
+                ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
+                :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
+              }
+            </select>
+          </div>
+          <button
+            disabled={!lf.name.trim()||!lf.team}
+            onClick={()=>{
+              if(!lf.name.trim()||!lf.team)return;
+              const rawName=lf.name.toLowerCase().trim();
+              const data={game:lf.game,league:lf.league||lf.game,role:lf.role||"",team:lf.team,name:lf.name.trim()};
+              setPlayers(p=>{
+                supaUpsertPlayer({name:rawName,...data}).catch(()=>{});
+                return{...p,[rawName]:data};
+              });
+              showToast(lf.name+" ajouté ✓","#A78BFA");
+              setLf({name:"",game:"NBA",league:"NBA",team:"",role:""});
+              setAddOpen(false);
+            }}
+            style={{width:"100%",padding:"12px",background:lf.name.trim()&&lf.team?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:lf.name.trim()&&lf.team?"#fff":"#9CA3AF",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+            ✓ Ajouter le joueur
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App(){
   const [bets,setBets]=useState([]);
   const [bankroll,setBankroll]=useState(5000);
@@ -5280,7 +5347,19 @@ export default function App(){
                       Changer
                     </button></div></div>
               )}
-              {form.player&&!form.autoInfo&&<div style={{marginTop:7,fontSize:11,color:"#F59E0B",fontWeight:600}}>⚠ Joueur non reconnu — tu peux quand même enregistrer.</div>}
+              {form.player&&!form.autoInfo&&!form.tbConfirmed&&<div style={{marginTop:7,fontSize:11,color:"#F59E0B",fontWeight:600}}>⚠ Joueur non reconnu — tu peux quand même enregistrer.</div>}
+              {form.player&&!form.autoInfo&&form.tbConfirmed&&(
+                <div style={{marginTop:7,padding:"10px 14px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{form.description}</div>
+                    <div style={{fontSize:10,color:"#6B7280",marginTop:2}}>{form.game}</div>
+                  </div>
+                  <button onClick={()=>setTeamBetMode(true)}
+                    style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(96,165,250,.3)",background:"rgba(96,165,250,.08)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    Modifier
+                  </button>
+                </div>
+              )}
             </div>
 
 
@@ -5525,8 +5604,11 @@ export default function App(){
               const missing=[];
               if(!form.bookmaker) missing.push("Bookmaker");
               if(!form.player) missing.push("Joueur");
-              if(!form.overUnder) missing.push("Over/Under");
-              if(!form.description) missing.push("Stat/Ligne");
+              // Pari équipe confirmé : pas besoin de Over/Under ni description stat
+              if(!form.tbConfirmed){
+                if(!form.overUnder) missing.push("Over/Under");
+                if(!form.description) missing.push("Stat/Ligne");
+              }
               if(!form.odds) missing.push("Cote");
               if(!form.stake) missing.push("Mise");
               // map not required
@@ -7706,71 +7788,7 @@ export default function App(){
             </div>
 
             {/* ── AJOUTER JOUEUR ── */}
-            {(()=>{
-              const [addOpen,setAddOpen]=React.useState(false);
-              const [lf,setLf]=React.useState({name:"",game:"NBA",league:"NBA",team:"",role:""});
-              return(
-                <div style={{marginBottom:16}}>
-                  <button onClick={()=>setAddOpen(v=>!v)}
-                    style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:addOpen?"rgba(124,58,237,.1)":"rgba(255,255,255,.03)",border:"1.5px solid "+(addOpen?"rgba(124,58,237,.35)":"rgba(255,255,255,.08)"),borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:addOpen?10:0}}>
-                    <span style={{fontSize:13,fontWeight:700,color:addOpen?"#a78bfa":"#E5E7EB"}}>+ Ajouter joueur</span>
-                    <span style={{fontSize:11,color:"#6B7280"}}>{addOpen?"✕":"▼"}</span>
-                  </button>
-                  {addOpen&&(
-                    <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(124,58,237,.2)",borderRadius:12,padding:"14px"}}>
-                      <div style={{marginBottom:10}}>
-                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du joueur *</div>
-                        <input className="ifield" placeholder="Ex: Victor Wembanyama" value={lf.name} onChange={e=>setLf(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
-                      </div>
-                      <div style={{marginBottom:10}}>
-                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue *</div>
-                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.game} onChange={e=>setLf(p=>({...p,game:e.target.value,league:e.target.value,team:""}))}>
-                          {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
-                            <option key={g} value={g}>{g}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div style={{marginBottom:10}}>
-                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe *</div>
-                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.team} onChange={e=>setLf(p=>({...p,team:e.target.value}))}>
-                          <option value="">Choisir une équipe…</option>
-                          {(ALL_LEAGUE_TEAMS[lf.game]||[]).slice().sort().map(t=>(
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div style={{marginBottom:14}}>
-                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Poste</div>
-                        <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.role} onChange={e=>setLf(p=>({...p,role:e.target.value}))}>
-                          <option value="">Poste (optionnel)</option>
-                          {lf.game==="NBA"
-                            ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
-                            :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
-                          }
-                        </select>
-                      </div>
-                      <button
-                        disabled={!lf.name.trim()||!lf.team}
-                        onClick={()=>{
-                          if(!lf.name.trim()||!lf.team)return;
-                          const rawName=lf.name.toLowerCase().trim();
-                          const data={game:lf.game,league:lf.league||lf.game,role:lf.role||"",team:lf.team,name:lf.name.trim()};
-                          setPlayers(p=>{
-                            supaUpsertPlayer({name:rawName,...data}).catch(()=>{});
-                            return{...p,[rawName]:data};
-                          });
-                          showToast(lf.name+" ajouté ✓","#A78BFA");
-                          setLf({name:"",game:"NBA",league:"NBA",team:"",role:""});
-                          setAddOpen(false);
-                        }}
-                        style={{width:"100%",padding:"12px",background:lf.name.trim()&&lf.team?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:lf.name.trim()&&lf.team?"#fff":"#9CA3AF",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                        ✓ Ajouter le joueur
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            <AddPlayerForm setPlayers={setPlayers} showToast={showToast}/>
 
             {/* ── MODIFIER JOUEUR ── */}
             <div style={{marginBottom:16}}>
