@@ -5041,115 +5041,139 @@ export default function App(){
               const tbHcp=form.tbHcp||"3.5";
               const hcpValues=[];for(let v=0.5;v<=40;v+=0.5)hcpValues.push(v.toFixed(1));
               const leagueTeams=ALL_LEAGUE_TEAMS[tbLeague]||[];
-              const descFinal=tbType==="victoire"
-                ?(tbTeam?"Victoire "+tbTeam:"Victoire")
-                :(tbTeam?tbTeam+" "+(tbSign==="-"?"-":"+")+tbHcp:tbSign+(tbSign==="-"?"-":"+")+tbHcp);
-              // Sync description dans form
-              if(form.description!==descFinal&&tbTeam)setTimeout(()=>setForm(f=>({...f,description:descFinal,player:tbTeam,game:tbLeague})),0);
               return(
-                <div style={{background:"#0d1225",borderRadius:16,border:"1px solid rgba(96,165,250,0.18)",padding:"16px",marginBottom:10}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                    <span style={{fontSize:14,fontWeight:800,color:"#60a5fa",letterSpacing:.2}}>🏀 Pari Équipe</span>
-                    {tbTeam&&<span style={{fontSize:11,color:"#6B7280",fontWeight:500}}>{tbTeam}</span>}
+                <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
+                  {/* Header */}
+                  <div style={{padding:"14px 16px 0",borderBottom:"1px solid rgba(255,255,255,.05)",paddingBottom:14}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Pari Équipe</div>
                   </div>
 
-                  {/* Ligue */}
-                  <div style={{marginBottom:12}}>
-                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Ligue</div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                      {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
-                        const on=tbLeague===lg;
-                        return(
-                          <button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",game:lg}))}
-                            style={{display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(96,165,250,.5)":"rgba(255,255,255,.07)"),background:on?"rgba(96,165,250,.1)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            <GameLogo game={lg} size={13}/>
-                            <span style={{fontSize:10,fontWeight:700,color:on?"#60a5fa":"#6B7280"}}>{lg}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Équipe */}
-                  <div style={{marginBottom:12}}>
-                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Équipe</div>
-                    <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value}))}
-                      style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 14px",color:tbTeam?"#E5E7EB":"#6B7280",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                      <option value="">Choisir une équipe…</option>
-                      {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-
-                  {/* Type de pari */}
-                  <div style={{marginBottom:tbType==="handicap"?12:0}}>
-                    <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Type de pari</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                      <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
-                        style={{height:50,borderRadius:11,border:"1.5px solid "+(tbType==="victoire"?"#22c55e":"rgba(34,197,94,.15)"),background:tbType==="victoire"?"rgba(34,197,94,.1)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#22e875":"#4e7060",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <span style={{fontSize:16}}>✓</span> Victoire
-                      </button>
-                      <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
-                        style={{height:50,borderRadius:11,border:"1.5px solid "+(tbType==="handicap"?"#f59e0b":"rgba(245,158,11,.15)"),background:tbType==="handicap"?"rgba(245,158,11,.1)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6b5a30",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <span style={{fontSize:16}}>±</span> Handicap
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Handicap détail */}
-                  {tbType==="handicap"&&(
-                    <div style={{display:"grid",gridTemplateColumns:"88px 1fr",gap:8}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                        {["+","-"].map(s=>(
-                          <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
-                            style={{height:46,borderRadius:9,border:"1.5px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.5)":"rgba(248,113,113,.5)"):"rgba(255,255,255,.08)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.1)":"rgba(248,113,113,.1)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#22C55E":"#f87171"):"#6B7280",fontWeight:900,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            {s}
-                          </button>
-                        ))}
+                  <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
+                    {/* Ligue */}
+                    <div>
+                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Ligue</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
+                          const on=tbLeague===lg;
+                          return(
+                            <button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(on?"rgba(255,255,255,.2)":"rgba(255,255,255,.06)"),background:on?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                              <GameLogo game={lg} size={12}/>
+                              <span style={{fontSize:11,fontWeight:on?700:500,color:on?"#E5E7EB":"#6B7280"}}>{lg}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
-                        style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 14px",color:"#c4b5fd",fontSize:16,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                        {hcpValues.map(v=><option key={v} value={v}>{v}</option>)}
-                      </select>
                     </div>
-                  )}
 
-                  {/* Résumé */}
-                  {tbTeam&&(
-                    <div style={{marginTop:12,padding:"8px 12px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:8,fontSize:12,color:"#93c5fd",fontWeight:600}}>
-                      {tbType==="victoire"?("✓ Victoire "+tbTeam):("± "+tbTeam+" "+(tbSign==="-"?"-":"+")+tbHcp+" pts")}
+                    {/* Équipe */}
+                    <div>
+                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Équipe</div>
+                      <div style={{position:"relative"}}>
+                        <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value,description:f.tbType==="victoire"?"Victoire "+e.target.value:e.target.value+" "+(f.tbSign||"+"+(f.tbHcp||"3.5"))}))}
+                          style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 40px 13px 14px",color:tbTeam?"#E5E7EB":"#4B5563",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",fontWeight:tbTeam?600:400}}>
+                          <option value="">Choisir une équipe…</option>
+                          {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Type */}
+                    <div>
+                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
+                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                          Victoire
+                        </button>
+                        <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
+                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                          Handicap
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Handicap détail */}
+                    {tbType==="handicap"&&(
+                      <div>
+                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Valeur du handicap</div>
+                        <div style={{display:"grid",gridTemplateColumns:"96px 1fr",gap:8}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                            {["+","-"].map(s=>(
+                              <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
+                                style={{padding:"13px 0",borderRadius:12,border:"1px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.4)":"rgba(248,113,113,.4)"):"rgba(255,255,255,.06)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.08)":"rgba(248,113,113,.08)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#4ade80":"#f87171"):"#6B7280",fontWeight:800,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                          <div style={{position:"relative"}}>
+                            <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
+                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 40px 13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                              {hcpValues.map(v=><option key={v} value={v}>{tbSign}{v}</option>)}
+                            </select>
+                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Résumé + Confirmer */}
+                    {tbTeam&&(
+                      <div style={{background:"rgba(255,255,255,.03)",borderRadius:12,padding:"12px 14px",border:"1px solid rgba(255,255,255,.06)"}}>
+                        <div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Récapitulatif</div>
+                        <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",marginBottom:12}}>
+                          {tbType==="victoire"?("Victoire — "+tbTeam):(tbTeam+" "+tbSign+tbHcp+" pts")}
+                          <span style={{fontSize:11,color:"#6B7280",fontWeight:400,marginLeft:8}}>{tbLeague}</span>
+                        </div>
+                        <button onClick={()=>{
+                          const desc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+                          setForm(f=>({...f,player:tbTeam,description:desc,overUnder:"Over",game:tbLeague,tbConfirmed:true}));
+                          setTeamBetMode(false);
+                        }}
+                          style={{width:"100%",padding:"13px",background:"linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.06))",border:"1px solid rgba(255,255,255,.15)",borderRadius:12,color:"#E5E7EB",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif",letterSpacing:.2}}>
+                          Confirmer ce pari →
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })()}
 
             {/* ── COMBINE MODE ── */}
             {combineMode&&(
-              <div style={{background:"#131525",borderRadius:16,border:"1px solid rgba(52,211,153,0.2)",padding:"14px 16px",marginBottom:10}}>
-                <div style={{fontSize:12,color:"#34d399",fontWeight:700,marginBottom:12}}>🔗 Paris combinés</div>
+              <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
+                <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Paris combinés</div>
+                </div>
+                <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                 {combineLegs.map((leg,i)=>(
-                  <div key={i} style={{marginBottom:10,padding:"10px 12px",borderRadius:12,border:"1px solid rgba(255,255,255,.06)",background:"rgba(8,14,28,.6)"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <span style={{fontSize:11,color:"#9CA3AF",fontWeight:700}}>Sélection {i+1}</span>
-                      {combineLegs.length>2&&<button onClick={()=>setCombineLegs(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:13}}>×</button>}
+                  <div key={i} style={{borderRadius:12,border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.02)",overflow:"hidden"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                      <span style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Sélection {i+1}</span>
+                      {combineLegs.length>2&&<button onClick={()=>setCombineLegs(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1,padding:"0 2px"}}>×</button>}
                     </div>
-                    <input className="ifield" placeholder="Joueur..." value={leg.player} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,player:e.target.value}:x))} style={{marginBottom:6}}/>
-                    <input className="ifield" placeholder="Sélection (ex: 24.5 Points)..." value={leg.description} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,description:e.target.value}:x))} style={{marginBottom:6}}/>
-                    <div style={{display:"flex",gap:6}}>
-                      {["Over","Under"].map(ou=>(
-                        <button key={ou} onClick={()=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,overUnder:ou}:x))}
-                          style={{flex:1,padding:"6px",borderRadius:8,border:"1.5px solid "+(leg.overUnder===ou?(ou==="Over"?"#22c55e":"#3b82f6"):"rgba(255,255,255,.07)"),background:leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.12)":"rgba(59,130,246,.12)"):"transparent",color:leg.overUnder===ou?(ou==="Over"?"#22c55e":"#60a5fa"):"#6B7280",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                          {ou==="Over"?"▲ Over":"▼ Under"}
-                        </button>
-                      ))}
+                    <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+                      <input className="ifield" placeholder="Joueur…" value={leg.player} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,player:e.target.value}:x))} style={{marginBottom:0}}/>
+                      <input className="ifield" placeholder="Sélection (ex: 24.5 Points)…" value={leg.description} onChange={e=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,description:e.target.value}:x))} style={{marginBottom:0}}/>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                        {["Over","Under"].map(ou=>(
+                          <button key={ou} onClick={()=>setCombineLegs(l=>l.map((x,j)=>j===i?{...x,overUnder:ou}:x))}
+                            style={{padding:"10px",borderRadius:10,border:"1px solid "+(leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.35)":"rgba(96,165,250,.35)"):"rgba(255,255,255,.06)"),background:leg.overUnder===ou?(ou==="Over"?"rgba(34,197,94,.07)":"rgba(96,165,250,.07)"):"transparent",color:leg.overUnder===ou?(ou==="Over"?"#4ade80":"#60a5fa"):"#6B7280",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                            {ou==="Over"?"▲ Over":"▼ Under"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
                 <button onClick={()=>setCombineLegs(l=>[...l,{player:"",description:"",overUnder:"Over"}])}
-                  style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed rgba(52,211,153,.3)",borderRadius:10,color:"#34d399",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif",marginBottom:8}}>
+                  style={{width:"100%",padding:"11px",background:"transparent",border:"1px dashed rgba(255,255,255,.1)",borderRadius:12,color:"#6B7280",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif",fontWeight:600}}>
                   + Ajouter une sélection
                 </button>
-                <div style={{fontSize:10,color:"#6B7280",marginBottom:6}}>Cote & Mise totale ↓</div>
+                <div style={{fontSize:10,color:"#4B5563",textAlign:"center"}}>Cote & mise dans la section ci-dessous</div>
+                </div>
               </div>
             )}
 
@@ -5224,19 +5248,21 @@ export default function App(){
                       })()}
                       <span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>
                       <button
-                        onClick={()=>setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}))}
+                        onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}));}}
                         title="Changer la ligue"
-                        style={{display:"inline-flex",alignItems:"center",gap:4,background:"none",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"2px 6px",cursor:"pointer",position:"relative"}}>
-                        <GameLogo game={form.autoInfo.game} size={15}/>
-                        <span style={{fontSize:9,color:"#6B7280"}}>▾</span>
+                        style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:6,padding:"3px 7px",cursor:"pointer"}}>
+                        <GameLogo game={form.autoInfo.game} size={14}/>
+                        <span style={{fontSize:9,color:"#6B7280",lineHeight:1}}>▾</span>
                       </button>
                       {form._lgPickerOpen&&(
-                        <div style={{position:"absolute",zIndex:100,top:"100%",left:0,marginTop:4,background:"#0d1225",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"8px",display:"flex",flexWrap:"wrap",gap:5,boxShadow:"0 8px 24px rgba(0,0,0,.6)",minWidth:220}}>
+                        <div style={{position:"fixed",zIndex:999,background:"#0d1225",border:"1px solid rgba(255,255,255,.12)",borderRadius:14,padding:"10px",display:"flex",flexWrap:"wrap",gap:6,boxShadow:"0 16px 40px rgba(0,0,0,.7)",maxWidth:260,left:"50%",transform:"translateX(-50%)",top:"auto",marginTop:8}}
+                          onClick={e=>e.stopPropagation()}>
+                          <div style={{width:"100%",fontSize:9,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Changer la ligue</div>
                           {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
                             <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 9px",borderRadius:8,border:"1.5px solid "+(form.autoInfo.game===lg?"rgba(167,139,250,.5)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(124,58,237,.15)":"rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                              <GameLogo game={lg} size={13}/>
-                              <span style={{fontSize:10,fontWeight:700,color:form.autoInfo.game===lg?"#a78bfa":"#9CA3AF"}}>{lg}</span>
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(form.autoInfo.game===lg?"rgba(255,255,255,.2)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(255,255,255,.1)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                              <GameLogo game={lg} size={12}/>
+                              <span style={{fontSize:11,fontWeight:form.autoInfo.game===lg?700:500,color:form.autoInfo.game===lg?"#E5E7EB":"#9CA3AF"}}>{lg}</span>
                             </button>
                           ))}
                         </div>
