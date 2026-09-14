@@ -6039,35 +6039,35 @@ export default function App(){
                       })()}
                       <span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span>
                       <button
-                        onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen,_lgPickerY:e.clientY,_lgPickerX:e.clientX}));}}
-                        title="Changer la ligue"
-                        style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:6,padding:"3px 7px",cursor:"pointer"}}>
+                        onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}));}}
+                        title="Changer la ligue du pari"
+                        style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"4px 8px",cursor:"pointer"}}>
                         <GameLogo game={form.autoInfo.game} size={14}/>
-                        <span style={{fontSize:9,color:"#6B7280",lineHeight:1}}>▾</span>
+                        <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>{form.autoInfo.game}</span>
+                        <span style={{fontSize:9,color:"#6B7280"}}>▾</span>
                       </button>
-                      {form._lgPickerOpen&&(()=>{
-                        const winH=window.innerHeight;
-                        const winW=window.innerWidth;
-                        const pickerH=280;
-                        const pickerW=220;
-                        const cy=form._lgPickerY||200;
-                        const top=cy+pickerH>winH-20?cy-pickerH-8:cy+8;
-                        const left=Math.min(Math.max((form._lgPickerX||winW/2)-pickerW/2,8),winW-pickerW-8);
-                        return(
-                          <div style={{position:"fixed",zIndex:9999,top,left,background:"#0d1225",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"10px",display:"flex",flexWrap:"wrap",gap:6,boxShadow:"0 16px 40px rgba(0,0,0,.8)",width:pickerW}}
+                      {form._lgPickerOpen&&(
+                        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.65)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}
+                          onClick={()=>setForm(f=>({...f,_lgPickerOpen:false}))}>
+                          <div style={{background:"#0d1225",border:"1px solid rgba(255,255,255,.15)",borderRadius:18,padding:"16px",width:"100%",maxWidth:300,boxShadow:"0 24px 60px rgba(0,0,0,.9)"}}
                             onClick={e=>e.stopPropagation()}>
-                            <div style={{width:"100%",fontSize:9,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Ligue du joueur</div>
-                            {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
-                              <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
-                                style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(form.autoInfo.game===lg?"rgba(255,255,255,.25)":"rgba(255,255,255,.07)"),background:form.autoInfo.game===lg?"rgba(255,255,255,.12)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
-                                <GameLogo game={lg} size={13}/>
-                                <span style={{fontSize:12,fontWeight:form.autoInfo.game===lg?700:500,color:form.autoInfo.game===lg?"#E5E7EB":"#9CA3AF"}}>{lg}</span>
-                                {form.autoInfo.game===lg&&<span style={{marginLeft:"auto",color:"#a78bfa",fontSize:11}}>✓</span>}
-                              </button>
-                            ))}
+                            <div style={{fontSize:11,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:12,textAlign:"center"}}>Ligue du pari — {form.autoInfo.name||form.player}</div>
+                            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>{
+                                const on=form.autoInfo.game===lg;
+                                return(
+                                  <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
+                                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid "+(on?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",width:"100%"}}>
+                                    <GameLogo game={lg} size={16}/>
+                                    <span style={{flex:1,fontSize:13,fontWeight:on?700:500,color:on?"#a78bfa":"#E5E7EB"}}>{lg}</span>
+                                    {on&&<span style={{color:"#a78bfa",fontSize:14}}>✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      )}
                       {form.autoInfo.role&&(
                         <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,fontWeight:600,color:"#7a9cbd"}}>{form.autoInfo.role}</span></>
                       )}
