@@ -2782,29 +2782,45 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
 }
 
 // ── LeagueEditor — section Édit dans Suivi ────────────────────────────────────
-const POSITION_ORDER=["PG","SG","SF","PF","C","Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big","G","F",""];
-function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?99:r;}
+const POSITION_ORDER=["PG","SG","G","Guard","Point Guard","Shooting Guard","SF","Small Forward","Wing","PF","Power Forward","F","Forward","C","Center","Big",""];
+function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?98:r;}
 
 function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [openLeague,setOpenLeague]=useState(null);
   const [openTeam,setOpenTeam]=useState(null);
-  const [editingPlayer,setEditingPlayerLocal]=useState(null); // {key, data}
+  const [editingPlayer,setEditingPlayerLocal]=useState(null);
   const [editForm,setEditForm]=useState({});
 
   const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
-  // Build league→teams→players from allPlayers
   const leagueData=useMemo(()=>{
     const map={};
     LEAGUES.forEach(lg=>{map[lg]={};});
+
     Object.entries(allPlayers).forEach(([key,p])=>{
-      const lg=p.game||"NBA";
-      if(!map[lg])map[lg]={};
+      const primaryLeague=p.game||"NBA";
       const team=p.team||"Sans équipe";
-      if(!map[lg][team])map[lg][team]=[];
-      map[lg][team].push({key,data:p});
+
+      // Trouver toutes les ligues de ce club via MULTI_LEAGUE_CLUBS
+      const clubLeagues=MULTI_LEAGUE_CLUBS[team]||null;
+
+      if(clubLeagues){
+        // Joueur multi-ligues : apparaît dans CHAQUE ligue du club
+        clubLeagues.forEach(lg=>{
+          if(!map[lg])map[lg]={};
+          if(!map[lg][team])map[lg][team]=[];
+          // Eviter les doublons
+          if(!map[lg][team].find(x=>x.key===key)){
+            map[lg][team].push({key,data:p});
+          }
+        });
+      } else {
+        // Joueur ligue unique : ligue principale seulement
+        if(!map[primaryLeague])map[primaryLeague]={};
+        if(!map[primaryLeague][team])map[primaryLeague][team]=[];
+        map[primaryLeague][team].push({key,data:p});
+      }
     });
-    // Also add teams from EURO_TEAMS / NBA_TEAMS that have 0 players (still show)
     return map;
   },[allPlayers]);
 
