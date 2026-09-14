@@ -3061,7 +3061,17 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [deletingTeam,setDeletingTeam]=useState(null); // {lg, team} - confirmation inline
   const [addTeamLeague,setAddTeamLeague]=useState(null); // ligue pour ajouter club
   const [addTeamName,setAddTeamName]=useState("");
+  const [searchQ,setSearchQ]=useState("");
   const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+
+  const searchResults=useMemo(()=>{
+    const q=searchQ.toLowerCase().trim();
+    if(q.length<2)return[];
+    return Object.entries(allPlayers)
+      .filter(([k,p])=>k.includes(q)||(p.name||"").toLowerCase().includes(q))
+      .sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0]))
+      .slice(0,8);
+  },[allPlayers,searchQ]);
 
   const leagueData=useMemo(()=>{
     const map={};
@@ -3136,6 +3146,52 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   return(
     <div style={{marginBottom:16}}>
       <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",marginBottom:10}}>Édit</div>
+
+      {/* ── Barre de recherche rapide ── */}
+      <div style={{position:"relative",marginBottom:12}}>
+        <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
+        <input
+          value={searchQ}
+          onChange={e=>setSearchQ(e.target.value)}
+          placeholder="Rechercher un joueur... (ex: Irving)"
+          style={{width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 12px 11px 36px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+        />
+        {searchQ&&<button onClick={()=>setSearchQ("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.1)",border:"none",borderRadius:"50%",width:20,height:20,color:"#9CA3AF",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+      </div>
+
+      {/* ── Résultats de recherche ── */}
+      {searchResults.length>0&&(
+        <div style={{background:"rgba(6,10,20,.95)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          {searchResults.map(([key,data])=>{
+            const teamLogo=TEAM_LOGOS[data.team]||EL_TEAM_LOGOS[data.team]||NBA_TEAM_LOGOS[data.team]||null;
+            return(
+              <button key={key} onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
+                style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.05)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                {data.photo_url?(
+                  <img src={data.photo_url} loading="lazy" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                ):(
+                  <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                  </div>
+                )}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.name||key}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                    {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
+                    <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
+                    {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
+                    <span style={{fontSize:9,color:"#4a5a6e"}}>{data.game}</span>
+                  </div>
+                </div>
+                <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {searchQ.length>=2&&searchResults.length===0&&(
+        <div style={{textAlign:"center",padding:"10px",fontSize:11,color:"#4a5a6e",marginBottom:12}}>Aucun joueur trouvé pour "{searchQ}"</div>
+      )}
 
       {/* Player edit modal — fixed position, outside scroll */}
       {editingPlayer&&(
@@ -8526,20 +8582,6 @@ export default function App(){
 
             {/* ── ÉDIT ── */}
             <LeagueEditor allPlayers={allPlayers} setPlayers={setPlayers} showToast={showToast}/>
-
-            {/* ── MODIFIER JOUEUR ── */}
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#60a5fa",marginBottom:10,letterSpacing:.3}}>✎ Modifier joueur</div>
-              <PlayerSearchPanel
-                allPlayers={allPlayers}
-                custom={players}
-                setPlayers={setPlayers}
-                setEditingPlayer={setEditingPlayer}
-                blacklist={blacklist}
-                toggleBlacklist={toggleBlacklist}
-                onSaveBulk={()=>{}}
-              />
-            </div>
 
             {/* ── TIPSERS ── */}
             {(()=>{
