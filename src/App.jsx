@@ -4609,9 +4609,11 @@ export default function App(){
   },[homeSettled]);
 
   const formGame=useMemo(function(){
+    // form.game est mis à jour par le picker de ligue — priorité sur autoInfo
+    if(form.game&&form.game!=="NBA"||form.game==="NBA")return form.game||"NBA";
     if(form.autoInfo&&form.autoInfo.game)return form.autoInfo.game;
     return "NBA";
-  },[form.autoInfo]);
+  },[form.game,form.autoInfo]);
 
   function addBet(){
     if(!form.player||!form.odds||!form.stake||!form.bookmaker||!form.description)return;
@@ -4642,7 +4644,7 @@ export default function App(){
         ...editingBet,
         player:form.player,description:desc,overUnder:form.overUnder,
         odds,stake,bookmaker:form.bookmaker,
-        game:info.game,league:info.league,role:info.role,team:info.team,
+        game:form.game||info.game,league:form.league||form.game||info.league,role:info.role,team:info.team,
         datetime:newDatetime,isHeadshot:form.isHeadshot||false,isLive:form.isLive||false,
         mapTag:form.mapTag||"",
         profit:calcProfit(editingBet.status,stake,odds),
@@ -4696,7 +4698,7 @@ export default function App(){
     const newBet={
       id:Date.now(),updatedAt:Date.now(),player:form.player,description:desc,overUnder:form.overUnder,
       odds,stake,bookmaker:form.bookmaker,status:form.status,
-      game:info.game,league:info.league,role:info.role,team:info.team,
+      game:form.game||info.game,league:form.league||form.game||info.league,role:info.role,team:info.team,
       datetime:form.datetime||nowDT(),isHeadshot:form.isHeadshot||false,isLive:form.isLive||false,
       mapTag:form.mapTag||"",profit:calcProfit(form.status,stake,odds),
       tournament:tname,
@@ -4737,7 +4739,7 @@ export default function App(){
       id:now+i,player:form.player,description:desc,overUnder:form.overUnder,
       odds:parseFloat(m.odds),stake:parseFloat(m.stake||form.stake||0),
       bookmaker:form.bookmaker,status:m.status,
-      game:info.game,league:info.league,role:info.role,team:info.team,
+      game:form.game||info.game,league:form.league||form.game||info.league,role:info.role,team:info.team,
       datetime:form.datetime||nowDT(),isHeadshot:form.isHeadshot||false,isLive:form.isLive||false,
       mapTag:"Map "+(i+1),
       profit:calcProfit(m.status,parseFloat(m.stake||form.stake||0),parseFloat(m.odds)),
@@ -6144,28 +6146,37 @@ export default function App(){
                         <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>{form.autoInfo.game}</span>
                         <span style={{fontSize:9,color:"#6B7280"}}>▾</span>
                       </button>
-                      {form._lgPickerOpen&&(
-                        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.65)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}
-                          onClick={()=>setForm(f=>({...f,_lgPickerOpen:false}))}>
-                          <div style={{background:"#0d1225",border:"1px solid rgba(255,255,255,.15)",borderRadius:18,padding:"16px",width:"100%",maxWidth:300,boxShadow:"0 24px 60px rgba(0,0,0,.9)"}}
-                            onClick={e=>e.stopPropagation()}>
-                            <div style={{fontSize:11,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:12,textAlign:"center"}}>Ligue du pari — {form.autoInfo.name||form.player}</div>
-                            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>{
-                                const on=form.autoInfo.game===lg;
-                                return(
-                                  <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,_lgPickerOpen:false}))}
-                                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid "+(on?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",width:"100%"}}>
-                                    <GameLogo game={lg} size={16}/>
-                                    <span style={{flex:1,fontSize:13,fontWeight:on?700:500,color:on?"#a78bfa":"#E5E7EB"}}>{lg}</span>
-                                    {on&&<span style={{color:"#a78bfa",fontSize:14}}>✓</span>}
-                                  </button>
-                                );
-                              })}
+                      {form._lgPickerOpen&&(()=>{
+                        // Trouver les ligues du club du joueur via MULTI_LEAGUE_CLUBS
+                        const playerTeam=form.autoInfo.team||"";
+                        const teamNorm=playerTeam.toLowerCase().trim();
+                        const officialName=Object.keys(MULTI_LEAGUE_CLUBS).find(k=>k.toLowerCase().trim()===teamNorm)||null;
+                        const availLeagues=officialName?MULTI_LEAGUE_CLUBS[officialName]:null;
+                        // Si pas trouvé → toutes les ligues
+                        const leaguesToShow=availLeagues||["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+                        return(
+                          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.65)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}
+                            onClick={()=>setForm(f=>({...f,_lgPickerOpen:false}))}>
+                            <div style={{background:"#0d1225",border:"1px solid rgba(255,255,255,.15)",borderRadius:18,padding:"16px",width:"100%",maxWidth:300,boxShadow:"0 24px 60px rgba(0,0,0,.9)"}}
+                              onClick={e=>e.stopPropagation()}>
+                              <div style={{fontSize:11,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:12,textAlign:"center"}}>Ligue du pari — {form.autoInfo.name||form.player}</div>
+                              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                                {leaguesToShow.map(lg=>{
+                                  const on=form.autoInfo.game===lg;
+                                  return(
+                                    <button key={lg} onClick={()=>setForm(f=>({...f,autoInfo:{...f.autoInfo,game:lg,league:lg},game:lg,league:lg,_lgPickerOpen:false}))}
+                                      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid "+(on?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",width:"100%"}}>
+                                      <GameLogo game={lg} size={16}/>
+                                      <span style={{flex:1,fontSize:13,fontWeight:on?700:500,color:on?"#a78bfa":"#E5E7EB"}}>{lg}</span>
+                                      {on&&<span style={{color:"#a78bfa",fontSize:14}}>✓</span>}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                       {form.autoInfo.role&&(
                         <><span style={{color:"#4a5a6e",fontSize:12,fontWeight:300}}>·</span><span style={{fontSize:11,fontWeight:600,color:"#7a9cbd"}}>{form.autoInfo.role}</span></>
                       )}
@@ -6396,19 +6407,18 @@ export default function App(){
                   {lockedTipster?"🔒 Locké":"🔓 Locker"}
                 </button></div>
               {savedTipsters.length>0?(
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {savedTipsters.map(t=>{
-                    const on=tipsterName===t;
-                    return(
-                      <button key={t} onClick={()=>setTipsterName(on?"":t)}
-                        style={{padding:"6px 13px",borderRadius:20,border:"1.5px solid "+(on?"rgba(167,139,250,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",color:on?"#a78bfa":"#6B7280",fontSize:12,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                        {on?"✓ ":""}{t}
-                      </button>
-                    );
-                  })}
+                <div style={{position:"relative"}}>
+                  <select
+                    value={tipsterName}
+                    onChange={e=>setTipsterName(e.target.value)}
+                    style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 36px 11px 12px",color:tipsterName?"#E5E7EB":"#6B7280",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}>
+                    <option value="">Aucun tipster</option>
+                    {savedTipsters.map(t=><option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
                 </div>
               ):(
-                <input className="ifield" placeholder="Nom du tipster (optionnel)..." value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={{marginBottom:0}}/>
+                <div style={{fontSize:11,color:"#6B7280",padding:"8px 0"}}>Crée des tipsers dans l'onglet Suivi pour les sélectionner ici.</div>
               )}
               {lockedTipster&&tipsterName&&<div style={{fontSize:10,color:"#F59E0B",marginTop:6,fontWeight:600}}>🔒 Tipster "{tipsterName}" verrouillé pour les prochains paris</div>}
             </div>
