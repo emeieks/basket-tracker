@@ -514,7 +514,22 @@ const EL_TEAM_LOGOS = {
 // Colle les URLs ici pour chaque club.
 const TEAM_LOGOS = {
   // ── Pro A ──────────────────────────────────────────────────────────────────
-  "Paris Basketball":        "",
+  "Paris Basketball":        "https://www.basketguru.fr/team_logos/logo_paris_basketball.png",
+  "LDLC ASVEL":              "https://www.basketguru.fr/team_logos/logo_asvel.png",
+  "JL Bourg":                "https://www.basketguru.fr/team_logos/logo_jlbourg.png",
+  "Cholet Basket":           "https://www.basketguru.fr/team_logos/logo_cholet.png",
+  "Nanterre 92":             "https://www.basketguru.fr/team_logos/logo_nanterre.png",
+  "Le Mans Sarthe":          "https://www.basketguru.fr/team_logos/logo_msb.png",
+  "Élan Chalon":             "https://www.basketguru.fr/team_logos/logo_chalon.png",
+  "Gravelines-Dunkerque":    "https://www.basketguru.fr/team_logos/logo_bcm.png",
+  "SIG Strasbourg":          "https://www.basketguru.fr/team_logos/logo_strasbourg.png",
+  "Limoges CSP":             "https://www.basketguru.fr/team_logos/logo_csp_limoges.png",
+  "Roanne":                  "https://www.basketguru.fr/team_logos/logo_roanne.png",
+  "Pau-Lacq-Orthez":         "https://www.basketguru.fr/team_logos/logo_pau.png",
+  "Nancy":                   "https://www.basketguru.fr/team_logos/logo_sluc.png",
+  "Boulazac Basket Dordogne":"https://www.basketguru.fr/team_logos/logo_bbd.png",
+  "JDA Dijon":               "https://www.basketguru.fr/team_logos/logo_jda.png",
+  "Saint-Quentin":           "https://www.basketguru.fr/team_logos/logo_sqbb.png",
   "LDLC ASVEL":              "",
   "JL Bourg":                "",
   "Cholet Basket":           "",
@@ -603,18 +618,38 @@ const TEAM_LOGOS = {
   "Braunschweig":            "",
   "Dresden":                 "",
 
-  // ── EuroLeague ─────────────────────────────────────────────────────────────
-  "Fenerbahce":              "",
-  "Anadolu Efes":            "",
-  "Olympiacos":              "",
-  "Panathinaikos":           "",
-  "Partizan":                "",
-  "Crvena zvezda":           "",
-  "Maccabi Tel Aviv":        "",
-  "Besiktas":                "",
-  "Zalgiris Kaunas":         "",
-  "Dubai Basketball":        "",
-  "Hapoel Tel Aviv":         "",
+  // ── EuroLeague (logos depuis EL_TEAM_LOGOS existants) ────────────────────
+  "Real Madrid":                    "https://media-cdn.incrowdsports.com/371b0d9b-9250-4c09-bda7-0686cf024657.png?width=168&resizeType=fill&format=webp",
+  "FC Barcelona":                   "https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png?width=168&resizeType=fill&format=webp",
+  "Fenerbahçe Tarfin":              "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezrk/aa39750a-6203-49ee-a87d-edd0c6f0397d.png?width=168&resizeType=fill&format=webp",
+  "Fenerbahce":                     "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezrk/aa39750a-6203-49ee-a87d-edd0c6f0397d.png?width=168&resizeType=fill&format=webp",
+  "Anadolu Efes":                   "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgOCxM/a844756c-a58d-4666-93b8-48f7337bc79d.png?width=168&resizeType=fill&format=webp",
+  "Olympiacos":                     "https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png?width=168&resizeType=fill&format=webp",
+  "Panathinaikos AKTOR":            "https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png?width=168&resizeType=fill&format=webp",
+  "Panathinaikos":                  "https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png?width=168&resizeType=fill&format=webp",
+  "Partizan Mozzart Bet":           "https://media-cdn.incrowdsports.com/2681304e-77dd-4331-88b1-683078c0fb49.png?width=168&resizeType=fill&format=webp",
+  "Partizan":                       "https://media-cdn.incrowdsports.com/2681304e-77dd-4331-88b1-683078c0fb49.png?width=168&resizeType=fill&format=webp",
+  "Crvena zvezda Meridianbet":      "https://media-cdn.incrowdsports.com/d2eef4a8-62df-4fdd-9076-276004268515.png?width=168&resizeType=fill&format=webp",
+  "Crvena zvezda":                  "https://media-cdn.incrowdsports.com/d2eef4a8-62df-4fdd-9076-276004268515.png?width=168&resizeType=fill&format=webp",
+  "Maccabi Rapyd Tel Aviv":         "https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png?width=168&resizeType=fill&format=webp",
+  "Maccabi Tel Aviv":               "https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png?width=168&resizeType=fill&format=webp",
+  "Olimpia Milano":                 "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgPRhK/c3bed86d-f49c-4459-a7b7-97e4a49d67da.png?width=168&resizeType=fill&format=webp",
+  "EA7 Olimpia Milano":             "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgPRhK/c3bed86d-f49c-4459-a7b7-97e4a49d67da.png?width=168&resizeType=fill&format=webp",
+  "Virtus Olidata Bologna":         "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezvk/a92d4c3b-9f9c-4163-8a10-bcf8fc15893e.png?width=168&resizeType=fill&format=webp",
+  "Virtus Bologna":                 "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezvk/a92d4c3b-9f9c-4163-8a10-bcf8fc15893e.png?width=168&resizeType=fill&format=webp",
+  "Beşiktaş Gain":                  "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
+  "Besiktas":                       "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
+  "Kosner Baskonia":                "https://media-cdn.cortextech.io/cbc49cb0-99ce-4462-bdb7-56983ee03cf4.png?width=168&resizeType=fill&format=webp",
+  "Bayern München":                 "https://media-cdn.incrowdsports.com/817b0e58-d595-4b09-ab0b-1e7cc26249ff.png?width=168&resizeType=fill&format=webp",
+  "FC Bayern Munich":               "https://media-cdn.incrowdsports.com/817b0e58-d595-4b09-ab0b-1e7cc26249ff.png?width=168&resizeType=fill&format=webp",
+  "LDLC ASVEL":                     "https://www.basketguru.fr/team_logos/logo_asvel.png",
+  "Valencia Basket":                "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHL/bc3e00b2-fea4-40be-a7ec-1e633129bde3.png?width=168&resizeType=fill&format=webp",
+  "Paris Basketball":               "https://www.basketguru.fr/team_logos/logo_paris_basketball.png",
+  "Žalgiris":                       "https://media-cdn.incrowdsports.com/0aa09358-3847-4c4e-b228-3582ee4e536d.png?width=168&resizeType=fill&format=webp",
+  "Zalgiris Kaunas":                "https://media-cdn.incrowdsports.com/0aa09358-3847-4c4e-b228-3582ee4e536d.png?width=168&resizeType=fill&format=webp",
+  "Dubai Basketball":               "https://media-cdn.incrowdsports.com/1efae090-16e2-4963-ae47-4b94f249c244.png?width=168&resizeType=fill&format=webp",
+  "Hapoel IBI Tel Aviv":            "https://media-cdn.incrowdsports.com/cbb1c3ad-03d5-426a-b5ef-2832a4eee484.png?width=168&resizeType=fill&format=webp",
+  "Hapoel Tel Aviv":                "https://media-cdn.incrowdsports.com/cbb1c3ad-03d5-426a-b5ef-2832a4eee484.png?width=168&resizeType=fill&format=webp",
 
   // ── EuroCup ────────────────────────────────────────────────────────────────
   "Aris Thessaloniki":       "",
@@ -687,13 +722,13 @@ const NBA_LEAGUE_LOGO = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagu
 // ── Équipes ligues européennes basket ────────────────────────────────────────
 const EURO_TEAMS={
   // ── Pro A / Betclic Élite (France) ───────────────────────────────────────
-  "Pro A":["Paris Basketball","LDLC ASVEL","JL Bourg","Cholet","Nanterre 92","Metropolitans 92","Le Mans Sarthe","Roanne","Orléans Loiret","Pau-Lacq-Orthez","Limoges CSP","Élan Chalon","Gravelines-Dunkerque","SIG Strasbourg","Fos Provence","Champagne Basket","Châlons-Reims","Nancy","Hyères-Toulon","Aix-Maurienne"],
+  "Pro A":["Paris Basketball","LDLC ASVEL","JL Bourg","Cholet Basket","Nanterre 92","Le Mans Sarthe","Élan Chalon","Gravelines-Dunkerque","SIG Strasbourg","Limoges CSP","Roanne","Pau-Lacq-Orthez","Nancy","Boulazac Basket Dordogne","JDA Dijon","Saint-Quentin"],
   // ── ACB (Espagne) ────────────────────────────────────────────────────────
-  "ACB":["Real Madrid","FC Barcelona","Kosner Baskonia","Valencia Basket","Dreamland Gran Canaria","Unicaja","Asisa Joventut","Río Breogán","BAXI Manresa","Casademont Zaragoza","Fuenlabrada","Obradoiro","UCAM Murcia","Bilbao Basket","Surne Bilbao","La Laguna Tenerife","Betis","Morabanc Andorra","Recoletas Salud Burgos","Estudiantes"],
+  "ACB":["Real Madrid","FC Barcelona","Kosner Baskonia","Valencia Basket","Unicaja","Joventut Badalona","BAXI Manresa","Casademont Zaragoza","UCAM Murcia","Bilbao Basket","Surne Bilbao","Lenovo Tenerife","Monbus Obradoiro","MoraBanc Andorra","Siblo San Pablo Burgos","Rio Breogan","CB Girona","CB Coruna","Forca Lleida"],
   // ── Lega Basket Serie A (Italie) ─────────────────────────────────────────
-  "Lega":["Olimpia Milano","Virtus Olidata Bologna","Dolomiti Energia Trento","Umana Reyer Venezia","Pallacanestro Varese","Baglietto Derthona","Germani Brescia","Pallacanestro Reggiana","Napoli Basketball","Trieste","Treviso","Vanoli Cremona","Scafati","Pistoia","Forlì","Udine","Brindisi","Pesaro","Roma Basketball","Trapani Shark"],
+  "Lega":["Olimpia Milano","Umana Reyer Venezia","Virtus Olidata Bologna","Maxima Roma","BC Roma SPQR","Pallacanestro Varese","Baglietto Derthona","Napoli Basketball","Pallacanestro Reggiana","Dolomiti Energia Trento","Nutribullet Treviso","APU Udine","Pallacanestro Trieste","Acqua San Bernardo Cantu","Givova Scafati","Tezenis Verona"],
   // ── BBL / Bundesliga (Allemagne) ─────────────────────────────────────────
-  "Bundesliga":["Bayern München","Alba Berlin","Telekom Baskets Bonn","Hamburg Towers","Fitness First Würzburg Baskets","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Jena","Tübingen","Göttingen","Gießen","Braunschweig","Dresden"],
+  "Bundesliga":["Bayern München","Telekom Baskets Bonn","Hamburg Towers","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Science City Jena","Tigers Tübingen","BG Göttingen","Giessen 46ers","Löwen Braunschweig","Dresden Titans","Brose Bamberg","Hamburg Towers"],
   // ── EuroLeague 2026-27 (20 équipes officielles Wikipedia) ────────────────
   "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
   // ── EuroCup 2026-27 (32 équipes - Monaco exclu 01/09/2026) ───────────────
@@ -714,7 +749,7 @@ const MULTI_LEAGUE_CLUBS={
   "Nanterre 92":        ["Pro A","BCL"],
   "Cholet":             ["Pro A","BCL"],
   "SIG Strasbourg":     ["Pro A","BCL"],
-  "Élan Chalon":        ["Pro A","BCL"],
+  "Élan Chalon":        ["Pro A"],
 
   // ────────────────────────────────────────────────────────────────────────
   // ESPAGNE - ACB
@@ -724,12 +759,12 @@ const MULTI_LEAGUE_CLUBS={
   "Kosner Baskonia":           ["ACB","EuroLeague"],
   "Valencia Basket":           ["ACB","EuroLeague"],
   "Unicaja":                   ["ACB","BCL"],
-  "Asisa Joventut":            ["ACB","BCL"],
+  "Joventut Badalona":          ["ACB","BCL"],
   "UCAM Murcia":               ["ACB","BCL"],
   "Surne Bilbao":              ["ACB","BCL"],
-  "La Laguna Tenerife":        ["ACB","EuroCup"],
+  "Lenovo Tenerife":            ["ACB","EuroCup"],
   "BAXI Manresa":              ["ACB","EuroCup"],
-  "Recoletas Salud Burgos":    ["ACB","EuroCup"],
+  "Siblo San Pablo Burgos":     ["ACB","EuroCup"],
 
   // ────────────────────────────────────────────────────────────────────────
   // ITALIE - Lega Basket Serie A
@@ -743,7 +778,7 @@ const MULTI_LEAGUE_CLUBS={
   "Baglietto Derthona":        ["Lega","EuroCup"],
   "Napoli Basketball":         ["Lega","EuroCup"],
   "Roma Basketball":           ["Lega","EuroCup"],
-  "Pallacanestro Varese":      ["Lega","BCL"],
+  "Pallacanestro Varese":       ["Lega","BCL"],
   "Pallacanestro Reggiana":    ["Lega","BCL"],
 
   // ────────────────────────────────────────────────────────────────────────
@@ -904,6 +939,13 @@ const MULTI_LEAGUE_CLUBS={
   // ────────────────────────────────────────────────────────────────────────
   "Tofaş":                     ["BSL","EuroCup"],
   "Maxima Roma":               ["Lega","EuroCup"],
+  "BC Roma SPQR":              ["Lega"],
+  "Nutribullet Treviso":       ["Lega"],
+  "APU Udine":                 ["Lega"],
+  "Acqua San Bernardo Cantu":  ["Lega"],
+  "Givova Scafati":            ["Lega"],
+  "Tezenis Verona":            ["Lega"],
+  "Pallacanestro Trieste":     ["Lega"],
 };
 
 
