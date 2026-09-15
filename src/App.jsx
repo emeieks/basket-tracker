@@ -333,7 +333,6 @@ async function supaFetchPlayers() {
 }
 
 async function supaUpsertPlayer(data) {
-  // data: { id?, name, game, league, role, team, avatar_url?, avatar_file? }
   const payload = {
     name: data.name.toLowerCase().trim(),
     game: data.game || "NBA",
@@ -343,6 +342,7 @@ async function supaUpsertPlayer(data) {
     photo_url: data.photo_url || data.avatar_url || null,
     avatar_url: data.avatar_url || null,
     avatar_file: data.avatar_file || null,
+    team_logo_url: data.team_logo_url || null,
   };
   if (data.id) payload.id = data.id;
   const res = await fetch(SUPA_URL + "/rest/v1/players", {
@@ -2610,7 +2610,7 @@ function AnnonceNBATracker({bets,allPlayers}){
         </div></div>
       )}
       {filteredEntries.length===0?(
-        <div style={{textAlign:"center",padding:"32px 16px",color:"#4a5a6e"}}><div style={{fontSize:28,marginBottom:8}}>📋</div><div style={{fontSize:13,fontWeight:600}}>Aucune annonce trackée</div><div style={{fontSize:11,marginTop:4}}>Ajoute une annonce NBA pour voir comment les lignes bougent</div></div>
+        <div style={{textAlign:"center",padding:"32px 16px",color:"#4a5a6e"}}><div style={{fontSize:28,marginBottom:8}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div style={{fontSize:13,fontWeight:600}}>Aucune annonce trackée</div><div style={{fontSize:11,marginTop:4}}>Ajoute une annonce NBA pour voir comment les lignes bougent</div></div>
       ):filteredEntries.map(entry=>{
         const delta=entry.cutAfter!=null?entry.cutAfter-entry.cutBefore:null;
         const deltaColor=delta===null?"#6B7280":delta>0?"#22C55E":delta<0?"#f87171":"#9CA3AF";
@@ -3005,6 +3005,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [role,setRole]=useState(playerData.role||"");
   const [league,setLeague]=useState(playerData.game||"NBA");
   const [photoUrl,setPhotoUrl]=useState(playerData.photo_url||playerData.avatar_url||"");
+  const [teamLogoUrl,setTeamLogoUrl]=useState(playerData.team_logo_url||"");
   const [saving,setSaving]=useState(false);
   const isNBA=league==="NBA";
   const positions=isNBA?["PG","SG","SF","PF","C"]:["Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"];
@@ -3023,7 +3024,8 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   async function save(){
     setSaving(true);
     const finalPhoto=photoUrl.trim()||playerData.photo_url||null;
-    const updated={...playerData,team,role,game:league,photo_url:finalPhoto,avatar_url:finalPhoto};
+    const finalTeamLogo=teamLogoUrl.trim()||playerData.team_logo_url||null;
+    const updated={...playerData,team,role,game:league,photo_url:finalPhoto,avatar_url:finalPhoto,team_logo_url:finalTeamLogo};
     try{
       await supaUpsertPlayer({name:playerKey,...updated});
     }catch(e){console.error(e);}
@@ -3047,10 +3049,18 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
             </div>
           )}
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{playerData.name||playerKey}</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{fontSize:15,fontWeight:800,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{playerData.name||playerKey}</div>
+              <button onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(playerData.name||playerKey).then(()=>{})}
+                title="Copier le nom"
+                style={{flexShrink:0,background:"rgba(255,255,255,.08)",border:"none",borderRadius:6,padding:"2px 6px",color:"#9CA3AF",fontSize:10,cursor:"pointer",fontFamily:"Inter,sans-serif"}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
             <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3}}>
               {teamLogo&&<img src={teamLogo} alt="" style={{width:13,height:13,objectFit:"contain"}} loading="lazy"/>}
               <span style={{fontSize:11,color:"#6B7280"}}>{team||"Sans équipe"}</span>
+              {team&&<button onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(team).then(()=>{})}
+                title="Copier l'équipe"
+                style={{flexShrink:0,background:"rgba(255,255,255,.08)",border:"none",borderRadius:6,padding:"2px 5px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif"}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>}
               {role&&<span style={{fontSize:10,color:"#a78bfa",background:"rgba(124,58,237,.15)",padding:"1px 6px",borderRadius:8,fontWeight:600}}>{role}</span>}
             </div>
           </div>
@@ -3075,6 +3085,25 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
                 style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
               />
               {photoUrl&&<button onClick={()=>setPhotoUrl("")} style={{flexShrink:0,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"8px 10px",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>×</button>}
+            </div>
+          </div>
+
+          {/* Logo équipe URL */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo équipe URL</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {teamLogoUrl?(
+                <img src={teamLogoUrl} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"contain",flexShrink:0,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",padding:2}} onError={e=>e.target.style.display="none"}/>
+              ):(
+                <div style={{width:36,height:36,borderRadius:8,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6B7280"}}>🏀</div>
+              )}
+              <input
+                placeholder="Colle l'URL du logo de l'équipe..."
+                value={teamLogoUrl}
+                onChange={e=>setTeamLogoUrl(e.target.value)}
+                style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+              />
+              {teamLogoUrl&&<button onClick={()=>setTeamLogoUrl("")} style={{flexShrink:0,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"8px 10px",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>×</button>}
             </div>
           </div>
 
@@ -3240,27 +3269,43 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
         <div style={{background:"rgba(6,10,20,.95)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden",marginBottom:12}}>
           {searchResults.map(([key,data])=>{
             const teamLogo=TEAM_LOGOS[data.team]||EL_TEAM_LOGOS[data.team]||NBA_TEAM_LOGOS[data.team]||null;
+            const copyText=(txt)=>{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>showToast("Copié : "+txt,"#22C55E")).catch(()=>{});};
             return(
-              <button key={key} onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
-                style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.05)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                {data.photo_url?(
-                  <img src={data.photo_url} loading="lazy" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
-                ):(
-                  <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+              <div key={key} style={{display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                <button onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
+                  style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                  {data.photo_url?(
+                    <img src={data.photo_url} loading="lazy" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                  ):(
+                    <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.name||key}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                      {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
+                      <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
+                      {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
+                      <span style={{fontSize:9,color:"#4a5a6e"}}>{data.game}</span>
+                    </div>
                   </div>
-                )}
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.name||key}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-                    {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
-                    <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
-                    {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
-                    <span style={{fontSize:9,color:"#4a5a6e"}}>{data.game}</span>
-                  </div>
+                  <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
+                </button>
+                {/* Boutons copier */}
+                <div style={{display:"flex",flexDirection:"column",gap:3,paddingRight:10,flexShrink:0}}>
+                  <button onClick={e=>{e.stopPropagation();copyText(data.name||key);}}
+                    title="Copier le nom"
+                    style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,whiteSpace:"nowrap"}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> nom
+                  </button>
+                  {data.team&&<button onClick={e=>{e.stopPropagation();copyText(data.team);}}
+                    title="Copier l'équipe"
+                    style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,whiteSpace:"nowrap"}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> équipe
+                  </button>}
                 </div>
-                <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
-              </button>
+              </div>
             );
           })}
         </div>
