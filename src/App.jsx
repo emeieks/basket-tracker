@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from "react";
 
-// ── Optimisation images globale ───────────────────────────────────────────────
-if(typeof document!=="undefined"){
-  const style=document.createElement("style");
-  style.textContent=`
-    img { image-rendering: auto; }
-    img[loading="lazy"] { opacity: 0; transition: opacity .15s; }
-    img[loading="lazy"].loaded { opacity: 1; }
-  `;
-  document.head.appendChild(style);
-
-  // Ajouter class loaded quand image chargée
-  document.addEventListener("load", e=>{
-    if(e.target.tagName==="IMG") e.target.classList.add("loaded");
-  }, true);
+// ── Cache images en mémoire (affichage instantané au 2e affichage) ──────────
+const IMG_CACHE=new Map();
+function CachedImg({src,style,alt="",onError,width,height,...rest}){
+  if(!src) return null;
+  const cached=IMG_CACHE.has(src);
+  return(
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      decoding="async"
+      loading={cached?"eager":"lazy"}
+      style={{...style,transition:cached?undefined:"opacity .1s",opacity:cached?1:0}}
+      onLoad={e=>{IMG_CACHE.set(src,true);e.target.style.opacity="1";}}
+      onError={e=>{if(onError)onError(e);e.target.style.display="none";}}
+      {...rest}
+    />
+  );
 }
-
-
 
 // ── Normalize datetime helper ─────────────────────────────────────────────
 
@@ -3044,22 +3047,31 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
     const finalTeamLogo=teamLogoUrl.trim()||playerData.team_logo_url||null;
     const updated={...playerData,team,role,game:league,photo_url:finalPhoto,avatar_url:finalPhoto,team_logo_url:finalTeamLogo};
     try{
-      await supaUpsertPlayer({name:playerKey,...updated});
-    }catch(e){console.error(e);}
-    setPlayers(p=>({...p,[playerKey]:updated}));
-    showToast((playerData.name||playerKey)+" mis à jour","#A78BFA");
+      const res=await supaUpsertPlayer({name:playerKey,...updated});
+      if(!res) throw new Error("Pas de réponse Supabase");
+      setPlayers(p=>({...p,[playerKey]:updated}));
+      showToast((playerData.name||playerKey)+" mis à jour ✓","#22C55E");
+    }catch(e){
+      console.error("Supabase error:",e);
+      // Sauvegarder quand même en local
+      setPlayers(p=>({...p,[playerKey]:updated}));
+      showToast("Hors ligne — sauvegardé localement","#F59E0B");
+    }
     setSaving(false);
     onClose();
   }
 
   return(
-    <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.6)"}} onClick={onClose}>
-      <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",top,width:"calc(100% - 32px)",maxWidth:420,background:"#0a0f1e",borderRadius:18,border:"1px solid rgba(255,255,255,.12)",boxShadow:"0 20px 60px rgba(0,0,0,.8)"}} onClick={e=>e.stopPropagation()}>
+    <>
+      {/* Overlay fermeture */}
+      <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,.6)"}} onClick={onClose}/>
+      {/* Modal positionné exactement au clic */}
+      <div style={{position:"fixed",left:"50%",transform:"translateX(-50%)",top,zIndex:9999,width:"calc(100% - 32px)",maxWidth:420,background:"#0a0f1e",borderRadius:18,border:"1px solid rgba(255,255,255,.12)",boxShadow:"0 20px 60px rgba(0,0,0,.8)",overflowY:"auto",maxHeight:"calc(100vh - 24px)"}} onClick={e=>e.stopPropagation()}>
 
         {/* Player header */}
         <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
           {photo?(
-            <img src={photo} loading="lazy" style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"} alt=""/>
+            <CachedImg src={photo} width={48} height={48} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}}/>
           ):(
             <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(124,58,237,.2)",border:"2px solid rgba(124,58,237,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <span style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{(playerData.name||playerKey).charAt(0).toUpperCase()}</span>
@@ -3172,7 +3184,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -3308,7 +3320,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                 <button onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
                   style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                   {data.photo_url?(
-                    <img src={data.photo_url} loading="lazy" decoding="async" width="32" height="32" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                    <CachedImg src={data.photo_url} width={32} height={32} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
                   ):(
                     <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -3484,7 +3496,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                         <button onClick={()=>handleOpenTeam(isTeamOpen?null:lg+":"+team, teamPlayers)}
                           style={{flex:1,display:"flex",alignItems:"center",gap:9,padding:"10px 10px 10px 18px",background:isTeamOpen?"rgba(255,255,255,.04)":"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",minWidth:0}}>
                           {teamLogo?(
-                            <img src={teamLogo} alt={team} onClick={e=>{e.stopPropagation();setEditingTeam({name:team,lg,logoInput:teamLogo||""});}} width="22" height="22" style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:3,cursor:"pointer"}} loading="lazy" decoding="async" title="Modifier le logo"/>
+                            <CachedImg src={teamLogo} alt={team} onClick={e=>{e.stopPropagation();setEditingTeam({name:team,lg,logoInput:teamLogo||""}); }} width={22} height={22} style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:3,cursor:"pointer"}} title="Modifier le logo"/>
                           ):(
                             <div onClick={e=>{e.stopPropagation();setEditingTeam({name:team,lg,logoInput:"",nameInput:team});}} style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#4a5a6e"}} title="Ajouter un logo">+</div>
                           )}
@@ -3508,7 +3520,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <img src={data.photo_url} loading="lazy" decoding="async" width="30" height="30" style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                                <CachedImg src={data.photo_url} width={30} height={30} style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
                               ):(
                                 <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                   <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -3828,7 +3840,24 @@ export default function App(){
         setBets(parsed.map(normalizeBet));
       }
       const bk=localStorage.getItem("v7_bankroll"); if(bk)setBankroll(parseFloat(bk));
-      // Charger les joueurs depuis Supabase (table "players")
+      // ── Joueurs: cache-first (localStorage instantane + Supabase background) ──
+      const CACHE_KEY="v7_players_cache";
+      try{
+        const cached=localStorage.getItem(CACHE_KEY);
+        if(cached){
+          const obj=JSON.parse(cached);
+          setPlayers(obj);
+          // Précharger les photos en arrière-plan dès le cache
+          if(typeof window!=="undefined"){
+            setTimeout(()=>{
+              Object.values(obj).slice(0,40).forEach(p=>{
+                if(p.photo_url){const i=new Image();i.decoding="async";i.src=p.photo_url;}
+              });
+            },100);
+          }
+        }
+      }catch(e){}
+
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
           // Aliases pour normaliser les anciens noms d'équipes
@@ -3863,6 +3892,7 @@ export default function App(){
           var RMIG={"Top Laner":"Top","Toplaner":"Top","Bot Laner":"Bot","Botlaner":"Bot","Mid Laner":"Mid","Midlaner":"Mid","Jungler":"Jungle","jungler":"Jungle","Jngl":"Jungle","Jng":"Jungle","Support":"Support","Sup":"Support","Supp":"Support"};
           Object.keys(obj).forEach(function(k){var r=obj[k].role;if(r&&RMIG[r])obj[k]=Object.assign({},obj[k],{role:RMIG[r]});});
           setPlayers(obj);
+          try{ localStorage.setItem("v7_players_cache", JSON.stringify(obj)); }catch(e){}
         }
       }).catch(function(){});
       const bm=localStorage.getItem("v7_bmakers");
