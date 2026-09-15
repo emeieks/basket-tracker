@@ -75,7 +75,7 @@ async function supaPullBets() {
   let all = [];
   let offset = 0;
   while(true) {
-    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge&order=datetime.desc&limit=${limit}&offset=${offset}&archived=is.false`);
+    const batch = await supaFetch(`/rest/v1/bets?select=id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,pp_map_type,pp_line,pp_edge&order=datetime.desc&limit=${limit}&offset=${offset}`);
     if(!batch || batch.length === 0) break;
     all = [...all, ...batch];
     if(batch.length < limit) break;
@@ -102,13 +102,12 @@ async function supaPushBets(bets) {
   const now=Date.now();
   const rows = bets.map(({id,player,description,overUnder,odds,stake,bookmaker,
     status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,
-    ppMapType,ppLine,ppEdge,tipster})=>
+    ppMapType,ppLine,ppEdge})=>
     ({id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,
       team,datetime:safeDT(datetime),isHeadshot:!!isHeadshot,isLive:!!isLive,mapTag,profit,tournament,
       splits:splits&&splits.length>0?JSON.stringify(splits):null,
-      updatedAt:updatedAt||now,archived:false,
-      pp_map_type:ppMapType||null,pp_line:ppLine||null,pp_edge:ppEdge!=null?ppEdge:null,
-      tipster:tipster||null}));
+      updatedAt:updatedAt||now,
+      pp_map_type:ppMapType||null,pp_line:ppLine||null,pp_edge:ppEdge!=null?ppEdge:null}));
   // Chunk en 500
   for(let i=0;i<rows.length;i+=500){
     await supaFetch("/rest/v1/bets",{
@@ -347,9 +346,7 @@ async function supaFetchPlayers() {
     }
     return all;
   }
-  const full = await fetchAll("players_full","id,name,game,league,role,team,photo_url,team_logo_url,team_id,avatar_url,avatar_file");
-  if (full !== null) return full;
-  return await fetchAll("players","id,name,game,league,role,team,photo_url,avatar_url,avatar_file");
+  return await fetchAll("players","id,name,game,league,role,team,photo_url,team_logo_url,avatar_url,avatar_file");
 }
 
 async function supaUpsertPlayer(data) {
@@ -3932,7 +3929,7 @@ export default function App(){
       // Serialize testFilter (Sets → Arrays for JSON)
       const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
       if(SUPA_URL&&SUPA_KEY){
-        const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),archived:false,splits:null};
+        const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
         fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
       }
     }catch(e){}
