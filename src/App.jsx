@@ -1588,7 +1588,19 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
               <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
               <GameLogo game={bet.game} size={14}/>
-              {descLine&&<span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>}
+              {descLine&&(()=>{
+                // Extraire le chiffre dans la description (ex: "13.5 Points" → "13.5" en gras)
+                const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
+                if(parts){
+                  return(
+                    <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,textDecoration:"underline",textUnderlineOffset:2}}>
+                      <span style={{fontWeight:800,color:"#c8d8f0",fontSize:13}}>{parts[1]}</span>
+                      {parts[2]?" "+parts[2]:""}
+                    </span>
+                  );
+                }
+                return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>;
+              })()}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
             </div>
             {/* Ligne 2 : @odds · bk logo · mise · tag ANNONCE */}
@@ -6114,7 +6126,13 @@ export default function App(){
                           }}
                         />
                       );
-                      // Avatar par défaut - initiale avec glow
+                      // Avatar par défaut - logo du club ou initiale
+                      const teamLogo=TEAM_LOGOS[form.autoInfo.team]||EL_TEAM_LOGOS[form.autoInfo.team]||NBA_TEAM_LOGOS[form.autoInfo.team]||null;
+                      if(teamLogo)return(
+                        <div style={{position:"relative",zIndex:1,width:72,height:72,borderRadius:16,background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,boxShadow:"0 0 20px rgba(124,58,237,.3)"}}>
+                          <img src={teamLogo} alt={form.autoInfo.team} style={{width:52,height:52,objectFit:"contain"}} loading="lazy"/>
+                        </div>
+                      );
                       return(
                         <div style={{position:"relative",zIndex:1,width:64,height:64,borderRadius:"50%",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:800,color:"#fff",textTransform:"uppercase",marginBottom:16,boxShadow:"0 0 24px rgba(124,58,237,.5)"}}>
                           {(form.autoInfo.name||form.player).charAt(0)}
