@@ -3892,7 +3892,18 @@ export default function App(){
         setBookmakers(merged);
         if(merged.length!==saved.length)localStorage.setItem("v7_bmakers",JSON.stringify(merged));
       }
-      const bp=localStorage.getItem("v7_bkphotos"); if(bp)setBkPhotos(JSON.parse(bp));
+      const bp=localStorage.getItem("v7_bkphotos");
+      if(bp){
+        const parsed=JSON.parse(bp);
+        // Supprimer les anciens logos base64 (trop lourds)
+        const cleaned={};
+        Object.entries(parsed).forEach(([k,v])=>{
+          if(v&&!v.startsWith("data:"))cleaned[k]=v;
+        });
+        setBkPhotos(cleaned);
+        // Réécrire le localStorage sans les base64
+        try{localStorage.setItem("v7_bkphotos",JSON.stringify(cleaned));}catch(e){}
+      }
       const tv=localStorage.getItem("v7_tourneys"); if(tv)setActiveTourneys(JSON.parse(tv));
       const stv=localStorage.getItem("v7_saved_tourneys"); if(stv)setSavedTourneys(JSON.parse(stv));
       // Restaurer le BK sticky de la session précédente
@@ -8946,8 +8957,8 @@ export default function App(){
                   const logo=BK_LOGOS[bk]||bkPhotos[bk];
                   return(
                     <div key={bk} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:idx<bookmakers.length-1?"1px solid #1F2937":"none"}}>
-                      <div onClick={()=>setEditingBK({name:bk,logoUrl:bkPhotos[bk]||""})} title="Modifier le logo" style={{width:34,height:34,borderRadius:9,overflow:"hidden",flexShrink:0,background:"#0B1220",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:"1px solid rgba(255,255,255,.06)"}}>
-                        {(bkPhotos[bk])?(<img src={bkPhotos[bk]} alt={bk} style={{width:34,height:34,objectFit:"contain",padding:2}} onError={e=>e.target.style.display="none"}/>):(<span style={{fontSize:11,fontWeight:700,color:"#6B7280"}}>{bk.slice(0,2)}</span>)}
+                      <div onClick={()=>setEditingBK({name:bk,logoUrl:bkPhotos[bk]||""})} title="Modifier le logo" style={{width:34,height:34,borderRadius:9,flexShrink:0,background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                        {(bkPhotos[bk])?(<img src={bkPhotos[bk]} alt={bk} style={{width:32,height:32,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>):(<span style={{fontSize:11,fontWeight:700,color:"#6B7280"}}>{bk.slice(0,2)}</span>)}
                       </div><div style={{flex:1,display:"flex",alignItems:"center",gap:7}}><span style={{fontWeight:600,fontSize:14,color:hiddenBKs.has(bk)?"#6B7280":"#E5E7EB"}}>{bk}</span>
                         {hiddenBKs.has(bk)&&<span style={{fontSize:9,fontWeight:700,color:"#6B7280",background:"rgba(107,114,128,0.12)",border:"1px solid rgba(107,114,128,0.2)",borderRadius:4,padding:"1px 5px",textTransform:"uppercase",letterSpacing:.5}}>masqué</span>}
                       </div><button title={hiddenBKs.has(bk)?"Afficher dans filtres":"Masquer des filtres"} onClick={()=>toggleHideBK(bk)} style={{width:32,height:32,background:hiddenBKs.has(bk)?"rgba(107,114,128,0.15)":"rgba(251,191,36,0.08)",border:"1px solid "+(hiddenBKs.has(bk)?"rgba(107,114,128,0.3)":"rgba(251,191,36,0.25)"),borderRadius:8,color:hiddenBKs.has(bk)?"#6B7280":"#FCD34D",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>
