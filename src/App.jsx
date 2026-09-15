@@ -1593,12 +1593,19 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
-            {/* Ligne 1 : Nom joueur + logo ligue + stat */}
+            {/* Ligne 1 : Nom joueur · logo ligue · logo BK · @cote */}
             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
               <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
               <GameLogo game={bet.game} size={14}/>
+              {(bkLogo||bet.bookmaker)&&<span style={{color:"#2e3d50",margin:"0 2px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span>}
+              {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:13,height:13,objectFit:"contain",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>):null}
+              <span style={{color:"#2e3d50",margin:"0 2px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
+              {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
+            </div>
+            {/* Ligne 2 : stat (chiffre gras) · mise */}
+            <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"nowrap",overflow:"hidden"}}>
               {descLine&&(()=>{
-                // Extraire le chiffre dans la description (ex: "13.5 Points" → "13.5" en gras)
                 const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
                 if(parts){
                   return(
@@ -1610,13 +1617,6 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                 }
                 return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>;
               })()}
-              {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
-            </div>
-            {/* Ligne 2 : @odds · bk logo · mise · tag ANNONCE */}
-            <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"nowrap",overflow:"hidden"}}>
-              <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
-              {(bkLogo||bet.bookmaker)&&<span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span>}
-              {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:14,height:14,objectFit:"contain",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>):null}
               {bet.stake&&<><span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.stake}$</span></>}
               {hasAnnounce&&<><span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,lineHeight:1,flexShrink:0}}>·</span><span style={{fontSize:8,fontWeight:800,color:"#f97316",background:"rgba(249,115,22,.13)",border:"1px solid rgba(249,115,22,.35)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span></>}
               {bet.tipster&&<><span style={{color:"#2e3d50",margin:"0 4px",fontSize:11,flexShrink:0}}>·</span><span style={{fontSize:11,color:"#a78bfa",fontWeight:600,flexShrink:0}}>{bet.tipster}</span></>}
