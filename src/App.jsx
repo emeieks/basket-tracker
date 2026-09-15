@@ -3004,24 +3004,26 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [team,setTeam]=useState(playerData.team||"");
   const [role,setRole]=useState(playerData.role||"");
   const [league,setLeague]=useState(playerData.game||"NBA");
+  const [photoUrl,setPhotoUrl]=useState(playerData.photo_url||playerData.avatar_url||"");
   const [saving,setSaving]=useState(false);
   const isNBA=league==="NBA";
   const positions=isNBA?["PG","SG","SF","PF","C"]:["Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"];
   const teamList=(ALL_LEAGUE_TEAMS[league]||[]).slice().sort();
-  const photo=playerData.photo_url||playerData.avatar_url||null;
+  const photo=photoUrl||playerData.photo_url||playerData.avatar_url||null;
   const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
   const sel={width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"12px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",appearance:"none",WebkitAppearance:"none"};
 
   // Position: appear near click, but keep on screen
   const winH=typeof window!=="undefined"?window.innerHeight:800;
-  const modalH=420;
+  const modalH=500;
   let top=clickY?clickY-20:winH/2-modalH/2;
   if(top+modalH>winH-20) top=winH-modalH-20;
   if(top<60) top=60;
 
   async function save(){
     setSaving(true);
-    const updated={...playerData,team,role,game:league};
+    const finalPhoto=photoUrl.trim()||playerData.photo_url||null;
+    const updated={...playerData,team,role,game:league,photo_url:finalPhoto,avatar_url:finalPhoto};
     try{
       await supaUpsertPlayer({name:playerKey,...updated});
     }catch(e){console.error(e);}
@@ -3056,6 +3058,26 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
         </div>
 
         <div style={{padding:"12px 16px 16px",display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* Photo URL */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Photo URL</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {photoUrl?(
+                <img src={photoUrl} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
+              ):(
+                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6B7280"}}>👤</div>
+              )}
+              <input
+                placeholder="Colle l'URL de la photo ici..."
+                value={photoUrl}
+                onChange={e=>setPhotoUrl(e.target.value)}
+                style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+              />
+              {photoUrl&&<button onClick={()=>setPhotoUrl("")} style={{flexShrink:0,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"8px 10px",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>×</button>}
+            </div>
+          </div>
+
           {/* Ligue */}
           <div>
             <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Ligue</div>
@@ -3678,7 +3700,7 @@ export default function App(){
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
           // Aliases pour normaliser les anciens noms d'équipes
-          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
+          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Partizan":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
 
           const obj = {};
           rows.forEach(p => {
