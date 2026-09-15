@@ -1,5 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from "react";
 
+// ── Optimisation images globale ───────────────────────────────────────────────
+if(typeof document!=="undefined"){
+  const style=document.createElement("style");
+  style.textContent=`
+    img { image-rendering: auto; }
+    img[loading="lazy"] { opacity: 0; transition: opacity .15s; }
+    img[loading="lazy"].loaded { opacity: 1; }
+  `;
+  document.head.appendChild(style);
+
+  // Ajouter class loaded quand image chargée
+  document.addEventListener("load", e=>{
+    if(e.target.tagName==="IMG") e.target.classList.add("loaded");
+  }, true);
+}
+
+
 
 // ── Normalize datetime helper ─────────────────────────────────────────────
 
@@ -412,7 +429,7 @@ const LEAGUES_BY_GAME={
 
 // ── Basketball Positions ────────────────────────────────────────────────────
 const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
-const POS_LABELS={PG:"Point Guard",SG:"Small Guard",SF:"Small Forward",PF:"Power Forward",C:"Center"};
+const POS_LABELS={PG:"Point Guard",SG:"Shooting Guard",SF:"Small Forward",PF:"Power Forward",C:"Center"};
 const POS_COLORS={PG:{col:"#a78bfa",bg:"rgba(167,139,250,.12)",border:"rgba(167,139,250,.3)"},SG:{col:"#60a5fa",bg:"rgba(96,165,250,.12)",border:"rgba(96,165,250,.3)"},SF:{col:"#34d399",bg:"rgba(52,211,153,.12)",border:"rgba(52,211,153,.3)"},PF:{col:"#fb923c",bg:"rgba(251,146,60,.12)",border:"rgba(251,146,60,.3)"},C:{col:"#f472b6",bg:"rgba(244,114,182,.12)",border:"rgba(244,114,182,.3)"}};
 function PositionLogo({role,size=16}){
   if(!role)return null;
@@ -2366,7 +2383,7 @@ function AnnonceStatsView({bets, allPlayers}){
   const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
   const POS_LIST=[
     {key:"PG",label:"Point Guard",color:"#a78bfa"},
-    {key:"SG",label:"Small Guard",color:"#60a5fa"},
+    {key:"SG",label:"Shooting Guard",color:"#60a5fa"},
     {key:"SF",label:"Small Forward",color:"#34d399"},
     {key:"PF",label:"Power Forward",color:"#fb923c"},
     {key:"C",label:"Center",color:"#f472b6"},
@@ -2997,7 +3014,7 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
 }
 
 // ── LeagueEditor - section Édit dans Suivi ────────────────────────────────────
-const POSITION_ORDER=["PG","SG","G","Guard","Point Guard","Shooting Guard","SF","Small Forward","Wing","PF","Power Forward","F","Forward","C","Center","Big",""];
+const POSITION_ORDER=["PG","Point Guard","SG","Shooting Guard","SF","Small Forward","PF","Power Forward","C","Center",""];
 function posRank(p){const r=POSITION_ORDER.indexOf(p||"");return r===-1?98:r;}
 
 function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,onClose,clickY}){
@@ -3008,18 +3025,18 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [teamLogoUrl,setTeamLogoUrl]=useState(playerData.team_logo_url||"");
   const [saving,setSaving]=useState(false);
   const isNBA=league==="NBA";
-  const positions=isNBA?["PG","SG","SF","PF","C"]:["Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"];
+  const positions=isNBA?["PG","SG","SF","PF","C"]:["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
   const teamList=(ALL_LEAGUE_TEAMS[league]||[]).slice().sort();
   const photo=photoUrl||playerData.photo_url||playerData.avatar_url||null;
   const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
   const sel={width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"12px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",appearance:"none",WebkitAppearance:"none"};
 
-  // Position: appear near click, but keep on screen
+  // Centrer le modal sur le point de clic
   const winH=typeof window!=="undefined"?window.innerHeight:800;
   const modalH=500;
-  let top=clickY?clickY-20:winH/2-modalH/2;
-  if(top+modalH>winH-20) top=winH-modalH-20;
-  if(top<60) top=60;
+  let top=clickY?clickY-modalH/2:winH/2-modalH/2;
+  if(top+modalH>winH-12) top=winH-modalH-12;
+  if(top<12) top=12;
 
   async function save(){
     setSaving(true);
@@ -3163,9 +3180,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [openLeague,setOpenLeague]=useState(null);
   const [openTeam,setOpenTeam]=useState(null);
   const [editingPlayer,setEditingPlayer]=useState(null);
-  const [deletingTeam,setDeletingTeam]=useState(null); // {lg, team} - confirmation inline
-  const [addTeamLeague,setAddTeamLeague]=useState(null); // ligue pour ajouter club
+  const [deletingTeam,setDeletingTeam]=useState(null);
+  const [addTeamLeague,setAddTeamLeague]=useState(null);
   const [addTeamName,setAddTeamName]=useState("");
+  const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
   const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
@@ -3216,6 +3234,21 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
     });
     return map;
   },[allPlayers]);
+
+  function handleOpenTeam(key, players){
+    setOpenTeam(key);
+    // Précharger les photos des joueurs seulement quand on ouvre l'équipe
+    if(players && players.length > 0){
+      players.forEach(({data})=>{
+        if(data.photo_url){
+          const img=new Image();
+          img.decoding='async';
+          img.src=data.photo_url;
+        }
+      });
+    }
+  }
+
 
   function confirmDeleteTeam(){
     if(!deletingTeam)return;
@@ -3275,7 +3308,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                 <button onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
                   style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                   {data.photo_url?(
-                    <img src={data.photo_url} loading="lazy" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                    <img src={data.photo_url} loading="lazy" decoding="async" width="32" height="32" style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
                   ):(
                     <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -3363,6 +3396,60 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
         </div>
       )}
 
+
+      {/* ── Modal édit club ── */}
+      {editingTeam&&(
+        <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setEditingTeam(null)}>
+          <div style={{width:"100%",maxWidth:360,background:"#0a0f1e",borderRadius:20,border:"1px solid rgba(255,255,255,.12)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+            <div style={{padding:"16px 18px",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",gap:12}}>
+              {(TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name])?(
+                <img src={TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name]} alt="" style={{width:40,height:40,objectFit:"contain",borderRadius:8,background:"rgba(255,255,255,.05)",padding:3}} onError={e=>e.target.style.display="none"}/>
+              ):(
+                <div style={{width:40,height:40,borderRadius:8,background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#6B7280"}}>🏀</div>
+              )}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{editingTeam.name}</div>
+                <div style={{fontSize:11,color:"#6B7280"}}>{editingTeam.lg}</div>
+              </div>
+              <button onClick={()=>setEditingTeam(null)} style={{background:"none",border:"none",color:"#6B7280",fontSize:20,cursor:"pointer",flexShrink:0}}>×</button>
+            </div>
+            <div style={{padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:12}}>
+              <div>
+                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo URL</div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  {editingTeam.logoInput&&(
+                    <img src={editingTeam.logoInput} alt="" style={{width:30,height:30,objectFit:"contain",borderRadius:6,background:"rgba(255,255,255,.05)",padding:2,flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+                  )}
+                  <input
+                    style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+                    placeholder="https://... URL du logo"
+                    value={editingTeam.logoInput||""}
+                    onChange={e=>setEditingTeam(t=>({...t,logoInput:e.target.value}))}
+                  />
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Nom du club</div>
+                <input
+                  style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+                  value={editingTeam.nameInput||editingTeam.name}
+                  onChange={e=>setEditingTeam(t=>({...t,nameInput:e.target.value}))}
+                />
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <button onClick={()=>setEditingTeam(null)} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+                <button onClick={()=>{
+                  const logo=(editingTeam.logoInput||"").trim();
+                  if(logo) TEAM_LOGOS[editingTeam.name]=logo;
+                  showToast(editingTeam.name+" mis à jour","#22C55E");
+                  setEditingTeam(null);
+                }} style={{padding:"12px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Enregistrer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {LEAGUES.map(lg=>{
         const teams=leagueData[lg]||{};
         const playerCount=Object.values(teams).reduce((s,arr)=>s+arr.length,0);
@@ -3392,14 +3479,14 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                   const isTeamOpen=openTeam===lg+":"+team;
                   const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
                   return(
-                    <div key={team} style={{borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                    <div key={team} style={{borderBottom:"1px solid rgba(255,255,255,.04)",contain:"layout style"}}>
                       <div style={{display:"flex",alignItems:"center"}}>
-                        <button onClick={()=>setOpenTeam(isTeamOpen?null:lg+":"+team)}
+                        <button onClick={()=>handleOpenTeam(isTeamOpen?null:lg+":"+team, teamPlayers)}
                           style={{flex:1,display:"flex",alignItems:"center",gap:9,padding:"10px 10px 10px 18px",background:isTeamOpen?"rgba(255,255,255,.04)":"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",minWidth:0}}>
                           {teamLogo?(
-                            <img src={teamLogo} alt={team} style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:3}} loading="lazy"/>
+                            <img src={teamLogo} alt={team} onClick={e=>{e.stopPropagation();setEditingTeam({name:team,lg,logoInput:teamLogo||""});}} width="22" height="22" style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:3,cursor:"pointer"}} loading="lazy" decoding="async" title="Modifier le logo"/>
                           ):(
-                            <div style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0}}/>
+                            <div onClick={e=>{e.stopPropagation();setEditingTeam({name:team,lg,logoInput:"",nameInput:team});}} style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#4a5a6e"}} title="Ajouter un logo">+</div>
                           )}
                           <span style={{flex:1,textAlign:"left",fontSize:12,fontWeight:600,color:"#D1D5DB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{team}</span>
                           <span style={{fontSize:10,color:"#6B7280",flexShrink:0}}>{teamPlayers.length}</span>
@@ -3419,9 +3506,9 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <div style={{padding:"10px 24px",fontSize:11,color:"#4a5a6e"}}>Aucun joueur enregistre</div>
                           ):[...teamPlayers].sort((a,b)=>posRank(a.data.role)-posRank(b.data.role)||(a.data.name||"").localeCompare(b.data.name||"")).map(({key,data})=>(
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
-                              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <img src={data.photo_url} loading="lazy" style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
+                                <img src={data.photo_url} loading="lazy" decoding="async" width="30" height="30" style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}} onError={e=>e.target.style.display="none"} alt=""/>
                               ):(
                                 <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                   <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -3488,7 +3575,7 @@ function AddPlayerForm({setPlayers,showToast}){
               <option value="">Poste (optionnel)</option>
               {lf.game==="NBA"
                 ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
-                :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
+                :["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"].map(r=><option key={r} value={r}>{r}</option>)
               }
             </select>
           </div>
@@ -3751,7 +3838,9 @@ export default function App(){
           rows.forEach(p => {
             // Normaliser le nom de l'équipe si alias existe
             const normalizedTeam=TEAM_ALIASES[p.team]||p.team;
-            const pNorm={...p,team:normalizedTeam};
+            const POS_NORM={"G":"Point Guard","Guard":"Point Guard","SG":"Shooting Guard","Shooting Guard":"Shooting Guard","Wing":"Small Forward","F":"Small Forward","Forward":"Small Forward","Big":"Center","PF/C":"Center","F/C":"Center","G/F":"Small Forward"};
+            const normalizedRole=POS_NORM[p.role]||p.role;
+            const pNorm={...p,team:normalizedTeam,role:normalizedRole};
 
             const key = pNorm.name.toLowerCase().replace(/[čćžšđ]/g, c=>({č:'c',ć:'c',ž:'z',š:'s',đ:'d'}[c]||c)).trim();
             const entry = {
@@ -3759,7 +3848,7 @@ export default function App(){
               name: pNorm.name,
               game: pNorm.game,
               league: pNorm.league,
-              role: pNorm.role,
+              role: normalizedRole,
               team: pNorm.team,
               photo_url: pNorm.photo_url || null,
               team_logo_url: pNorm.team_logo_url || null,
@@ -6190,6 +6279,7 @@ export default function App(){
                             objectPosition:"bottom center",
                             display:"block",
                             filter:"drop-shadow(0 0 12px rgba(124,58,237,.4))",
+                            contain:"layout",
                           }}
                         />
                       );
@@ -6868,7 +6958,7 @@ export default function App(){
                   {/* POSITIONS */}
                   <Sec label={`Masquer positions${f.hideRoles.size>0?` · ${f.hideRoles.size} 🚫`:""}`}><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                       {["PG","SG","SF","PF","C"].map(r=>{
-                        const labels={"PG":"Point Guard","SG":"Small Guard","SF":"Small Forward","PF":"Power Forward","C":"Center"};
+                        const labels={"PG":"Point Guard","SG":"Shooting Guard","SF":"Small Forward","PF":"Power Forward","C":"Center"};
                         const on=f.hideRoles.has(r);
                         return <button key={r} onClick={()=>toggleSet("hideRoles",r)} style={redChip(on)}>{on?"🚫 ":""}{labels[r]||r}</button>;
                       })}
@@ -8023,7 +8113,7 @@ export default function App(){
             {statsTab==="tournois"&&(()=>{
               const POS_LIST=[
                 {key:"PG",label:"Point Guard",color:"#a78bfa"},
-                {key:"SG",label:"Small Guard",color:"#60a5fa"},
+                {key:"SG",label:"Shooting Guard",color:"#60a5fa"},
                 {key:"SF",label:"Small Forward",color:"#34d399"},
                 {key:"PF",label:"Power Forward",color:"#fb923c"},
                 {key:"C",label:"Center",color:"#f472b6"},
@@ -9139,7 +9229,7 @@ export default function App(){
                 <option value="">Poste (optionnel)</option>
                 {pform.game==="NBA"
                   ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
-                  :["Guard","Point Guard","Shooting Guard","Small Forward","Power Forward","Center","Wing","Big"].map(r=><option key={r} value={r}>{r}</option>)
+                  :["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"].map(r=><option key={r} value={r}>{r}</option>)
                 }
               </select>
             </div>
