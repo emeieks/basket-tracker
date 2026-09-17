@@ -1583,12 +1583,18 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   return(
     <div style={{borderBottom:"1px solid rgba(255,255,255,.1)",WebkitTapHighlightColor:"transparent",contain:"layout style",borderLeft:"2.5px solid "+(isPending?"#60a5fa":isWon?"#00E676":"#f43f5e"),background:"transparent",position:"relative",transition:"all .15s"}}><div onClick={()=>setOpen(v=>!v)} style={{padding:"11px 13px 11px 12px",cursor:"pointer",userSelect:"none",WebkitUserSelect:"none"}}><div style={{display:"flex",alignItems:"center",gap:11}}>
 
-          {/* Logo équipe ou championnat */}
-          <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {teamLogoSrc
-              ? <img src={teamLogoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team} onError={e=>{e.target.style.display="none";}}/>
-              : <GameLogo game={bet.game} size={30}/>
-            }
+          {/* Logo équipe avec filigrane derrière */}
+          <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+            {/* Filigrane logo club — 120% opacité 12% */}
+            {teamLogoSrc&&(
+              <img src={teamLogoSrc} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"120%",height:"120%",objectFit:"contain",opacity:.12,pointerEvents:"none",zIndex:0}} onError={e=>e.target.style.display="none"}/>
+            )}
+            <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
+              {teamLogoSrc
+                ? <img src={teamLogoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team} onError={e=>{e.target.style.display="none";}}/>
+                : <GameLogo game={bet.game} size={30}/>
+              }
+            </div>
           </div>
 
           {/* Centre */}
@@ -1615,8 +1621,6 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
               {(bkLogo||bet.bookmaker)&&<span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span>}
               {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:13,height:13,objectFit:"contain",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>):null}
               {bet.stake&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.stake}$</span></>}
-              <span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span>
-              <GameLogo game={bet.game} size={14}/>
               {hasAnnounce&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:8,fontWeight:800,color:"#f97316",background:"rgba(249,115,22,.13)",border:"1px solid rgba(249,115,22,.35)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span></>}
               {bet.tipster&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:11,color:"#a78bfa",fontWeight:600,flexShrink:0}}>{bet.tipster}</span></>}
             </div>
@@ -5893,21 +5897,14 @@ export default function App(){
 
             {/* ── Top bar ── */}
             <div style={{padding:"14px 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.05)"}}><div style={{display:"flex",alignItems:"center",gap:12}}><button onClick={()=>setView("home")} style={{background:"none",border:"none",color:"#fff",fontSize:28,cursor:"pointer",lineHeight:1,padding:0,fontFamily:"Inter,sans-serif"}}>‹</button><div><div style={{fontSize:22,fontWeight:900,letterSpacing:-.5,color:"#eef3ff"}}>
-                    {editingBet?"Modifier pari":combineMode?"Combiné":teamBetMode?"Pari Équipe":sessionMode?"Session multi-map":"Ajouter un pari"}
+                    {editingBet?"Modifier pari":sessionMode?"Session multi-map":"Ajouter un pari"}
                   </div></div></div><div style={{display:"flex",gap:6,alignItems:"center"}}>
                 {editingBet&&(
                   <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:""});}}
                     style={{fontSize:11,color:"#6B7280",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600}}>
                     × Annuler
                   </button>
-                )}
-                <button onClick={()=>{setCombineMode(v=>!v);setTeamBetMode(false);setDuelMode(false);setSessionMode(false);}}
-                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(combineMode?"#34d399":"rgba(255,255,255,0.1)"),background:combineMode?"rgba(52,211,153,0.12)":"rgba(255,255,255,0.04)",color:combineMode?"#34d399":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  🔗 Combiner
-                </button><button onClick={()=>{setTeamBetMode(v=>!v);setCombineMode(false);setDuelMode(false);setSessionMode(false);}}
-                  style={{padding:"7px 13px",borderRadius:12,border:"1.5px solid "+(teamBetMode?"#60a5fa":"rgba(255,255,255,0.1)"),background:teamBetMode?"rgba(96,165,250,0.12)":"rgba(255,255,255,0.04)",color:teamBetMode?"#60a5fa":"#9CA3AF",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  🏀 Équipe
-                </button></div></div><div style={{padding:"10px 14px 20px"}}>
+                )}</div></div><div style={{padding:"10px 14px 20px"}}>
 
 
             {/* ── DUEL MODE ── */}
@@ -6265,24 +6262,52 @@ export default function App(){
               );
             })()}
             {!duelMode&&!teamBetMode&&!combineMode&&<>
-            {/* ── 2. JOUEUR ── */}
+            {/* ── 2. JOUEUR / ÉQUIPE ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2}}>
-                  
-                  Joueur
+                  Joueur / Équipe
                 </div><button onClick={()=>{setPform({name:"",game:"NBA",league:"",position:"",team:""});setModalPlayer(true);}}
                   style={{padding:"3px 9px",borderRadius:7,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",color:"#6B7280",fontSize:10,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>
                   + Ajouter un joueur
                 </button></div>
-              {!form.autoInfo&&(
-                <div style={{background:"rgba(8,14,28,0.9)",borderRadius:12,border:"1px solid rgba(255,255,255,0.06)",padding:"2px 10px"}}><PlayerAC ref={playerACRef} value={form.player} onChange={v=>{
-                    const pi=findPlayer(v);
-                    setForm(f=>({
-                      ...f,
-                      player:v,
-                      autoInfo:pi,
-                    }));
-                  }} allPlayers={allPlayers} activeTourneys={activeTourneys} betFreq={betFreq} onConfirm={()=>{setTimeout(()=>{const el=document.getElementById("kills-select");if(el){el.focus();el.click();}else{const odds=document.getElementById("odds-input-field");if(odds)odds.focus();}},80);}}/></div>
-              )}
+              {!form.autoInfo&&!teamBetMode&&(()=>{
+                // Search teams too
+                const uniQ=(form.player||"").toLowerCase().trim();
+                const teamMatches=uniQ.length>=2?
+                  Object.entries(ALL_LEAGUE_TEAMS)
+                    .flatMap(([lg,teams])=>teams.filter(t=>t.toLowerCase().includes(uniQ)).map(t=>({name:t,lg})))
+                    .slice(0,5)
+                  :[];
+                return(
+                  <div>
+                    <div style={{background:"rgba(8,14,28,0.9)",borderRadius:12,border:"1px solid rgba(255,255,255,0.06)",padding:"2px 10px"}}>
+                      <PlayerAC ref={playerACRef} value={form.player} onChange={v=>{
+                        const pi=findPlayer(v);
+                        setForm(f=>({...f,player:v,autoInfo:pi}));
+                      }} allPlayers={allPlayers} activeTourneys={activeTourneys} betFreq={betFreq} onConfirm={()=>{setTimeout(()=>{const el=document.getElementById("kills-select");if(el){el.focus();el.click();}else{const odds=document.getElementById("odds-input-field");if(odds)odds.focus();}},80);}}/>
+                    </div>
+                    {/* Suggestions équipes */}
+                    {teamMatches.length>0&&(
+                      <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:3}}>
+                        {teamMatches.map(({name,lg})=>{
+                          const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
+                          return(
+                            <button key={lg+name} onClick={()=>{
+                              setTeamBetMode(true);
+                              setCombineMode(false);
+                              setForm(f=>({...f,tbLeague:lg,tbTeam:name,player:name,game:lg,description:"Victoire "+name,tbType:"victoire"}));
+                            }}
+                              style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                              {logo?<img src={logo} alt={name} style={{width:20,height:20,objectFit:"contain",flexShrink:0}}/>:<GameLogo game={lg} size={18}/>}
+                              <span style={{fontSize:13,fontWeight:600,color:"#E5E7EB",flex:1}}>{name}</span>
+                              <span style={{fontSize:10,color:"#60a5fa",fontWeight:600}}>{lg}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {form.autoInfo&&(
                 <div style={{position:"relative",borderRadius:16,border:"1px solid rgba(139,92,246,.18)",background:"linear-gradient(105deg,rgba(12,18,38,.99) 55%,rgba(20,14,42,.97))",display:"flex",alignItems:"stretch",overflow:"hidden",minHeight:118}}>
 
@@ -6770,6 +6795,13 @@ export default function App(){
                     }
                     return null;
                   })()}
+                  {/* ── Bouton Combiner inline ── */}
+                  {!combineMode&&!editingBet&&(
+                    <button onClick={()=>{setCombineMode(true);setTeamBetMode(false);}}
+                      style={{width:"100%",height:44,border:"1.5px dashed rgba(52,211,153,.3)",borderRadius:13,background:"rgba(52,211,153,.04)",color:"#34d399",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      <span style={{fontSize:16}}>+</span> Ajouter une sélection (combiné)
+                    </button>
+                  )}
                   <button onClick={sessionMode?addSession:addBet} disabled={isDisabled}
                     style={{
                       width:"100%",height:60,
