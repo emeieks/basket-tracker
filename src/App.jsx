@@ -3017,7 +3017,9 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [role,setRole]=useState(playerData.role||"");
   const [league,setLeague]=useState(playerData.game||"NBA");
   const [photoUrl,setPhotoUrl]=useState(playerData.photo_url||playerData.avatar_url||"");
+  const [uploadingPhoto,setUploadingPhoto]=useState(false);
   const [teamLogoUrl,setTeamLogoUrl]=useState(playerData.team_logo_url||"");
+  const [uploadingLogo,setUploadingLogo]=useState(false);
   const [saving,setSaving]=useState(false);
   const isNBA=league==="NBA";
   const positions=isNBA?["PG","SG","SF","PF","C"]:["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
@@ -3090,40 +3092,82 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
 
         <div style={{padding:"12px 16px 16px",display:"flex",flexDirection:"column",gap:10}}>
 
-          {/* Photo URL */}
+          {/* Photo — upload Supabase ou URL */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Photo URL</div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Photo joueur</div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {photoUrl?(
-                <img src={photoUrl} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
+                <img src={photoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
               ):(
                 <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6B7280"}}>👤</div>
               )}
-              <input
-                placeholder="Colle l'URL de la photo ici..."
-                value={photoUrl}
-                onChange={e=>setPhotoUrl(e.target.value)}
-                style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
-              />
+              <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                {/* Upload direct Supabase */}
+                <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>{uploadingPhoto?"Envoi...":" Uploader photo"}</span>
+                  <input type="file" accept="image/*" style={{display:"none"}} disabled={uploadingPhoto} onChange={async e=>{
+                    const file=e.target.files[0];
+                    if(!file)return;
+                    setUploadingPhoto(true);
+                    try{
+                      const filename=await supaUploadAvatar(file,playerKey);
+                      const url=AVATARS_BUCKET+encodeURIComponent(filename);
+                      setPhotoUrl(url);
+                      setUploadingPhoto(false);
+                    }catch(err){
+                      console.error(err);
+                      setUploadingPhoto(false);
+                      alert("Erreur upload: "+err.message);
+                    }
+                  }}/>
+                </label>
+                {/* OU coller une URL */}
+                <input
+                  placeholder="ou colle une URL..."
+                  value={photoUrl}
+                  onChange={e=>setPhotoUrl(e.target.value)}
+                  style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,padding:"8px 12px",color:"#E5E7EB",fontSize:11,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",width:"100%"}}
+                />
+              </div>
               {photoUrl&&<button onClick={()=>setPhotoUrl("")} style={{flexShrink:0,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"8px 10px",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>×</button>}
             </div>
           </div>
 
-          {/* Logo équipe URL */}
+          {/* Logo équipe — upload Supabase ou URL */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo équipe URL</div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo équipe</div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {teamLogoUrl?(
-                <img src={teamLogoUrl} alt="" style={{width:36,height:36,borderRadius:8,objectFit:"contain",flexShrink:0,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",padding:2}} onError={e=>e.target.style.display="none"}/>
+                <img src={teamLogoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:8,objectFit:"contain",flexShrink:0,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",padding:2}} onError={e=>e.target.style.display="none"}/>
               ):(
                 <div style={{width:36,height:36,borderRadius:8,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6B7280"}}>🏀</div>
               )}
-              <input
-                placeholder="Colle l'URL du logo de l'équipe..."
-                value={teamLogoUrl}
-                onChange={e=>setTeamLogoUrl(e.target.value)}
-                style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
-              />
+              <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(59,130,246,.10)",border:"1px solid rgba(59,130,246,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:12,color:"#60a5fa",fontWeight:600}}>{uploadingLogo?"Envoi...":" Uploader logo"}</span>
+                  <input type="file" accept="image/*" style={{display:"none"}} disabled={uploadingLogo} onChange={async e=>{
+                    const file=e.target.files[0];
+                    if(!file)return;
+                    setUploadingLogo(true);
+                    try{
+                      const filename=await supaUploadAvatar(file,"logo_"+(playerData.team||playerKey));
+                      const url=AVATARS_BUCKET+encodeURIComponent(filename);
+                      setTeamLogoUrl(url);
+                      setUploadingLogo(false);
+                    }catch(err){
+                      console.error(err);
+                      setUploadingLogo(false);
+                      alert("Erreur upload: "+err.message);
+                    }
+                  }}/>
+                </label>
+                <input
+                  placeholder="ou colle une URL..."
+                  value={teamLogoUrl}
+                  onChange={e=>setTeamLogoUrl(e.target.value)}
+                  style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,padding:"8px 12px",color:"#E5E7EB",fontSize:11,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",width:"100%"}}
+                />
+              </div>
               {teamLogoUrl&&<button onClick={()=>setTeamLogoUrl("")} style={{flexShrink:0,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"8px 10px",color:"#f87171",fontSize:11,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>×</button>}
             </div>
           </div>
@@ -3882,6 +3926,24 @@ export default function App(){
           // Migrate roles to short form
           var RMIG={"Top Laner":"Top","Toplaner":"Top","Bot Laner":"Bot","Botlaner":"Bot","Mid Laner":"Mid","Midlaner":"Mid","Jungler":"Jungle","jungler":"Jungle","Jngl":"Jungle","Jng":"Jungle","Support":"Support","Sup":"Support","Supp":"Support"};
           Object.keys(obj).forEach(function(k){var r=obj[k].role;if(r&&RMIG[r])obj[k]=Object.assign({},obj[k],{role:RMIG[r]});});
+
+          // ── Merger avec le cache local — préserver photos/logos locaux si Supabase retourne null ──
+          try{
+            const cached=localStorage.getItem("v7_players_cache");
+            if(cached){
+              const localCache=JSON.parse(cached);
+              Object.keys(obj).forEach(k=>{
+                const local=localCache[k];
+                if(local){
+                  // Garder photo_url locale si Supabase n'en a pas
+                  if(!obj[k].photo_url&&local.photo_url) obj[k].photo_url=local.photo_url;
+                  if(!obj[k].avatar_url&&local.avatar_url) obj[k].avatar_url=local.avatar_url;
+                  if(!obj[k].team_logo_url&&local.team_logo_url) obj[k].team_logo_url=local.team_logo_url;
+                }
+              });
+            }
+          }catch(e){}
+
           setPlayers(obj);
           try{ localStorage.setItem("v7_players_cache", JSON.stringify(obj)); }catch(e){}
         }
@@ -9254,13 +9316,27 @@ export default function App(){
                 ):(
                   <div style={{width:36,height:36,borderRadius:8,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#6B7280"}}>🏦</div>
                 )}
-                <input
-                  autoFocus
-                  placeholder="https://... URL du logo"
-                  value={editingBK.logoUrl||""}
-                  onChange={e=>setEditingBK(b=>({...b,logoUrl:e.target.value}))}
-                  style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none"}}
-                />
+                <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                  <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(124,58,237,.1)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    <span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>⬆ Uploader logo</span>
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                      const file=e.target.files[0];
+                      if(!file)return;
+                      try{
+                        const filename=await supaUploadAvatar(file,"bk_"+editingBK.name);
+                        const url=AVATARS_BUCKET+encodeURIComponent(filename);
+                        setEditingBK(b=>({...b,logoUrl:url}));
+                      }catch(err){alert("Erreur: "+err.message);}
+                    }}/>
+                  </label>
+                  <input
+                    autoFocus
+                    placeholder="ou colle une URL..."
+                    value={editingBK.logoUrl||""}
+                    onChange={e=>setEditingBK(b=>({...b,logoUrl:e.target.value}))}
+                    style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"9px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none"}}
+                  />
+                </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <button onClick={()=>setEditingBK(null)} style={{padding:"11px",background:"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
