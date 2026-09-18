@@ -92,7 +92,6 @@ async function supaPullBets() {
 }
 
 async function supaPushBets(bets) {
-  // Forcer le format YYYY-MM-DDTHH:MM pour la datetime (éviter transformation Supabase)
   const safeDT=dt=>{
     if(!dt)return dt;
     const s=String(dt);
@@ -102,12 +101,20 @@ async function supaPushBets(bets) {
   const now=Date.now();
   const rows = bets.map(({id,player,description,overUnder,odds,stake,bookmaker,
     status,game,league,role,team,datetime,isHeadshot,isLive,mapTag,profit,tournament,splits,updatedAt,
-    ppMapType,ppLine,ppEdge})=>
-    ({id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,
-      team,datetime:safeDT(datetime),isHeadshot:!!isHeadshot,isLive:!!isLive,mapTag,profit,tournament,
+    ppMapType,ppLine,ppEdge})=>{
+    const row={id,player,description,overUnder,odds,stake,bookmaker,status,game,league,role,
+      team,datetime:safeDT(datetime),profit,tournament,
       splits:splits&&splits.length>0?JSON.stringify(splits):null,
-      updatedAt:updatedAt||now,
-      pp_map_type:ppMapType||null,pp_line:ppLine||null,pp_edge:ppEdge!=null?ppEdge:null}));
+      updatedAt:updatedAt||now};
+    // Colonnes optionnelles — ne pas envoyer si null pour éviter 400 si colonne absente
+    if(isHeadshot!==undefined) row.isHeadshot=!!isHeadshot;
+    if(isLive!==undefined) row.isLive=!!isLive;
+    if(mapTag) row.mapTag=mapTag;
+    if(ppMapType) row.pp_map_type=ppMapType;
+    if(ppLine) row.pp_line=ppLine;
+    if(ppEdge!=null) row.pp_edge=ppEdge;
+    return row;
+  });
   // Chunk en 500
   for(let i=0;i<rows.length;i+=500){
     await supaFetch("/rest/v1/bets",{
@@ -3288,28 +3295,26 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [addTeamName,setAddTeamName]=useState("");
   const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
-  const [searchMode,setSearchMode]=useState("joueur"); // "joueur" | "club"
   const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   const searchResults=useMemo(()=>{
     const q=searchQ.toLowerCase().trim();
-    if(q.length<2)return[];
-    if(searchMode==="club"){
-      // Chercher dans toutes les ligues
-      const seen=new Set();
-      const results=[];
-      Object.entries(ALL_LEAGUE_TEAMS).forEach(([lg,teams])=>{
-        teams.filter(t=>t.toLowerCase().includes(q)).forEach(t=>{
-          if(!seen.has(t)){seen.add(t);results.push({type:"club",name:t,lg});}
-        });
-      });
-      return results.slice(0,10);
-    }
-    return Object.entries(allPlayers)
+    if(q.length<2)return{players:[],clubs:[]};
+    // Joueurs
+    const players=Object.entries(allPlayers)
       .filter(([k,p])=>k.includes(q)||(p.name||"").toLowerCase().includes(q))
       .sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0]))
-      .slice(0,8);
-  },[allPlayers,searchQ,searchMode]);
+      .slice(0,5);
+    // Clubs
+    const seen=new Set();
+    const clubs=[];
+    Object.entries(ALL_LEAGUE_TEAMS).forEach(([lg,teams])=>{
+      teams.filter(t=>t.toLowerCase().includes(q)).forEach(t=>{
+        if(!seen.has(t)){seen.add(t);clubs.push({name:t,lg});}
+      });
+    });
+    return{players,clubs:clubs.slice(0,5)};
+  },[allPlayers,searchQ]);
 
   const leagueData=useMemo(()=>{
     const map={};
@@ -3400,113 +3405,103 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
     <div style={{marginBottom:16}}>
       <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",marginBottom:10}}>Édit</div>
 
-      {/* ── Barre de recherche + toggle ── */}
-      <div style={{marginBottom:12}}>
-        {/* Toggle Joueur / Club */}
-        <div style={{display:"flex",gap:4,marginBottom:6}}>
-          {["joueur","club"].map(m=>(
-            <button key={m} onClick={()=>{setSearchMode(m);setSearchQ("");}}
-              style={{flex:1,padding:"7px",borderRadius:9,border:"1px solid "+(searchMode===m?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:searchMode===m?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",color:searchMode===m?"#a78bfa":"#6B7280",fontSize:12,fontWeight:searchMode===m?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",textTransform:"capitalize"}}>
-              {m==="joueur"?"👤 Joueur":"🏀 Club"}
-            </button>
-          ))}
-        </div>
-        <div style={{position:"relative"}}>
-          <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
-          <input
-            value={searchQ}
-            onChange={e=>setSearchQ(e.target.value)}
-            placeholder={searchMode==="club"?"Rechercher un club... (ex: Barcelona)":"Rechercher un joueur... (ex: Irving)"}
-            style={{width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 12px 11px 36px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
-          />
-          {searchQ&&<button onClick={()=>setSearchQ("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.1)",border:"none",borderRadius:"50%",width:20,height:20,color:"#9CA3AF",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-        </div>
+      {/* ── Barre de recherche unifiée joueurs + clubs ── */}
+      <div style={{position:"relative",marginBottom:12}}>
+        <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
+        <input
+          value={searchQ}
+          onChange={e=>setSearchQ(e.target.value)}
+          placeholder="Joueur ou club... (ex: Irving, Barcelona)"
+          style={{width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 12px 11px 36px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+        />
+        {searchQ&&<button onClick={()=>setSearchQ("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.1)",border:"none",borderRadius:"50%",width:20,height:20,color:"#9CA3AF",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
       </div>
 
-      {/* ── Résultats clubs ── */}
-      {searchMode==="club"&&searchResults.length>0&&(
+      {/* ── Résultats unifiés ── */}
+      {searchQ.length>=2&&(searchResults.players.length>0||searchResults.clubs.length>0)&&(
         <div style={{background:"rgba(6,10,20,.95)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          {searchResults.map((r,i)=>{
-            const logo=TEAM_LOGOS[r.name]||EL_TEAM_LOGOS[r.name]||NBA_TEAM_LOGOS[r.name]||null;
-            const existingLogo=TEAM_LOGOS[r.name]||EL_TEAM_LOGOS[r.name]||"";
-            return(
-              <div key={r.name+r.lg} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<searchResults.length-1?"1px solid rgba(255,255,255,.05)":"none",cursor:"pointer"}}
-                onClick={()=>{setEditingTeam({name:r.name,lg:r.lg,logoInput:existingLogo,nameInput:r.name});setSearchQ("");}}>
-                {logo?(
-                  <img src={logo} alt={r.name} style={{width:28,height:28,objectFit:"contain",flexShrink:0,borderRadius:4}} loading="lazy"/>
-                ):(
-                  <div style={{width:28,height:28,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#6B7280"}}>🏀</div>
-                )}
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                  <div style={{fontSize:10,color:"#6B7280",display:"flex",alignItems:"center",gap:4,marginTop:1}}>
-                    <GameLogo game={r.lg} size={10}/>
-                    <span>{r.lg}</span>
-                    {logo&&<span style={{color:"#22C55E",fontSize:9,fontWeight:600}}>● Logo</span>}
+          {/* Joueurs */}
+          {searchResults.players.length>0&&(
+            <>
+              {searchResults.clubs.length>0&&<div style={{padding:"5px 14px 3px",fontSize:9,color:"#4a5a6e",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Joueurs</div>}
+              {searchResults.players.map(([key,data])=>{
+                const teamLogo=TEAM_LOGOS[data.team]||EL_TEAM_LOGOS[data.team]||NBA_TEAM_LOGOS[data.team]||null;
+                const copyText=(txt)=>{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>showToast("Copié : "+txt,"#22C55E")).catch(()=>{});};
+                return(
+                  <div key={key} style={{display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                    <button onClick={()=>{setEditingPlayer({key,data,clickY:window.innerHeight/2});setSearchQ("");}}
+                      style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                      {data.photo_url?(
+                        <CachedImg src={data.photo_url} width={32} height={32} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
+                      ):(
+                        <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
+                          {data.name||key}
+                          {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                          {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
+                          <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
+                          {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
+                        </div>
+                      </div>
+                      <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
+                    </button>
+                    <div style={{display:"flex",flexDirection:"column",gap:3,paddingRight:10,flexShrink:0}}>
+                      <button onClick={e=>{e.stopPropagation();copyText(data.name||key);}}
+                        style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,display:"flex",alignItems:"center",gap:3}}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> nom
+                      </button>
+                      {data.team&&<button onClick={e=>{e.stopPropagation();copyText(data.team);}}
+                        style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,display:"flex",alignItems:"center",gap:3}}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> équipe
+                      </button>}
+                    </div>
                   </div>
-                </div>
-                <span style={{fontSize:10,color:"#4a5a6e"}}>✎</span>
-              </div>
-            );
-          })}
+                );
+              })}
+            </>
+          )}
+          {/* Clubs */}
+          {searchResults.clubs.length>0&&(
+            <>
+              {searchResults.players.length>0&&<div style={{height:1,background:"rgba(255,255,255,.06)"}}/>}
+              {searchResults.clubs.length>0&&<div style={{padding:"5px 14px 3px",fontSize:9,color:"#4a5a6e",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Clubs</div>}
+              {searchResults.clubs.map((r,i)=>{
+                const logo=TEAM_LOGOS[r.name]||EL_TEAM_LOGOS[r.name]||NBA_TEAM_LOGOS[r.name]||null;
+                return(
+                  <div key={r.name+r.lg} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<searchResults.clubs.length-1?"1px solid rgba(255,255,255,.05)":"none",cursor:"pointer"}}
+                    onClick={()=>{setEditingTeam({name:r.name,lg:r.lg,logoInput:logo||"",nameInput:r.name});setSearchQ("");}}>
+                    {logo?(
+                      <img src={logo} alt={r.name} style={{width:28,height:28,objectFit:"contain",flexShrink:0,borderRadius:4}} loading="lazy"/>
+                    ):(
+                      <div style={{width:28,height:28,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#6B7280"}}>🏀</div>
+                    )}
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                      <div style={{fontSize:10,color:"#6B7280",display:"flex",alignItems:"center",gap:4,marginTop:1}}>
+                        <GameLogo game={r.lg} size={10}/>
+                        <span>{r.lg}</span>
+                        {logo&&<span style={{color:"#22C55E",fontSize:9,fontWeight:600}}>● Logo</span>}
+                      </div>
+                    </div>
+                    <span style={{fontSize:10,color:"#4a5a6e"}}>✎</span>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
-      {searchMode==="club"&&searchQ.length>=2&&searchResults.length===0&&(
-        <div style={{textAlign:"center",padding:"10px",fontSize:11,color:"#4a5a6e",marginBottom:12}}>Aucun club trouvé pour "{searchQ}"</div>
+      {searchQ.length>=2&&searchResults.players.length===0&&searchResults.clubs.length===0&&(
+        <div style={{textAlign:"center",padding:"10px",fontSize:11,color:"#4a5a6e",marginBottom:12}}>Aucun résultat pour "{searchQ}"</div>
       )}
 
-      {/* ── Résultats de recherche ── */}
-      {searchResults.length>0&&(
-        <div style={{background:"rgba(6,10,20,.95)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden",marginBottom:12}}>
-          {searchResults.map(([key,data])=>{
-            const teamLogo=TEAM_LOGOS[data.team]||EL_TEAM_LOGOS[data.team]||NBA_TEAM_LOGOS[data.team]||null;
-            const copyText=(txt)=>{navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>showToast("Copié : "+txt,"#22C55E")).catch(()=>{});};
-            return(
-              <div key={key} style={{display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-                <button onClick={()=>{setEditingPlayer({key,data});setSearchQ("");}}
-                  style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                  {data.photo_url?(
-                    <CachedImg src={data.photo_url} width={32} height={32} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
-                  ):(
-                    <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
-                    </div>
-                  )}
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
-                      {data.name||key}
-                      {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-                      {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
-                      <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
-                      {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
-                      <span style={{fontSize:9,color:"#4a5a6e"}}>{data.game}</span>
-                    </div>
-                  </div>
-                  <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
-                </button>
-                {/* Boutons copier */}
-                <div style={{display:"flex",flexDirection:"column",gap:3,paddingRight:10,flexShrink:0}}>
-                  <button onClick={e=>{e.stopPropagation();copyText(data.name||key);}}
-                    title="Copier le nom"
-                    style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,whiteSpace:"nowrap"}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> nom
-                  </button>
-                  {data.team&&<button onClick={e=>{e.stopPropagation();copyText(data.team);}}
-                    title="Copier l'équipe"
-                    style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",borderRadius:6,padding:"3px 6px",color:"#9CA3AF",fontSize:9,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600,whiteSpace:"nowrap"}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> équipe
-                  </button>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {searchQ.length>=2&&searchResults.length===0&&(
-        <div style={{textAlign:"center",padding:"10px",fontSize:11,color:"#4a5a6e",marginBottom:12}}>Aucun joueur trouvé pour "{searchQ}"</div>
-      )}
+
 
       {/* Player edit modal — fixed position, outside scroll */}
       {editingPlayer&&(
@@ -3795,6 +3790,8 @@ export default function App(){
   const [tipsterName,setTipsterName]=useState("");
   const [lockedTipster,setLockedTipster]=useState(false);
   const [savedTipsters,setSavedTipsters]=useState(()=>{try{return JSON.parse(localStorage.getItem("v7_saved_tipsers")||"[]");}catch(e){return[];}});
+  const [tipsterPhotos,setTipsterPhotos]=useState(()=>{try{return JSON.parse(localStorage.getItem("v7_tipster_photos")||"{}");}catch(e){return{};}});
+  const [editingTipsterPhoto,setEditingTipsterPhoto]=useState(null); // {name, url}
   const [combineMode,setCombineMode]=useState(false);
   const [combineLegs,setCombineLegs]=useState([{player:"",description:"",overUnder:"Over"}]);
   const [teamBetMode,setTeamBetMode]=useState(false);
@@ -4012,7 +4009,7 @@ export default function App(){
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
           // Aliases pour normaliser les anciens noms d'équipes
-          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Partizan":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
+          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Partizan":"Partizan Mozzart Bet","Partizan Mozzart Bet Belgrade":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
 
           const obj = {};
           rows.forEach(p => {
@@ -4061,6 +4058,19 @@ export default function App(){
           }catch(e){}
 
           setPlayers(obj);
+
+          // ── Nettoyage URLs ESPN cassées en background ──
+          Object.keys(obj).forEach(k=>{
+            const p=obj[k];
+            if(p.photo_url&&p.photo_url.includes("espncdn.com")&&p.photo_url.includes("/full/")){
+              const img=new Image();
+              img.onerror=()=>{
+                // URL ESPN invalide → vider pour supprimer le 404
+                setPlayers(prev=>prev[k]?{...prev,[k]:{...prev[k],photo_url:null,avatar_url:null}}:prev);
+              };
+              img.src=p.photo_url;
+            }
+          });
           try{ localStorage.setItem("v7_players_cache", JSON.stringify(obj)); }catch(e){}
         }
       }).catch(function(){});
@@ -7042,17 +7052,21 @@ export default function App(){
         {!viewPending&&view==="statistiques"&&(
           <div className="view-enter" style={{display:statsDrill?"none":"block"}}><div style={{fontSize:16,fontWeight:800,textTransform:"uppercase",letterSpacing:1.5,color:"#dce8ff",marginBottom:14}}>Statistiques</div>
 
-            {/* ── TAB BAR : APERÇU / JEUX / JOUEURS / TOURNOIS / PLUS ── */}
-            <div style={{display:"flex",gap:18,marginBottom:16,borderBottom:"1px solid rgba(255,255,255,.07)",overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-              {[{k:"apercu",l:"Aperçu"},{k:"jeux",l:"Ligues"},{k:"joueurs",l:"Joueurs"},{k:"tournois",l:"Positions"},{k:"annonces",l:"Annonces"},{k:"victoire",l:"Victoire"},{k:"combine",l:"Combiné"},{k:"tipsers",l:"Tipsers"},{k:"plus",l:"Plus"}].map(t=>{
-                const on=statsTab===t.k;
-                return(
-                  <button key={t.k} onClick={()=>setStatsTab(t.k)}
-                    style={{background:"none",border:"none",padding:"0 0 10px",color:on?"#A78BFA":"#6B7280",fontSize:12,fontWeight:800,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",fontFamily:"Inter,sans-serif",whiteSpace:"nowrap",borderBottom:"2px solid "+(on?"#A78BFA":"transparent"),transition:"all .15s"}}>
-                    {t.l}
-                  </button>
-                );
-              })}
+            {/* ── TAB BAR STATS — scrollable ── */}
+            <div style={{position:"relative",marginBottom:16}}>
+              <div style={{display:"flex",gap:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+                {[{k:"apercu",l:"Aperçu"},{k:"jeux",l:"Ligues"},{k:"joueurs",l:"Joueurs"},{k:"tournois",l:"Positions"},{k:"annonces",l:"Annonces"},{k:"victoire",l:"Victoire"},{k:"combine",l:"Combiné"},{k:"tipsers",l:"Tipsers"},{k:"plus",l:"Plus"}].map(t=>{
+                  const on=statsTab===t.k;
+                  return(
+                    <button key={t.k} onClick={()=>setStatsTab(t.k)}
+                      style={{background:"none",border:"none",padding:"0 14px 10px",color:on?"#A78BFA":"#6B7280",fontSize:12,fontWeight:800,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",fontFamily:"Inter,sans-serif",whiteSpace:"nowrap",borderBottom:"2px solid "+(on?"#A78BFA":"transparent"),transition:"all .15s",flexShrink:0}}>
+                      {t.l}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Fade droit pour indiquer scroll */}
+              <div style={{position:"absolute",right:0,top:0,bottom:0,width:32,background:"linear-gradient(to right,transparent,rgba(8,12,24,.9))",pointerEvents:"none"}}/>
             </div>
 
             {/* ── TESTING PANEL ── */}
@@ -9081,6 +9095,51 @@ export default function App(){
               return(
                 <div style={{marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:8,letterSpacing:.5}}><TipsterIcon size={14} color="#a78bfa"/> Tipsers</div>
+
+                  {/* Modal photo tipster */}
+                  {editingTipsterPhoto&&(
+                    <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setEditingTipsterPhoto(null)}>
+                      <div style={{width:"100%",maxWidth:340,background:"#0d1225",borderRadius:18,border:"1px solid rgba(255,255,255,.12)",padding:"18px 18px 20px"}} onClick={e=>e.stopPropagation()}>
+                        <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:14}}>Photo — {editingTipsterPhoto.name}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
+                          {editingTipsterPhoto.url?(
+                            <img src={editingTipsterPhoto.url} alt="" style={{width:40,height:40,borderRadius:10,objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"}/>
+                          ):(
+                            <div style={{width:40,height:40,borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><TipsterIcon size={18} color="#a78bfa"/></div>
+                          )}
+                          <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                            <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(124,58,237,.1)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                              <span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>⬆ Uploader</span>
+                              <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                                const file=e.target.files[0];
+                                if(!file)return;
+                                try{
+                                  const fn=await supaUploadAvatar(file,"tipster_"+editingTipsterPhoto.name);
+                                  const url=AVATARS_BUCKET+encodeURIComponent(fn);
+                                  setEditingTipsterPhoto(t=>({...t,url}));
+                                }catch(err){alert("Erreur: "+err.message);}
+                              }}/>
+                            </label>
+                            <input autoFocus placeholder="ou colle une URL..." value={editingTipsterPhoto.url||""}
+                              onChange={e=>setEditingTipsterPhoto(t=>({...t,url:e.target.value}))}
+                              style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"9px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none"}}/>
+                          </div>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                          <button onClick={()=>setEditingTipsterPhoto(null)} style={{padding:"11px",background:"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+                          <button onClick={()=>{
+                            const url=(editingTipsterPhoto.url||"").trim();
+                            const updated={...tipsterPhotos,[editingTipsterPhoto.name]:url||undefined};
+                            if(!url) delete updated[editingTipsterPhoto.name];
+                            setTipsterPhotos(updated);
+                            try{localStorage.setItem("v7_tipster_photos",JSON.stringify(updated));}catch(e){}
+                            showToast(editingTipsterPhoto.name+" photo mise à jour","#A78BFA");
+                            setEditingTipsterPhoto(null);
+                          }} style={{padding:"11px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:10,color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Enregistrer</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:13,overflow:"hidden",marginBottom:6}}>
                     {allTipsters.length===0&&(
                       <div style={{padding:"14px",fontSize:11,color:"#4a5a6e",textAlign:"center"}}>Aucun tipster - crée-en un ci-dessous</div>
@@ -9092,9 +9151,18 @@ export default function App(){
                       const profit=settled.reduce((s,b)=>s+(b.profit||0),0);
                       const wr=settled.length>0?(won/settled.length*100):0;
                       const isSaved=savedTipsters.includes(tip);
+                      const tipPhoto=tipsterPhotos[tip]||null;
                       return(
                         <div key={tip} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<allTipsters.length-1?"1px solid #1F2937":"none"}}>
-                          <div style={{width:34,height:34,borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><TipsterIcon size={17} color="#a78bfa"/></div>
+                          {/* Avatar cliquable pour changer la photo */}
+                          <button onClick={()=>setEditingTipsterPhoto({name:tip,url:tipPhoto||""})}
+                            style={{width:34,height:34,borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer",overflow:"hidden",padding:0}}>
+                            {tipPhoto?(
+                              <img src={tipPhoto} alt={tip} style={{width:34,height:34,objectFit:"cover",objectPosition:"50% 0%"}} onError={e=>e.target.style.display="none"}/>
+                            ):(
+                              <TipsterIcon size={17} color="#a78bfa"/>
+                            )}
+                          </button>
                           <div style={{flex:1}}>
                             <div style={{fontWeight:700,fontSize:13,color:"#a78bfa",display:"flex",alignItems:"center",gap:6}}>
                               {tip}
