@@ -3274,10 +3274,35 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
           </div>
 
           {/* Boutons */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:2}}>
-            <button onClick={onClose} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
-            <button onClick={save} disabled={saving} style={{padding:"12px",background:saving?"rgba(124,58,237,.4)":"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-              {saving?"Copie & sauvegarde...":"Enregistrer"}
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:2}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button onClick={onClose} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+              <button onClick={save} disabled={saving} style={{padding:"12px",background:saving?"rgba(124,58,237,.4)":"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                {saving?"Copie & sauvegarde...":"Enregistrer"}
+              </button>
+            </div>
+            {/* Supprimer joueur */}
+            <button onClick={async()=>{
+              if(!window.confirm("Supprimer "+( playerData.name||playerKey)+" ?"))return;
+              try{
+                if(playerData.id){
+                  await fetch(SUPA_URL+"/rest/v1/players?id=eq."+playerData.id,{
+                    method:"DELETE",
+                    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}
+                  });
+                }
+              }catch(e){console.error(e);}
+              setPlayers(p=>{const n={...p};delete n[playerKey];return n;});
+              // Mettre à jour le cache
+              try{
+                const cache=JSON.parse(localStorage.getItem("v7_players_cache")||"{}");
+                delete cache[playerKey];
+                localStorage.setItem("v7_players_cache",JSON.stringify(cache));
+              }catch(e){}
+              showToast((playerData.name||playerKey)+" supprimé","#EF4444");
+              onClose();
+            }} style={{padding:"10px",background:"rgba(239,68,68,.06)",border:"1px solid rgba(239,68,68,.18)",borderRadius:12,color:"#f87171",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+              🗑 Supprimer ce joueur
             </button>
           </div>
         </div>
@@ -3558,8 +3583,8 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
         <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setEditingTeam(null)}>
           <div style={{width:"100%",maxWidth:360,background:"#0a0f1e",borderRadius:20,border:"1px solid rgba(255,255,255,.12)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:"16px 18px",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",gap:12}}>
-              {(TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name])?(
-                <img src={TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name]} alt="" style={{width:40,height:40,objectFit:"contain",borderRadius:8,background:"rgba(255,255,255,.05)",padding:3}} onError={e=>e.target.style.display="none"}/>
+              {(editingTeam.logoInput||TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name])?(
+                <img src={editingTeam.logoInput||TEAM_LOGOS[editingTeam.name]||EL_TEAM_LOGOS[editingTeam.name]||NBA_TEAM_LOGOS[editingTeam.name]} alt="" style={{width:40,height:40,objectFit:"contain",borderRadius:8,background:"rgba(255,255,255,.05)",padding:3}} onError={e=>e.target.style.display="none"}/>
               ):(
                 <div style={{width:40,height:40,borderRadius:8,background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#6B7280"}}>🏀</div>
               )}
@@ -3571,17 +3596,34 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
             </div>
             <div style={{padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:12}}>
               <div>
-                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo URL</div>
+                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Logo</div>
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  {editingTeam.logoInput&&(
-                    <img src={editingTeam.logoInput} alt="" style={{width:30,height:30,objectFit:"contain",borderRadius:6,background:"rgba(255,255,255,.05)",padding:2,flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+                  {editingTeam.logoInput?(
+                    <img src={editingTeam.logoInput} alt="" style={{width:32,height:32,objectFit:"contain",borderRadius:6,background:"rgba(255,255,255,.05)",padding:2,flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+                  ):(
+                    <div style={{width:32,height:32,borderRadius:6,background:"rgba(255,255,255,.06)",flexShrink:0}}/>
                   )}
-                  <input
-                    style={{flex:1,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"10px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
-                    placeholder="https://... URL du logo"
-                    value={editingTeam.logoInput||""}
-                    onChange={e=>setEditingTeam(t=>({...t,logoInput:e.target.value}))}
-                  />
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                    <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.25)",borderRadius:10,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                      <span style={{fontSize:12,color:"#60a5fa",fontWeight:600}}>{editingTeam.uploading?"Envoi...":"⬆ Uploader logo"}</span>
+                      <input type="file" accept="image/*" style={{display:"none"}} disabled={editingTeam.uploading} onChange={async e=>{
+                        const file=e.target.files[0];
+                        if(!file)return;
+                        setEditingTeam(t=>({...t,uploading:true}));
+                        try{
+                          const fn=await supaUploadAvatar(file,"logo_"+editingTeam.name);
+                          const url=AVATARS_BUCKET+encodeURIComponent(fn);
+                          setEditingTeam(t=>({...t,logoInput:url,uploading:false}));
+                        }catch(err){setEditingTeam(t=>({...t,uploading:false}));alert("Erreur: "+err.message);}
+                      }}/>
+                    </label>
+                    <input
+                      style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"8px 12px",color:"#E5E7EB",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",width:"100%"}}
+                      placeholder="ou colle une URL..."
+                      value={editingTeam.logoInput||""}
+                      onChange={e=>setEditingTeam(t=>({...t,logoInput:e.target.value}))}
+                    />
+                  </div>
                 </div>
               </div>
               <div>
@@ -3594,8 +3636,12 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <button onClick={()=>setEditingTeam(null)} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
-                <button onClick={()=>{
-                  const logo=(editingTeam.logoInput||"").trim();
+                <button onClick={async()=>{
+                  let logo=(editingTeam.logoInput||"").trim();
+                  // Si URL externe → rehost vers Supabase
+                  if(logo&&!logo.includes(SUPA_URL)){
+                    try{ logo=await supaRehost(logo,"logo_"+editingTeam.name); }catch(e){}
+                  }
                   if(logo) TEAM_LOGOS[editingTeam.name]=logo;
                   showToast(editingTeam.name+" mis à jour","#22C55E");
                   setEditingTeam(null);
@@ -6313,13 +6359,32 @@ export default function App(){
                     </div>}
                     <div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
                         <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
-                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Victoire</button>
+                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>Victoire</button>
                         <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
-                          style={{padding:"14px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Handicap</button>
+                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>Handicap</button>
+                        <button onClick={()=>setForm(f=>({...f,tbType:"longtermebets",overUnder:"Over",description:tbTeam?"Champion "+tbTeam+" — "+(f.tbChampComp||tbLeague||"NBA"):""}))}
+                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="longtermebets"?"rgba(167,139,250,.4)":"rgba(255,255,255,.06)"),background:tbType==="longtermebets"?"rgba(124,58,237,.1)":"rgba(255,255,255,.02)",color:tbType==="longtermebets"?"#a78bfa":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>🏆 Long terme</button>
                       </div>
                     </div>
+                    {tbType==="longtermebets"&&tbTeam&&(
+                      <div>
+                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Compétition</div>
+                        <div style={{position:"relative"}}>
+                          <select value={form.tbChampComp||tbLeague} onChange={e=>setForm(f=>({...f,tbChampComp:e.target.value,description:"Champion "+tbTeam+" — "+e.target.value}))}
+                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px 40px 12px 14px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                            {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
+                              <option key={lg} value={lg}>{lg}</option>
+                            ))}
+                          </select>
+                          <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                        </div>
+                        <div style={{marginTop:8,padding:"10px 14px",borderRadius:11,background:"rgba(124,58,237,.08)",border:"1px solid rgba(167,139,250,.2)"}}>
+                          <span style={{fontSize:13,color:"#a78bfa",fontWeight:600}}>🏆 Champion {tbTeam} — {form.tbChampComp||tbLeague}</span>
+                        </div>
+                      </div>
+                    )}
                     {tbType==="handicap"&&(
                       <div>
                         <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Valeur</div>
