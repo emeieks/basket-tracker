@@ -323,6 +323,49 @@ function ProfitChart({points,h=110}){
 
 const AVATARS_BUCKET = SUPA_URL + "/storage/v1/object/public/avatars/";
 
+// ── Copier une image externe vers Supabase Storage via canvas ────────────────
+// Retourne l'URL Supabase permanente, ou l'URL originale si crossOrigin bloqué
+async function supaRehost(externalUrl, name) {
+  if(!externalUrl) return externalUrl;
+  // Déjà dans notre Supabase → pas besoin de recopier
+  if(externalUrl.includes(SUPA_URL)) return externalUrl;
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.crossOrigin="anonymous";
+    img.onload=async ()=>{
+      try{
+        const canvas=document.createElement("canvas");
+        canvas.width=img.naturalWidth||300;
+        canvas.height=img.naturalHeight||300;
+        const ctx=canvas.getContext("2d");
+        ctx.drawImage(img,0,0);
+        canvas.toBlob(async (blob)=>{
+          if(!blob){resolve(externalUrl);return;}
+          const filename=name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40)+"_"+Date.now()+".png";
+          const path="photos/players/"+filename;
+          try{
+            const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+              method:"POST",
+              headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"image/png","x-upsert":"true"},
+              body:blob,
+            });
+            if(res.ok){
+              resolve(SUPA_URL+"/storage/v1/object/public/avatars/"+path);
+            } else {
+              resolve(externalUrl); // fallback
+            }
+          }catch(e){resolve(externalUrl);}
+        },"image/png",0.95);
+      }catch(e){resolve(externalUrl);}
+    };
+    img.onerror=()=>resolve(externalUrl); // crossOrigin bloqué → garder URL originale
+    img.src=externalUrl;
+    // Timeout 8s
+    setTimeout(()=>resolve(externalUrl),8000);
+  });
+}
+
+
 function getAvatarSrc(player) {
   if ((player&&player.photo_url)) return player.photo_url;
   if ((player&&player.avatar_url)) return player.avatar_url;
@@ -3037,17 +3080,29 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
 
   async function save(){
     setSaving(true);
-    const finalPhoto=photoUrl.trim()||playerData.photo_url||null;
-    const finalTeamLogo=teamLogoUrl.trim()||playerData.team_logo_url||null;
-    const updated={...playerData,team,role,game:league,photo_url:finalPhoto,avatar_url:finalPhoto,team_logo_url:finalTeamLogo};
     try{
+      // Copier les images externes vers Supabase Storage automatiquement
+      const finalPhoto=photoUrl.trim()||playerData.photo_url||null;
+      const finalLogo=teamLogoUrl.trim()||playerData.team_logo_url||null;
+      // Rehost si URL externe (canvas → Supabase)
+      const [permanentPhoto,permanentLogo]=await Promise.all([
+        finalPhoto?supaRehost(finalPhoto,playerKey):Promise.resolve(null),
+        finalLogo?supaRehost(finalLogo,"logo_"+(team||playerKey)):Promise.resolve(null),
+      ]);
+      const updated={...playerData,team,role,game:league,
+        photo_url:permanentPhoto,avatar_url:permanentPhoto,
+        team_logo_url:permanentLogo};
       const res=await supaUpsertPlayer({name:playerKey,...updated});
       if(!res) throw new Error("Pas de réponse Supabase");
       setPlayers(p=>({...p,[playerKey]:updated}));
       showToast((playerData.name||playerKey)+" mis à jour ✓","#22C55E");
     }catch(e){
-      console.error("Supabase error:",e);
-      // Sauvegarder quand même en local
+      console.error("Save error:",e);
+      // Sauvegarder quand même en local sans rehost
+      const updated={...playerData,team,role,game:league,
+        photo_url:photoUrl.trim()||playerData.photo_url||null,
+        avatar_url:photoUrl.trim()||playerData.avatar_url||null,
+        team_logo_url:teamLogoUrl.trim()||playerData.team_logo_url||null};
       setPlayers(p=>({...p,[playerKey]:updated}));
       showToast("Hors ligne — sauvegardé localement","#F59E0B");
     }
@@ -3215,7 +3270,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:2}}>
             <button onClick={onClose} style={{padding:"12px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,color:"#9CA3AF",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
             <button onClick={save} disabled={saving} style={{padding:"12px",background:saving?"rgba(124,58,237,.4)":"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:12,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-              {saving?"Sauvegarde...":"Enregistrer"}
+              {saving?"Copie & sauvegarde...":"Enregistrer"}
             </button>
           </div>
         </div>
@@ -3233,16 +3288,28 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [addTeamName,setAddTeamName]=useState("");
   const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
+  const [searchMode,setSearchMode]=useState("joueur"); // "joueur" | "club"
   const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   const searchResults=useMemo(()=>{
     const q=searchQ.toLowerCase().trim();
     if(q.length<2)return[];
+    if(searchMode==="club"){
+      // Chercher dans toutes les ligues
+      const seen=new Set();
+      const results=[];
+      Object.entries(ALL_LEAGUE_TEAMS).forEach(([lg,teams])=>{
+        teams.filter(t=>t.toLowerCase().includes(q)).forEach(t=>{
+          if(!seen.has(t)){seen.add(t);results.push({type:"club",name:t,lg});}
+        });
+      });
+      return results.slice(0,10);
+    }
     return Object.entries(allPlayers)
       .filter(([k,p])=>k.includes(q)||(p.name||"").toLowerCase().includes(q))
       .sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0]))
       .slice(0,8);
-  },[allPlayers,searchQ]);
+  },[allPlayers,searchQ,searchMode]);
 
   const leagueData=useMemo(()=>{
     const map={};
@@ -3333,17 +3400,60 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
     <div style={{marginBottom:16}}>
       <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",marginBottom:10}}>Édit</div>
 
-      {/* ── Barre de recherche rapide ── */}
-      <div style={{position:"relative",marginBottom:12}}>
-        <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
-        <input
-          value={searchQ}
-          onChange={e=>setSearchQ(e.target.value)}
-          placeholder="Rechercher un joueur... (ex: Irving)"
-          style={{width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 12px 11px 36px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
-        />
-        {searchQ&&<button onClick={()=>setSearchQ("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.1)",border:"none",borderRadius:"50%",width:20,height:20,color:"#9CA3AF",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+      {/* ── Barre de recherche + toggle ── */}
+      <div style={{marginBottom:12}}>
+        {/* Toggle Joueur / Club */}
+        <div style={{display:"flex",gap:4,marginBottom:6}}>
+          {["joueur","club"].map(m=>(
+            <button key={m} onClick={()=>{setSearchMode(m);setSearchQ("");}}
+              style={{flex:1,padding:"7px",borderRadius:9,border:"1px solid "+(searchMode===m?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:searchMode===m?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",color:searchMode===m?"#a78bfa":"#6B7280",fontSize:12,fontWeight:searchMode===m?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",textTransform:"capitalize"}}>
+              {m==="joueur"?"👤 Joueur":"🏀 Club"}
+            </button>
+          ))}
+        </div>
+        <div style={{position:"relative"}}>
+          <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
+          <input
+            value={searchQ}
+            onChange={e=>setSearchQ(e.target.value)}
+            placeholder={searchMode==="club"?"Rechercher un club... (ex: Barcelona)":"Rechercher un joueur... (ex: Irving)"}
+            style={{width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 12px 11px 36px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+          />
+          {searchQ&&<button onClick={()=>setSearchQ("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.1)",border:"none",borderRadius:"50%",width:20,height:20,color:"#9CA3AF",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+        </div>
       </div>
+
+      {/* ── Résultats clubs ── */}
+      {searchMode==="club"&&searchResults.length>0&&(
+        <div style={{background:"rgba(6,10,20,.95)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,overflow:"hidden",marginBottom:12}}>
+          {searchResults.map((r,i)=>{
+            const logo=TEAM_LOGOS[r.name]||EL_TEAM_LOGOS[r.name]||NBA_TEAM_LOGOS[r.name]||null;
+            const existingLogo=TEAM_LOGOS[r.name]||EL_TEAM_LOGOS[r.name]||"";
+            return(
+              <div key={r.name+r.lg} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<searchResults.length-1?"1px solid rgba(255,255,255,.05)":"none",cursor:"pointer"}}
+                onClick={()=>{setEditingTeam({name:r.name,lg:r.lg,logoInput:existingLogo,nameInput:r.name});setSearchQ("");}}>
+                {logo?(
+                  <img src={logo} alt={r.name} style={{width:28,height:28,objectFit:"contain",flexShrink:0,borderRadius:4}} loading="lazy"/>
+                ):(
+                  <div style={{width:28,height:28,borderRadius:4,background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#6B7280"}}>🏀</div>
+                )}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                  <div style={{fontSize:10,color:"#6B7280",display:"flex",alignItems:"center",gap:4,marginTop:1}}>
+                    <GameLogo game={r.lg} size={10}/>
+                    <span>{r.lg}</span>
+                    {logo&&<span style={{color:"#22C55E",fontSize:9,fontWeight:600}}>● Logo</span>}
+                  </div>
+                </div>
+                <span style={{fontSize:10,color:"#4a5a6e"}}>✎</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {searchMode==="club"&&searchQ.length>=2&&searchResults.length===0&&(
+        <div style={{textAlign:"center",padding:"10px",fontSize:11,color:"#4a5a6e",marginBottom:12}}>Aucun club trouvé pour "{searchQ}"</div>
+      )}
 
       {/* ── Résultats de recherche ── */}
       {searchResults.length>0&&(
@@ -3363,7 +3473,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                     </div>
                   )}
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.name||key}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
+                      {data.name||key}
+                      {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
+                    </div>
                     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
                       {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
                       <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
@@ -3563,7 +3676,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                                 </div>
                               )}
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize"}}>{data.name||key}</div>
+                                <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize",display:"flex",alignItems:"center",gap:5}}>
+                                {data.name||key}
+                                {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
+                              </div>
                                 {data.role&&<div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{data.role}</div>}
                               </div>
                               <span style={{fontSize:10,color:"#4a5a6e",flexShrink:0}}>✎</span>
@@ -6150,16 +6266,32 @@ export default function App(){
               const desc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
               const canSubmit=!!(tbTeam&&form.bookmaker&&form.odds&&form.stake);
               const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(0):null;
+              const tbLogo=TEAM_LOGOS[tbTeam]||EL_TEAM_LOGOS[tbTeam]||NBA_TEAM_LOGOS[tbTeam]||null;
               return(
                 <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
-                  <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2}}>Pari Équipe</div>
+                  <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"center",gap:10}}>
+                    {tbLogo&&<img src={tbLogo} alt={tbTeam} style={{width:22,height:22,objectFit:"contain"}} loading="lazy"/>}
+                    <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2,flex:1}}>{tbTeam||"Pari Équipe"}</div>
+                    <button onClick={()=>{setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",player:"",game:"NBA"}));}}
+                      style={{background:"none",border:"none",color:"#4B5563",fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",padding:"2px 6px"}}>Changer ×</button>
                   </div>
                   <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
-                    <div>
+                    {/* Barre recherche équipe toujours visible */}
+                    <div style={{position:"relative"}}>
+                      <select value={tbTeam} onChange={e=>{
+                        const v=e.target.value;
+                        setForm(f=>({...f,tbTeam:v,player:v,description:f.tbType==="victoire"?"Victoire "+v:v+" "+(f.tbSign||"+")+(f.tbHcp||"3.5")}));
+                      }} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px 40px 12px 14px",color:tbTeam?"#E5E7EB":"#4B5563",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",fontWeight:tbTeam?600:400}}>
+                        <option value="">Choisir une équipe…</option>
+                        {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                    </div>
+                    {/* Ligue — seulement si pas NBA */}
+                    {tbLeague!=="NBA"&&<div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Ligue</div>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
+                        {["EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
                           const on=tbLeague===lg;
                           return(<button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
                             style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(on?"rgba(255,255,255,.2)":"rgba(255,255,255,.06)"),background:on?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
@@ -6168,18 +6300,7 @@ export default function App(){
                           </button>);
                         })}
                       </div>
-                    </div>
-                    <div>
-                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Équipe</div>
-                      <div style={{position:"relative"}}>
-                        <select value={tbTeam} onChange={e=>setForm(f=>({...f,tbTeam:e.target.value,player:e.target.value,description:f.tbType==="victoire"?"Victoire "+e.target.value:e.target.value+" "+(f.tbSign||"+")+(f.tbHcp||"3.5")}))}
-                          style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 40px 13px 14px",color:tbTeam?"#E5E7EB":"#4B5563",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",fontWeight:tbTeam?600:400}}>
-                          <option value="">Choisir une équipe…</option>
-                          {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
-                        </select>
-                        <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
-                      </div>
-                    </div>
+                    </div>}
                     <div>
                       <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -6213,7 +6334,16 @@ export default function App(){
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                         <div>
                           <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Cote</div>
-                          <input type="number" step="0.01" placeholder="1.85" value={form.odds||""} onChange={e=>setForm(f=>({...f,odds:e.target.value}))}
+                          <input type="text" inputMode="decimal" placeholder="1.85 ou 185" value={form.odds||""} onChange={e=>{
+                            let v=e.target.value.replace(",",".");
+                            setForm(f=>({...f,odds:v}));
+                          }} onBlur={e=>{
+                            // 185 → 1.85, 250 → 2.50
+                            let v=e.target.value.replace(",",".");
+                            const n=parseFloat(v);
+                            if(!isNaN(n)&&n>=100){v=(n/100).toFixed(2);}
+                            setForm(f=>({...f,odds:v}));
+                          }}
                             style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                         </div>
                         <div>
@@ -6239,6 +6369,17 @@ export default function App(){
                           <span style={{color:"#E5E7EB",fontWeight:700}}>{desc}</span>
                           {form.odds&&form.stake&&<span style={{color:"#4ade80",fontWeight:700,marginLeft:8}}>+{gain}$ potentiel</span>}
                         </div>}
+                        {/* Bouton Combiner */}
+                        <button onClick={()=>{
+                          setCombineMode(true);
+                          setTeamBetMode(false);
+                          // Pré-remplir le combiné avec la sélection équipe actuelle
+                          const teamDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+                          setCombineLegs([{player:tbTeam,description:teamDesc,game:tbLeague,isTeam:true}]);
+                        }}
+                          style={{width:"100%",height:44,border:"1.5px dashed rgba(52,211,153,.3)",borderRadius:13,background:"rgba(52,211,153,.04)",color:"#34d399",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                          <span style={{fontSize:16}}>+</span> Combiner avec un joueur
+                        </button>
                         <button disabled={!canSubmit}
                           onClick={()=>{
                             const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
