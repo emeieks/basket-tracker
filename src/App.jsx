@@ -367,6 +367,32 @@ async function supaRehost(externalUrl, name) {
   if(!externalUrl) return externalUrl;
   // Déjà dans notre Supabase → pas besoin de recopier
   if(externalUrl.includes(SUPA_URL)) return externalUrl;
+  if(!SUPA_URL||!SUPA_KEY) return externalUrl;
+
+  const filename=name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40)+"_"+Date.now()+".jpg";
+  const path="photos/players/"+filename;
+
+  // Méthode 1 : fetch direct → blob (pas de restriction CORS côté fetch)
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),8000);
+    const imgRes=await fetch(externalUrl,{signal:ctrl.signal,mode:"cors"});
+    clearTimeout(tid);
+    if(imgRes.ok){
+      const blob=await imgRes.blob();
+      const ct=blob.type||"image/jpeg";
+      const ext=ct.includes("png")?"png":"jpg";
+      const finalPath=path.replace(".jpg","."+ext);
+      const upRes=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+finalPath,{
+        method:"POST",
+        headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":ct,"x-upsert":"true"},
+        body:blob,
+      });
+      if(upRes.ok) return SUPA_URL+"/storage/v1/object/public/avatars/"+finalPath;
+    }
+  }catch(e){}
+
+  // Méthode 2 : canvas (fallback si CORS autorisé sur l'image)
   return new Promise((resolve)=>{
     const img=new Image();
     img.crossOrigin="anonymous";
@@ -379,26 +405,20 @@ async function supaRehost(externalUrl, name) {
         ctx.drawImage(img,0,0);
         canvas.toBlob(async (blob)=>{
           if(!blob){resolve(externalUrl);return;}
-          const filename=name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40)+"_"+Date.now()+".png";
-          const path="photos/players/"+filename;
           try{
             const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
               method:"POST",
               headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"image/png","x-upsert":"true"},
               body:blob,
             });
-            if(res.ok){
-              resolve(SUPA_URL+"/storage/v1/object/public/avatars/"+path);
-            } else {
-              resolve(externalUrl); // fallback
-            }
+            if(res.ok) resolve(SUPA_URL+"/storage/v1/object/public/avatars/"+path);
+            else resolve(externalUrl);
           }catch(e){resolve(externalUrl);}
-        },"image/png",0.95);
+        },"image/png",0.92);
       }catch(e){resolve(externalUrl);}
     };
-    img.onerror=()=>resolve(externalUrl); // crossOrigin bloqué → garder URL originale
+    img.onerror=()=>resolve(externalUrl);
     img.src=externalUrl;
-    // Timeout 8s
     setTimeout(()=>resolve(externalUrl),8000);
   });
 }
@@ -3390,6 +3410,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [teamLogoUrl,setTeamLogoUrl]=useState(playerData.team_logo_url||"");
   const [uploadingLogo,setUploadingLogo]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [photoRehostFailed,setPhotoRehostFailed]=useState(false);
   const isNBA=league==="NBA";
   const positions=isNBA?["PG","SG","SF","PF","C"]:["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
   const teamList=(ALL_LEAGUE_TEAMS[league]||[]).slice().sort();
@@ -3415,6 +3436,21 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
         finalPhoto?supaRehost(finalPhoto,playerKey):Promise.resolve(null),
         finalLogo?supaRehost(finalLogo,"logo_"+(team||playerKey)):Promise.resolve(null),
       ]);
+      // Détecter si le rehost a échoué (URL retournée = même URL externe)
+      if(finalPhoto&&permanentPhoto&&!permanentPhoto.includes(SUPA_URL)){
+        setPhotoRehostFailed(true);
+        setSaving(false);
+        // Sauvegarder quand même avec l'URL externe
+        const updated={...playerData,team,role,game:league,
+          photo_url:finalPhoto,avatar_url:finalPhoto,
+          team_logo_url:permanentLogo||finalLogo};
+        await supaUpsertPlayer({name:playerKey,...updated});
+        setPlayers(p=>({...p,[playerKey]:updated}));
+        showToast("Photo externe — lien Supabase impossible","#F59E0B");
+        onClose();
+        return;
+      }
+      setPhotoRehostFailed(false);
       const updated={...playerData,team,role,game:league,
         photo_url:permanentPhoto,avatar_url:permanentPhoto,
         team_logo_url:permanentLogo};
@@ -3475,10 +3511,24 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
 
           {/* Photo — upload Supabase ou URL */}
           <div>
-            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Photo joueur</div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+              Photo joueur
+              {photoUrl&&(
+                photoRehostFailed
+                  ?<span title="Impossible d'enregistrer dans Supabase" style={{width:8,height:8,borderRadius:"50%",background:"#EF4444",flexShrink:0,display:"inline-block",boxShadow:"0 0 4px #EF4444"}}/>
+                  :!photoUrl.includes(SUPA_URL)
+                    ?<span title="Photo externe — pas encore dans Supabase" style={{width:8,height:8,borderRadius:"50%",background:"#FBBF24",flexShrink:0,display:"inline-block",boxShadow:"0 0 4px #FBBF24"}}/>
+                    :<span title="Photo hébergée dans Supabase ✓" style={{width:8,height:8,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block",boxShadow:"0 0 4px #22C55E"}}/>
+              )}
+            </div>
+            {photoRehostFailed&&<div style={{fontSize:10,color:"#f87171",background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>⚠️ CORS bloqué — essaie d'uploader le fichier directement via le bouton ci-dessous</div>}
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {photoUrl?(
-                <img src={photoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
+                <div style={{position:"relative",flexShrink:0}}>
+                  <img src={photoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
+                  {/* Point statut en bas à droite de la photo */}
+                  <span style={{position:"absolute",bottom:0,right:0,width:10,height:10,borderRadius:"50%",background:photoRehostFailed?"#EF4444":photoUrl.includes(SUPA_URL)?"#22C55E":"#FBBF24",border:"2px solid #111827",boxShadow:"0 0 4px "+(photoRehostFailed?"#EF4444":photoUrl.includes(SUPA_URL)?"#22C55E":"#FBBF24")}}/>
+                </div>
               ):(
                 <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.06)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6B7280"}}>👤</div>
               )}
@@ -3785,7 +3835,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
                           {data.name||key}
-                          {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
+                          {data.photo_url&&(data.photo_url.includes(SUPA_URL)?<span title="Photo Supabase ✓" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>:<span title="Photo externe — cliquer pour héberger" style={{width:6,height:6,borderRadius:"50%",background:"#FBBF24",flexShrink:0,display:"inline-block"}}/>)}
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
                           {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
@@ -4038,7 +4088,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize",display:"flex",alignItems:"center",gap:5}}>
                                 {data.name||key}
-                                {data.photo_url&&data.photo_url.includes(SUPA_URL)&&<span title="Photo hébergée Supabase" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>}
+                                {data.photo_url&&(data.photo_url.includes(SUPA_URL)?<span title="Photo Supabase ✓" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>:<span title="Photo externe — cliquer pour héberger" style={{width:6,height:6,borderRadius:"50%",background:"#FBBF24",flexShrink:0,display:"inline-block"}}/>)}
                               </div>
                                 {data.role&&<div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{data.role}</div>}
                               </div>
