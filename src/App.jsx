@@ -1052,7 +1052,7 @@ const STATUS_CFG={
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
   lost:{label:"Perdu",color:"#EF4444",bg:"rgba(248,113,113,0.1)"},
 };
-const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:nowDT(),isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[],selCat:null,betType:null};
+const EMPTY_FORM=()=>({player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:nowDT(),isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[],selCat:null,betType:null});
 const EMPTY_MAP_ROW={odds:"",stake:"",status:"pending",enabled:true};
 
 function toDateKey(dt){
@@ -1061,11 +1061,15 @@ function toDateKey(dt){
   catch{return "";}
 }
 function nowDT(){
-  // Toujours utiliser l'heure de Montréal (America/Toronto)
   const p=v=>String(v).padStart(2,"0");
-  const now=new Date();
-  const mtl=new Date(now.toLocaleString("en-CA",{timeZone:"America/Toronto"}));
-  return mtl.getFullYear()+"-"+p(mtl.getMonth()+1)+"-"+p(mtl.getDate())+"T"+p(mtl.getHours())+":"+p(mtl.getMinutes());
+  try{
+    // Essayer avec le fuseau horaire de l'appareil (le plus fiable sur iOS)
+    const now=new Date();
+    return now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate())+"T"+p(now.getHours())+":"+p(now.getMinutes());
+  }catch(e){
+    const now=new Date();
+    return now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate())+"T"+p(now.getHours())+":"+p(now.getMinutes());
+  }
 }
 function calcProfit(status,stake,odds){
   if(status==="won")return stake*(odds-1);
@@ -4014,7 +4018,7 @@ export default function App(){
     });
   }
   const [bookmakers,setBookmakers]=useState(DEFAULT_BK);
-  const [form,setForm]=useState({...EMPTY_FORM,datetime:nowDT()});
+  const [form,setForm]=useState({...EMPTY_FORM(),datetime:nowDT()});
   const [stickyBK,setStickyBK]=useState(false);
   const [lockedStatus,setLockedStatus]=useState(null);
   const [tipsterName,setTipsterName]=useState("");
@@ -5351,7 +5355,7 @@ export default function App(){
         return updated;
       });
       setEditingBet(null);
-      setForm(f=>({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
+      setForm(f=>({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
       showToast("Pari modifié ✓");
       if(editedBK){setFBKs(prev=>prev.includes(editedBK)?prev:[...prev,editedBK]);}
       setView("mesparis");
@@ -5403,7 +5407,7 @@ export default function App(){
     // Push immédiat vers Supabase (pas d'attente du debounce)
     supaPushBets([newBet]).catch(function(){});
     const addedBK=form.bookmaker;
-    setForm(f=>({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
+    setForm(f=>({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
     showToast("Pari enregistré ✓");
     showBetConfirm(form.status);
     // Filtrer automatiquement par le bookmaker du pari ajouté
@@ -5441,7 +5445,7 @@ export default function App(){
     lastPushRef.current=Date.now();
     // Push immédiat vers Supabase
     supaPushBets(newBets).catch(function(){});
-    setForm(f=>({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
+    setForm(f=>({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
     setSessionMaps([{...EMPTY_MAP_ROW},{...EMPTY_MAP_ROW},{...EMPTY_MAP_ROW}]);
     showToast(newBets.length+" paris enregistres");
     if(sessionBK){setFBKs(prev=>prev.includes(sessionBK)?prev:[...prev,sessionBK]);}
@@ -6383,7 +6387,7 @@ export default function App(){
                     {editingBet?"Modifier pari":sessionMode?"Session multi-map":"Ajouter un pari"}
                   </div></div></div><div style={{display:"flex",gap:6,alignItems:"center"}}>
                 {editingBet&&(
-                  <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:""});}}
+                  <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:""});}}
                     style={{fontSize:11,color:"#6B7280",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"6px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600}}>
                     × Annuler
                   </button>
@@ -6589,183 +6593,203 @@ export default function App(){
               const tbHcp=form.tbHcp||"3.5";
               const hcpValues=[];for(let v=0.5;v<=40;v+=0.5)hcpValues.push(v.toFixed(1));
               const leagueTeams=ALL_LEAGUE_TEAMS[tbLeague]||[];
-              const desc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
               const canSubmit=!!(tbTeam&&form.bookmaker&&form.odds&&form.stake);
               const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(0):null;
               const tbLogo=TEAM_LOGOS[tbTeam]||EL_TEAM_LOGOS[tbTeam]||NBA_TEAM_LOGOS[tbTeam]||null;
+              const ALL_LEAGUES=["EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"];
+              const inp={width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 16px",color:"#fff",fontSize:16,fontWeight:700,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"};
+              const sel={...inp,cursor:"pointer",appearance:"none",WebkitAppearance:"none",paddingRight:40};
               return(
-                <div style={{background:"#080e1e",borderRadius:20,border:"1px solid rgba(255,255,255,.08)",overflow:"hidden",marginBottom:10}}>
-                  <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"center",gap:10}}>
-                    {tbLogo&&<img src={tbLogo} alt={tbTeam} style={{width:22,height:22,objectFit:"contain"}} loading="lazy"/>}
-                    <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:1.2,flex:1}}>{tbTeam||"Pari Équipe"}</div>
-                    <button onClick={()=>{setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",player:"",game:"NBA"}));}}
-                      style={{background:"none",border:"none",color:"#4B5563",fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",padding:"2px 6px"}}>Changer ×</button>
-                  </div>
-                  <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
-                    {/* Barre recherche équipe toujours visible */}
-                    <div style={{position:"relative"}}>
-                      <select value={tbTeam} onChange={e=>{
-                        const v=e.target.value;
-                        setForm(f=>({...f,tbTeam:v,player:v,description:f.tbType==="victoire"?"Victoire "+v:v+" "+(f.tbSign||"+")+(f.tbHcp||"3.5")}));
-                      }} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px 40px 12px 14px",color:tbTeam?"#E5E7EB":"#4B5563",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",fontWeight:tbTeam?600:400}}>
-                        <option value="">Choisir une équipe…</option>
-                        {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
-                    </div>
-                    {/* Ligue — seulement si pas NBA */}
-                    {tbLeague!=="NBA"&&<div>
-                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Ligue</div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {["EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga"].map(lg=>{
-                          const on=tbLeague===lg;
-                          return(<button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
-                            style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid "+(on?"rgba(255,255,255,.2)":"rgba(255,255,255,.06)"),background:on?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            <GameLogo game={lg} size={12}/>
-                            <span style={{fontSize:11,fontWeight:on?700:500,color:on?"#E5E7EB":"#6B7280"}}>{lg}</span>
-                          </button>);
-                        })}
-                      </div>
-                    </div>}
-                    <div>
-                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-                        <button onClick={()=>setForm(f=>({...f,tbType:"victoire",overUnder:"Over",description:tbTeam?"Victoire "+tbTeam:"Victoire"}))}
-                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="victoire"?"rgba(34,197,94,.4)":"rgba(255,255,255,.06)"),background:tbType==="victoire"?"rgba(34,197,94,.08)":"rgba(255,255,255,.02)",color:tbType==="victoire"?"#4ade80":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>Victoire</button>
-                        <button onClick={()=>setForm(f=>({...f,tbType:"handicap",overUnder:"Over",description:tbTeam?tbTeam+" +"+(tbHcp||"3.5"):"+3.5"}))}
-                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="handicap"?"rgba(251,191,36,.4)":"rgba(255,255,255,.06)"),background:tbType==="handicap"?"rgba(251,191,36,.08)":"rgba(255,255,255,.02)",color:tbType==="handicap"?"#fbbf24":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>Handicap</button>
-                        <button onClick={()=>setForm(f=>({...f,tbType:"longtermebets",overUnder:"Over",description:tbTeam?"Champion "+tbTeam+" — "+(f.tbChampComp||tbLeague||"NBA"):""}))}
-                          style={{padding:"12px 6px",borderRadius:12,border:"1px solid "+(tbType==="longtermebets"?"rgba(167,139,250,.4)":"rgba(255,255,255,.06)"),background:tbType==="longtermebets"?"rgba(124,58,237,.1)":"rgba(255,255,255,.02)",color:tbType==="longtermebets"?"#a78bfa":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"center"}}>🏆 Long terme</button>
-                      </div>
-                    </div>
-                    {tbType==="longtermebets"&&tbTeam&&(
-                      <div>
-                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Compétition</div>
-                        <div style={{position:"relative"}}>
-                          <select value={form.tbChampComp||tbLeague} onChange={e=>setForm(f=>({...f,tbChampComp:e.target.value,description:"Champion "+tbTeam+" — "+e.target.value}))}
-                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px 40px 12px 14px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                            {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
-                              <option key={lg} value={lg}>{lg}</option>
-                            ))}
-                          </select>
-                          <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
-                        </div>
-                        <div style={{marginTop:8,padding:"10px 14px",borderRadius:11,background:"rgba(124,58,237,.08)",border:"1px solid rgba(167,139,250,.2)"}}>
-                          <span style={{fontSize:13,color:"#a78bfa",fontWeight:600}}>🏆 Champion {tbTeam} — {form.tbChampComp||tbLeague}</span>
-                        </div>
-                      </div>
-                    )}
-                    {tbType==="handicap"&&(
-                      <div>
-                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Valeur</div>
-                        <div style={{display:"grid",gridTemplateColumns:"96px 1fr",gap:8}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                            {["+","-"].map(s=>(
-                              <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
-                                style={{padding:"13px 0",borderRadius:12,border:"1px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.4)":"rgba(248,113,113,.4)"):"rgba(255,255,255,.06)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.08)":"rgba(248,113,113,.08)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#4ade80":"#f87171"):"#6B7280",fontWeight:800,fontSize:18,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{s}</button>
-                            ))}
-                          </div>
-                          <div style={{position:"relative"}}>
-                            <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
-                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 40px 13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                              {hcpValues.map(v=><option key={v} value={v}>{tbSign}{v}</option>)}
-                            </select>
-                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {tbTeam&&(
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                        <div>
-                          <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Cote</div>
-                          <input type="text" inputMode="decimal" placeholder="1.85 ou 185" value={form.odds||""} onChange={e=>{
-                            let v=e.target.value.replace(",",".");
-                            setForm(f=>({...f,odds:v}));
-                          }} onBlur={e=>{
-                            // 185 → 1.85, 250 → 2.50
-                            let v=e.target.value.replace(",",".");
-                            const n=parseFloat(v);
-                            if(!isNaN(n)&&n>=100){v=(n/100).toFixed(2);}
-                            setForm(f=>({...f,odds:v}));
-                          }}
-                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
-                        </div>
-                        <div>
-                          <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Mise ($)</div>
-                          <input type="number" step="1" placeholder="50" value={form.stake||""} onChange={e=>setForm(f=>({...f,stake:e.target.value}))}
-                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"13px 14px",color:"#E5E7EB",fontSize:18,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
-                        </div>
-                      </div>
-                    )}
-                    {tbTeam&&(
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-                        {[["pending","⏳","#3B82F6"],["won","✓","#22C55E"],["lost","✗","#EF4444"]].map(([s,ic,col])=>(
-                          <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
-                            style={{padding:"10px",borderRadius:10,border:"1px solid "+((form.status||"pending")===s?col+"66":"rgba(255,255,255,.06)"),background:(form.status||"pending")===s?col+"18":"rgba(255,255,255,.02)",color:(form.status||"pending")===s?col:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            {ic} {s==="pending"?"Attente":s==="won"?"Gagné":"Perdu"}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {tbTeam&&(
-                      <div>
-                        {gain&&<div style={{textAlign:"center",fontSize:12,color:"#6B7280",marginBottom:8}}>
-                          <span style={{color:"#E5E7EB",fontWeight:700}}>{desc}</span>
-                          {form.odds&&form.stake&&<span style={{color:"#4ade80",fontWeight:700,marginLeft:8}}>+{gain}$ potentiel</span>}
-                        </div>}
-                        {/* Tipster */}
-                    {savedTipsters.length>0&&(
-                      <div>
-                        <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Tipster</div>
-                        <div style={{position:"relative"}}>
-                          <select value={tipsterName} onChange={e=>setTipsterName(e.target.value)}
-                            style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 36px 11px 12px",color:tipsterName?"#E5E7EB":"#6B7280",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}>
-                            <option value="">Aucun tipster</option>
-                            {savedTipsters.map(t=><option key={t} value={t}>{t}</option>)}
-                          </select>
-                          <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
-                        </div>
-                      </div>
-                    )}
+                <div style={{marginBottom:10}}>
 
-                    {/* Mise rapide */}
-                    {form.stake&&<div style={{fontSize:10,color:"#4B5563",marginTop:-8}}>
-                      <span style={{color:"#4ade80",fontWeight:600}}>Gain potentiel : +{gain}$</span>
-                    </div>}
-                    {!form.stake&&<div>
-                      <div style={{fontSize:10,color:"#4B5563",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Mise rapide</div>
-                      <div style={{display:"flex",gap:6}}>
-                        {[25,50,100].map(v=>(
-                          <button key={v} onClick={()=>setForm(f=>({...f,stake:String(v)}))}
-                            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",background:"rgba(255,255,255,.03)",color:"#9CA3AF",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                            {v}$
+                  {/* ── Header équipe ── */}
+                  <div style={{background:"linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.08))",border:"1px solid rgba(139,92,246,.25)",borderRadius:20,padding:"16px",marginBottom:8,display:"flex",alignItems:"center",gap:14}}>
+                    <div style={{width:56,height:56,borderRadius:14,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+                      {tbLogo?<img src={tbLogo} alt={tbTeam} style={{width:50,height:50,objectFit:"contain"}}/>:<span style={{fontSize:26}}>🏀</span>}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:16,fontWeight:800,color:tbTeam?"#fff":"#6B7280",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tbTeam||"Choisir une équipe"}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                        <GameLogo game={tbLeague} size={13}/>
+                        <span style={{fontSize:12,color:"#6B7280"}}>{tbLeague}</span>
+                      </div>
+                    </div>
+                    <button onClick={()=>{setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",player:"",game:"NBA"}));}}
+                      style={{padding:"6px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",color:"#9CA3AF",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+                      Changer
+                    </button>
+                  </div>
+
+                  <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:20,border:"1px solid rgba(139,92,246,.2)",overflow:"hidden",marginBottom:8}}>
+                    <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
+
+                      {/* Équipe */}
+                      <div>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Équipe</div>
+                        <div style={{position:"relative"}}>
+                          <select value={tbTeam} onChange={e=>{
+                            const v=e.target.value;
+                            setForm(f=>({...f,tbTeam:v,player:v,description:f.tbType==="victoire"?"Victoire "+v:v+" "+(f.tbSign||"+")+(f.tbHcp||"3.5")}));
+                          }} style={sel}>
+                            <option value="">Choisir une équipe…</option>
+                            {leagueTeams.slice().sort().map(t=><option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                        </div>
+                      </div>
+
+                      {/* Ligue */}
+                      <div>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Ligue</div>
+                        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                          {ALL_LEAGUES.map(lg=>{const on=tbLeague===lg;return(
+                            <button key={lg} onClick={()=>setForm(f=>({...f,tbLeague:lg,tbTeam:"",player:"",game:lg}))}
+                              style={{display:"flex",alignItems:"center",gap:4,padding:"6px 10px",borderRadius:20,border:"1.5px solid "+(on?"#7C3AED":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.15)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                              <GameLogo game={lg} size={13}/>
+                              <span style={{fontSize:11,fontWeight:on?700:500,color:on?"#a78bfa":"#6B7280"}}>{lg}</span>
+                            </button>
+                          );})}
+                        </div>
+                      </div>
+
+                      {/* Type de pari */}
+                      <div>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Type de pari</div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                          {[
+                            {k:"victoire",l:"Victoire",i:"🏆",col:"#22C55E",bc:"rgba(34,197,94,"},
+                            {k:"handicap",l:"Handicap",i:"📊",col:"#fbbf24",bc:"rgba(251,191,36,"},
+                            {k:"longtermebets",l:"Long terme",i:"📈",col:"#a78bfa",bc:"rgba(124,58,237,"},
+                          ].map(t=>{const on=tbType===t.k;return(
+                            <button key={t.k} onClick={()=>{
+                              const desc=t.k==="victoire"?"Victoire "+tbTeam:t.k==="handicap"?tbTeam+" +"+(tbHcp||"3.5"):"Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague||"NBA");
+                              setForm(f=>({...f,tbType:t.k,overUnder:"Over",description:tbTeam?desc:""}));
+                            }} style={{padding:"12px 4px",borderRadius:12,border:"1.5px solid "+(on?t.bc+".4)":"rgba(255,255,255,.07)"),background:on?t.bc+".1)":"rgba(255,255,255,.02)",color:on?t.col:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",gap:3,transition:"all .15s"}}>
+                              <span style={{fontSize:18}}>{t.i}</span>{t.l}
+                            </button>
+                          );})}
+                        </div>
+                      </div>
+
+                      {/* Handicap */}
+                      {tbType==="handicap"&&(
+                        <div>
+                          <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Handicap</div>
+                          <div style={{display:"grid",gridTemplateColumns:"88px 1fr",gap:8}}>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+                              {["+","-"].map(s=>(
+                                <button key={s} onClick={()=>setForm(f=>({...f,tbSign:s,description:tbTeam?tbTeam+" "+s+tbHcp:s+tbHcp}))}
+                                  style={{padding:"14px 0",borderRadius:12,border:"1.5px solid "+(tbSign===s?(s==="+"?"rgba(34,197,94,.5)":"rgba(248,113,113,.5)"):"rgba(255,255,255,.08)"),background:tbSign===s?(s==="+"?"rgba(34,197,94,.1)":"rgba(248,113,113,.1)"):"rgba(255,255,255,.02)",color:tbSign===s?(s==="+"?"#22C55E":"#f87171"):"#6B7280",fontWeight:900,fontSize:20,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{s}</button>
+                              ))}
+                            </div>
+                            <div style={{position:"relative"}}>
+                              <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
+                                style={sel}>
+                                {hcpValues.map(v=><option key={v} value={v}>{tbSign}{v}</option>)}
+                              </select>
+                              <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Long terme — compétition */}
+                      {tbType==="longtermebets"&&tbTeam&&(
+                        <div>
+                          <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Compétition</div>
+                          <div style={{position:"relative"}}>
+                            <select value={form.tbChampComp||tbLeague} onChange={e=>setForm(f=>({...f,tbChampComp:e.target.value,description:"Champion "+tbTeam+" — "+e.target.value}))}
+                              style={sel}>
+                              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
+                                <option key={lg} value={lg}>{lg}</option>
+                              ))}
+                            </select>
+                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cote + Mise côte à côte */}
+                      {tbTeam&&(
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div>
+                            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Cote</div>
+                            <input type="text" inputMode="decimal" placeholder="1.85" value={form.odds||""} onChange={e=>{let v=e.target.value.replace(",",".");setForm(f=>({...f,odds:v}));}} onBlur={e=>{let v=e.target.value.replace(",",".");const n=parseFloat(v);if(!isNaN(n)&&n>=100){v=(n/100).toFixed(2);}setForm(f=>({...f,odds:v}));}} style={inp}/>
+                          </div>
+                          <div>
+                            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Mise ($)</div>
+                            <input type="number" step="1" placeholder="50" value={form.stake||""} onChange={e=>setForm(f=>({...f,stake:e.target.value}))} style={inp}/>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mises rapides */}
+                      {tbTeam&&!form.stake&&(
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+                          {[25,50,75,100].map(v=>(
+                            <button key={v} onClick={()=>setForm(f=>({...f,stake:String(v)}))}
+                              style={{padding:"10px 0",borderRadius:11,border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.03)",color:"#9CA3AF",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                              {v}$
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Statut */}
+                      {tbTeam&&(
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                          {[["pending","⏳","En attente","#3B82F6"],["won","✓","Gagné","#22C55E"],["lost","✗","Perdu","#EF4444"]].map(([s,ic,lb,col])=>{const on=(form.status||"pending")===s;return(
+                            <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
+                              style={{padding:"12px 4px",borderRadius:12,border:"1.5px solid "+(on?col+"88":"rgba(255,255,255,.07)"),background:on?col+"18":"rgba(255,255,255,.02)",color:on?col:"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
+                              <span style={{fontSize:15,fontWeight:900}}>{ic}</span><span>{lb}</span>
+                            </button>
+                          );})}
+                        </div>
+                      )}
+
+                      {/* Tipster */}
+                      {savedTipsters.length>0&&(
+                        <div>
+                          <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Tipster</div>
+                          <div style={{position:"relative"}}>
+                            <select value={tipsterName} onChange={e=>setTipsterName(e.target.value)} style={sel}>
+                              <option value="">Aucun tipster</option>
+                              {savedTipsters.map(t=><option key={t} value={t}>{t}</option>)}
+                            </select>
+                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Récap + gain potentiel */}
+                      {tbTeam&&form.odds&&form.stake&&(
+                        <div style={{padding:"12px 16px",borderRadius:14,background:"rgba(124,58,237,.08)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"#c4b5fd"}}>{tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Champion "+tbTeam}</div>
+                          <div style={{fontSize:14,fontWeight:800,color:"#22C55E"}}>+{gain}$</div>
+                        </div>
+                      )}
+
+                      {/* Boutons action */}
+                      {tbTeam&&(
+                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                          <button onClick={()=>{
+                            setCombineMode(true);setTeamBetMode(false);
+                            const teamDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+                            setCombineLegs([{player:tbTeam,description:teamDesc,game:tbLeague,isTeam:true}]);
+                          }} style={{width:"100%",height:46,border:"1.5px dashed rgba(52,211,153,.3)",borderRadius:13,background:"rgba(52,211,153,.04)",color:"#34d399",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                            <span style={{fontSize:16}}>+</span> Combiner avec un joueur
                           </button>
-                        ))}
-                      </div>
-                    </div>}
-                    {/* Bouton Combiner */}
-                        <button onClick={()=>{
-                          setCombineMode(true);
-                          setTeamBetMode(false);
-                          // Pré-remplir le combiné avec la sélection équipe actuelle
-                          const teamDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
-                          setCombineLegs([{player:tbTeam,description:teamDesc,game:tbLeague,isTeam:true}]);
-                        }}
-                          style={{width:"100%",height:44,border:"1.5px dashed rgba(52,211,153,.3)",borderRadius:13,background:"rgba(52,211,153,.04)",color:"#34d399",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          <span style={{fontSize:16}}>+</span> Combiner avec un joueur
-                        </button>
-                        <button disabled={!canSubmit}
-                          onClick={()=>{
-                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbTeam+" "+tbSign+tbHcp;
+                          <button disabled={!canSubmit} onClick={()=>{
+                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague);
                             setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending",tipster:tipsterName||null}));
-                            setTimeout(()=>{ addBet(); setTeamBetMode(false); setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"})); },0);
-                          }}
-                          style={{width:"100%",height:56,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
-                          {canSubmit?"Ajouter à mes paris ✓":"Compléter le formulaire"}
-                        </button>
-                      </div>
-                    )}
+                            setTimeout(()=>{addBet();setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"}));},0);
+                          }} style={{width:"100%",height:58,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
+                            {canSubmit?"Ajouter à mes paris ✓":"Compléter le formulaire"}
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
                   </div>
                 </div>
               );
@@ -6892,9 +6916,18 @@ export default function App(){
                   {/* ── Zone photo (38% de la carte) ── */}
                   <div style={{width:"38%",flexShrink:0,position:"relative",display:"flex",alignItems:"flex-end",justifyContent:"center",overflow:"hidden"}}>
                     {/* Logo équipe en filigrane */}
-                    {form.autoInfo.team_logo_url&&(
-                      <img src={form.autoInfo.team_logo_url} alt="" onError={e=>e.target.style.display='none'} style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"70%",height:"70%",objectFit:"contain",opacity:.08,zIndex:0,pointerEvents:"none"}}/>
-                    )}
+                    {(()=>{
+                      const watermarkSrc=
+                        form.autoInfo.team_logo_url||
+                        TEAM_LOGOS[form.autoInfo.team]||
+                        EL_TEAM_LOGOS[form.autoInfo.team]||
+                        NBA_TEAM_LOGOS[form.autoInfo.team]||null;
+                      if(!watermarkSrc)return null;
+                      return(
+                        <img src={watermarkSrc} alt="" onError={e=>e.target.style.display='none'}
+                          style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"85%",height:"85%",objectFit:"contain",opacity:.12,zIndex:0,pointerEvents:"none"}}/>
+                      );
+                    })()}
                     {/* Glow violet derrière la photo */}
                     <div style={{position:"absolute",bottom:"-10%",left:"50%",transform:"translateX(-50%)",width:"80%",height:"90%",background:"radial-gradient(ellipse at 50% 80%,rgba(124,58,237,.35),transparent 70%)",pointerEvents:"none",zIndex:0}}/>
                     {(()=>{
@@ -7047,10 +7080,11 @@ export default function App(){
                 };
                 const selBT=form.betType||null;
                 const selBTObj=BET_TYPES_LIST.find(b=>b.id===selBT);
-                const lineVals=selBT?BET_OPTS[selBT]:(BET_OPTS.pts);
-                // Extraire la valeur numérique de form.description
-                const descParts=form.description?form.description.split(" "):[]; 
-                const selVal=descParts[0]&&!isNaN(parseFloat(descParts[0]))?descParts[0]:"";
+                const lineVals=selBT?BET_OPTS[selBT]:BET_OPTS.pts;
+                // Valeur numérique stockée dans betLine (champ dédié) — fallback sur description
+                const selVal=form.betLine||(form.description?form.description.split(" ")[0]:"");
+                // S'assurer que selVal est dans les options du type actuel
+                const validVal=lineVals.includes(selVal)?selVal:"";
 
                 const boxStyle=(active,col)=>({
                   flex:1,minWidth:0,height:54,borderRadius:13,
@@ -7085,13 +7119,13 @@ export default function App(){
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                       {/* Valeur */}
                       <div style={{position:"relative"}}>
-                        <select value={selVal}
+                        <select value={validVal}
                           onChange={e=>{
                             const v=e.target.value;
                             const suffix=BET_SUFFIX[selBT]||"Points";
-                            setForm(f=>({...f,description:v+" "+suffix}));
+                            setForm(f=>({...f,betLine:v,description:v?v+" "+suffix:""}));
                           }}
-                          style={{...boxStyle(!!selVal,"#c4b5fd"),width:"100%",paddingRight:28}}>
+                          style={{...boxStyle(!!validVal,"#c4b5fd"),width:"100%",paddingRight:28}}>
                           <option value="">Ligne…</option>
                           {lineVals.map(v=><option key={v} value={v}>{v}</option>)}
                         </select>
@@ -7104,8 +7138,10 @@ export default function App(){
                           onChange={e=>{
                             const newBT=e.target.value;
                             const suffix=BET_SUFFIX[newBT]||"Points";
-                            const val=selVal||(BET_OPTS[newBT]?BET_OPTS[newBT][Math.floor(BET_OPTS[newBT].length/2)]:"");
-                            setForm(f=>({...f,betType:newBT,description:val?" "+suffix:""}));
+                            // Garder la valeur actuelle si elle est valide dans le nouveau type, sinon vider
+                            const newOpts=BET_OPTS[newBT]||[];
+                            const keepVal=newOpts.includes(selVal)?selVal:"";
+                            setForm(f=>({...f,betType:newBT,betLine:keepVal,description:keepVal?keepVal+" "+suffix:""}));
                           }}
                           style={{...boxStyle(!!selBT,selBTObj?.col||"#a78bfa"),width:"100%",paddingRight:28}}>
                           <option value="">Type…</option>
@@ -7116,9 +7152,9 @@ export default function App(){
                     </div>
 
                     {/* Résumé de la sélection */}
-                    {form.overUnder&&selVal&&selBT&&(
+                    {form.overUnder&&validVal&&selBT&&(
                       <div style={{padding:"8px 12px",borderRadius:10,background:"rgba(167,139,250,.06)",border:"1px solid rgba(167,139,250,.15)",fontSize:13,fontWeight:700,color:"#c4b5fd",textAlign:"center",letterSpacing:.2}}>
-                        {form.overUnder} {selVal} {BET_SUFFIX[selBT]}
+                        {form.overUnder} {validVal} {BET_SUFFIX[selBT]}
                       </div>
                     )}
                   </div>
@@ -7391,7 +7427,7 @@ export default function App(){
                     {isDisabled?"Complète le formulaire ↑":sessionMode?"Enregistrer session ("+sessionMaps.filter(m=>m.enabled&&m.odds).length+" maps)":editingBet?"✓ Sauvegarder":"⊕ Ajouter le pari"}
                   </button>
                   {editingBet&&(
-                    <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM,datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:"",});}}
+                    <button onClick={()=>{setEditingBet(null);setForm({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?form.bookmaker:"",});}}
                       style={{width:"100%",padding:"12px",background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,color:"#6B7280",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:8}}>
                       × Annuler modification
                     </button>
@@ -9428,7 +9464,7 @@ export default function App(){
                         const ou=b.direction==="OVER"?"Over":"Under";
                         const gk=b.sport&&sport.includes("CS")?"CS2":b.sport&&sport.includes("Legend")?"LoL":b.sport&&sport.includes("Dota")?"Dota2":b.sport&&sport.includes("Valor")?"Valorant":null;
                         const autoInfo=gk?findPlayer(b.player)||{game:gk,league:"?",role:"?",team:b.team||"?"}:null;
-                        setForm({...EMPTY_FORM,datetime:nowDT(),player:b.player||"",overUnder:ou,description:desc,odds:String(b.odds||""),stake:"",bookmaker:bk,mapTag:mapTag,isLive:false,mapLocked:false,autoInfo:autoInfo});
+                        setForm({...EMPTY_FORM(),datetime:nowDT(),player:b.player||"",overUnder:ou,description:desc,odds:String(b.odds||""),stake:"",bookmaker:bk,mapTag:mapTag,isLive:false,mapLocked:false,autoInfo:autoInfo});
                         setEditingBet(null);
                         setExpandedAnalyseBet(null);
                         setView("add");
