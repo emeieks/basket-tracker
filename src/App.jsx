@@ -1052,7 +1052,7 @@ const STATUS_CFG={
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
   lost:{label:"Perdu",color:"#EF4444",bg:"rgba(248,113,113,0.1)"},
 };
-const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:"",isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[],selCat:null,betType:null};
+const EMPTY_FORM={player:"",overUnder:"",description:"",odds:"",stake:"",bookmaker:"",status:"pending",autoInfo:null,datetime:nowDT(),isHeadshot:false,mapTag:"Match",isLive:false,mapLocked:false,ppMapType:"",ppDescription:"",calcBkLine:"",calcPPLine:"",calcMapType:"Match",calcOU:"Over",announceOuts:[],selCat:null,betType:null};
 const EMPTY_MAP_ROW={odds:"",stake:"",status:"pending",enabled:true};
 
 function toDateKey(dt){
@@ -2776,7 +2776,7 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
   }
   function addVBet(){
     if(!form.bookmaker||!form.team||!form.odds||!form.stake){showToast("Remplis tous les champs requis","#EF4444");return;}
-    const descr=getBetDescription();
+    const descr=form.note.trim()||getBetDescription();
     const profit=form.status==="won"?parseFloat(form.stake)*(parseFloat(form.odds)-1):form.status==="lost"?-parseFloat(form.stake):0;
     const newBet={id:Date.now(),bookmaker:form.bookmaker,league:form.league,competition:form.competitionType,team:form.team,betType:form.betType,handicapSign:form.handicapSign,handicapVal:form.handicapVal,opponent:form.opponent,description:descr,odds:parseFloat(form.odds),stake:parseFloat(form.stake),status:form.status,profit,datetime:form.datetime,outPlayers_own:form.outPlayers_own,outPlayers_opp:form.outPlayers_opp,note:form.note};
     const updated=[newBet,...vBets];setVBets(updated);saveVB(updated);
@@ -3012,15 +3012,11 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
             )}
           </div>
 
-          {/* Aperçu pari */}
-          {form.team&&form.odds&&(
-            <div style={{padding:"11px 14px",background:"rgba(124,58,237,.08)",border:"1px solid rgba(124,58,237,.18)",borderRadius:12,marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-              {teamLogo&&<img src={teamLogo} alt="" style={{width:24,height:24,objectFit:"contain"}}/>}
-              <div style={{fontSize:12,color:"#c4b5fd",fontWeight:600,flex:1}}>{getBetDescription()}{form.opponent?" vs "+form.opponent:""}</div>
-              <div style={{fontSize:13,fontWeight:800,color:"#a78bfa"}}>@{form.odds}</div>
-              {form.stake&&<div style={{fontSize:12,fontWeight:700,color:"#E5E7EB"}}>{form.stake}$</div>}
-            </div>
-          )}
+          {/* Description libre */}
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Description</div>
+            <input style={{...inp,color:"#fff"}} placeholder="ex: Victoire à domicile, forme récente…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+          </div>
 
           {/* Bouton principal */}
           <button onClick={addVBet}
@@ -3036,32 +3032,35 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
       ):vBets.map(b=>{
         const isPending=b.status==="pending";const isWon=b.status==="won";const col=STATUS_C[b.status];
         const bLogo=getTeamLogo(b.team);
+        // Titre propre selon le type
+        const cardTitle=(()=>{
+          if(b.betType==="victoire")return b.team||b.description;
+          if(b.betType==="handicap")return b.team+(b.handicapSign||"")+(b.handicapVal?parseFloat(b.handicapVal).toFixed(1):"");
+          if(b.betType==="3pts")return b.team+" "+(b.threeptOU||"Over")+" "+(b.threeptVal?parseFloat(b.threeptVal).toFixed(1):"")+"s 3s";
+          if(b.betType==="longterme")return b.team;
+          return b.description||b.team;
+        })();
         return(
           <div key={b.id} style={{background:"#0D1117",border:"1px solid rgba(255,255,255,.07)",borderLeft:"3px solid "+col+(isPending?"":"AA"),borderRadius:14,marginBottom:10,overflow:"hidden"}}>
             <div style={{padding:"13px 14px"}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                {bLogo
-                  ?<img src={bLogo} alt={b.team} style={{width:34,height:34,objectFit:"contain",flexShrink:0}}/>
-                  :<div style={{width:34,height:34,borderRadius:8,background:"rgba(255,255,255,.04)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:18}}>🏀</span></div>}
+                {/* Carré logo club */}
+                <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+                  {bLogo
+                    ?<img src={bLogo} alt={b.team} style={{width:36,height:36,objectFit:"contain"}}/>
+                    :<span style={{fontSize:20}}>🏀</span>}
+                </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
-                    <div style={{fontWeight:800,fontSize:14,color:"#E5E7EB",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{b.description}</div>
-                    {b.betType==="3pts"&&<span style={{fontSize:9,fontWeight:800,color:"#34d399",background:"rgba(52,211,153,.1)",border:"1px solid rgba(52,211,153,.25)",borderRadius:5,padding:"1px 5px",flexShrink:0}}>3PT</span>}
-                    {b.betType==="handicap"&&<span style={{fontSize:9,fontWeight:800,color:"#a78bfa",background:"rgba(124,58,237,.1)",border:"1px solid rgba(124,58,237,.25)",borderRadius:5,padding:"1px 5px",flexShrink:0}}>HCP</span>}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-                    <GameLogo game={b.league} size={12}/>
-                    <span style={{fontSize:11,color:"#6B7280"}}>{b.league}{b.opponent?" · vs "+b.opponent:""}</span>
-                  </div>
+                  <div style={{fontWeight:700,fontSize:14,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{cardTitle}</div>
+                  <div style={{fontSize:11,color:"#6B7280"}}>@{b.odds} · {b.bookmaker}{b.opponent?" · vs "+b.opponent:""}</div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontWeight:800,fontSize:16,color:isPending?"#3B82F6":isWon?"#22C55E":"#f87171"}}>
                     {isPending?"@"+b.odds:((b.profit||0)>=0?"+":"")+(b.profit||0).toFixed(0)+"$"}
                   </div>
-                  <div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{b.bookmaker}</div>
+                  <div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{b.stake}$</div>
                 </div>
               </div>
-              <div style={{fontSize:11,color:"#4B5563",marginBottom:isPending?10:4}}>@{b.odds} · {b.stake}$ · {b.datetime?b.datetime.slice(0,10):""}</div>
               {((b.outPlayers_own||[]).length+(b.outPlayers_opp||[]).length)>0&&(
                 <div style={{marginBottom:8,display:"flex",flexWrap:"wrap",gap:4}}>
                   {(b.outPlayers_own||[]).map(o=><span key={o} style={{fontSize:9,fontWeight:700,color:"#f87171",background:"rgba(239,68,68,.1)",padding:"2px 7px",borderRadius:8}}>❌ {o}</span>)}
@@ -6531,8 +6530,21 @@ export default function App(){
             {/* ── DATE & HEURE ── */}
             {!duelMode&&<div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 12px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
               <div style={{fontSize:13,fontWeight:700,color:"#ccd3e4",marginBottom:8}}>Date & heure</div>
-              <input type="datetime-local" value={form.datetime||nowDT()} onChange={e=>setForm(f=>({...f,datetime:e.target.value}))}
-                style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"11px 14px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",colorScheme:"dark"}}/>
+              <div style={{position:"relative"}}>
+                {/* Affichage formaté en français */}
+                <div style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(139,92,246,.3)",borderRadius:12,padding:"11px 14px",color:"#E5E7EB",fontSize:14,fontWeight:600,fontFamily:"Inter,sans-serif",pointerEvents:"none",userSelect:"none"}}>
+                  {(()=>{
+                    const dt=form.datetime||nowDT();
+                    if(!dt)return"—";
+                    const d=new Date(dt);
+                    if(isNaN(d.getTime()))return dt;
+                    return d.toLocaleString("fr-CA",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+                  })()}
+                </div>
+                {/* Input transparent par-dessus pour ouvrir le picker */}
+                <input type="datetime-local" value={form.datetime||nowDT()} onChange={e=>setForm(f=>({...f,datetime:e.target.value}))}
+                  style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent"}}/>
+              </div>
             </div>}
 
             {/* ── 1. BOOKMAKER ── */}
