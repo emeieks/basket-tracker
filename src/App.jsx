@@ -1072,6 +1072,26 @@ function checkIsTeamBet(b){
   return false;
 }
 
+// ── Helper Supabase pour données secondaires (components) ────────────────────
+// Chaque composant appelle supaSettingsSave(id, data) pour persister dans Supabase
+// et supaSettingsLoad(id) pour récupérer
+async function supaSettingsLoad(rowId){
+  if(!SUPA_URL||!SUPA_KEY)return null;
+  try{
+    const r=await fetch(SUPA_URL+"/rest/v1/bets?id=eq."+encodeURIComponent(rowId)+"&select=description",{headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}});
+    const d=await r.json();
+    if(d&&d[0]&&d[0].description)return JSON.parse(d[0].description);
+  }catch(e){}
+  return null;
+}
+function supaSettingsSave(rowId,data){
+  if(!SUPA_URL||!SUPA_KEY)return;
+  try{
+    const row={id:rowId,player:"__SETTINGS_COMP__",description:JSON.stringify(data),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+    fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(row)}).catch(()=>{});
+  }catch(e){}
+}
+
 const STATUS_CFG={
   pending:{label:"En attente",color:"#3B82F6",bg:"rgba(96,165,250,0.1)"},
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
@@ -2688,9 +2708,24 @@ function AnnonceStatsView({bets, allPlayers}){
 
 // ── AnnonceNBATracker ──────────────────────────────────────────────────────────
 function AnnonceNBATracker({bets,allPlayers}){
-  const STORAGE_KEY="v7_annonce_tracker";
-  function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return[];}}
-  function save(data){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){}}
+  const SUPA_ROW_ANN="__settings_annonce_tracker__";
+  function load(){try{return JSON.parse(localStorage.getItem("v7_annonce_tracker")||"[]");}catch(e){return[];}}
+  function save(data){
+    try{localStorage.setItem("v7_annonce_tracker",JSON.stringify(data));}catch(e){}
+    supaSettingsSave(SUPA_ROW_ANN,data);
+  }
+  useEffect(()=>{
+    supaSettingsLoad(SUPA_ROW_ANN).then(d=>{
+      if(d&&Array.isArray(d)&&d.length>0){
+        setEntries(prev=>{
+          const ids=new Set(prev.map(e=>e.id));
+          const merged=[...prev,...d.filter(e=>!ids.has(e.id))];
+          try{localStorage.setItem("v7_annonce_tracker",JSON.stringify(merged));}catch(e){}
+          return merged;
+        });
+      }
+    }).catch(()=>{});
+  },[]);
   const [entries,setEntries]=useState(load);
   const [form,setForm]=useState({player:"",outPlayers:[],cutBefore:"",cutAfter:"",note:"",date:new Date().toISOString().slice(0,10)});
   const [addOpen,setAddOpen]=useState(false);
@@ -2817,9 +2852,26 @@ function AnnonceNBATracker({bets,allPlayers}){
 
 // ── VictoireEquipeView ─────────────────────────────────────────────────────────
 function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast,allPlayers}){
-  const STORAGE_KEY="v7_victoire_bets";
-  function loadVB(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return[];}}
-  function saveVB(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
+  const SUPA_ROW_VB="__settings_victoire_bets__";
+  function loadVB(){try{return JSON.parse(localStorage.getItem("v7_victoire_bets")||"[]");}catch(e){return[];}}
+  function saveVB(d){
+    try{localStorage.setItem("v7_victoire_bets",JSON.stringify(d));}catch(e){}
+    supaSettingsSave(SUPA_ROW_VB,d);
+  }
+  useEffect(()=>{
+    supaSettingsLoad(SUPA_ROW_VB).then(d=>{
+      if(d&&Array.isArray(d)&&d.length>0){
+        setVBets(prev=>{
+          // Merge : union par id, Supabase gagne si plus récent
+          const localMap=Object.fromEntries(prev.map(b=>[b.id,b]));
+          const merged=[...prev];
+          d.forEach(b=>{if(!localMap[b.id])merged.push(b);});
+          try{localStorage.setItem("v7_victoire_bets",JSON.stringify(merged));}catch(e){}
+          return merged;
+        });
+      }
+    }).catch(()=>{});
+  },[]);
   const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
   const HANDICAP_VALUES=[];for(let v=0.5;v<=34.5;v+=0.5)HANDICAP_VALUES.push(v);
   const THREEPT_VALUES=[];for(let v=0.5;v<=19.5;v+=0.5)THREEPT_VALUES.push(v);
@@ -3151,9 +3203,25 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
 
 // ── PariCombineView ────────────────────────────────────────────────────────────
 function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast}){
-  const STORAGE_KEY="v7_combine_bets";
-  function loadCB(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return[];}}
-  function saveCB(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
+  const SUPA_ROW_CB="__settings_combine_bets__";
+  function loadCB(){try{return JSON.parse(localStorage.getItem("v7_combine_bets")||"[]");}catch(e){return[];}}
+  function saveCB(d){
+    try{localStorage.setItem("v7_combine_bets",JSON.stringify(d));}catch(e){}
+    supaSettingsSave(SUPA_ROW_CB,d);
+  }
+  useEffect(()=>{
+    supaSettingsLoad(SUPA_ROW_CB).then(d=>{
+      if(d&&Array.isArray(d)&&d.length>0){
+        setCBets(prev=>{
+          const localMap=Object.fromEntries(prev.map(b=>[b.id,b]));
+          const merged=[...prev];
+          d.forEach(b=>{if(!localMap[b.id])merged.push(b);});
+          try{localStorage.setItem("v7_combine_bets",JSON.stringify(merged));}catch(e){}
+          return merged;
+        });
+      }
+    }).catch(()=>{});
+  },[]);
   const BET_TYPES=["Points","Passes","Rebonds","3 Points","Pts+Passes+Rbs","Blocs","Interceptions"];
   const LINE_VALUES=[];for(let v=0.5;v<=60.5;v+=0.5)LINE_VALUES.push(v);
   const [combineBets,setCombineBets]=useState(loadCB);
@@ -4209,8 +4277,6 @@ export default function App(){
   // ── MODE NOUVEAU DÉPART (Men in Black) ───────────────────────────────────
   const [mibActive,setMibActive]=useState(()=>{try{return localStorage.getItem("v7_mib_active")==="1";}catch(e){return false;}});
   const [mibDate,setMibDate]=useState(()=>{try{return localStorage.getItem("v7_mib_date")||new Date().toISOString().slice(0,10);}catch(e){return new Date().toISOString().slice(0,10);}});
-  // Persister MIB dans localStorage
-  useEffect(()=>{try{localStorage.setItem("v7_mib_active",mibActive?"1":"0");localStorage.setItem("v7_mib_date",mibDate);}catch(e){}},[mibActive,mibDate]);
   const [statsPeriod,setStatsPeriod]=useState(null);
   const [statsChartMode,setStatsChartMode]=useState("line");
   const [playersExpanded,setPlayersExpanded]=useState(null);
@@ -4438,32 +4504,49 @@ export default function App(){
   },[]);
 
   // Persister stickyBK + bookmaker actif
-  useEffect(()=>{
-    if(!loaded)return;
-    try{localStorage.setItem("v7_sticky_bk",JSON.stringify({active:stickyBK,bk:stickyBK?form.bookmaker:""}));}catch(e){}
-  },[stickyBK,form.bookmaker,loaded]);
-  useEffect(()=>{if(!loaded)return;try{localStorage.setItem("v7_locked_status",lockedStatus||"");}catch(e){}},[lockedStatus,loaded]);
-  useEffect(()=>{try{localStorage.setItem("v7_depots",JSON.stringify(depots));}catch(e){}},[depots]);
-  useEffect(()=>{try{localStorage.setItem("v7_bk_accounts",JSON.stringify(bkAccounts));}catch(e){}},[bkAccounts]);
-  // Persister la liste des bookmakers (ajout, renommage, suppression)
-  useEffect(()=>{if(!loaded)return;try{localStorage.setItem("v7_bmakers",JSON.stringify(bookmakers));}catch(e){}},[bookmakers,loaded]);
-  // Persister les coupes personnalisées
-  useEffect(()=>{try{localStorage.setItem("v7_custom_cups",JSON.stringify(customCups));}catch(e){}},[customCups]);
 
-  // Persister tournois actifs + savedTourneys + MIB + testFilter → localStorage + Supabase
+  // Persister tournois actifs + savedTourneys + MIB + testFilter → Supabase
   useEffect(()=>{
     if(!loaded)return;
     try{
-      localStorage.setItem("v7_tourneys",JSON.stringify(activeTourneys));
-      localStorage.setItem("v7_saved_tourneys_bk",JSON.stringify(savedTourneys));
-      // Serialize testFilter (Sets → Arrays for JSON)
       const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
       if(SUPA_URL&&SUPA_KEY){
+        // Row 1 : settings principaux
         const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
         fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
       }
     }catch(e){}
   },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters,customCups,loaded]);
+
+  // ── Supabase save : settings app (bookmakers, bkPhotos, bankroll, dépôts, etc.) ──
+  useEffect(()=>{
+    if(!loaded)return;
+    const t=setTimeout(()=>{
+      try{
+        if(SUPA_URL&&SUPA_KEY){
+          let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+          const appRow={
+            id:"__settings_app__",player:"__SETTINGS_APP__",
+            description:JSON.stringify({
+              bookmakers,bkPhotos,bkAccounts,
+              bankroll,depots,
+              overrides:ovSaved,hiddenBKs:[...hiddenBKs],
+              stickyBK,lockedStatus,
+              hiddenAnalyseBets:[...hiddenAnalyseBets],
+              blacklist:[...blacklist],
+              simManual,tipsterPhotos,
+              ppData,
+            }),
+            odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+            datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+            ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null
+          };
+          fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(appRow)}).catch(function(){});
+        }
+      }catch(e){}
+    },1500);
+    return()=>clearTimeout(t);
+  },[bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs,stickyBK,lockedStatus,hiddenAnalyseBets,blacklist,simManual,tipsterPhotos,ppData,loaded]);
 
   // ── Save: localStorage (debounced) ───────────────────────────────────────
   useEffect(()=>{
@@ -4628,6 +4711,38 @@ export default function App(){
           }
         }catch(e){}
       }
+      // ── Restore __settings_app__ ──────────────────────────────────────────────
+      const appRow=remote.find(b=>b.player==="__SETTINGS_APP__");
+      if(appRow){
+        try{
+          const a=JSON.parse(appRow.description||"{}");
+          if(a.bookmakers&&a.bookmakers.length>0){
+            setBookmakers(prev=>{
+              const merged=[...a.bookmakers];
+              DEFAULT_BK.forEach(bk=>{if(!merged.includes(bk))merged.push(bk);});
+              return merged;
+            });
+          }
+          if(a.bkPhotos&&Object.keys(a.bkPhotos).length>0){
+            setBkPhotos(prev=>({...prev,...a.bkPhotos}));
+          }
+          if(a.bkAccounts&&Object.keys(a.bkAccounts).length>0){
+            setBkAccounts(prev=>({...prev,...a.bkAccounts}));
+          }
+          if(a.bankroll!=null&&a.bankroll>0){setBankroll(a.bankroll);}
+          if(a.depots&&a.depots.length>0){setDepots(a.depots);}
+          if(a.overrides&&Object.keys(a.overrides).length>0){try{const merged2={...JSON.parse(localStorage.getItem("v7_overrides")||"{}"), ...a.overrides};localStorage.setItem("v7_overrides",JSON.stringify(merged2));}catch(e){}}
+          if(a.hiddenBKs&&a.hiddenBKs.length>0){setHiddenBKs(new Set(a.hiddenBKs));}
+          if(a.stickyBK!=null){setStickyBK(a.stickyBK);}
+          if(a.lockedStatus!=null){setLockedStatus(a.lockedStatus);}
+          if(a.hiddenAnalyseBets&&a.hiddenAnalyseBets.length>0){setHiddenAnalyseBets(new Set(a.hiddenAnalyseBets));}
+          if(a.blacklist&&a.blacklist.length>0){setBlacklist(new Set(a.blacklist));}
+          if(a.simManual&&Object.keys(a.simManual).length>0){setSimManual(prev=>({...prev,...a.simManual}));}
+          if(a.tipsterPhotos&&Object.keys(a.tipsterPhotos).length>0){setTipsterPhotos(prev=>({...prev,...a.tipsterPhotos}));}
+          if(a.ppData&&a.ppData.length>0){setPpData(a.ppData);}
+        }catch(e){}
+      }
+
       // Marquer comme pull pour éviter re-push automatique
       lastPulledRef.current=merged.length+":"+(merged[0]&&merged[0].id||"");
       // Re-apply any remaining overrides on top of merged data
@@ -11228,9 +11343,23 @@ function PPReferenceTable(){
 
 // ── PPRatioCompiler ─────────────────────────────────────────────────────────
 function PPRatioCompiler(){
-  const STORAGE_KEY="v7_pp_ratios";
-  function loadData(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch(e){return{};}}
-  function saveDataToStorage(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch(e){}}
+  const SUPA_ROW_PP="__settings_pp_ratios__";
+  function loadData(){try{return JSON.parse(localStorage.getItem("v7_pp_ratios")||"{}");}catch(e){return{};}}
+  function saveDataToStorage(d){
+    try{localStorage.setItem("v7_pp_ratios",JSON.stringify(d));}catch(e){}
+    supaSettingsSave(SUPA_ROW_PP,d);
+  }
+  useEffect(()=>{
+    supaSettingsLoad(SUPA_ROW_PP).then(d=>{
+      if(d&&Object.keys(d).length>0){
+        setData(prev=>{
+          const merged={...prev,...d};
+          try{localStorage.setItem("v7_pp_ratios",JSON.stringify(merged));}catch(e){}
+          return merged;
+        });
+      }
+    }).catch(()=>{});
+  },[]);
 
   const [game,setGame]=useState("NBA");
   const [mt,setMt]=useState("12");
