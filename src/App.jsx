@@ -365,14 +365,23 @@ const AVATARS_BUCKET = SUPA_URL + "/storage/v1/object/public/avatars/";
 // Retourne l'URL Supabase permanente, ou l'URL originale si crossOrigin bloqué
 async function supaRehost(externalUrl, name) {
   if(!externalUrl) return externalUrl;
-  // Déjà dans notre Supabase → pas besoin de recopier
   if(externalUrl.includes(SUPA_URL)) return externalUrl;
   if(!SUPA_URL||!SUPA_KEY) return externalUrl;
 
-  const filename=name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40)+"_"+Date.now()+".jpg";
-  const path="photos/players/"+filename;
+  // ── Méthode 1 : Edge Function Supabase (côté serveur, zéro CORS) ─────────────
+  try{
+    const fnRes=await fetch(SUPA_URL+"/functions/v1/rehost-image",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY},
+      body:JSON.stringify({url:externalUrl,name:name||"player"}),
+    });
+    if(fnRes.ok){
+      const data=await fnRes.json();
+      if(data.url&&data.url.includes(SUPA_URL)) return data.url;
+    }
+  }catch(e){}
 
-  // Méthode 1 : fetch direct → blob (pas de restriction CORS côté fetch)
+  // ── Méthode 2 : fetch navigateur direct (si le site autorise CORS) ───────────
   try{
     const ctrl=new AbortController();
     const tid=setTimeout(()=>ctrl.abort(),8000);
@@ -381,19 +390,22 @@ async function supaRehost(externalUrl, name) {
     if(imgRes.ok){
       const blob=await imgRes.blob();
       const ct=blob.type||"image/jpeg";
-      const ext=ct.includes("png")?"png":"jpg";
-      const finalPath=path.replace(".jpg","."+ext);
-      const upRes=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+finalPath,{
+      const ext=ct.includes("png")?"png":ct.includes("webp")?"webp":"jpg";
+      const safeName=(name||"player").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+      const path="photos/players/"+safeName+"_"+Date.now()+"."+ext;
+      const upRes=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
         method:"POST",
         headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":ct,"x-upsert":"true"},
         body:blob,
       });
-      if(upRes.ok) return SUPA_URL+"/storage/v1/object/public/avatars/"+finalPath;
+      if(upRes.ok) return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
     }
   }catch(e){}
 
-  // Méthode 2 : canvas (fallback si CORS autorisé sur l'image)
+  // ── Méthode 3 : canvas crossOrigin (dernier recours) ────────────────────────
   return new Promise((resolve)=>{
+    const safeName=(name||"player").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+    const path="photos/players/"+safeName+"_"+Date.now()+".png";
     const img=new Image();
     img.crossOrigin="anonymous";
     img.onload=async ()=>{
