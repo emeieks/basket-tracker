@@ -7457,7 +7457,7 @@ export default function App(){
             {/* ── TAB BAR STATS — scrollable ── */}
             <div style={{position:"relative",marginBottom:16}}>
               <div style={{display:"flex",gap:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-                {[{k:"apercu",l:"Aperçu"},{k:"jeux",l:"Ligues"},{k:"joueurs",l:"Joueurs"},{k:"tournois",l:"Positions"},{k:"annonces",l:"Annonces"},{k:"victoire",l:"Victoire"},{k:"combine",l:"Combiné"},{k:"tipsers",l:"Tipsers"},{k:"plus",l:"Plus"}].map(t=>{
+                {[{k:"apercu",l:"Aperçu"},{k:"jeux",l:"Ligues"},{k:"tournois",l:"Positions"},{k:"annonces",l:"Annonces"},{k:"victoire",l:"Victoire"},{k:"combine",l:"Combiné"},{k:"tipsers",l:"Tipsers"},{k:"plus",l:"Plus"}].map(t=>{
                   const on=statsTab===t.k;
                   return(
                     <button key={t.k} onClick={()=>setStatsTab(t.k)}
@@ -8226,24 +8226,151 @@ export default function App(){
                 </div>
               );
             })()}
+
+            {/* ── Bookmakers ── */}
+            {bkStatsSorted.length>0&&(
+              <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                <div style={{fontSize:10,color:"#a78bfa",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 8px",fontFamily:"Inter,sans-serif"}}>Bookmakers</div>
+                {bkStatsSorted.map(([bk,s],i)=>{
+                  const logo=BK_LOGOS[bk]||bkPhotos[bk]||null;
+                  const wr=s.count>0?(s.won/s.count*100):0;
+                  const roi=s.staked>0?(s.profit/s.staked*100):0;
+                  return(
+                    <div key={bk} style={{padding:"10px 14px",borderTop:i>0?"1px solid #1F2937":"none",display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:30,height:30,borderRadius:7,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {logo?<img src={logo} alt={bk} style={{width:24,height:24,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:10,fontWeight:700,color:"#6B7280"}}>{bk.slice(0,2)}</span>}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{bk}</div>
+                        <div style={{fontSize:10,color:"#6B7280"}}>{s.count} paris · {wr.toFixed(0)}% WR · {roi>=0?"+":""}{roi.toFixed(1)}% ROI</div>
+                      </div>
+                      <span style={{fontWeight:700,fontSize:13,color:s.profit>=0?"#22C55E":"#EF4444",flexShrink:0}}>{s.profit>=0?"+":""}{s.profit.toFixed(0)}$</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Tranches de cote ── */}
+            {oddsRangeStats.length>0&&(
+              <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                <div style={{fontSize:10,color:"#fbbf24",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 8px",fontFamily:"Inter,sans-serif"}}>Tranches de cote</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 40px 52px 70px",gap:4,padding:"4px 14px 8px"}}>
+                  <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textTransform:"uppercase"}}>Cote</span>
+                  <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>N</span>
+                  <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>WR%</span>
+                  <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"right"}}>Profit</span>
+                </div>
+                {oddsRangeStats.map((r,i)=>(
+                  <div key={r.label} style={{display:"grid",gridTemplateColumns:"1fr 40px 52px 70px",gap:4,padding:"7px 14px",borderTop:"1px solid #1F2937",alignItems:"center"}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fbbf24"}}>@{r.label}</span>
+                    <span style={{fontSize:11,color:"#9CA3AF",textAlign:"center"}}>{r.count}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:r.wr>55?"#22C55E":r.wr<45?"#EF4444":"#9CA3AF",textAlign:"center"}}>{r.wr.toFixed(0)}%</span>
+                    <span style={{fontSize:11,fontWeight:700,color:r.profit>=0?"#22C55E":"#EF4444",textAlign:"right"}}>{r.profit>=0?"+":""}{r.profit.toFixed(0)}$</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             </>}
 
             {/* ──  ONGLET ANALYSE ── */}
             
-            {statsTab==="annonces"&&(
-              <div>
-                <div style={{display:"flex",gap:6,marginBottom:12}}>
-                  {[{k:"tracker",l:"📋 Tracker Lignes"},{k:"stats",l:"📊 Stats"}].map(t=>(
-                    <button key={t.k} onClick={()=>setAnnSubTab(t.k)}
-                      style={{flex:1,padding:"9px",borderRadius:9,border:"1.5px solid "+(annSubTab===t.k?"rgba(124,58,237,.4)":"rgba(255,255,255,.07)"),background:annSubTab===t.k?"rgba(124,58,237,.12)":"transparent",color:annSubTab===t.k?"#a78bfa":"#6B7280",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                      {t.l}
-                    </button>
-                  ))}
+            {statsTab==="annonces"&&(()=>{
+              // Grouper les paris avec annonces OUT par ligue
+              const annByGame={};
+              settledFiltered.forEach(b=>{
+                if(!b.announceOuts||b.announceOuts.length===0)return;
+                const g=b.game||"Autre";
+                if(!annByGame[g])annByGame[g]=[];
+                annByGame[g].push(b);
+              });
+              const games=Object.keys(annByGame).sort();
+              if(games.length===0){
+                return(
+                  <div style={{textAlign:"center",padding:"40px 16px",color:"#4a5a6e"}}>
+                    <div style={{fontSize:28,marginBottom:10}}>📣</div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#6B7280"}}>Aucune annonce OUT enregistrée</div>
+                    <div style={{fontSize:11,color:"#4a5a6e",marginTop:6}}>Les annonces apparaissent quand tu ajoutes des joueurs OUT à un pari</div>
+                  </div>
+                );
+              }
+              return(
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {games.map(game=>{
+                    const gb=annByGame[game];
+                    const won=gb.filter(b=>b.status==="won").length;
+                    const profit=gb.reduce((s,b)=>s+(b.profit||0),0);
+                    const staked=gb.reduce((s,b)=>s+(b.stake||0),0);
+                    const wr=gb.length>0?(won/gb.length*100):0;
+                    const roi=staked>0?(profit/staked*100):0;
+                    const avgOdds=gb.length>0?(gb.reduce((s,b)=>s+(b.odds||0),0)/gb.length):0;
+                    const roiAbs=Math.min(Math.abs(roi),50);
+                    const isOpen=!!statsGameOpen["ANN_"+game];
+                    const cfg=GAME_CFG[game]||{accent:"#9CA3AF"};
+                    return(
+                      <div key={game} style={{background:"#111827",border:"1px solid "+(isOpen?cfg.accent+"55":"#1F2937"),borderRadius:isOpen?"14px 14px 0 0":"14px",overflow:"hidden"}}>
+                        <button onClick={()=>setStatsGameOpen(s=>({...s,["ANN_"+game]:!s["ANN_"+game]}))}
+                          style={{width:"100%",display:"flex",flexDirection:"column",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <GameLogo game={game} size={20}/>
+                              <span style={{fontSize:14,fontWeight:800,color:cfg.accent}}>{game}</span>
+                              <span style={{fontSize:10,color:"#6B7280"}}>{gb.length} paris annoncés</span>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{padding:"2px 8px",borderRadius:6,background:profit>=0?"rgba(34,197,94,.1)":"rgba(239,68,68,.1)",fontSize:11,fontWeight:700,color:profit>=0?"#22C55E":"#EF4444"}}>{profit>=0?"+":""}{profit.toFixed(0)}$</span>
+                              <span style={{fontSize:11,color:"#6B7280",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
+                            </div>
+                          </div>
+                          <div style={{display:"flex",gap:10,marginBottom:6}}>
+                            <span style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{wr.toFixed(0)}% WR</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,fontWeight:700,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}% ROI</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,color:"#9CA3AF"}}>@{avgOdds.toFixed(2)}</span>
+                          </div>
+                          <div style={{display:"flex",gap:4}}>
+                            <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:wr+"%",background:wr>55?"#22C55E":wr<45?"#EF4444":"#9CA3AF",borderRadius:2}}/>
+                            </div>
+                            <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden",position:"relative"}}>
+                              <div style={{position:"absolute",top:0,left:roi>=0?"50%":"calc(50% - "+(roiAbs/2)+"%)",height:"100%",width:roiAbs+"%",background:roi>=0?"linear-gradient(90deg,#3B82F6,#06B6D4)":"#EF4444",borderRadius:2}}/>
+                            </div>
+                          </div>
+                        </button>
+                        {isOpen&&(
+                          <div style={{background:"#111827",border:"1px solid #1F2937",borderTop:"none",borderRadius:"0 0 14px 14px",overflow:"hidden"}}>
+                            {gb.map((b,i)=>{
+                              const pd=allPlayers[(b.player||"").toLowerCase().trim()];
+                              const avatarSrc=pd?getAvatarSrc(pd):null;
+                              const allOuts=[...(b.outPlayers_own||[]),...(b.outPlayers_opp||[]),...(b.announceOuts||[])];
+                              return(
+                                <div key={b.id} style={{padding:"10px 14px",borderTop:i>0?"1px solid rgba(255,255,255,.04)":"none",display:"flex",alignItems:"center",gap:10}}>
+                                  <div style={{width:32,height:32,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                    {avatarSrc?<img src={avatarSrc} alt={b.player} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:12,fontWeight:700,color:"#6B7280"}}>{(b.player||"?").charAt(0).toUpperCase()}</span>}
+                                  </div>
+                                  <div style={{flex:1,minWidth:0}}>
+                                    <div style={{fontWeight:700,fontSize:13,color:"#E5E7EB",textTransform:"capitalize",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{b.player}</div>
+                                    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:3}}>
+                                      {allOuts.map(o=><span key={o} style={{fontSize:9,fontWeight:700,color:"#f87171",background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",borderRadius:4,padding:"1px 5px"}}>❌ {o}</span>)}
+                                    </div>
+                                  </div>
+                                  <div style={{textAlign:"right",flexShrink:0}}>
+                                    <div style={{fontWeight:700,fontSize:12,color:b.profit>=0?"#22C55E":"#EF4444"}}>{b.profit>=0?"+":""}{(b.profit||0).toFixed(0)}$</div>
+                                    <div style={{fontSize:10,color:"#6B7280"}}>@{b.odds}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                {annSubTab==="tracker"&&<AnnonceNBATracker bets={bets} allPlayers={allPlayers}/>}
-                {annSubTab==="stats"&&<AnnonceStatsView bets={bets} allPlayers={allPlayers}/>}
-              </div>
-            )}
+              );
+            })()}
             {statsTab==="victoire"&&(
               <VictoireEquipeView
                 bets={bets} setBets={setBets}
@@ -8531,168 +8658,331 @@ export default function App(){
               </div>
             )}
 
-            {statsTab==="jeux"&&<>
-            {/* ── PAR JEU - accordéons regroupés ── */}
-            {ALL_GAMES.map(game=>{
-              const gs=perGameStats[game];
-              if(!gs)return null;
-              const cfg=GAME_CFG[game]||{accent:"#9CA3AF"};
-              const isOpen=!!statsGameOpen[game];
-              const toggle=()=>setStatsGameOpen(s=>({...s,[game]:!s[game]}));
-              const drillGame=()=>setStatsDrill({game,league:null});
+            {statsTab==="jeux"&&(()=>{
+              // ── Calcul global toutes ligues confondues ──
+              const allSettled=settledFiltered;
+
+              // Over/Under global
+              const ouStats={Over:{count:0,won:0,profit:0,staked:0},Under:{count:0,won:0,profit:0,staked:0}};
+              allSettled.forEach(b=>{
+                const ou=b.overUnder;
+                if(ou==="Over"||ou==="Under"){ouStats[ou].count++;ouStats[ou].profit+=b.profit;ouStats[ou].staked+=b.stake;if(b.status==="won")ouStats[ou].won++;}
+              });
+
+              // Joueurs vs Équipes
+              const isTeamBet=b=>!!(b.tbConfirmed||(b.description&&(b.description.startsWith("Victoire ")||b.description.startsWith("Champion ")||b.description.startsWith("Vainqueur "))));
+              const playerBets=allSettled.filter(b=>!isTeamBet(b));
+              const teamBets=allSettled.filter(b=>isTeamBet(b));
+              const calcSide=bets=>{
+                const count=bets.length;
+                const won=bets.filter(b=>b.status==="won").length;
+                const profit=bets.reduce((s,b)=>s+(b.profit||0),0);
+                const staked=bets.reduce((s,b)=>s+(b.stake||0),0);
+                const wr=count>0?(won/count*100):0;
+                const roi=staked>0?(profit/staked*100):0;
+                return{count,won,profit,staked,wr,roi};
+              };
+              const pSide=calcSide(playerBets);
+              const tSide=calcSide(teamBets);
+
+              // Positions (toutes ligues)
+              const roleMap={};
+              allSettled.forEach(b=>{
+                if(isTeamBet(b))return;
+                const pd=allPlayers[(b.player||"").toLowerCase().trim()];
+                const role=(pd&&pd.role)||b.role||"";
+                if(!role)return;
+                const k=normalizeRole(role,b.game)||role;
+                if(!roleMap[k])roleMap[k]={role:k,count:0,won:0,profit:0,staked:0};
+                roleMap[k].count++;roleMap[k].profit+=b.profit;roleMap[k].staked+=b.stake;
+                if(b.status==="won")roleMap[k].won++;
+              });
+              const roles=Object.values(roleMap).sort((a,b)=>b.profit-a.profit);
+
+              // Top 10 joueurs (seulement paris joueur)
+              const playerMap={};
+              playerBets.forEach(b=>{
+                const k=(b.player||"").toLowerCase().trim();
+                if(!k)return;
+                const pd=allPlayers[k];
+                if(!playerMap[k])playerMap[k]={player:b.player,key:k,count:0,won:0,profit:0,game:b.game,pd};
+                playerMap[k].count++;playerMap[k].profit+=b.profit;
+                if(b.status==="won")playerMap[k].won++;
+              });
+              const top10=Object.values(playerMap).filter(p=>p.count>=1).sort((a,b)=>b.profit-a.profit).slice(0,10);
+
+              // Coupes — stats globales
+              const cupMap={};
+              allSettled.forEach(b=>{
+                const teamLower=(b.team||b.player||"").toLowerCase().trim();
+                (customCups||[]).forEach(cup=>{
+                  if((cup.clubs||[]).some(cl=>cl.name.trim().toLowerCase()===teamLower)){
+                    if(!cupMap[cup.name])cupMap[cup.name]={cup,count:0,won:0,profit:0,staked:0};
+                    cupMap[cup.name].count++;cupMap[cup.name].profit+=b.profit;cupMap[cup.name].staked+=b.stake;
+                    if(b.status==="won")cupMap[cup.name].won++;
+                  }
+                });
+              });
+              const cups=Object.values(cupMap);
+
+              const secH=(col,label)=>(
+                <div style={{fontSize:10,color:col,fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 8px",borderTop:"1px solid rgba(255,255,255,.05)",fontFamily:"Inter,sans-serif"}}>{label}</div>
+              );
+              const statCard=(label,col,bc,data)=>{
+                if(!data||!data.count)return null;
+                const wr=data.wr.toFixed(0);
+                const roi=data.roi.toFixed(1);
+                return(
+                  <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:14,padding:"12px 14px",flex:1,minWidth:0}}>
+                    <div style={{fontSize:10,color:col,fontWeight:800,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>{label}</div>
+                    <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:-.5,marginBottom:2}}>{data.count} <span style={{fontSize:13,color:"#6B7280",fontWeight:500}}>paris</span></div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:12,fontWeight:700,color:data.profit>=0?"#22C55E":"#EF4444"}}>{data.profit>=0?"+":""}{data.profit.toFixed(0)}$</span>
+                      <span style={{fontSize:11,color:"#6B7280"}}>{wr}% WR</span>
+                      <span style={{fontSize:11,color:data.roi>=0?"#22C55E":"#EF4444"}}>{data.roi>=0?"+":""}{roi}% ROI</span>
+                    </div>
+                  </div>
+                );
+              };
+
               return(
-                <div key={game} style={{marginBottom:10}}>
-                  {/* Accordéon header */}
-                  <button onClick={toggle} style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"stretch",background:"#111827",border:"1px solid "+(isOpen?cfg.accent+"55":"#1F2937"),borderRadius:isOpen?"14px 14px 0 0":"14px",padding:"12px 14px",cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all .2s ease",textAlign:"left"}}>
-                    {/* Top row */}
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8}}><GameLogo game={game} size={22}/><span style={{fontSize:14,fontWeight:800,color:cfg.accent}}>{game}</span><span style={{fontSize:10,color:"#6B7280"}}>{gs.count} paris</span></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{padding:"2px 8px",borderRadius:6,background:gs.profit>=0?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)",fontSize:11,fontWeight:700,color:gs.profit>=0?"#22C55E":"#EF4444"}}>{gs.profit>=0?"+":""}{gs.profit.toFixed(0)}$</span><span style={{fontSize:11,color:"#6B7280",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s",flexShrink:0}}>▼</span></div></div>
-                    {/* Stats row */}
-                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}><span style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{gs.wr.toFixed(0)}% WR</span><span style={{fontSize:11,color:"#6B7280"}}>·</span><span style={{fontSize:11,fontWeight:700,color:gs.roi>=0?"#22C55E":"#EF4444"}}>{gs.roi>=0?"+":""}{gs.roi.toFixed(1)}% ROI</span><span style={{fontSize:11,color:"#6B7280"}}>·</span><span style={{fontSize:11,color:"#9CA3AF"}}>@{gs.avgOdds.toFixed(2)} moy.</span><span style={{fontSize:11,color:"#6B7280"}}>·</span><span style={{fontSize:11,fontWeight:700,color:gs.profit>=0?"#22C55E":"#EF4444",background:gs.profit>=0?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.08)",padding:"1px 6px",borderRadius:5}}>{gs.profit>=0?"+":""}{bankroll>0?(gs.profit/bankroll*100).toFixed(1):0}% BK</span></div>
-                    {/* Progress bar: WR */}
-                    {(()=>{
-                      const wr=gs.wr;
-                      const roiAbs=Math.min(Math.abs(gs.roi),50); // cap à 50%
+                <div>
+                  {/* ── 1. OVER / UNDER ── */}
+                  <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                    {secH("#60A5FA","🔼 Over / Under")}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 40px 52px 68px",gap:4,padding:"4px 14px 8px"}}>
+                      <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textTransform:"uppercase"}}>Type</span>
+                      <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>N</span>
+                      <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>WR%</span>
+                      <span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"right"}}>Profit</span>
+                    </div>
+                    {[{label:"🔼 Over",k:"Over"},{label:"🔽 Under",k:"Under"}].map(({label,k})=>{
+                      const s=ouStats[k];
+                      if(!s.count)return null;
+                      const wr=s.count>0?(s.won/s.count*100):0;
                       return(
-                        <div style={{display:"flex",gap:4,alignItems:"center"}}>
-                          {/* WR bar */}
-                          <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:wr+"%",background:wr>55?"linear-gradient(90deg,#22C55E,#22C55E)":wr<45?"linear-gradient(90deg,#EF4444,#EF4444)":"linear-gradient(90deg,#9CA3AF,#6B7280)",borderRadius:2,transition:"width .5s ease"}}/></div>
-                          {/* ROI bar */}
-                          <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden",position:"relative"}}><div style={{position:"absolute",top:0,left:gs.roi>=0?"50%":"calc(50% - "+(roiAbs/100*100/2)+"%)",height:"100%",width:(roiAbs/50*50)+"%",background:gs.roi>=0?"linear-gradient(90deg,#3B82F6,#06B6D4)":"linear-gradient(90deg,#EF4444,#EF4444)",borderRadius:2,transition:"all .5s ease"}}/></div></div>
+                        <div key={k} style={{display:"grid",gridTemplateColumns:"1fr 40px 52px 68px",gap:4,padding:"8px 14px",borderTop:"1px solid #1F2937",alignItems:"center"}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"#60A5FA"}}>{label}</span>
+                          <span style={{fontSize:12,color:"#9CA3AF",textAlign:"center"}}>{s.count}</span>
+                          <span style={{fontSize:12,fontWeight:700,color:wr>55?"#22C55E":wr<45?"#EF4444":"#9CA3AF",textAlign:"center"}}>{wr.toFixed(0)}%</span>
+                          <span style={{fontSize:12,fontWeight:700,color:s.profit>=0?"#22C55E":"#EF4444",textAlign:"right"}}>{s.profit>=0?"+":""}{s.profit.toFixed(0)}$</span>
+                        </div>
                       );
-                    })()}
-                  </button>
+                    })}
+                  </div>
 
-                  {isOpen&&(
-                    <div style={{background:"#111827",border:"1px solid #1F2937",borderTop:"none",borderRadius:"0 0 14px 14px",overflow:"hidden"}}>
-
-                      {/* Top 5 + Worst 5 joueurs */}
-                      {gs.topP.length>0&&(()=>{
-                        var showAll=playersExpanded===game;
-                        var allP=gs.allPlayers||[];
-                        var sortKey=playerSortKey||"profit";
-                        var sorted=[...allP].filter(function(p){return p.count>=playerMinBets;}).sort(function(a,b){
-                          if(sortKey==="profit")return b.profit-a.profit;
-                          if(sortKey==="count")return b.count-a.count;
-                          if(sortKey==="wr")return (b.count>0?b.won/b.count:0)-(a.count>0?a.won/a.count:0);
-                          return b.profit-a.profit;
-                        });
-                        var displayList=showAll?sorted.slice(0,50):sorted.slice(0,5);
-                        return(<><div onClick={function(){setPlayersExpanded(showAll?null:game);}}
-                            style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:"#00E676",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderBottom:"1px solid rgba(74,222,128,.15)",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}><span> {showAll?"Top 50":"Top 5"} joueurs</span><span style={{fontSize:10,color:"#4a5a6e"}}>{showAll?"▲ Réduire":"Voir 50 →"}</span></div>
-                          {showAll&&<div style={{display:"flex",gap:5,padding:"8px 14px",borderBottom:"1px solid #1F2937",flexWrap:"wrap",alignItems:"center"}}>
-                            {[{k:"profit",l:"Profit"},{k:"count",l:"Paris"},{k:"wr",l:"WR%"}].map(function(s){
-                              var on=sortKey===s.k;
-                              return <button key={s.k} onClick={function(e){e.stopPropagation();setPlayerSortKey(s.k);}}
-                                style={{padding:"3px 10px",borderRadius:6,border:"1px solid "+(on?"rgba(0,230,118,.4)":"rgba(255,255,255,.07)"),background:on?"rgba(0,230,118,.1)":"transparent",color:on?"#00E676":"#6B7280",fontSize:10,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{s.l}</button>;
-                            })}
-                            <div style={{width:1,height:14,background:"rgba(255,255,255,.08)",margin:"0 2px"}}/><span style={{fontSize:9,color:"#4a5a6e",fontWeight:600}}>Min paris:</span>
-                            {[1,3,5,10,20].map(function(n){
-                              var on=playerMinBets===n;
-                              return <button key={n} onClick={function(e){e.stopPropagation();setPlayerMinBets(n);}}
-                                style={{padding:"3px 9px",borderRadius:6,border:"1px solid "+(on?"rgba(167,139,250,.4)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.12)":"transparent",color:on?"#c4b5fd":"#6B7280",fontSize:10,fontWeight:on?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{n}+</button>;
-                            })}
-                            <span style={{fontSize:10,color:"#4a5a6e",marginLeft:4}}>{sorted.length} joueurs</span></div>}
-                          {displayList.map(function(p,i){
-                            var wr=p.count>0?(p.won/p.count*100).toFixed(0):0;
-                            return(
-                              <div key={p.player} className="stat-row" onClick={function(){setStatsDrill({game,league:null,filterType:"player",filterValue:p.player});}} style={{cursor:"pointer"}}><div style={{display:"flex",alignItems:"center",gap:9}}><span style={{fontSize:11,color:i<3?"#fbbf24":"#6B7280",fontWeight:700,width:20,textAlign:"center"}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</span><div><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{fontWeight:700,fontSize:13,color:"#E5E7EB",textTransform:"capitalize"}}>{p.player}</div><span style={{fontSize:10,color:"#4B5563"}}>›</span></div><div style={{fontSize:10,color:"#6B7280"}}>{p.count} paris · {wr}% WR</div></div></div><span style={{fontWeight:700,fontSize:13,color:p.profit>=0?"#22C55E":"#EF4444"}}>{p.profit>=0?"+":""}{(p.profit||0).toFixed(0)}$</span></div>
-                            );
-                          })}
-                        </>);
-                      })()}
-
-                      {/* Positions */}
-                      {gs.roles.length>0&&(
-                        <><div style={{fontSize:11,color:"#A78BFA",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderBottom:"1px solid rgba(124,58,237,0.2)",fontFamily:"'Inter',sans-serif",borderTop:"1px solid #1F2937"}}>Positions</div>
-                          {gs.roles.map(r=>{
-                            const wr=r.count>0?(r.won/r.count*100):0;
-                            const roi=r.staked>0?(r.profit/r.staked*100):0;
-                            return(
-                              <div key={r.role} className="stat-row" onClick={()=>setStatsDrill({game,league:null,filterType:"role",filterValue:r.role})} style={{cursor:"pointer"}}><div><div style={{display:"flex",alignItems:"center",gap:5}}>
-                                    {r.role&&<PositionLogo role={r.role} size={16}/>}
-                                    <div style={{fontWeight:600,fontSize:13,color:"#E5E7EB"}}>{r.role}</div><span style={{fontSize:10,color:"#4B5563"}}>›</span></div><div style={{fontSize:10,color:"#6B7280"}}>{r.count} paris · {wr.toFixed(0)}% WR</div></div><div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:13,color:r.profit>=0?"#22C55E":"#EF4444"}}>{r.profit>=0?"+":""}{(r.profit||0).toFixed(0)}$</div><div style={{fontSize:10,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}%</div></div></div>
-                            );
-                          })}
-                        </>
-                      )}
-
-                      {/* Tournois */}
-                      {gs.tourneys.length>0&&(()=>{
-                        const cups=gs.tourneys.filter(t=>t.isCup);
-                        const others=gs.tourneys.filter(t=>!t.isCup);
-                        return(<>
-                          {cups.length>0&&(
-                            <><div style={{fontSize:11,color:"#FCD34D",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderBottom:"1px solid rgba(251,191,36,0.2)",fontFamily:"'Inter',sans-serif",borderTop:"1px solid #1F2937"}}>🏆 Coupes</div>
-                              {cups.map(t=>{
-                                const wr=t.count>0?(t.won/t.count*100):0;
-                                const roi=t.staked>0?(t.profit/t.staked*100):0;
-                                const cupRealName=t.name.replace(/^🏆 /,"");
-                                const cupObj=(customCups||[]).find(c=>c.name===cupRealName);
-                                return(
-                                  <div key={t.name} className="stat-row" onClick={()=>setStatsDrill({game,league:null,filterType:"tourney",filterValue:t.name})} style={{cursor:"pointer"}}>
-                                    <div style={{display:"flex",alignItems:"center",gap:7}}>
-                                      <div style={{width:18,height:18,borderRadius:4,background:"rgba(251,191,36,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                        {cupObj&&cupObj.logo?<img src={cupObj.logo} alt="" style={{width:16,height:16,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:12}}>🏆</span>}
-                                      </div>
-                                      <div><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{fontWeight:600,fontSize:13,color:"#FCD34D"}}>{cupRealName}</div><span style={{fontSize:10,color:"#4B5563"}}>›</span></div><div style={{fontSize:10,color:"#6B7280"}}>{t.count} paris · {wr.toFixed(0)}% WR</div></div>
-                                    </div>
-                                    <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:13,color:t.profit>=0?"#22C55E":"#EF4444"}}>{t.profit>=0?"+":""}{(t.profit||0).toFixed(0)}$</div><div style={{fontSize:10,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}%</div></div>
-                                  </div>
-                                );
-                              })}
-                            </>
-                          )}
-                          {others.length>0&&(
-                            <><div style={{fontSize:11,color:"#A78BFA",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderBottom:"1px solid rgba(124,58,237,0.2)",fontFamily:"'Inter',sans-serif",borderTop:"1px solid #1F2937"}}>Tournois</div>
-                              {others.map(t=>{
-                                const wr=t.count>0?(t.won/t.count*100):0;
-                                const roi=t.staked>0?(t.profit/t.staked*100):0;
-                                return(
-                                  <div key={t.name} className="stat-row" onClick={()=>setStatsDrill({game,league:null,filterType:"tourney",filterValue:t.name})} style={{cursor:"pointer"}}><div style={{display:"flex",alignItems:"center",gap:7}}>
-                                      {t.name==="Hors tournoi"?<span style={{fontSize:12}}>📅</span>:<LeagueLogo league={t.name} size={18}/>}
-                                      <div><div style={{display:"flex",alignItems:"center",gap:5}}><div style={{fontWeight:600,fontSize:13,color:t.name==="Hors tournoi"?"#9CA3AF":"#E5E7EB"}}>{t.name}</div><span style={{fontSize:10,color:"#4B5563"}}>›</span></div><div style={{fontSize:10,color:"#6B7280"}}>{t.count} paris · {wr.toFixed(0)}% WR</div></div></div><div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:13,color:t.profit>=0?"#22C55E":"#EF4444"}}>{t.profit>=0?"+":""}{(t.profit||0).toFixed(0)}$</div><div style={{fontSize:10,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}%</div></div></div>
-                                );
-                              })}
-                            </>
-                          )}
-                        </>);
-                      })()}
-
-                      {/* Over / Under */}
-                      {(gs.overS||gs.underS)&&(
-                        <><div style={{fontSize:11,color:"#60A5FA",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderBottom:"1px solid rgba(96,165,250,0.2)",fontFamily:"'Inter',sans-serif",borderTop:"1px solid #1F2937"}}> Over / Under</div><div style={{display:"grid",gridTemplateColumns:"1fr 40px 48px 64px 16px",gap:2,padding:"4px 14px 6px"}}><span style={{fontSize:9,color:"#4B5563",fontWeight:700,textTransform:"uppercase"}}>Type</span><span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>N</span><span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"center"}}>WR%</span><span style={{fontSize:9,color:"#4B5563",fontWeight:700,textAlign:"right"}}>Profit</span><span/></div>
-                          {[{label:"🔼 Over",s:gs.overS},{label:"🔽 Under",s:gs.underS}].filter(x=>x.s).map(({label,s})=>(
-                            <div key={label} style={{display:"grid",gridTemplateColumns:"1fr 40px 48px 64px 16px",gap:2,padding:"6px 14px",borderTop:"1px solid #1F2937",alignItems:"center"}}><span style={{fontSize:12,fontWeight:600,color:"#60A5FA"}}>{label}</span><span style={{fontSize:11,color:"#9CA3AF",textAlign:"center"}}>{s.count}</span><span style={{fontSize:11,fontWeight:700,color:s.wr>55?"#22C55E":s.wr<45?"#EF4444":"#9CA3AF",textAlign:"center"}}>{s.wr.toFixed(0)}%</span><span style={{fontSize:11,fontWeight:700,color:s.profit>=0?"#22C55E":"#EF4444",textAlign:"right"}}>{s.profit>=0?"+":""}{(s.profit||0).toFixed(0)}$</span><span style={{fontSize:10}}>{s.wr>55?"":s.wr<45?"":""}</span></div>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Annonces */}
-                      {(()=>{
-                        const annBets=settledFiltered.filter(b=>b.game===game&&b.announceOuts&&b.announceOuts.length>0);
-                        if(annBets.length===0)return null;
-                        const annWon=annBets.filter(b=>b.status==="won").length;
-                        const annProfit=annBets.reduce((s,b)=>s+(b.profit||0),0);
-                        const annStaked=annBets.reduce((s,b)=>s+(b.stake||0),0);
-                        const annROI=annStaked>0?(annProfit/annStaked*100):0;
-                        const annWR=annBets.length>0?(annWon/annBets.length*100):0;
-                        return(
-                          <><div style={{fontSize:11,color:"#34d399",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",padding:"14px 14px 6px",borderTop:"1px solid #1F2937",borderBottom:"1px solid rgba(52,211,153,.2)",fontFamily:"'Inter',sans-serif"}}>📣 Annonces</div>
-                            <div className="stat-row">
-                              <div><div style={{fontWeight:700,fontSize:13,color:"#34d399"}}>Paris annoncés</div><div style={{fontSize:10,color:"#6B7280"}}>{annBets.length} paris · {annWR.toFixed(0)}% WR</div></div>
-                              <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:13,color:annProfit>=0?"#22C55E":"#EF4444"}}>{annProfit>=0?"+":""}{annProfit.toFixed(0)}$</div><div style={{fontSize:10,color:annROI>=0?"#22C55E":"#EF4444"}}>{annROI>=0?"+":""}{annROI.toFixed(1)}% ROI</div></div>
-                            </div>
-                          </>
-                        );
-                      })()}
-
+                  {/* ── 2. JOUEURS vs ÉQUIPES ── */}
+                  {(pSide.count>0||tSide.count>0)&&(
+                    <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                      {secH("#a78bfa","Joueurs vs Équipes")}
+                      <div style={{display:"flex",gap:8,padding:"0 14px 14px"}}>
+                        {statCard("Paris joueur","#c4b5fd","rgba(124,58,237,",pSide)}
+                        {statCard("Paris équipe","#34d399","rgba(52,211,153,",tSide)}
+                      </div>
                     </div>
                   )}
+
+                  {/* ── 3. POSITIONS ── */}
+                  {roles.length>0&&(
+                    <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                      {secH("#A78BFA","Positions")}
+                      {roles.map(r=>{
+                        const wr=r.count>0?(r.won/r.count*100):0;
+                        const roi=r.staked>0?(r.profit/r.staked*100):0;
+                        return(
+                          <div key={r.role} className="stat-row" onClick={()=>setStatsDrill({game:null,league:null,filterType:"role",filterValue:r.role})} style={{cursor:"pointer"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              {r.role&&<PositionLogo role={r.role} size={16}/>}
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{fontWeight:600,fontSize:13,color:"#E5E7EB"}}>{r.role}</div><span style={{fontSize:10,color:"#4B5563"}}>›</span></div>
+                                <div style={{fontSize:10,color:"#6B7280"}}>{r.count} paris · {wr.toFixed(0)}% WR</div>
+                              </div>
+                            </div>
+                            <div style={{textAlign:"right"}}>
+                              <div style={{fontWeight:700,fontSize:13,color:r.profit>=0?"#22C55E":"#EF4444"}}>{r.profit>=0?"+":""}{r.profit.toFixed(0)}$</div>
+                              <div style={{fontSize:10,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}%</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── 4. TOP 10 JOUEURS avec photo ── */}
+                  {top10.length>0&&(
+                    <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                      {secH("#00E676","Top 10 joueurs")}
+                      {top10.map((p,i)=>{
+                        const pd=allPlayers[p.key];
+                        const avatarSrc=pd?getAvatarSrc(pd):null;
+                        const teamName=pd&&pd.team;
+                        const teamLogo=teamName?(TEAM_LOGOS[teamName]||EL_TEAM_LOGOS[teamName]||NBA_TEAM_LOGOS[teamName]):null;
+                        const wr=p.count>0?(p.won/p.count*100).toFixed(0):0;
+                        return(
+                          <div key={p.key} className="stat-row" style={{padding:"10px 14px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                              {/* Rang */}
+                              <span style={{fontSize:11,color:i<3?"#fbbf24":"#6B7280",fontWeight:700,width:18,textAlign:"center",flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</span>
+                              {/* Photo joueur */}
+                              <div style={{width:38,height:38,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                                {teamLogo&&<img src={teamLogo} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.12,pointerEvents:"none"}}/>}
+                                {avatarSrc
+                                  ?<img src={avatarSrc} alt={p.player} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",position:"relative",zIndex:1}} onError={e=>{e.target.style.display="none";}}/>
+                                  :<span style={{fontSize:14,fontWeight:800,color:"#6B7280",position:"relative",zIndex:1}}>{(p.player||"").charAt(0).toUpperCase()}</span>}
+                              </div>
+                              {/* Nom + logo ligue */}
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{display:"flex",alignItems:"center",gap:5}}>
+                                  <span style={{fontWeight:700,fontSize:13,color:"#E5E7EB",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{(p.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+                                  <GameLogo game={p.game} size={13}/>
+                                </div>
+                                <div style={{fontSize:10,color:"#6B7280"}}>{p.count} paris · {wr}% WR</div>
+                              </div>
+                            </div>
+                            <span style={{fontWeight:700,fontSize:13,color:p.profit>=0?"#22C55E":"#EF4444",flexShrink:0}}>{p.profit>=0?"+":""}{p.profit.toFixed(0)}$</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── 5. COUPES ── */}
+                  {cups.length>0&&(
+                    <div style={{background:"#111827",border:"1px solid #1F2937",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+                      {secH("#FCD34D","🏆 Coupes")}
+                      {cups.map(({cup,count,won,profit,staked})=>{
+                        const wr=count>0?(won/count*100).toFixed(0):0;
+                        const roi=staked>0?(profit/staked*100).toFixed(1):0;
+                        return(
+                          <div key={cup.name} className="stat-row">
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:22,height:22,borderRadius:5,background:"rgba(251,191,36,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                {cup.logo?<img src={cup.logo} alt="" style={{width:18,height:18,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:13}}>🏆</span>}
+                              </div>
+                              <div>
+                                <div style={{fontWeight:600,fontSize:13,color:"#FCD34D"}}>{cup.name}</div>
+                                <div style={{fontSize:10,color:"#6B7280"}}>{count} paris · {wr}% WR</div>
+                              </div>
+                            </div>
+                            <div style={{textAlign:"right"}}>
+                              <div style={{fontWeight:700,fontSize:13,color:profit>=0?"#22C55E":"#EF4444"}}>{profit>=0?"+":""}{profit.toFixed(0)}$</div>
+                              <div style={{fontSize:10,color:parseFloat(roi)>=0?"#22C55E":"#EF4444"}}>{parseFloat(roi)>=0?"+":""}{roi}%</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── 6. PAR LIGUE (accordéons) ── */}
+                  {ALL_GAMES.map(game=>{
+                    const gs=perGameStats[game];
+                    if(!gs)return null;
+                    const cfg=GAME_CFG[game]||{accent:"#9CA3AF"};
+                    const isOpen=!!statsGameOpen[game];
+                    const toggle=()=>setStatsGameOpen(s=>({...s,[game]:!s[game]}));
+                    return(
+                      <div key={game} style={{marginBottom:8}}>
+                        <button onClick={toggle} style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"stretch",background:"#111827",border:"1px solid "+(isOpen?cfg.accent+"55":"#1F2937"),borderRadius:isOpen?"14px 14px 0 0":"14px",padding:"12px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .2s",textAlign:"left"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}><GameLogo game={game} size={20}/><span style={{fontSize:14,fontWeight:800,color:cfg.accent}}>{game}</span><span style={{fontSize:10,color:"#6B7280"}}>{gs.count} paris</span></div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{padding:"2px 8px",borderRadius:6,background:gs.profit>=0?"rgba(34,197,94,.1)":"rgba(239,68,68,.1)",fontSize:11,fontWeight:700,color:gs.profit>=0?"#22C55E":"#EF4444"}}>{gs.profit>=0?"+":""}{gs.profit.toFixed(0)}$</span>
+                              <span style={{fontSize:11,color:"#6B7280",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
+                            </div>
+                          </div>
+                          <div style={{display:"flex",gap:8}}>
+                            <span style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{gs.wr.toFixed(0)}% WR</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,fontWeight:700,color:gs.roi>=0?"#22C55E":"#EF4444"}}>{gs.roi>=0?"+":""}{gs.roi.toFixed(1)}% ROI</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,color:"#9CA3AF"}}>@{gs.avgOdds.toFixed(2)}</span>
+                          </div>
+                        </button>
+                        {isOpen&&(
+                          <div style={{background:"#111827",border:"1px solid #1F2937",borderTop:"none",borderRadius:"0 0 14px 14px",overflow:"hidden"}}>
+                            {/* Over/Under */}
+                            {(gs.overS||gs.underS)&&(
+                              <><div style={{fontSize:10,color:"#60A5FA",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"12px 14px 6px",borderBottom:"1px solid rgba(96,165,250,.15)"}}>Over / Under</div>
+                                {[{label:"🔼 Over",s:gs.overS},{label:"🔽 Under",s:gs.underS}].filter(x=>x.s).map(({label,s})=>(
+                                  <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 14px",borderTop:"1px solid #1F2937"}}>
+                                    <div><div style={{fontSize:12,fontWeight:700,color:"#60A5FA"}}>{label}</div><div style={{fontSize:10,color:"#6B7280"}}>{s.count} paris · {s.wr.toFixed(0)}% WR</div></div>
+                                    <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:12,color:s.profit>=0?"#22C55E":"#EF4444"}}>{s.profit>=0?"+":""}{s.profit.toFixed(0)}$</div><div style={{fontSize:10,color:s.roi>=0?"#22C55E":"#EF4444"}}>{s.roi>=0?"+":""}{s.roi.toFixed(1)}%</div></div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                            {/* Joueurs vs Équipes dans cette ligue */}
+                            {(()=>{
+                              const isTeamB=b=>!!(b.tbConfirmed||(b.description&&(b.description.startsWith("Victoire ")||b.description.startsWith("Champion ")||b.description.startsWith("Vainqueur "))));
+                              const gameBets=settledFiltered.filter(b=>b.game===game);
+                              const pB=gameBets.filter(b=>!isTeamB(b));
+                              const tB=gameBets.filter(b=>isTeamB(b));
+                              if(!pB.length&&!tB.length)return null;
+                              const cs=bets=>{const c=bets.length;const w=bets.filter(b=>b.status==="won").length;const p=bets.reduce((s,b)=>s+(b.profit||0),0);const st=bets.reduce((s,b)=>s+(b.stake||0),0);return{count:c,wr:c>0?w/c*100:0,profit:p,roi:st>0?p/st*100:0};};
+                              const ps=cs(pB),ts=cs(tB);
+                              if(!ps.count&&!ts.count)return null;
+                              return(
+                                <><div style={{fontSize:10,color:"#a78bfa",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"12px 14px 6px",borderTop:"1px solid #1F2937",borderBottom:"1px solid rgba(124,58,237,.15)"}}>Joueurs vs Équipes</div>
+                                  <div style={{display:"flex",gap:8,padding:"8px 14px"}}>
+                                    {ps.count>0&&<div style={{flex:1,background:"rgba(124,58,237,.06)",borderRadius:10,padding:"8px 10px"}}><div style={{fontSize:9,color:"#a78bfa",fontWeight:800,textTransform:"uppercase",marginBottom:4}}>Joueurs</div><div style={{fontSize:16,fontWeight:800,color:"#fff"}}>{ps.count} <span style={{fontSize:10,color:"#6B7280",fontWeight:400}}>paris</span></div><div style={{fontSize:10,color:ps.profit>=0?"#22C55E":"#EF4444"}}>{ps.profit>=0?"+":""}{ps.profit.toFixed(0)}$ · {ps.wr.toFixed(0)}% WR</div></div>}
+                                    {ts.count>0&&<div style={{flex:1,background:"rgba(52,211,153,.06)",borderRadius:10,padding:"8px 10px"}}><div style={{fontSize:9,color:"#34d399",fontWeight:800,textTransform:"uppercase",marginBottom:4}}>Équipes</div><div style={{fontSize:16,fontWeight:800,color:"#fff"}}>{ts.count} <span style={{fontSize:10,color:"#6B7280",fontWeight:400}}>paris</span></div><div style={{fontSize:10,color:ts.profit>=0?"#22C55E":"#EF4444"}}>{ts.profit>=0?"+":""}{ts.profit.toFixed(0)}$ · {ts.wr.toFixed(0)}% WR</div></div>}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                            {/* Top 5 joueurs dans la ligue */}
+                            {gs.topP.length>0&&(
+                              <><div style={{fontSize:10,color:"#00E676",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"12px 14px 6px",borderTop:"1px solid #1F2937",borderBottom:"1px solid rgba(0,230,118,.15)"}}>Top joueurs</div>
+                                {(gs.allPlayers||[]).slice(0,5).map((p,i)=>{
+                                  const pd=allPlayers[(p.player||"").toLowerCase().trim()];
+                                  const avatarSrc=pd?getAvatarSrc(pd):null;
+                                  const wr=p.count>0?(p.won/p.count*100).toFixed(0):0;
+                                  return(
+                                    <div key={p.player} className="stat-row" onClick={()=>setStatsDrill({game,league:null,filterType:"player",filterValue:p.player})} style={{cursor:"pointer"}}>
+                                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                        <span style={{fontSize:10,color:i<3?"#fbbf24":"#6B7280",fontWeight:700,width:16,textAlign:"center",flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</span>
+                                        <div style={{width:30,height:30,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                          {avatarSrc?<img src={avatarSrc} alt={p.player} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:11,fontWeight:700,color:"#6B7280"}}>{(p.player||"").charAt(0).toUpperCase()}</span>}
+                                        </div>
+                                        <div><div style={{fontSize:13,fontWeight:700,color:"#E5E7EB",textTransform:"capitalize"}}>{p.player}</div><div style={{fontSize:10,color:"#6B7280"}}>{p.count} paris · {wr}% WR</div></div>
+                                      </div>
+                                      <span style={{fontWeight:700,fontSize:12,color:p.profit>=0?"#22C55E":"#EF4444"}}>{p.profit>=0?"+":""}{p.profit.toFixed(0)}$</span>
+                                    </div>
+                                  );
+                                })}
+                              </>
+                            )}
+                            {/* Positions */}
+                            {gs.roles.length>0&&(
+                              <><div style={{fontSize:10,color:"#A78BFA",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"12px 14px 6px",borderTop:"1px solid #1F2937",borderBottom:"1px solid rgba(124,58,237,.2)"}}>Positions</div>
+                                {gs.roles.map(r=>{const wr=r.count>0?(r.won/r.count*100):0;const roi=r.staked>0?(r.profit/r.staked*100):0;return(
+                                  <div key={r.role} className="stat-row" onClick={()=>setStatsDrill({game,league:null,filterType:"role",filterValue:r.role})} style={{cursor:"pointer"}}>
+                                    <div style={{display:"flex",alignItems:"center",gap:6}}>{r.role&&<PositionLogo role={r.role} size={14}/>}<div><div style={{fontSize:12,fontWeight:600,color:"#E5E7EB"}}>{r.role}</div><div style={{fontSize:10,color:"#6B7280"}}>{r.count} paris · {wr.toFixed(0)}% WR</div></div></div>
+                                    <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:12,color:r.profit>=0?"#22C55E":"#EF4444"}}>{r.profit>=0?"+":""}{r.profit.toFixed(0)}$</div><div style={{fontSize:10,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}%</div></div>
+                                  </div>
+                                );})}
+                              </>
+                            )}
+                            {/* Coupes dans cette ligue */}
+                            {gs.tourneys.filter(t=>t.isCup).length>0&&(
+                              <><div style={{fontSize:10,color:"#FCD34D",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"12px 14px 6px",borderTop:"1px solid #1F2937",borderBottom:"1px solid rgba(251,191,36,.2)"}}>🏆 Coupes</div>
+                                {gs.tourneys.filter(t=>t.isCup).map(t=>{const wr=t.count>0?(t.won/t.count*100).toFixed(0):0;const roi=t.staked>0?(t.profit/t.staked*100).toFixed(1):0;const cupRealName=t.name.replace(/^🏆 /,"");const cupObj=(customCups||[]).find(c=>c.name===cupRealName);return(
+                                  <div key={t.name} className="stat-row">
+                                    <div style={{display:"flex",alignItems:"center",gap:7}}><div style={{width:18,height:18,borderRadius:4,background:"rgba(251,191,36,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{cupObj&&cupObj.logo?<img src={cupObj.logo} alt="" style={{width:14,height:14,objectFit:"contain"}}/>:<span style={{fontSize:11}}>🏆</span>}</div><div><div style={{fontSize:12,fontWeight:600,color:"#FCD34D"}}>{cupRealName}</div><div style={{fontSize:10,color:"#6B7280"}}>{t.count} paris · {wr}% WR</div></div></div>
+                                    <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:12,color:t.profit>=0?"#22C55E":"#EF4444"}}>{t.profit>=0?"+":""}{t.profit.toFixed(0)}$</div><div style={{fontSize:10,color:parseFloat(roi)>=0?"#22C55E":"#EF4444"}}>{parseFloat(roi)>=0?"+":""}{roi}%</div></div>
+                                  </div>
+                                );})}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })}
-
-            </>}
+            })()}
 
             {statsTab==="joueurs"&&(()=>{
               const pm={};
@@ -8854,34 +9144,56 @@ export default function App(){
                     });
                     const typeList=Object.entries(byType).sort((a,b2)=>b2[1].count-a[1].count);
                     const isOpen=!!statsGameOpen["POS_"+key];
+                    const avgOdds=pb.length>0?(pb.reduce((s,b)=>s+(b.odds||0),0)/pb.length):0;
+                    const roiAbs=Math.min(Math.abs(roi),50);
                     return(
-                      <div key={key} style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(255,255,255,.07)",borderRadius:14,overflow:"hidden"}}>
-                        <button onClick={()=>setStatsGameOpen(s=>({...s,["POS_"+key]:!s["POS_"+key]}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"3px 9px",borderRadius:6,background:color+"22",border:"1px solid "+color+"44",fontSize:11,fontWeight:800,color,fontFamily:"Inter,sans-serif"}}>{label}</span>
-                            <span style={{fontSize:11,color:"#6B7280"}}>{pb.length} paris</span>
+                      <div key={key} style={{background:"#111827",border:"1px solid "+(isOpen?"rgba(255,255,255,.12)":"#1F2937"),borderRadius:isOpen?"14px 14px 0 0":"14px",overflow:"hidden"}}>
+                        <button onClick={()=>setStatsGameOpen(s=>({...s,["POS_"+key]:!s["POS_"+key]}))}
+                          style={{width:"100%",display:"flex",flexDirection:"column",padding:"12px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                          {/* Ligne 1 : Nom position + profit */}
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:15,fontWeight:800,color:"#fff",textDecoration:"underline",textDecorationColor:color,textUnderlineOffset:3}}>{label}</span>
+                              <span style={{fontSize:10,color:"#6B7280",fontWeight:500}}>{key}</span>
+                              <span style={{fontSize:10,color:"#6B7280"}}>{pb.length} paris</span>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{padding:"2px 8px",borderRadius:6,background:profit>=0?"rgba(34,197,94,.1)":"rgba(239,68,68,.1)",fontSize:11,fontWeight:700,color:profit>=0?"#22C55E":"#EF4444"}}>{profit>=0?"+":""}{profit.toFixed(0)}$</span>
+                              <span style={{fontSize:11,color:"#6B7280",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
+                            </div>
                           </div>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <span style={{fontWeight:800,fontSize:13,color:profit>=0?"#22C55E":"#EF4444"}}>{profit>=0?"+":""}{profit.toFixed(0)}$</span>
-                            <span style={{fontSize:10,color:"#4a5a6e",display:"inline-block",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
+                          {/* Ligne 2 : stats */}
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                            <span style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{wr.toFixed(0)}% WR</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,fontWeight:700,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}% ROI</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,color:"#9CA3AF"}}>@{avgOdds.toFixed(2)} moy.</span>
+                            <span style={{fontSize:11,color:"#6B7280"}}>·</span>
+                            <span style={{fontSize:11,color:"#60a5fa"}}>▲{overB.length}</span>
+                            <span style={{fontSize:11,color:"#f87171"}}>▼{underB.length}</span>
+                          </div>
+                          {/* Barre WR + ROI */}
+                          <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                            <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:wr+"%",background:wr>55?"#22C55E":wr<45?"#EF4444":"#9CA3AF",borderRadius:2,transition:"width .5s"}}/>
+                            </div>
+                            <div style={{flex:1,height:4,background:"#1F2937",borderRadius:2,overflow:"hidden",position:"relative"}}>
+                              <div style={{position:"absolute",top:0,left:roi>=0?"50%":"calc(50% - "+(roiAbs/100*50)+"%)",height:"100%",width:roiAbs+"%",background:roi>=0?"linear-gradient(90deg,#3B82F6,#06B6D4)":"#EF4444",borderRadius:2,transition:"all .5s"}}/>
+                            </div>
                           </div>
                         </button>
-                        <div style={{display:"flex",gap:12,padding:"0 14px 10px",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-                          <span style={{fontSize:11,color:"#9CA3AF"}}>{wr.toFixed(0)}% WR</span>
-                          <span style={{fontSize:11,color:"#6B7280"}}>·</span>
-                          <span style={{fontSize:11,color:roi>=0?"#22C55E":"#EF4444"}}>{roi>=0?"+":""}{roi.toFixed(1)}% ROI</span>
-                          <span style={{fontSize:11,color:"#6B7280"}}>·</span>
-                          <span style={{fontSize:11,color:"#60a5fa"}}>▲{overB.length} {overWR.toFixed(0)}%</span>
-                          <span style={{fontSize:11,color:"#f87171"}}>▼{underB.length} {underWR.toFixed(0)}%</span>
-                        </div>
                         {isOpen&&(
-                          <div>
+                          <div style={{background:"#111827",border:"1px solid #1F2937",borderTop:"none",borderRadius:"0 0 14px 14px",overflow:"hidden"}}>
                             {typeList.map(([type,s])=>{
                               const twr=s.count>0?(s.won/s.count*100):0;
                               const troi=s.staked>0?(s.profit/s.staked*100):0;
                               return(
-                                <div key={type} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 14px",borderTop:"1px solid rgba(255,255,255,.04)"}}>
-                                  <div><div style={{fontWeight:600,fontSize:12,color:"#E5E7EB"}}>{type}</div><div style={{fontSize:10,color:"#6B7280"}}>{s.count} paris · {twr.toFixed(0)}% WR · {troi>=0?"+":""}{troi.toFixed(1)}% ROI</div></div>
+                                <div key={type} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",borderTop:"1px solid rgba(255,255,255,.04)"}}>
+                                  <div>
+                                    <div style={{fontWeight:600,fontSize:13,color:"#E5E7EB"}}>{type}</div>
+                                    <div style={{fontSize:10,color:"#6B7280"}}>{s.count} paris · {twr.toFixed(0)}% WR · {troi>=0?"+":""}{troi.toFixed(1)}% ROI</div>
+                                  </div>
                                   <span style={{fontWeight:700,fontSize:12,color:s.profit>=0?"#22C55E":"#EF4444"}}>{s.profit>=0?"+":""}{s.profit.toFixed(0)}$</span>
                                 </div>
                               );
