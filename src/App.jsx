@@ -1047,6 +1047,31 @@ const ALL_LEAGUE_TEAMS={
   ...EURO_TEAMS,
 };
 
+// ── Set global de toutes les équipes connues ──────────────────────────────────
+// Source de vérité unique : si bet.player est dans ce set → pari équipe
+const ALL_TEAMS_SET=new Set(
+  Object.values(ALL_LEAGUE_TEAMS).flat()
+);
+// Inclure aussi les noms depuis les logos (couvre NBA + EuroLeague + autres)
+[...Object.keys(TEAM_LOGOS),...Object.keys(EL_TEAM_LOGOS),...Object.keys(NBA_TEAM_LOGOS)].forEach(t=>ALL_TEAMS_SET.add(t));
+
+function checkIsTeamBet(b){
+  if(!b)return false;
+  // 1. Flag explicite posé au moment de la saisie
+  if(b.tbConfirmed)return true;
+  // 2. Description typique des paris équipe
+  if(b.description&&(
+    b.description.startsWith("Victoire ")||
+    b.description.startsWith("Champion ")||
+    b.description.startsWith("Vainqueur ")
+  ))return true;
+  // 3. Player est une équipe connue (source de vérité principale)
+  if(b.player&&ALL_TEAMS_SET.has(b.player))return true;
+  // 4. Description = "NomEquipe +/-X.X" (handicap équipe)
+  if(b.description&&/^[A-Z].+[+-]\d+\.?\d+$/.test(b.description))return true;
+  return false;
+}
+
 const STATUS_CFG={
   pending:{label:"En attente",color:"#3B82F6",bg:"rgba(96,165,250,0.1)"},
   won:{label:"Gagné",color:"#00E676",bg:"rgba(34,197,94,0.1)"},
@@ -1666,14 +1691,31 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   })();
 
   // Détecter type de pari équipe
-  const isTeamBet=!!(bet.tbConfirmed||(bet.description&&(bet.description.startsWith("Victoire ")||bet.description.startsWith("Champion ")||bet.description.startsWith("Vainqueur ")||/^[A-Z].*[+-]\d+\.?\d+$/.test(bet.description))));
+  const isTeamBet=checkIsTeamBet(bet);
   const isLongTerme=!!(bet.description&&(bet.description.startsWith("Champion ")||bet.description.startsWith("Vainqueur ")));
 
   // Pour victoire/longterm : logo de l'équipe bet.player (c'est le nom du club)
   const teamBetLogo=(()=>{
     if(!isTeamBet) return null;
-    const team=bet.player||bet.team||"";
-    return TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
+    const rawTeam=bet.player||bet.team||"";
+    // Essayer le nom exact d'abord
+    const direct=TEAM_LOGOS[rawTeam]||EL_TEAM_LOGOS[rawTeam]||NBA_TEAM_LOGOS[rawTeam]||null;
+    if(direct)return direct;
+    // Essayer sans le préfixe "Victoire " ou "Vainqueur "
+    const cleanTeam=rawTeam.replace(/^(Victoire |Vainqueur |Champion )/,"").trim();
+    const clean=TEAM_LOGOS[cleanTeam]||EL_TEAM_LOGOS[cleanTeam]||NBA_TEAM_LOGOS[cleanTeam]||null;
+    if(clean)return clean;
+    // Essayer avec les alias (Olympiakos → Olympiacos, etc.)
+    const ALIASES={"Olympiakos":"Olympiacos","Olympiacos Piraeus":"Olympiacos","Panathinaikos":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Fenerbahce":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Anadolu Efes":"Anadolu Efes Istanbul","Zalgiris":"Žalgiris","Zalgiris Kaunas":"Žalgiris","Armani Olimpia Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Bayern Munich":"Bayern München","FC Bayern Munich":"Bayern München","Baskonia":"Kosner Baskonia","ASVEL":"LDLC ASVEL","Real Madrid":"Real Madrid","Barcelona":"FC Barcelona","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Partizan":"Partizan Mozzart Bet","Red Star Belgrade":"Crvena zvezda Meridianbet","Maccabi Tel Aviv":"Maccabi Rapyd Tel Aviv"};
+    const aliasTeam=ALIASES[rawTeam]||ALIASES[cleanTeam];
+    if(aliasTeam)return TEAM_LOGOS[aliasTeam]||EL_TEAM_LOGOS[aliasTeam]||NBA_TEAM_LOGOS[aliasTeam]||null;
+    // Recherche partielle insensible à la casse
+    const lc=cleanTeam.toLowerCase();
+    for(const map of[TEAM_LOGOS,EL_TEAM_LOGOS,NBA_TEAM_LOGOS]){
+      const found=Object.keys(map).find(k=>k.toLowerCase()===lc||k.toLowerCase().includes(lc)||lc.includes(k.toLowerCase()));
+      if(found)return map[found];
+    }
+    return null;
   })();
 
   const logoSrc=isTeamBet?(teamBetLogo||teamLogoSrc):teamLogoSrc;
@@ -7473,7 +7515,7 @@ export default function App(){
 
             {/* ── TESTING PANEL ── */}
             {statsTab==="tipsers"&&(()=>{
-              const isTeamB=b=>!!(b.tbConfirmed||(b.description&&(b.description.startsWith("Victoire ")||b.description.startsWith("Champion ")||b.description.startsWith("Vainqueur "))));
+              const isTeamB=b=>checkIsTeamBet(b);
               const tipsterMap={};
               settled.forEach(b=>{
                 const t=b.tipster;if(!t)return;
@@ -8437,7 +8479,7 @@ export default function App(){
             {statsTab==="victoire"&&(()=>{
               const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
               // Tous les paris équipe (victoire + handicap + long terme)
-              const isTeamB=b=>!!(b.tbConfirmed||(b.description&&(b.description.startsWith("Victoire ")||b.description.startsWith("Champion ")||b.description.startsWith("Vainqueur "))));
+              const isTeamB=b=>checkIsTeamBet(b);
               const teamBets=settledFiltered.filter(isTeamB);
 
               // ─ Helper stats ─
@@ -8915,7 +8957,7 @@ export default function App(){
             )}
 
             {statsTab==="jeux"&&(()=>{
-              const isTeamBet=b=>!!(b.tbConfirmed||(b.description&&(b.description.startsWith("Victoire ")||b.description.startsWith("Champion ")||b.description.startsWith("Vainqueur "))));
+              const isTeamBet=b=>checkIsTeamBet(b);
 
               // Style commun tableau
               const TableHdr=()=>(
