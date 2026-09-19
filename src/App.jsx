@@ -6535,10 +6535,11 @@ export default function App(){
                 <div style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(139,92,246,.3)",borderRadius:12,padding:"11px 14px",color:"#E5E7EB",fontSize:14,fontWeight:600,fontFamily:"Inter,sans-serif",pointerEvents:"none",userSelect:"none"}}>
                   {(()=>{
                     const dt=form.datetime||nowDT();
-                    if(!dt)return"—";
-                    const d=new Date(dt);
-                    if(isNaN(d.getTime()))return dt;
-                    return d.toLocaleString("fr-CA",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+                    // Parser le format YYYY-MM-DDTHH:MM directement sans passer par Date()
+                    const m=dt.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                    if(!m)return nowDT().replace("T"," à ").slice(0,16).replace("-","/").replace("-","/");
+                    const mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+                    return parseInt(m[3])+" "+mois[parseInt(m[2])-1]+" "+m[1]+" à "+m[4]+":"+m[5];
                   })()}
                 </div>
                 {/* Input transparent par-dessus pour ouvrir le picker */}
@@ -7014,123 +7015,119 @@ export default function App(){
 
 
 
-            {/* ── BET TYPE ── */}
+            {/* ── BET BUILDER — phrase interactive ── */}
             <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"12px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>Type de bet</div>
-              {(()=>{
-                const BET_TYPES=[
-                  {id:"pts",   label:"PTS",    full:"Points",      col:"#a78bfa", min:3.5,  max:35.5},
-                  {id:"reb",   label:"REB",    full:"Rebonds",     col:"#fb923c", min:0.5,  max:15.5},
-                  {id:"ast",   label:"AST",    full:"Passes",      col:"#60a5fa", min:0.5,  max:15.5},
-                  {id:"3pts",  label:"3PT",    full:"3 Points",    col:"#34d399", min:0.5,  max:6.5},
-                  {id:"pts_reb",     label:"P+R",  full:"Pts+Reb",     col:"#f472b6", min:4.0,  max:51.0},
-                  {id:"pts_ast",     label:"P+A",  full:"Pts+Passes",  col:"#38bdf8", min:4.0,  max:51.0},
-                  {id:"pts_reb_ast", label:"P+R+A",full:"Pts+Reb+Ast", col:"#fbbf24", min:4.5,  max:66.5},
+              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",marginBottom:12}}>Sélection</div>
+              {!form.autoInfo?(
+                <div style={{height:50,background:"rgba(8,14,28,.6)",borderRadius:13,border:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",justifyContent:"center",color:"#4e5a6e",fontSize:13,fontWeight:500}}>
+                  Sélectionnez d'abord un joueur
+                </div>
+              ):(()=>{
+                const BET_TYPES_LIST=[
+                  {id:"pts",     label:"PTS",   full:"Points",      col:"#a78bfa"},
+                  {id:"reb",     label:"REB",   full:"Rebounds",    col:"#fb923c"},
+                  {id:"ast",     label:"AST",   full:"Assists",     col:"#60a5fa"},
+                  {id:"3pts",    label:"3PT",   full:"3 Pts",       col:"#34d399"},
+                  {id:"pts_reb", label:"P+R",   full:"Pts+Reb",     col:"#f472b6"},
+                  {id:"pts_ast", label:"P+A",   full:"Pts+Ast",     col:"#38bdf8"},
+                  {id:"pts_reb_ast",label:"P+R+A",full:"Pts+Reb+Ast",col:"#fbbf24"},
                 ];
-                const on=form.betType;
+                const BET_OPTS={
+                  pts:       Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))),
+                  reb:       Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))),
+                  ast:       Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))),
+                  "3pts":    Array.from({length:13},(_,i)=>((i+0.5).toFixed(1))),
+                  pts_reb:   Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))),
+                  pts_ast:   Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))),
+                  pts_reb_ast:Array.from({length:63},(_,i)=>((i+4.5).toFixed(1))),
+                };
+                const BET_SUFFIX={
+                  pts:"Points",reb:"Rebounds",ast:"Assists","3pts":"3 Pts",
+                  pts_reb:"Pts+Reb",pts_ast:"Pts+Ast",pts_reb_ast:"Pts+Reb+Ast",
+                };
+                const selBT=form.betType||null;
+                const selBTObj=BET_TYPES_LIST.find(b=>b.id===selBT);
+                const lineVals=selBT?BET_OPTS[selBT]:(BET_OPTS.pts);
+                // Extraire la valeur numérique de form.description
+                const descParts=form.description?form.description.split(" "):[]; 
+                const selVal=descParts[0]&&!isNaN(parseFloat(descParts[0]))?descParts[0]:"";
+
+                const boxStyle=(active,col)=>({
+                  flex:1,minWidth:0,height:54,borderRadius:13,
+                  border:"1.5px solid "+(active?(col||"#a78bfa"):"rgba(255,255,255,.07)"),
+                  background:active?"rgba(167,139,250,.1)":"rgba(8,14,28,.8)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  cursor:"pointer",fontFamily:"Inter,sans-serif",
+                  appearance:"none",WebkitAppearance:"none",outline:"none",
+                  color:active?(col||"#a78bfa"):"#4a5568",
+                  fontWeight:active?800:600,fontSize:13,
+                  boxShadow:active?"0 0 16px rgba(167,139,250,.2)":"none",
+                  transition:"all .15s",padding:"0 6px",
+                });
+
                 return(
-                  <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:2}}>
-                    {BET_TYPES.map(bt=>{
-                      const active=on===bt.id;
-                      const col=bt.col;
-                      return(
-                        <button key={bt.id}
-                          onClick={()=>setForm(f=>({...f,betType:active?null:bt.id,description:""}))}
-                          style={{
-                            flexShrink:0,
-                            display:"flex",alignItems:"center",justifyContent:"center",
-                            padding:"7px 12px",
-                            borderRadius:10,
-                            border:"1.5px solid "+(active?"#a78bfa":"rgba(255,255,255,.07)"),
-                            background:active?"rgba(167,139,250,.15)":"rgba(255,255,255,.02)",
-                            color:active?"#a78bfa":"#4a5568",
-                            cursor:"pointer",fontFamily:"Inter,sans-serif",
-                            transition:"all .15s",
-                            minWidth:42,
-                            boxShadow:active?"0 0 12px rgba(167,139,250,.3)":"none",
-                          }}>
-                          <span style={{fontSize:11,fontWeight:900,letterSpacing:.3}}>{bt.label}</span>
-                        </button>
-                      );
-                    })}
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {/* Ligne 1 : Over/Under */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                      {["Over","Under"].map(ou=>{
+                        const active=form.overUnder===ou;
+                        const col=ou==="Over"?"#00E676":"#3b82f6";
+                        return(
+                          <button key={ou} onClick={()=>setForm(f=>({...f,overUnder:ou}))}
+                            style={{...boxStyle(active,col),fontSize:15,fontWeight:800,letterSpacing:.5}}>
+                            {ou==="Over"?"▲ OVER":"▼ UNDER"}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Ligne 2 : [Valeur] [Type] côte à côte */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                      {/* Valeur */}
+                      <div style={{position:"relative"}}>
+                        <select value={selVal}
+                          onChange={e=>{
+                            const v=e.target.value;
+                            const suffix=BET_SUFFIX[selBT]||"Points";
+                            setForm(f=>({...f,description:v+" "+suffix}));
+                          }}
+                          style={{...boxStyle(!!selVal,"#c4b5fd"),width:"100%",paddingRight:28}}>
+                          <option value="">Ligne…</option>
+                          {lineVals.map(v=><option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                      </div>
+
+                      {/* Type de stat */}
+                      <div style={{position:"relative"}}>
+                        <select value={selBT||""}
+                          onChange={e=>{
+                            const newBT=e.target.value;
+                            const suffix=BET_SUFFIX[newBT]||"Points";
+                            const val=selVal||(BET_OPTS[newBT]?BET_OPTS[newBT][Math.floor(BET_OPTS[newBT].length/2)]:"");
+                            setForm(f=>({...f,betType:newBT,description:val?" "+suffix:""}));
+                          }}
+                          style={{...boxStyle(!!selBT,selBTObj?.col||"#a78bfa"),width:"100%",paddingRight:28}}>
+                          <option value="">Type…</option>
+                          {BET_TYPES_LIST.map(bt=><option key={bt.id} value={bt.id}>{bt.full}</option>)}
+                        </select>
+                        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                      </div>
+                    </div>
+
+                    {/* Résumé de la sélection */}
+                    {form.overUnder&&selVal&&selBT&&(
+                      <div style={{padding:"8px 12px",borderRadius:10,background:"rgba(167,139,250,.06)",border:"1px solid rgba(167,139,250,.15)",fontSize:13,fontWeight:700,color:"#c4b5fd",textAlign:"center",letterSpacing:.2}}>
+                        {form.overUnder} {selVal} {BET_SUFFIX[selBT]}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
             </div>
 
-            {/* ── 3. SÉLECTION ── */}
-            <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:9}}>
-                
-                Sélection
-              </div>
-              {form.autoInfo&&(()=>{
-                const game=form.autoInfo.game;
-                let opts=[];
-                // Options selon betType sélectionné
-                // Plages : PT=3.5-35.5, REB=0.5-15.5, AST=0.5-15.5, 3PT=0.5-6.5
-                // Combinées = somme des min/max de chaque stat
-                const BET_OPTS={
-                  pts:     Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))+" Points"),
-                  reb:     Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Rebounds"),
-                  ast:     Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Assists"),
-                  "3pts":  Array.from({length:13},(_,i)=>((i+0.5).toFixed(1))+" 3 Pts"),
-                  // PR: min=3.5+0.5=4.0, max=35.5+15.5=51.0 → 48 valeurs
-                  pts_reb: Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))+" Pts+Reb"),
-                  // PA: min=3.5+0.5=4.0, max=35.5+15.5=51.0 → 48 valeurs
-                  pts_ast: Array.from({length:48},(_,i)=>((i+4.0).toFixed(1))+" Pts+Ast"),
-                  // PRA: min=3.5+0.5+0.5=4.5, max=35.5+15.5+15.5=66.5 → 63 valeurs
-                  pts_reb_ast: Array.from({length:63},(_,i)=>((i+4.5).toFixed(1))+" Pts+Reb+Ast"),
-                };
-                if(form.betType&&BET_OPTS[form.betType]){
-                  opts=BET_OPTS[form.betType];
-                } else {
-                  opts=[
-                    ...Array.from({length:33},(_,i)=>((i+3.5).toFixed(1))+" Points"),
-                    ...Array.from({length:13},(_,i)=>((i+0.5).toFixed(1))+" 3 Pts"),
-                    ...Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Assists"),
-                    ...Array.from({length:16},(_,i)=>((i+0.5).toFixed(1))+" Rebounds"),
-                    ...Array.from({length:20},(_,i)=>((i+5.5).toFixed(1))+" Pts+Reb"),
-                    ...Array.from({length:20},(_,i)=>((i+5.5).toFixed(1))+" Pts+Ast"),
-                    ...Array.from({length:20},(_,i)=>((i+8.5).toFixed(1))+" Pts+Reb+Ast"),
-                  ];
-                }
-                
-                
-                
-                if(form.description&&!opts.includes(form.description)){opts=[form.description,...opts];}
-                if(opts.length===0)return null;
-                return(
-                  <div style={{display:"flex",alignItems:"center",gap:8,borderRadius:13,border:"1px solid rgba(255,255,255,.06)",background:"rgba(8,14,28,.9)",overflow:"hidden",height:50}}><div style={{height:"100%",width:46,borderRight:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      {form.autoInfo.game==="NBA"
-                        ? <img src={NBA_LEAGUE_LOGO} style={{width:36,height:36,objectFit:"contain"}} alt="NBA" onError={e=>e.target.style.display="none"}/>
-                        : <GameLogo game={form.autoInfo.game} size={22}/>
-                      }
-                    </div><select id="stat-select" value={form.description} onChange={e=>{const val=e.target.value;const is3Pts=val.includes("Headshot");setForm(f=>({...f,description:val,isHeadshot:is3Pts}));if(e.target.value){setTimeout(()=>{const el=document.getElementById("odds-input-field");if(el)el.focus();},80);}}}
-                      style={{flex:1,height:"100%",background:"transparent",border:"none",padding:"0 12px 0 4px",color:form.description?"#a8c4ff":"#5a6880",fontSize:14,fontFamily:"Inter,sans-serif",fontWeight:500,outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}><option value="" style={{color:"#6B7280",background:"#0d1428"}}>Choisir une ligne...</option>
-                      {opts.map(o=><option key={o} value={o} style={{color:"#E5E7EB",background:"#0d1428"}}>{o}</option>)}
-                    </select><span style={{color:"#4b5568",paddingRight:12,fontSize:13,flexShrink:0}}>⌄</span></div>
-                );
-              })()}
-              {!form.autoInfo&&(
-                <div style={{height:50,background:"rgba(8,14,28,.6)",borderRadius:13,border:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",justifyContent:"center",color:"#4e5a6e",fontSize:13,fontWeight:500}}>
-                  Sélectionnez d'abord un joueur
-                </div>
-              )}
-            </div>
+            {/* ── 4. TYPE DE PARI (Over/Under) — supprimé, intégré ci-dessus ── */}
 
-            {/* ── 4. TYPE DE PARI ── */}
-            {!sessionMode&&(
-              <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:9}}>
-                  
-                  Type de pari
-                </div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><button onClick={()=>setForm(f=>({...f,overUnder:"Over"}))}
-                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.overUnder==="Over"?"#00E676":"rgba(34,197,94,.2)"),background:form.overUnder==="Over"?"rgba(34,197,94,.14)":"rgba(34,197,94,.03)",color:form.overUnder==="Over"?"#22e875":"#4e7060",fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:"Inter,sans-serif",letterSpacing:.5,boxShadow:form.overUnder==="Over"?"0 0 28px rgba(34,197,94,.2),inset 0 1px 0 rgba(34,197,94,.15)":"none",transition:"all .15s"}}>
-                    ▲ OVER
-                  </button><button onClick={()=>setForm(f=>({...f,overUnder:"Under"}))}
-                    style={{height:54,borderRadius:13,border:"1.5px solid "+(form.overUnder==="Under"?"#3b82f6":"rgba(59,130,246,.2)"),background:form.overUnder==="Under"?"rgba(59,130,246,.14)":"rgba(59,130,246,.03)",color:form.overUnder==="Under"?"#60a5fa":"#3d5270",fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:"Inter,sans-serif",letterSpacing:.5,boxShadow:form.overUnder==="Under"?"0 0 28px rgba(59,130,246,.2),inset 0 1px 0 rgba(59,130,246,.15)":"none",transition:"all .15s"}}>
-                    ▼ UNDER
-                  </button></div></div>
-            )}
             {/* ── 5. COTE & MISE ── */}
             {!sessionMode&&(
               <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 10px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:700,color:"#ccd3e4",letterSpacing:.2,marginBottom:9}}>
