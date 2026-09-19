@@ -3564,6 +3564,52 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
                     }
                   }}/>
                 </label>
+                {/* Coller image depuis presse-papier */}
+                <button onClick={async()=>{
+                  setUploadingPhoto(true);
+                  try{
+                    // Lire le presse-papier
+                    const items=await navigator.clipboard.read();
+                    let imageBlob=null;
+                    for(const item of items){
+                      const imgType=item.types.find(t=>t.startsWith("image/"));
+                      if(imgType){imageBlob=await item.getType(imgType);break;}
+                    }
+                    if(!imageBlob){
+                      // Essayer aussi le texte (URL copiée)
+                      const text=await navigator.clipboard.readText().catch(()=>"");
+                      if(text&&(text.startsWith("http")||text.startsWith("https"))){
+                        setPhotoUrl(text.trim());
+                        setUploadingPhoto(false);
+                        return;
+                      }
+                      alert("Aucune image dans le presse-papier — copie d'abord une photo");
+                      setUploadingPhoto(false);
+                      return;
+                    }
+                    // Uploader le blob directement dans Supabase
+                    const ext=imageBlob.type.includes("png")?"png":imageBlob.type.includes("webp")?"webp":"jpg";
+                    const safeName=playerKey.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+                    const path="photos/players/"+safeName+"_"+Date.now()+"."+ext;
+                    const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+                      method:"POST",
+                      headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":imageBlob.type,"x-upsert":"true"},
+                      body:imageBlob,
+                    });
+                    if(res.ok){
+                      const url=SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+                      setPhotoUrl(url);
+                      setPhotoRehostFailed(false);
+                    }else{
+                      alert("Erreur upload Supabase");
+                    }
+                  }catch(e){
+                    alert("Erreur presse-papier : "+e.message+"\n\nSur iPhone, autorise l'accès au presse-papier quand demandé.");
+                  }
+                  setUploadingPhoto(false);
+                }} disabled={uploadingPhoto} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+                  <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>{uploadingPhoto?"Envoi...":" 📋 Coller image"}</span>
+                </button>
                 {/* OU coller une URL */}
                 <input
                   placeholder="ou colle une URL..."
