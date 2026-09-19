@@ -1666,8 +1666,8 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   })();
 
   // Détecter type de pari équipe
-  const isTeamBet=!!(bet.tbConfirmed||(bet.description&&(bet.description.startsWith("Victoire ")||bet.description.startsWith("Champion "))));
-  const isLongTerme=!!(bet.description&&bet.description.startsWith("Champion "));
+  const isTeamBet=!!(bet.tbConfirmed||(bet.description&&(bet.description.startsWith("Victoire ")||bet.description.startsWith("Champion ")||bet.description.startsWith("Vainqueur ")||/^[A-Z].*[+-]\d+\.?\d+$/.test(bet.description))));
+  const isLongTerme=!!(bet.description&&(bet.description.startsWith("Champion ")||bet.description.startsWith("Vainqueur ")));
 
   // Pour victoire/longterm : logo de l'équipe bet.player (c'est le nom du club)
   const teamBetLogo=(()=>{
@@ -1683,13 +1683,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Logo équipe avec filigrane derrière */}
           <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-            {/* Filigrane logo club — 120% opacité 12% */}
             {logoSrc&&(
               <img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"120%",height:"120%",objectFit:"contain",opacity:.12,pointerEvents:"none",zIndex:0}} onError={e=>e.target.style.display="none"}/>
             )}
             <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
-              {teamLogoSrc
-                ? <img src={logoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team} onError={e=>{e.target.style.display="none";}}/>
+              {logoSrc
+                ? <img src={logoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team||bet.player} onError={e=>{e.target.style.display="none";}}/>
                 : <GameLogo game={bet.game} size={30}/>
               }
             </div>
@@ -1697,10 +1696,26 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
-            {/* Ligne 1 : Nom joueur · logo ligue · stat */}
+            {/* Ligne 1 : Nom joueur/club · logo ligue · stat */}
             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
-              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>{(bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
+              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>
+                {(()=>{
+                  // Paris équipe : afficher nom club + handicap si applicable
+                  if(isTeamBet){
+                    const club=bet.player||bet.team||"";
+                    const clubName=club.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+                    if(bet.description&&bet.description.includes(" +")&&!bet.description.startsWith("Victoire")&&!bet.description.startsWith("Champion")){
+                      // Handicap : extraire "+X.X" ou "-X.X"
+                      const m=bet.description.match(/([+-]\d+\.?\d*)/);
+                      return m?clubName+" "+m[1]:clubName;
+                    }
+                    return clubName;
+                  }
+                  return (bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+                })()}
+              </span>
               <GameLogo game={bet.game} size={16}/>
+              {/* Description stat : seulement pour paris joueur, pas équipe */}
               {!isTeamBet&&descLine&&(()=>{
                 const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
                 if(parts) return(
@@ -1710,6 +1725,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                   </span>
                 );
                 return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>;
+              })()}
+              {/* Long terme : afficher la ligue */}
+              {isLongTerme&&(()=>{
+                const m=bet.description&&bet.description.match(/—\s*(.+)$/);
+                const league=m?m[1]:(bet.game||bet.league||"");
+                return league?<span style={{fontSize:11,color:"#a78bfa",fontWeight:700,flexShrink:0,background:"rgba(124,58,237,.12)",borderRadius:4,padding:"1px 5px"}}>Vainqueur {league}</span>:null;
               })()}
               {bet.splits&&bet.splits.length>0&&<span style={{fontSize:8,color:"#00E676",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:4,padding:"1px 5px",fontWeight:700,flexShrink:0}}>{1+bet.splits.length}</span>}
             </div>
@@ -6593,19 +6614,16 @@ export default function App(){
               const tbHcp=form.tbHcp||"3.5";
               const hcpValues=[];for(let v=0.5;v<=40;v+=0.5)hcpValues.push(v.toFixed(1));
               const canSubmit=!!(tbTeam&&form.bookmaker&&form.odds&&form.stake);
-              const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(0):null;
+              const gain=form.odds&&form.stake?(parseFloat(form.stake||0)*(parseFloat(form.odds||1)-1)).toFixed(2):null;
               const tbLogo=TEAM_LOGOS[tbTeam]||EL_TEAM_LOGOS[tbTeam]||NBA_TEAM_LOGOS[tbTeam]||null;
-
-              const fieldLabel={fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8};
-              const fieldBox={background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:16,overflow:"hidden"};
+              const lbl={fontSize:9,color:"#4a5468",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:4};
 
               return(
                 <div style={{marginBottom:10}}>
 
-                  {/* ── Header équipe — cliquable pour changer ── */}
+                  {/* Header équipe cliquable */}
                   <div onClick={()=>{setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",player:"",game:"NBA"}));}}
                     style={{background:"linear-gradient(135deg,rgba(124,58,237,.14),rgba(59,130,246,.08))",border:"1px solid rgba(139,92,246,.3)",borderRadius:20,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:14,cursor:"pointer",userSelect:"none"}}>
-                    {/* Logo avec filigrane */}
                     <div style={{width:60,height:60,borderRadius:14,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",position:"relative"}}>
                       {tbLogo&&<img src={tbLogo} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.15,pointerEvents:"none"}}/>}
                       {tbLogo?<img src={tbLogo} alt={tbTeam} style={{width:46,height:46,objectFit:"contain",position:"relative",zIndex:1}}/>:<span style={{fontSize:28,position:"relative",zIndex:1}}>🏀</span>}
@@ -6622,21 +6640,17 @@ export default function App(){
                   </div>
 
                   <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:20,border:"1px solid rgba(139,92,246,.2)",overflow:"hidden",marginBottom:8}}>
-                    <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:14}}>
+                    <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
 
-                      {/* Type de pari — sans emoji */}
+                      {/* Type de pari — une seule couleur violette */}
                       <div>
-                        <div style={fieldLabel}>Type de pari</div>
+                        <div style={{...lbl,marginBottom:8}}>Type de pari</div>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-                          {[
-                            {k:"victoire",  l:"Victoire",   col:"#22C55E", bc:"rgba(34,197,94,"},
-                            {k:"handicap",  l:"Handicap",   col:"#fbbf24", bc:"rgba(251,191,36,"},
-                            {k:"longtermebets",l:"Long terme",col:"#a78bfa",bc:"rgba(124,58,237,"},
-                          ].map(t=>{const on=tbType===t.k;return(
+                          {[{k:"victoire",l:"Victoire"},{k:"handicap",l:"Handicap"},{k:"longtermebets",l:"Long terme"}].map(t=>{const on=tbType===t.k;return(
                             <button key={t.k} onClick={()=>{
                               const desc=t.k==="victoire"?"Victoire "+tbTeam:t.k==="handicap"?tbTeam+" +"+(tbHcp||"3.5"):"Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague||"NBA");
                               setForm(f=>({...f,tbType:t.k,overUnder:"Over",description:tbTeam?desc:""}));
-                            }} style={{padding:"14px 6px",borderRadius:14,border:"1.5px solid "+(on?t.bc+".5)":"rgba(255,255,255,.07)"),background:on?t.bc+".12)":"rgba(255,255,255,.02)",color:on?t.col:"#6B7280",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",letterSpacing:.1,transition:"all .15s"}}>
+                            }} style={{padding:"13px 4px",borderRadius:13,border:"1.5px solid "+(on?"rgba(139,92,246,.6)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.02)",color:on?"#c4b5fd":"#6B7280",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
                               {t.l}
                             </button>
                           );})}
@@ -6646,7 +6660,7 @@ export default function App(){
                       {/* Handicap */}
                       {tbType==="handicap"&&(
                         <div>
-                          <div style={fieldLabel}>Handicap</div>
+                          <div style={{...lbl,marginBottom:8}}>Handicap</div>
                           <div style={{display:"grid",gridTemplateColumns:"88px 1fr",gap:8}}>
                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
                               {["+","-"].map(s=>(
@@ -6656,7 +6670,7 @@ export default function App(){
                             </div>
                             <div style={{position:"relative"}}>
                               <select value={tbHcp} onChange={e=>setForm(f=>({...f,tbHcp:e.target.value,description:tbTeam?tbTeam+" "+tbSign+e.target.value:tbSign+e.target.value}))}
-                                style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 40px 14px 16px",color:"#fff",fontSize:17,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                                style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:13,padding:"14px 40px 14px 16px",color:"#fff",fontSize:17,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
                                 {hcpValues.map(v=><option key={v} value={v}>{tbSign}{v}</option>)}
                               </select>
                               <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
@@ -6668,10 +6682,10 @@ export default function App(){
                       {/* Long terme — compétition */}
                       {tbType==="longtermebets"&&tbTeam&&(
                         <div>
-                          <div style={fieldLabel}>Compétition</div>
+                          <div style={{...lbl,marginBottom:8}}>Compétition</div>
                           <div style={{position:"relative"}}>
                             <select value={form.tbChampComp||tbLeague} onChange={e=>setForm(f=>({...f,tbChampComp:e.target.value,description:"Champion "+tbTeam+" — "+e.target.value}))}
-                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 40px 14px 16px",color:"#fff",fontSize:16,fontWeight:700,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:13,padding:"14px 40px 14px 16px",color:"#fff",fontSize:16,fontWeight:700,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
                               {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
                                 <option key={lg} value={lg}>{lg}</option>
                               ))}
@@ -6681,58 +6695,70 @@ export default function App(){
                         </div>
                       )}
 
-                      {/* Tipster — en premier avant cote/mise */}
-                      {savedTipsters.length>0&&(
+                      {/* ── COTE — identique page joueur ── */}
+                      {tbTeam&&(
                         <div>
-                          <div style={fieldLabel}>Tipster</div>
-                          <div style={{position:"relative"}}>
-                            <select value={tipsterName} onChange={e=>setTipsterName(e.target.value)}
-                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 40px 14px 16px",color:tipsterName?"#fff":"#6B7280",fontSize:15,fontWeight:tipsterName?700:500,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                              <option value="">Aucun tipster</option>
-                              {savedTipsters.map(t=><option key={t} value={t}>{t}</option>)}
-                            </select>
-                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                          <div style={lbl}>Cote</div>
+                          <div style={{height:48,borderRadius:12,border:"1px solid rgba(255,255,255,.09)",background:"rgba(8,14,28,.95)",display:"flex",alignItems:"center",padding:"0 10px",gap:3}}>
+                            <span style={{color:"#4a5468",fontSize:13,fontWeight:500,flexShrink:0}}>@</span>
+                            <input type="text" inputMode="decimal" placeholder="1.85" value={form.odds||""}
+                              onChange={e=>{let v=e.target.value.replace(",",".");setForm(f=>({...f,odds:v}));}}
+                              onBlur={e=>{let v=e.target.value.replace(",",".");const n=parseFloat(v);if(!isNaN(n)&&n>=100){v=(n/100).toFixed(2);}setForm(f=>({...f,odds:v}));}}
+                              style={{flex:1,background:"transparent",border:"none",outline:"none",color:"#E5E7EB",fontSize:22,fontWeight:800,fontFamily:"Inter,sans-serif",letterSpacing:"-.3px"}}/>
                           </div>
                         </div>
                       )}
 
-                      {/* ── COTE — pleine largeur ── */}
+                      {/* ── MISE — identique page joueur avec 6 boutons d'unités ── */}
                       {tbTeam&&(
-                        <div style={fieldBox}>
-                          <div style={{padding:"10px 16px 4px",fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Cote</div>
-                          <div style={{display:"flex",alignItems:"center",padding:"0 16px 12px",gap:6}}>
-                            <span style={{fontSize:18,color:"#4a5568",fontWeight:500,flexShrink:0}}>@</span>
-                            <input type="text" inputMode="decimal" placeholder="1.85" value={form.odds||""} onChange={e=>{let v=e.target.value.replace(",",".");setForm(f=>({...f,odds:v}));}} onBlur={e=>{let v=e.target.value.replace(",",".");const n=parseFloat(v);if(!isNaN(n)&&n>=100){v=(n/100).toFixed(2);}setForm(f=>({...f,odds:v}));}}
-                              style={{flex:1,background:"transparent",border:"none",outline:"none",color:"#fff",fontSize:28,fontWeight:800,fontFamily:"Inter,sans-serif",letterSpacing:-.5}}/>
+                        <div>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={lbl}>Mise</span>
+                            <span style={{fontSize:10,color:"#7a6aae",fontWeight:600}}>1u = {unitValue.toFixed(0)}$ · Palier {bkTier.toFixed(0)}$</span>
                           </div>
-                        </div>
-                      )}
-
-                      {/* ── MISE — pleine largeur avec mises rapides intégrées ── */}
-                      {tbTeam&&(
-                        <div style={fieldBox}>
-                          <div style={{padding:"10px 16px 4px",fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Mise</div>
-                          <div style={{display:"flex",alignItems:"center",padding:"0 16px 12px",gap:6}}>
-                            <input type="number" step="1" placeholder="50" value={form.stake||""} onChange={e=>setForm(f=>({...f,stake:e.target.value}))}
-                              style={{flex:1,background:"transparent",border:"none",outline:"none",color:"#fff",fontSize:28,fontWeight:800,fontFamily:"Inter,sans-serif",letterSpacing:-.5}}/>
-                            <span style={{fontSize:18,color:"#4a5568",fontWeight:500,flexShrink:0}}>$</span>
+                          <div style={{height:48,borderRadius:12,border:"1px solid rgba(255,255,255,.09)",background:"rgba(8,14,28,.95)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 10px",marginBottom:8}}>
+                            <input type="number" step="1" placeholder="75" value={form.stake||""}
+                              onChange={e=>setForm(f=>({...f,stake:e.target.value}))}
+                              style={{flex:1,background:"transparent",border:"none",outline:"none",color:"#E5E7EB",fontSize:22,fontWeight:800,fontFamily:"Inter,sans-serif",letterSpacing:"-.3px"}}/>
+                            <span style={{color:"#4a5468",fontSize:13,fontWeight:500,flexShrink:0,marginLeft:3}}>$</span>
                           </div>
-                          {/* Mises rapides dans le bloc mise */}
-                          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:"1px solid rgba(255,255,255,.06)"}}>
-                            {[25,50,75,100].map(v=>{const on=parseFloat(form.stake)===v;return(
-                              <button key={v} onClick={()=>setForm(f=>({...f,stake:String(v)}))}
-                                style={{padding:"10px 0",background:on?"rgba(124,58,237,.15)":"transparent",border:"none",borderRight:"1px solid rgba(255,255,255,.05)",color:on?"#a78bfa":"#6B7280",fontSize:13,fontWeight:on?800:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .1s"}}>
-                                {v}$
-                              </button>
-                            );})}
+                          {/* 6 boutons unités — même style que page joueur */}
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                            {[0.75,1,1.25,1.5,1.75,2].map(u=>{
+                              const s=unitValue*u;
+                              const sStr=Number.isInteger(s)?String(s):s.toFixed(1);
+                              const isActive=parseFloat(form.stake)===s;
+                              return(
+                                <button key={u} onClick={()=>setForm(f=>({...f,stake:sStr}))}
+                                  style={{height:52,borderRadius:12,border:"1px solid "+(isActive?"rgba(139,92,246,.65)":"rgba(255,255,255,.09)"),background:isActive?"rgba(139,92,246,.2)":"rgba(255,255,255,.03)",color:isActive?"#d4c5ff":"#8892a4",cursor:"pointer",fontFamily:"Inter,sans-serif",boxShadow:isActive?"0 0 16px rgba(139,92,246,.25)":"none",transition:"all .15s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2}}>
+                                  <span style={{fontSize:13,fontWeight:isActive?800:600,letterSpacing:"-.3px"}}>{u}u</span>
+                                  <span style={{fontSize:11,fontWeight:500,color:isActive?"#c4b5fd":"#5a6478"}}>{sStr}$</span>
+                                </button>
+                              );
+                            })}
                           </div>
                           {/* Gain potentiel */}
                           {form.odds&&form.stake&&(
-                            <div style={{padding:"8px 16px",borderTop:"1px solid rgba(255,255,255,.06)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                              <span style={{fontSize:11,color:"#6B7280",fontWeight:500}}>Gain potentiel</span>
-                              <span style={{fontSize:15,fontWeight:800,color:"#22C55E"}}>+{gain}$</span>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:9,marginTop:6,borderTop:"1px solid rgba(255,255,255,0.04)"}}>
+                              <span style={{fontSize:11,color:"#5a6478",fontWeight:500}}>Gain potentiel</span>
+                              <span style={{fontSize:16,fontWeight:700,color:"#00E676"}}>+{gain}$</span>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* Tipster */}
+                      {savedTipsters.length>0&&tbTeam&&(
+                        <div>
+                          <div style={{...lbl,marginBottom:8}}>Tipster</div>
+                          <div style={{position:"relative"}}>
+                            <select value={tipsterName} onChange={e=>setTipsterName(e.target.value)}
+                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:12,padding:"11px 36px 11px 12px",color:tipsterName?"#E5E7EB":"#6B7280",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",appearance:"none",WebkitAppearance:"none",cursor:"pointer"}}>
+                              <option value="">Aucun tipster</option>
+                              {savedTipsters.map(t=><option key={t} value={t}>{t}</option>)}
+                            </select>
+                            <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:11,pointerEvents:"none"}}>▾</span>
+                          </div>
                         </div>
                       )}
 
@@ -6741,7 +6767,7 @@ export default function App(){
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
                           {[["pending","En attente","#3B82F6"],["won","Gagné","#22C55E"],["lost","Perdu","#EF4444"]].map(([s,lb,col])=>{const on=(form.status||"pending")===s;return(
                             <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
-                              style={{padding:"13px 4px",borderRadius:14,border:"1.5px solid "+(on?col+"99":"rgba(255,255,255,.07)"),background:on?col+"1A":"rgba(255,255,255,.02)",color:on?col:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                              style={{padding:"13px 4px",borderRadius:13,border:"1.5px solid "+(on?col+"99":"rgba(255,255,255,.07)"),background:on?col+"1A":"rgba(255,255,255,.02)",color:on?col:"#6B7280",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
                               {lb}
                             </button>
                           );})}
@@ -6759,7 +6785,7 @@ export default function App(){
                             + Combiner avec un joueur
                           </button>
                           <button disabled={!canSubmit} onClick={()=>{
-                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague);
+                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague);
                             setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending",tipster:tipsterName||null}));
                             setTimeout(()=>{addBet();setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"}));},0);
                           }} style={{width:"100%",height:58,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
@@ -9765,6 +9791,13 @@ export default function App(){
         {/* ── MODAL COUPE ── */}
         {modalCup&&(()=>{
           const isNew=modalCup==="new";
+          // Tous les clubs disponibles dans l'app
+          const ALL_CLUBS=[
+            ...Object.keys(TEAM_LOGOS),
+            ...Object.keys(EL_TEAM_LOGOS),
+            ...Object.keys(NBA_TEAM_LOGOS),
+          ].filter((v,i,a)=>a.indexOf(v)===i).sort();
+
           const saveCup=()=>{
             if(!cupForm.name.trim()){showToast("Donne un nom à la coupe","#F59E0B");return;}
             if(isNew){
@@ -9777,10 +9810,16 @@ export default function App(){
             }
             setModalCup(false);
           };
-          const addClub=()=>setCupForm(f=>({...f,clubs:[...f.clubs,{name:""}]}));
           const removeClub=i=>setCupForm(f=>({...f,clubs:f.clubs.filter((_,j)=>j!==i)}));
-          const updateClub=(i,val)=>setCupForm(f=>{const clubs=[...f.clubs];clubs[i]={name:val};return{...f,clubs};});
-          const inputStyle={width:"100%",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:8,padding:"9px 12px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"};
+          const addClubByName=(name)=>{
+            if(!name.trim())return;
+            if(cupForm.clubs.some(c=>c.name.toLowerCase()===name.toLowerCase()))return;
+            setCupForm(f=>({...f,clubs:[...f.clubs,{name:name.trim()}],_search:""}));
+          };
+          const search=(cupForm._search||"").toLowerCase();
+          const suggestions=search.length>=1
+            ?ALL_CLUBS.filter(c=>c.toLowerCase().includes(search)&&!cupForm.clubs.some(x=>x.name===c)).slice(0,6)
+            :[];
           return(
             <div className="moverlay" onClick={()=>setModalCup(false)}>
               <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -9788,7 +9827,7 @@ export default function App(){
                   <span style={{fontSize:20}}>🏆</span>
                   <div style={{fontSize:15,fontWeight:700}}>{isNew?"Créer une coupe":"Modifier la coupe"}</div>
                 </div>
-                <div style={{fontSize:11,color:"#6B7280",marginBottom:16}}>Exemple : Coupe d'Italie, Coupe de France…</div>
+                <div style={{fontSize:11,color:"#6B7280",marginBottom:14}}>Exemple : Coupe d'Italie, Coupe de France…</div>
 
                 {/* Nom */}
                 <div style={{marginBottom:10}}>
@@ -9805,21 +9844,66 @@ export default function App(){
                   </div>
                 </div>
 
-                {/* Clubs */}
+                {/* Clubs — recherche intelligente */}
                 <div style={{marginBottom:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                     <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Clubs participants</div>
                     <span style={{fontSize:10,color:"#6B7280"}}>{cupForm.clubs.length} club{cupForm.clubs.length!==1?"s":""}</span>
                   </div>
-                  <div style={{maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
-                    {cupForm.clubs.map((club,i)=>(
-                      <div key={i} style={{display:"flex",gap:6,alignItems:"center"}}>
-                        <input value={club.name} onChange={e=>updateClub(i,e.target.value)} placeholder={"Club "+(i+1)} style={inputStyle}/>
-                        <button onClick={()=>removeClub(i)} style={{width:30,height:34,flexShrink:0,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:7,color:"#EF4444",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-                      </div>
-                    ))}
+
+                  {/* Barre de recherche */}
+                  <div style={{position:"relative",marginBottom:6}}>
+                    <input
+                      value={cupForm._search||""}
+                      onChange={e=>setCupForm(f=>({...f,_search:e.target.value}))}
+                      onKeyDown={e=>{
+                        if(e.key==="Enter"&&suggestions.length>0){addClubByName(suggestions[0]);e.preventDefault();}
+                        if(e.key==="Escape")setCupForm(f=>({...f,_search:""}));
+                      }}
+                      placeholder="Rechercher un club… ex: BOS, Olympia…"
+                      style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(124,58,237,.3)",borderRadius:10,padding:"10px 14px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+                    />
+                    {search&&<button onClick={()=>setCupForm(f=>({...f,_search:""}))} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1}}>×</button>}
                   </div>
-                  <button onClick={addClub} style={{width:"100%",marginTop:6,padding:"8px",background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.12)",borderRadius:8,color:"#9CA3AF",cursor:"pointer",fontSize:12,fontFamily:"Inter,sans-serif"}}>+ Ajouter un club</button>
+
+                  {/* Suggestions */}
+                  {suggestions.length>0&&(
+                    <div style={{background:"rgba(8,14,28,.98)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,overflow:"hidden",marginBottom:8}}>
+                      {suggestions.map(name=>{
+                        const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
+                        return(
+                          <button key={name} onClick={()=>addClubByName(name)}
+                            style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.04)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                            <div style={{width:26,height:26,borderRadius:6,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {logo?<img src={logo} alt="" style={{width:22,height:22,objectFit:"contain"}}/>:<span style={{fontSize:12}}>🏀</span>}
+                            </div>
+                            <span style={{fontSize:13,color:"#E5E7EB",fontWeight:600}}>{name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Liste des clubs ajoutés */}
+                  {cupForm.clubs.length>0&&(
+                    <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:5}}>
+                      {cupForm.clubs.filter(c=>c.name.trim()).map((club,i)=>{
+                        const logo=TEAM_LOGOS[club.name]||EL_TEAM_LOGOS[club.name]||NBA_TEAM_LOGOS[club.name]||null;
+                        return(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:9}}>
+                            <div style={{width:26,height:26,borderRadius:6,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {logo?<img src={logo} alt="" style={{width:22,height:22,objectFit:"contain"}}/>:<span style={{fontSize:12}}>🏀</span>}
+                            </div>
+                            <span style={{flex:1,fontSize:13,color:"#E5E7EB",fontWeight:500}}>{club.name}</span>
+                            <button onClick={()=>removeClub(i)} style={{background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1,padding:"0 2px"}}>×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {cupForm.clubs.length===0&&!search&&(
+                    <div style={{textAlign:"center",color:"#4B5563",fontSize:12,padding:"12px 0"}}>Recherche un club ci-dessus pour l'ajouter</div>
+                  )}
                 </div>
 
                 <div style={{display:"flex",gap:8}}>
