@@ -1,19 +1,50 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from "react";
 
+// ── Service Worker — cache images permanent ───────────────────────────────────
+if(typeof window!=="undefined"&&"serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("/sw.js").then(reg=>{
+      console.log("SW enregistré:",reg.scope);
+    }).catch(err=>{
+      console.log("SW échec:",err);
+    });
+  });
+}
+
 // ── Cache images en mémoire (affichage instantané au 2e affichage) ──────────
 const IMG_CACHE=new Map();
 function CachedImg({src,style,alt="",onError,width,height,...rest}){
   if(!src) return null;
   const cached=IMG_CACHE.has(src);
+  const ref=React.useRef(null);
+  React.useEffect(()=>{
+    if(cached||!src||!ref.current) return;
+    // IntersectionObserver — charger seulement quand visible
+    const obs=new IntersectionObserver(([entry])=>{
+      if(entry.isIntersecting){
+        obs.disconnect();
+        const img=new Image();
+        img.decoding="async";
+        img.onload=()=>{
+          IMG_CACHE.set(src,true);
+          if(ref.current){ref.current.src=src;ref.current.style.opacity="1";}
+        };
+        img.onerror=()=>{if(ref.current)ref.current.style.display="none";};
+        img.src=src;
+      }
+    },{rootMargin:"200px"}); // Précharger 200px avant d'être visible
+    obs.observe(ref.current);
+    return()=>obs.disconnect();
+  },[src,cached]);
   return(
     <img
-      src={src}
+      ref={ref}
+      src={cached?src:undefined}
       alt={alt}
       width={width}
       height={height}
       decoding="async"
-      loading={cached?"eager":"lazy"}
-      style={{...style,transition:cached?undefined:"opacity .1s",opacity:cached?1:0}}
+      style={{...style,opacity:cached?1:0,transition:cached?undefined:"opacity .15s"}}
       onLoad={e=>{IMG_CACHE.set(src,true);e.target.style.opacity="1";}}
       onError={e=>{if(onError)onError(e);e.target.style.display="none";}}
       {...rest}
@@ -4105,7 +4136,39 @@ export default function App(){
 
           setPlayers(obj);
 
-          // ── Nettoyage URLs ESPN cassées en background ──
+          // ── Migration batch photos externes → Supabase Storage (background) ──
+          // Migre silencieusement les URLs externes vers Supabase après le chargement
+          setTimeout(async ()=>{
+            const toMigrate=Object.entries(obj).filter(([k,p])=>
+              p.photo_url && !p.photo_url.includes(SUPA_URL)
+            );
+            if(toMigrate.length===0) return;
+            console.log(`Migration photos: ${toMigrate.length} joueurs à migrer vers Supabase`);
+            let migrated=0;
+            for(const [key,p] of toMigrate){
+              try{
+                const permanentUrl=await supaRehost(p.photo_url, key);
+                if(permanentUrl!==p.photo_url){
+                  // URL différente = migration réussie → sauvegarder
+                  const updated={...p,photo_url:permanentUrl,avatar_url:permanentUrl};
+                  await supaUpsertPlayer({name:key,...updated});
+                  setPlayers(prev=>prev[key]?{...prev,[key]:updated}:prev);
+                  migrated++;
+                }
+              }catch(e){ /* silencieux */ }
+              // Pause entre chaque pour ne pas saturer le réseau
+              await new Promise(r=>setTimeout(r,300));
+            }
+            if(migrated>0){
+              console.log(`Migration terminée: ${migrated} photos maintenant dans Supabase`);
+              // Mettre à jour le cache
+              try{
+                const cache=JSON.parse(localStorage.getItem("v7_players_cache")||"{}");
+                Object.entries(obj).forEach(([k,p])=>{if(cache[k])cache[k]=p;});
+                localStorage.setItem("v7_players_cache",JSON.stringify(cache));
+              }catch(e){}
+            }
+          }, 5000); // Démarrer 5s après le chargement pour ne pas bloquer l'UI
           Object.keys(obj).forEach(k=>{
             const p=obj[k];
             if(p.photo_url&&p.photo_url.includes("espncdn.com")&&p.photo_url.includes("/full/")){
