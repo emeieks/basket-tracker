@@ -7295,7 +7295,7 @@ export default function App(){
                 </div>
                 {/* Input transparent par-dessus pour ouvrir le picker */}
                 <input type="datetime-local" value={form.datetime||nowDT()} onChange={e=>setForm(f=>({...f,datetime:e.target.value}))}
-                  style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent"}}/>
+                  style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent",zIndex:10,WebkitAppearance:"none",fontSize:16}}/>
               </div>
             </div>}
 
@@ -7511,7 +7511,7 @@ export default function App(){
                             + Combiner avec un joueur
                           </button>
                           <button disabled={!canSubmit} onClick={()=>{
-                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague);
+                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague)+" ("+tbTeam+")";
                             setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending",tipster:tipsterName||null}));
                             setTimeout(()=>{addBet();setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"}));},0);
                           }} style={{width:"100%",height:58,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
@@ -7641,8 +7641,10 @@ export default function App(){
                               setTeamBetMode(true);
                               setCombineMode(false);
                               if(isCup){
-                                // Pari dans une coupe → long terme par défaut avec nom de la coupe
-                                setForm(f=>({...f,tbLeague:"EuroLeague",tbTeam:name,player:name,game:"EuroLeague",description:"Vainqueur "+cupName,tbType:"longtermebets",tbChampComp:cupName}));
+                                // Pari dans une coupe → long terme avec la coupe comme compétition
+                                // Détecter la ligue de l'équipe pour le game
+                                const teamLeague=Object.entries(ALL_LEAGUE_TEAMS).find(([l,teams])=>teams.includes(name))?.[0]||"EuroLeague";
+                                setForm(f=>({...f,tbLeague:teamLeague,tbTeam:name,player:name,game:teamLeague,description:"Vainqueur "+cupName,tbType:"longtermebets",tbChampComp:cupName}));
                               } else {
                                 setForm(f=>({...f,tbLeague:lg,tbTeam:name,player:name,game:lg,description:"Victoire "+name,tbType:"victoire"}));
                               }
