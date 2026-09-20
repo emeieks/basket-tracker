@@ -3480,7 +3480,31 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
       const res=await supaUpsertPlayer({name:playerKey,...updated});
       if(!res) throw new Error("Pas de réponse Supabase");
       setPlayers(p=>({...p,[playerKey]:updated}));
-      showToast((playerData.name||playerKey)+" mis à jour ✓","#22C55E");
+
+      // ── Si le logo d'équipe a changé → mettre à jour TOUS les joueurs de cette équipe ──
+      if(permanentLogo&&permanentLogo!==playerData.team_logo_url&&team){
+        const teammates=Object.entries(allPlayers).filter(([k,p])=>
+          k!==playerKey && p.team===team && (!p.team_logo_url||!p.team_logo_url.includes(SUPA_URL))
+        );
+        if(teammates.length>0){
+          // Batch update en arrière-plan
+          Promise.allSettled(teammates.map(([k,p])=>
+            supaUpsertPlayer({name:k,...p,team_logo_url:permanentLogo})
+          )).then(()=>{
+            // Mettre à jour le state local aussi
+            setPlayers(prev=>{
+              const next={...prev};
+              teammates.forEach(([k,p])=>{next[k]={...p,team_logo_url:permanentLogo};});
+              return next;
+            });
+          });
+          showToast(`Logo mis à jour pour ${teammates.length+1} joueurs de ${team} ✓`,"#22C55E");
+        } else {
+          showToast((playerData.name||playerKey)+" mis à jour ✓","#22C55E");
+        }
+      } else {
+        showToast((playerData.name||playerKey)+" mis à jour ✓","#22C55E");
+      }
     }catch(e){
       console.error("Save error:",e);
       // Sauvegarder quand même en local sans rehost
