@@ -4560,7 +4560,13 @@ export default function App(){
       return n;
     });
   }
-  const [bookmakers,setBookmakers]=useState(DEFAULT_BK);
+  const [bookmakers,setBookmakers]=useState(()=>{
+    try{
+      const saved=localStorage.getItem("v7_bmakers");
+      if(saved){const parsed=JSON.parse(saved);if(parsed&&parsed.length>0)return parsed;}
+    }catch(e){}
+    return DEFAULT_BK;
+  });
   const [form,setForm]=useState({...EMPTY_FORM(),datetime:nowDT()});
   const [stickyBK,setStickyBK]=useState(false);
   const [lockedStatus,setLockedStatus]=useState(null);
@@ -4583,6 +4589,7 @@ export default function App(){
     },0);
   };
   const [loaded,setLoaded]=useState(false);
+  const [restoredFromSupa,setRestoredFromSupa]=useState(false);
   // Les joueurs viennent uniquement de Supabase - pas de localStorage
   const [toast,setToast]=useState(null);
   // betConfirm removed
@@ -4943,7 +4950,7 @@ export default function App(){
 
   // Persister tournois actifs + savedTourneys + MIB + testFilter → Supabase
   useEffect(()=>{
-    if(!loaded)return;
+    if(!loaded||!restoredFromSupa)return;
     const t=setTimeout(()=>{
       try{
         const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
@@ -4954,11 +4961,11 @@ export default function App(){
       }catch(e){}
     },300);
     return()=>clearTimeout(t);
-  },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters,customCups,loaded]);
+  },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters,customCups,customClubs,loaded,restoredFromSupa]);
 
   // ── Supabase save : settings app (bookmakers, bkPhotos, bankroll, dépôts, etc.) ──
   const saveAppSettings=React.useCallback(()=>{
-    if(!loaded||!SUPA_URL||!SUPA_KEY)return;
+    if(!loaded||!restoredFromSupa||!SUPA_URL||!SUPA_KEY)return;
     try{
       let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
       const appRow={
@@ -4979,7 +4986,7 @@ export default function App(){
       };
       fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(appRow)}).catch(function(){});
     }catch(e){}
-  },[bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs,stickyBK,lockedStatus,hiddenAnalyseBets,blacklist,simManual,tipsterPhotos,ppData,loaded]);
+  },[bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs,stickyBK,lockedStatus,hiddenAnalyseBets,blacklist,simManual,tipsterPhotos,ppData,loaded,restoredFromSupa]);
 
   useEffect(()=>{
     if(!loaded)return;
@@ -5237,6 +5244,7 @@ export default function App(){
       });
       setBets(finalMerged);
       localStorage.setItem("v7_bets",JSON.stringify(finalMerged));
+      setRestoredFromSupa(true); // ← permettre les saves automatiques maintenant
       // Push les bets locaux plus récents vers Supabase pour les autres appareils
       const toSyncBack=merged.filter(b=>{
         const loc=localMap[String(b.id)];
