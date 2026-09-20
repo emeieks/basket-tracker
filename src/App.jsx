@@ -6309,16 +6309,29 @@ export default function App(){
     setModalPlayer(false);
     showToast(pform.name+" ajouté ✓");
   }
-  function saveBookmaker(){
+  async function saveBookmaker(){
     if(!newBK.trim())return;
     const newName=newBK.trim();
     const newBks=[...bookmakers,newName];
     setBookmakers(newBks);
     const newPhotos=newBKPhoto?{...bkPhotos,[newName]:newBKPhoto}:bkPhotos;
-    if(newBKPhoto) setBkPhotos(newPhotos);
-    // Push immédiat Supabase
-    if(newBKPhoto) pushBkPhotosRow(newPhotos);
-    pushAppRow({bookmakers:newBks,bkPhotos:newPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
+    if(newBKPhoto)setBkPhotos(newPhotos);
+    // localStorage immédiat
+    try{localStorage.setItem("v7_bmakers",JSON.stringify(newBks));}catch(e){}
+    if(newBKPhoto)try{localStorage.setItem("v7_bkphotos",JSON.stringify(newPhotos));}catch(e){}
+    // Push Supabase et ATTENDRE avant de fermer le modal
+    if(SUPA_URL&&SUPA_KEY){
+      try{
+        let ov={};try{ov=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+        const row={id:"__settings_app__",player:"__SETTINGS_APP__",
+          description:JSON.stringify({bookmakers:newBks,bkPhotos:newPhotos,bkAccounts,bankroll,depots,overrides:ov,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData}),
+          odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+        await fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+          headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+          body:JSON.stringify(row)});
+      }catch(e){}
+    }
+    if(newBKPhoto)pushBkPhotosRow(newPhotos);
     setNewBK("");setNewBKPhoto("");setModalBK(false);
     showToast(newName+" ajouté");
   }
@@ -10815,7 +10828,17 @@ export default function App(){
                         const filteredBks=bookmakers.filter(x=>x!==bk);
                         setBookmakers(filteredBks);
                         try{localStorage.setItem("v7_bmakers",JSON.stringify(filteredBks));}catch(e){}
-                        pushAppRow({bookmakers:filteredBks,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
+                        (async()=>{
+                          if(SUPA_URL&&SUPA_KEY){try{
+                            let ov={};try{ov=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+                            const row={id:"__settings_app__",player:"__SETTINGS_APP__",
+                              description:JSON.stringify({bookmakers:filteredBks,bkPhotos,bkAccounts,bankroll,depots,overrides:ov,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData}),
+                              odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+                            await fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+                              headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+                              body:JSON.stringify(row)});
+                          }catch(e){}}
+                        })();
                         showToast(bk+" supprimé","#EF4444");
                       }} style={{width:32,height:32,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.18)",borderRadius:8,color:"#EF4444",cursor:"pointer",fontSize:15,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         ×
