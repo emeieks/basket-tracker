@@ -2496,17 +2496,17 @@ function MesParisView({
 
 
 // ── Optimise URL photo joueur pour affichage miniature ───────────────────────
-function optimizePhotoUrl(url){
+function optimizePhotoUrl(url, size=120){
   if(!url) return url;
-  // Supabase Storage → toujours garder l'URL originale (pleine qualité)
-  if(url.includes(SUPA_URL)) return url;
-  // NBA CDN : garder 1040x760 pour qualité Retina
-  if(url.includes("cdn.nba.com/headshots/nba/latest/1040x760/")){
-    return url;
+  // Supabase Storage → utiliser le transform pour servir à la bonne taille
+  if(url.includes(SUPA_URL)&&url.includes("/storage/v1/object/public/")){
+    // Remplacer /object/public/ par /render/image/public/ avec resize
+    return url.replace("/storage/v1/object/public/","/storage/v1/render/image/public/")
+      +"?width="+size+"&height="+size+"&resize=cover&quality=95";
   }
-  // ESPN full → garder full size, pas de crop via combiner
-  if(url.includes("espncdn.com/i/headshots/nba/players/full/")){
-    return url; // pleine résolution
+  // EuroLeague cortextech/incrowdsports → upgrade résolution
+  if(url.includes("cortextech.io")||url.includes("incrowdsports.com")){
+    return url.replace(/width=\d+/,"width=400").replace(/format=webp/,"format=png");
   }
   return url;
 }
@@ -3906,7 +3906,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                     <button onClick={()=>{setEditingPlayer({key,data,clickY:window.innerHeight/2});setSearchQ("");}}
                       style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                       {data.photo_url?(
-                        <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><CachedImg src={data.photo_url} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}}/></div>
+                        <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1px solid rgba(255,255,255,.06)"}}><CachedImg src={optimizePhotoUrl(data.photo_url,88)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block"}}/></div>
                       ):(
                         <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                           <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -4159,10 +4159,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><CachedImg src={data.photo_url} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}}/></div>
+                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1px solid rgba(255,255,255,.06)"}}><CachedImg src={optimizePhotoUrl(data.photo_url,88)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block"}}/></div>
                               ):(
-                                <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                  <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                                <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  <span style={{fontSize:16,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
                                 </div>
                               )}
                               <div style={{flex:1,minWidth:0}}>
@@ -6004,8 +6004,8 @@ export default function App(){
     <div style={{minHeight:"100vh",background:"#0B1220",fontFamily:"Inter,system-ui,-apple-system,sans-serif",color:"#E5E7EB",paddingBottom:84}}><style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-        img{image-rendering:-webkit-optimize-contrast;image-rendering:high-quality;-webkit-backface-visibility:hidden;backface-visibility:hidden;}
-        img[width="30"],img[width="32"],img[width="36"],img[width="38"],img[width="40"]{will-change:auto;}
+        img{-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-transform:translateZ(0);transform:translateZ(0);}
+        img.player-photo{image-rendering:-webkit-optimize-contrast;}
         input,textarea,select{background:transparent!important;-webkit-appearance:none;appearance:none;color-scheme:dark;}
         .bet-row-tap:active{background:rgba(255,255,255,.02)!important;transition:background .1s;}
         button:active{opacity:.8;transform:scale(.98);transition:all .1s;}
