@@ -2498,16 +2498,7 @@ function MesParisView({
 // ── Optimise URL photo joueur pour affichage miniature ───────────────────────
 function optimizePhotoUrl(url, size=120){
   if(!url) return url;
-  // Supabase Storage → utiliser le transform pour servir à la bonne taille
-  if(url.includes(SUPA_URL)&&url.includes("/storage/v1/object/public/")){
-    // Remplacer /object/public/ par /render/image/public/ avec resize
-    return url.replace("/storage/v1/object/public/","/storage/v1/render/image/public/")
-      +"?width="+size+"&height="+size+"&resize=cover&quality=95";
-  }
-  // EuroLeague cortextech/incrowdsports → upgrade résolution
-  if(url.includes("cortextech.io")||url.includes("incrowdsports.com")){
-    return url.replace(/width=\d+/,"width=400").replace(/format=webp/,"format=png");
-  }
+  // Retourner l'URL originale directement — pas de transform Supabase (plan gratuit)
   return url;
 }
 
