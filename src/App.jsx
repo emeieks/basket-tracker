@@ -7281,21 +7281,13 @@ export default function App(){
             {/* ── DATE & HEURE ── */}
             {!duelMode&&<div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 12px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
               <div style={{fontSize:13,fontWeight:700,color:"#ccd3e4",marginBottom:8}}>Date & heure</div>
-              <div style={{position:"relative"}}>
-                {/* Affichage formaté en français */}
-                <div style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(139,92,246,.3)",borderRadius:12,padding:"11px 14px",color:"#E5E7EB",fontSize:14,fontWeight:600,fontFamily:"Inter,sans-serif",pointerEvents:"none",userSelect:"none"}}>
-                  {(()=>{
-                    const dt=form.datetime||nowDT();
-                    // Parser le format YYYY-MM-DDTHH:MM directement sans passer par Date()
-                    const m=dt.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-                    if(!m)return nowDT().replace("T"," à ").slice(0,16).replace("-","/").replace("-","/");
-                    const mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
-                    return parseInt(m[3])+" "+mois[parseInt(m[2])-1]+" "+m[1]+" à "+m[4]+":"+m[5];
-                  })()}
-                </div>
-                {/* Input transparent par-dessus pour ouvrir le picker */}
-                <input type="datetime-local" value={form.datetime||nowDT()} onChange={e=>setForm(f=>({...f,datetime:e.target.value}))}
-                  style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none",background:"transparent",zIndex:10,WebkitAppearance:"none",fontSize:16}}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <input type="date" value={(form.datetime||nowDT()).split("T")[0]}
+                  onChange={e=>{const t=(form.datetime||nowDT()).split("T")[1]||"12:00";setForm(f=>({...f,datetime:e.target.value+"T"+t}));}}
+                  style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(139,92,246,.3)",borderRadius:12,padding:"11px 12px",color:"#E5E7EB",fontSize:15,fontWeight:600,fontFamily:"Inter,sans-serif",outline:"none",colorScheme:"dark",width:"100%",boxSizing:"border-box"}}/>
+                <input type="time" value={(form.datetime||nowDT()).split("T")[1]||"12:00"}
+                  onChange={e=>{const d=(form.datetime||nowDT()).split("T")[0];setForm(f=>({...f,datetime:d+"T"+e.target.value}));}}
+                  style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(139,92,246,.3)",borderRadius:12,padding:"11px 12px",color:"#E5E7EB",fontSize:15,fontWeight:600,fontFamily:"Inter,sans-serif",outline:"none",colorScheme:"dark",width:"100%",boxSizing:"border-box"}}/>
               </div>
             </div>}
 
@@ -7406,20 +7398,41 @@ export default function App(){
                       )}
 
                       {/* Long terme — compétition */}
-                      {tbType==="longtermebets"&&tbTeam&&(
-                        <div>
-                          <div style={{...lbl,marginBottom:8}}>Compétition</div>
-                          <div style={{position:"relative"}}>
-                            <select value={form.tbChampComp||tbLeague} onChange={e=>setForm(f=>({...f,tbChampComp:e.target.value,description:"Champion "+tbTeam+" — "+e.target.value}))}
-                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:13,padding:"14px 40px 14px 16px",color:"#fff",fontSize:16,fontWeight:700,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
-                              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(lg=>(
-                                <option key={lg} value={lg}>{lg}</option>
-                              ))}
-                            </select>
-                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
+                      {tbType==="longtermebets"&&tbTeam&&(()=>{
+                        // Ligues de l'équipe
+                        const teamLeagues=Object.entries(ALL_LEAGUE_TEAMS)
+                          .filter(([lg,teams])=>teams.includes(tbTeam))
+                          .map(([lg])=>lg);
+                        // Coupes qui contiennent cette équipe
+                        const teamCups=(customCups||[]).filter(cup=>
+                          (cup.clubs||[]).some(cl=>cl.name.toLowerCase()===tbTeam.toLowerCase())
+                        );
+                        // Options = ligues + coupes
+                        const allOpts=[...teamLeagues,...teamCups.map(c=>c.name)];
+                        if(allOpts.length===0)allOpts.push(tbLeague||"EuroLeague");
+                        const curVal=form.tbChampComp||tbLeague||allOpts[0];
+                        return(
+                          <div>
+                            <div style={{...lbl,marginBottom:8}}>Compétition</div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                              {allOpts.map(opt=>{
+                                const on=curVal===opt;
+                                const isCup=teamCups.some(c=>c.name===opt);
+                                const cup=teamCups.find(c=>c.name===opt);
+                                return(
+                                  <button key={opt} onClick={()=>setForm(f=>({...f,tbChampComp:opt,description:"Vainqueur "+opt+" ("+tbTeam+")"}))}
+                                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1.5px solid "+(on?(isCup?"rgba(251,191,36,.5)":"rgba(124,58,237,.5)"):"rgba(255,255,255,.1)"),background:on?(isCup?"rgba(251,191,36,.1)":"rgba(124,58,237,.12)"):"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                                    {isCup&&cup&&cup.logo&&<img src={cup.logo} alt="" style={{width:14,height:14,objectFit:"contain"}}/>}
+                                    {!isCup&&<GameLogo game={opt} size={13}/>}
+                                    <span style={{fontSize:12,fontWeight:on?700:500,color:on?(isCup?"#FCD34D":"#a78bfa"):"#9CA3AF"}}>{isCup?"🏆 ":""}{opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {curVal&&<div style={{marginTop:8,fontSize:11,color:"#6B7280"}}>Description : <span style={{color:"#E5E7EB",fontWeight:600}}>Vainqueur {curVal} ({tbTeam})</span></div>}
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* ── COTE — identique page joueur ── */}
                       {tbTeam&&(
@@ -7511,7 +7524,7 @@ export default function App(){
                             + Combiner avec un joueur
                           </button>
                           <button disabled={!canSubmit} onClick={()=>{
-                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague)+" ("+tbTeam+")";
+                            const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague||"EuroLeague")+" ("+tbTeam+")";
                             setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending",tipster:tipsterName||null}));
                             setTimeout(()=>{addBet();setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"}));},0);
                           }} style={{width:"100%",height:58,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
@@ -7641,10 +7654,8 @@ export default function App(){
                               setTeamBetMode(true);
                               setCombineMode(false);
                               if(isCup){
-                                // Pari dans une coupe → long terme avec la coupe comme compétition
-                                // Détecter la ligue de l'équipe pour le game
                                 const teamLeague=Object.entries(ALL_LEAGUE_TEAMS).find(([l,teams])=>teams.includes(name))?.[0]||"EuroLeague";
-                                setForm(f=>({...f,tbLeague:teamLeague,tbTeam:name,player:name,game:teamLeague,description:"Vainqueur "+cupName,tbType:"longtermebets",tbChampComp:cupName}));
+                                setForm(f=>({...f,tbLeague:teamLeague,tbTeam:name,player:name,game:teamLeague,description:"Vainqueur "+cupName+" ("+name+")",tbType:"longtermebets",tbChampComp:cupName}));
                               } else {
                                 setForm(f=>({...f,tbLeague:lg,tbTeam:name,player:name,game:lg,description:"Victoire "+name,tbType:"victoire"}));
                               }
