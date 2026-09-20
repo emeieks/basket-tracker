@@ -7527,11 +7527,24 @@ export default function App(){
               {!form.autoInfo&&!teamBetMode&&(()=>{
                 // Search teams too
                 const uniQ=(form.player||"").toLowerCase().trim();
-                const teamMatches=uniQ.length>=2?
+                // Matches dans les ligues
+                const leagueMatches=uniQ.length>=2?
                   Object.entries(ALL_LEAGUE_TEAMS)
-                    .flatMap(([lg,teams])=>teams.filter(t=>t.toLowerCase().includes(uniQ)).map(t=>({name:t,lg})))
-                    .slice(0,5)
+                    .flatMap(([lg,teams])=>teams.filter(t=>t.toLowerCase().includes(uniQ)).map(t=>({name:t,lg,isCup:false,cupName:null})))
                   :[];
+                // Matches dans les coupes personnalisées
+                const cupMatches=uniQ.length>=2?
+                  (customCups||[]).flatMap(cup=>
+                    (cup.clubs||[]).filter(cl=>cl.name.toLowerCase().includes(uniQ)).map(cl=>({name:cl.name,lg:cup.name,isCup:true,cupName:cup.name,cupLogo:cup.logo}))
+                  )
+                  :[];
+                // Merge — dédupliquer par nom+source, coupes en dernier
+                const seen=new Set();
+                const teamMatches=[...leagueMatches,...cupMatches].filter(m=>{
+                  const k=m.name+"__"+m.lg;
+                  if(seen.has(k))return false;
+                  seen.add(k);return true;
+                }).slice(0,7);
                 return(
                   <div>
                     <div style={{background:"rgba(8,14,28,0.9)",borderRadius:12,border:"1px solid rgba(255,255,255,0.06)",padding:"2px 10px"}}>
@@ -7540,21 +7553,30 @@ export default function App(){
                         setForm(f=>({...f,player:v,autoInfo:pi}));
                       }} allPlayers={allPlayers} activeTourneys={activeTourneys} betFreq={betFreq} onConfirm={()=>{setTimeout(()=>{const el=document.getElementById("kills-select");if(el){el.focus();el.click();}else{const odds=document.getElementById("odds-input-field");if(odds)odds.focus();}},80);}}/>
                     </div>
-                    {/* Suggestions équipes */}
+                    {/* Suggestions équipes + coupes */}
                     {teamMatches.length>0&&(
                       <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:3}}>
-                        {teamMatches.map(({name,lg})=>{
+                        {teamMatches.map(({name,lg,isCup,cupName,cupLogo})=>{
                           const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
                           return(
                             <button key={lg+name} onClick={()=>{
                               setTeamBetMode(true);
                               setCombineMode(false);
-                              setForm(f=>({...f,tbLeague:lg,tbTeam:name,player:name,game:lg,description:"Victoire "+name,tbType:"victoire"}));
+                              if(isCup){
+                                // Pari dans une coupe → long terme par défaut avec nom de la coupe
+                                setForm(f=>({...f,tbLeague:"EuroLeague",tbTeam:name,player:name,game:"EuroLeague",description:"Vainqueur "+cupName,tbType:"longtermebets",tbChampComp:cupName}));
+                              } else {
+                                setForm(f=>({...f,tbLeague:lg,tbTeam:name,player:name,game:lg,description:"Victoire "+name,tbType:"victoire"}));
+                              }
                             }}
-                              style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                              {logo?<img src={logo} alt={name} style={{width:20,height:20,objectFit:"contain",flexShrink:0}}/>:<GameLogo game={lg} size={18}/>}
+                              style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:isCup?"rgba(251,191,36,.06)":"rgba(96,165,250,.06)",border:"1px solid "+(isCup?"rgba(251,191,36,.2)":"rgba(96,165,250,.15)"),borderRadius:10,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                              {isCup?(
+                                cupLogo?<img src={cupLogo} alt={cupName} style={{width:20,height:20,objectFit:"contain",flexShrink:0}}/>:<span style={{fontSize:14}}>🏆</span>
+                              ):(
+                                logo?<img src={logo} alt={name} style={{width:20,height:20,objectFit:"contain",flexShrink:0}}/>:<GameLogo game={lg} size={18}/>
+                              )}
                               <span style={{fontSize:13,fontWeight:600,color:"#E5E7EB",flex:1}}>{name}</span>
-                              <span style={{fontSize:10,color:"#60a5fa",fontWeight:600}}>{lg}</span>
+                              <span style={{fontSize:10,color:isCup?"#FCD34D":"#60a5fa",fontWeight:600}}>{isCup?"🏆 "+lg:lg}</span>
                             </button>
                           );
                         })}
