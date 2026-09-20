@@ -4915,11 +4915,8 @@ export default function App(){
       const bm=localStorage.getItem("v7_bmakers");
       if(bm){
         const saved=JSON.parse(bm);
-        // Fusionner avec DEFAULT_BK pour s assurer que les nouveaux bookmakers par défaut sont présents
-        const merged=[...saved];
-        DEFAULT_BK.forEach(bk=>{if(!merged.includes(bk))merged.push(bk);});
-        setBookmakers(merged);
-        if(merged.length!==saved.length)localStorage.setItem("v7_bmakers",JSON.stringify(merged));
+        // Utiliser exactement la liste sauvegardée — ne pas forcer DEFAULT_BK
+        setBookmakers(saved);
       }
       const bp=localStorage.getItem("v7_bkphotos");
       if(bp){
@@ -5204,11 +5201,9 @@ export default function App(){
         try{
           const a=JSON.parse(appRow.description||"{}");
           if(a.bookmakers&&a.bookmakers.length>0){
-            setBookmakers(prev=>{
-              const merged=[...a.bookmakers];
-              DEFAULT_BK.forEach(bk=>{if(!merged.includes(bk))merged.push(bk);});
-              return merged;
-            });
+            // Utiliser exactement la liste Supabase — respecter les suppressions
+            setBookmakers(a.bookmakers);
+            try{localStorage.setItem("v7_bmakers",JSON.stringify(a.bookmakers));}catch(e){}
           }
           if(a.bkPhotos&&Object.keys(a.bkPhotos).length>0){
             setBkPhotos(prev=>({...prev,...a.bkPhotos}));
@@ -10811,6 +10806,7 @@ export default function App(){
                         if(!window.confirm("Supprimer "+bk+" ?"))return;
                         const filteredBks=bookmakers.filter(x=>x!==bk);
                         setBookmakers(filteredBks);
+                        try{localStorage.setItem("v7_bmakers",JSON.stringify(filteredBks));}catch(e){}
                         pushAppRow({bookmakers:filteredBks,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
                         showToast(bk+" supprimé","#EF4444");
                       }} style={{width:32,height:32,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.18)",borderRadius:8,color:"#EF4444",cursor:"pointer",fontSize:15,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center"}}>
