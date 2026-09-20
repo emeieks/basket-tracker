@@ -4919,31 +4919,93 @@ export default function App(){
           try{ localStorage.setItem("v7_players_cache", JSON.stringify(obj)); }catch(e){}
         }
       }).catch(function(){});
-      const bm=localStorage.getItem("v7_bmakers");
-      if(bm){
-        const saved=JSON.parse(bm);
-        // Utiliser exactement la liste sauvegardée — ne pas forcer DEFAULT_BK
-        setBookmakers(saved);
-      }
+      // localStorage bkphotos cleanup
       const bp=localStorage.getItem("v7_bkphotos");
       if(bp){
         const parsed=JSON.parse(bp);
-        // Supprimer les anciens logos base64 (trop lourds)
         const cleaned={};
-        Object.entries(parsed).forEach(([k,v])=>{
-          if(v&&!v.startsWith("data:"))cleaned[k]=v;
-        });
+        Object.entries(parsed).forEach(([k,v])=>{if(v&&!v.startsWith("data:"))cleaned[k]=v;});
         setBkPhotos(cleaned);
-        // Réécrire le localStorage sans les base64
         try{localStorage.setItem("v7_bkphotos",JSON.stringify(cleaned));}catch(e){}
       }
-      const tv=localStorage.getItem("v7_tourneys"); if(tv)setActiveTourneys(JSON.parse(tv));
-      const stv=localStorage.getItem("v7_saved_tourneys"); if(stv)setSavedTourneys(JSON.parse(stv));
-      // Restaurer le BK sticky de la session précédente
+      // BK sticky
       const sbk=localStorage.getItem("v7_sticky_bk");
-      if(sbk){const d=JSON.parse(sbk);setStickyBK(d.active||false);setForm(f=>({...f,bookmaker:d.bk||""}));}
+      if(sbk){try{const d=JSON.parse(sbk);setStickyBK(d.active||false);setForm(f=>({...f,bookmaker:d.bk||""}));}catch(e){}}
     }catch(e){}
-    setLoaded(true);
+
+    // ── Pull Supabase EN PREMIER avant setLoaded ──────────────────────────────
+    // Note: useEffect n'est pas async → wrapper dans une IIFE async
+    const _initFromSupa=async()=>{
+    if(SUPA_URL&&SUPA_KEY){
+      try{
+        // 1. Fetch settings rows SÉPARÉMENT (garantit qu'elles sont trouvées)
+        const settingsRes=await fetch(
+          SUPA_URL+"/rest/v1/bets?player=in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\")&select=*",
+          {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
+        );
+        if(settingsRes.ok){
+          const settingsRows=await settingsRes.json();
+
+          // Settings tourneys (coupes, tipsters, tournois, etc.)
+          const settingsRow=settingsRows.find(b=>b.player==="__SETTINGS__");
+          if(settingsRow){
+            try{
+              const s=JSON.parse(settingsRow.description||"{}");
+              if(s.activeTourneys&&Object.keys(s.activeTourneys).length>0)setActiveTourneys(s.activeTourneys);
+              if(s.savedTourneys&&Object.keys(s.savedTourneys).length>0)setSavedTourneys(s.savedTourneys);
+              if(s.mibActive!==undefined)setMibActive(!!s.mibActive);
+              if(s.mibDate)setMibDate(s.mibDate);
+              if(s.savedTipsters&&s.savedTipsters.length>0)setSavedTipsters(s.savedTipsters);
+              if(s.customCups&&s.customCups.length>0){
+                setCustomCups(s.customCups);
+                try{localStorage.setItem("v7_custom_cups",JSON.stringify(s.customCups));}catch(e){}
+              }
+              if(s.customClubs&&s.customClubs.length>0){
+                setCustomClubs(s.customClubs);
+                try{localStorage.setItem("v7_custom_clubs",JSON.stringify(s.customClubs));}catch(e){}
+                s.customClubs.forEach(club=>{
+                  (club.leagues||[]).forEach(lg=>{if(!ALL_LEAGUE_TEAMS[lg])ALL_LEAGUE_TEAMS[lg]=[];if(!ALL_LEAGUE_TEAMS[lg].includes(club.name))ALL_LEAGUE_TEAMS[lg].push(club.name);});
+                  if(club.logo){TEAM_LOGOS[club.name]=club.logo;EL_TEAM_LOGOS[club.name]=club.logo;}
+                });
+              }
+            }catch(e){}
+          }
+
+          // Settings app (bookmakers, bankroll, etc.)
+          const appRow=settingsRows.find(b=>b.player==="__SETTINGS_APP__");
+          if(appRow){
+            try{
+              const a=JSON.parse(appRow.description||"{}");
+              if(a.bookmakers&&a.bookmakers.length>0){
+                setBookmakers(a.bookmakers);
+                try{localStorage.setItem("v7_bmakers",JSON.stringify(a.bookmakers));}catch(e){}
+              }
+              if(a.bkPhotos&&Object.keys(a.bkPhotos).length>0)setBkPhotos(prev=>({...prev,...a.bkPhotos}));
+              if(a.bankroll!=null&&a.bankroll>0)setBankroll(a.bankroll);
+              if(a.depots&&a.depots.length>0)setDepots(a.depots);
+              if(a.tipsterPhotos&&Object.keys(a.tipsterPhotos).length>0)setTipsterPhotos(prev=>({...prev,...a.tipsterPhotos}));
+              if(a.hiddenBKs&&a.hiddenBKs.length>0)setHiddenBKs(new Set(a.hiddenBKs));
+              if(a.blacklist&&a.blacklist.length>0)setBlacklist(new Set(a.blacklist));
+              if(a.simManual&&Object.keys(a.simManual).length>0)setSimManual(prev=>({...prev,...a.simManual}));
+            }catch(e){}
+          }
+
+          // BK photos row dédiée
+          const bkPhotosRow=settingsRows.find(b=>b.player==="__SETTINGS_BKPHOTOS__");
+          if(bkPhotosRow){
+            try{const photos=JSON.parse(bkPhotosRow.description||"{}");if(Object.keys(photos).length>0)setBkPhotos(prev=>({...prev,...photos}));}catch(e){}
+          }
+        }
+
+        setRestoredFromSupa(true);
+      }catch(e){
+        setRestoredFromSupa(true); // offline mode
+      }
+    } else {
+      setRestoredFromSupa(true);
+    }
+    }; // end _initFromSupa
+    _initFromSupa().finally(()=>setLoaded(true));
   },[]);
 
   // Persister stickyBK + bookmaker actif
@@ -5265,7 +5327,7 @@ export default function App(){
   },[showToast]);
 
   // Pull au chargement
-  useEffect(()=>{if(!loaded)return;pullFromSupa(false);},[loaded]);
+  // Note: pull initial déjà fait dans useEffect init — pullFromSupa utilisé pour refresh périodique seulement
 
   // Re-pull quand l app revient au premier plan (iOS background → foreground)
   useEffect(()=>{
