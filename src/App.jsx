@@ -693,7 +693,7 @@ const TEAM_LOGOS = {
   "Recoletas Salud Burgos":  "",
 
   // ── Lega ───────────────────────────────────────────────────────────────────
-  "EA7 Olimpia Milano":      "",
+
   "Virtus Bologna":          "",
   "Dolomiti Energia Trento": "",
   "Umana Reyer Venezia":     "",
@@ -752,8 +752,8 @@ const TEAM_LOGOS = {
   "Crvena zvezda":                  "https://media-cdn.incrowdsports.com/d2eef4a8-62df-4fdd-9076-276004268515.png?width=168&resizeType=fill&format=webp",
   "Maccabi Rapyd Tel Aviv":         "https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png?width=168&resizeType=fill&format=webp",
   "Maccabi Tel Aviv":               "https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png?width=168&resizeType=fill&format=webp",
-  "Olimpia Milano":                 "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgPRhK/c3bed86d-f49c-4459-a7b7-97e4a49d67da.png?width=168&resizeType=fill&format=webp",
-  "EA7 Olimpia Milano":             "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgPRhK/c3bed86d-f49c-4459-a7b7-97e4a49d67da.png?width=168&resizeType=fill&format=webp",
+  "Olimpia Milano":                 "",
+  "EA7 Olimpia Milano":             "",
   "Virtus Olidata Bologna":         "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezvk/a92d4c3b-9f9c-4163-8a10-bcf8fc15893e.png?width=168&resizeType=fill&format=webp",
   "Virtus Bologna":                 "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCiezvk/a92d4c3b-9f9c-4163-8a10-bcf8fc15893e.png?width=168&resizeType=fill&format=webp",
   "Beşiktaş Gain":                  "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
@@ -845,11 +845,11 @@ const EURO_TEAMS={
   // ── ACB (Espagne) ────────────────────────────────────────────────────────
   "ACB":["Real Madrid","FC Barcelona","Kosner Baskonia","Valencia Basket","Unicaja","Joventut Badalona","BAXI Manresa","Casademont Zaragoza","UCAM Murcia","Bilbao Basket","Surne Bilbao","Lenovo Tenerife","Monbus Obradoiro","MoraBanc Andorra","Siblo San Pablo Burgos","Rio Breogan","CB Girona","CB Coruna","Forca Lleida"],
   // ── Lega Basket Serie A (Italie) ─────────────────────────────────────────
-  "Lega":["Olimpia Milano","Umana Reyer Venezia","Virtus Olidata Bologna","Maxima Roma","BC Roma SPQR","Pallacanestro Varese","Baglietto Derthona","Napoli Basketball","Pallacanestro Reggiana","Dolomiti Energia Trento","Nutribullet Treviso","APU Udine","Pallacanestro Trieste","Acqua San Bernardo Cantu","Givova Scafati","Tezenis Verona"],
+  "Lega":["Umana Reyer Venezia","Virtus Olidata Bologna","Maxima Roma","BC Roma SPQR","Pallacanestro Varese","Baglietto Derthona","Napoli Basketball","Pallacanestro Reggiana","Dolomiti Energia Trento","Nutribullet Treviso","APU Udine","Pallacanestro Trieste","Acqua San Bernardo Cantu","Givova Scafati","Tezenis Verona"],
   // ── BBL / Bundesliga (Allemagne) ─────────────────────────────────────────
   "Bundesliga":["Bayern München","Telekom Baskets Bonn","Hamburg Towers","Skyliners Frankfurt","BMA365 Bamberg","NINERS Chemnitz","MHP Riesen Ludwigsburg","Rostock Seawolves","MLP Academics Heidelberg","ratiopharm Ulm","Syntainics MBC","Rasta Vechta","Science City Jena","Tigers Tübingen","BG Göttingen","Giessen 46ers","Löwen Braunschweig","Dresden Titans","Brose Bamberg","Hamburg Towers"],
   // ── EuroLeague 2026-27 (20 équipes officielles Wikipedia) ────────────────
-  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Olimpia Milano","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
+  "EuroLeague":["Real Madrid","FC Barcelona","Fenerbahçe Tarfin","Anadolu Efes","Olympiacos","Panathinaikos AKTOR","Partizan Mozzart Bet","Crvena zvezda Meridianbet","Maccabi Rapyd Tel Aviv","Virtus Olidata Bologna","Beşiktaş Gain","Kosner Baskonia","Bayern München","LDLC ASVEL","Valencia Basket","Paris Basketball","Žalgiris","Dubai Basketball","Hapoel IBI Tel Aviv"],
   // ── EuroCup 2026-27 (32 équipes - Monaco exclu 01/09/2026) ───────────────
   "EuroCup":["JL Bourg","Le Mans Sarthe","Türk Telekom","Skyliners Frankfurt","Budućnost VOLI","U-BT Cluj-Napoca","PAOK","Bahçeşehir Koleji","Cedevita Olimpija","Baglietto Derthona","Aris Thessaloniki","Hapoel Midtown Jerusalem","ratiopharm Ulm","Dolomiti Energia Trento","Neptūnas Klaipeda","La Laguna Tenerife","NINERS Chemnitz","Umana Reyer Venezia","Lietkabelis Panevezys","London Lions","Maxima Roma","BAXI Manresa","Balkan Botevgrad","Šiauliai","Napoli Basketball","Recoletas Salud Burgos","Rostock Seawolves","Śląsk Wrocław","Roma Basketball","Bosna BH Telecom","Rīgas Zeļļi","Tofaş"],
   // ── BCL 2026-27 (30 direct + 2 qualifications) ───────────────────────────
@@ -888,8 +888,7 @@ const MULTI_LEAGUE_CLUBS={
   // ────────────────────────────────────────────────────────────────────────
   // ITALIE - Lega Basket Serie A
   // ────────────────────────────────────────────────────────────────────────
-  "Olimpia Milano":            ["Lega","EuroLeague"],
-  "EA7 Olimpia Milano":        ["Lega","EuroLeague"],
+
   "Virtus Olidata Bologna":    ["Lega","EuroLeague"],
   "Virtus Bologna":            ["Lega","EuroLeague"],
   "Dolomiti Energia Trento":   ["Lega","EuroCup"],
@@ -1121,6 +1120,38 @@ async function pasteImageToSupabase(name){
   });
   if(!res.ok){const e=await res.text();throw new Error(e);}
   return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+}
+
+
+// ── Push immédiat settings app vers Supabase ─────────────────────────────────
+function pushAppRow(data){
+  if(!SUPA_URL||!SUPA_KEY)return;
+  try{
+    let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+    const row={
+      id:"__settings_app__",player:"__SETTINGS_APP__",
+      description:JSON.stringify({...data,overrides:ovSaved}),
+      odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+      datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+      ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null
+    };
+    fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+      headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+      body:JSON.stringify(row)}).catch(()=>{});
+  }catch(e){}
+}
+function pushTourneyRow(data){
+  if(!SUPA_URL||!SUPA_KEY)return;
+  try{
+    const row={id:"__settings_tourneys__",player:"__SETTINGS__",
+      description:JSON.stringify(data),
+      odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+      datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+      ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+    fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+      headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+      body:JSON.stringify(row)}).catch(()=>{});
+  }catch(e){}
 }
 
 // ── Helper Supabase pour données secondaires (components) ────────────────────
@@ -1777,7 +1808,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     const clean=TEAM_LOGOS[cleanTeam]||EL_TEAM_LOGOS[cleanTeam]||NBA_TEAM_LOGOS[cleanTeam]||null;
     if(clean)return clean;
     // Essayer avec les alias (Olympiakos → Olympiacos, etc.)
-    const ALIASES={"Olympiakos":"Olympiacos","Olympiacos Piraeus":"Olympiacos","Panathinaikos":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Fenerbahce":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Anadolu Efes":"Anadolu Efes Istanbul","Zalgiris":"Žalgiris","Zalgiris Kaunas":"Žalgiris","Armani Olimpia Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Bayern Munich":"Bayern München","FC Bayern Munich":"Bayern München","Baskonia":"Kosner Baskonia","ASVEL":"LDLC ASVEL","Real Madrid":"Real Madrid","Barcelona":"FC Barcelona","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Partizan":"Partizan Mozzart Bet","Red Star Belgrade":"Crvena zvezda Meridianbet","Maccabi Tel Aviv":"Maccabi Rapyd Tel Aviv"};
+    const ALIASES={"Olympiakos":"Olympiacos","Olympiacos Piraeus":"Olympiacos","Panathinaikos":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Fenerbahce":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Anadolu Efes":"Anadolu Efes Istanbul","Zalgiris":"Žalgiris","Zalgiris Kaunas":"Žalgiris","Virtus Bologna":"Virtus Olidata Bologna","Bayern Munich":"Bayern München","FC Bayern Munich":"Bayern München","Baskonia":"Kosner Baskonia","ASVEL":"LDLC ASVEL","Real Madrid":"Real Madrid","Barcelona":"FC Barcelona","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Partizan":"Partizan Mozzart Bet","Red Star Belgrade":"Crvena zvezda Meridianbet","Maccabi Tel Aviv":"Maccabi Rapyd Tel Aviv"};
     const aliasTeam=ALIASES[rawTeam]||ALIASES[cleanTeam];
     if(aliasTeam)return TEAM_LOGOS[aliasTeam]||EL_TEAM_LOGOS[aliasTeam]||NBA_TEAM_LOGOS[aliasTeam]||null;
     // Recherche partielle insensible à la casse
@@ -4016,21 +4047,119 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
       {/* Add club modal */}
       {addTeamLeague&&(
-        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)",padding:16}} onClick={()=>setAddTeamLeague(null)}>
-          <div style={{background:"#0d1225",borderRadius:18,padding:"22px 20px",maxWidth:320,width:"100%",border:"1px solid rgba(255,255,255,.1)"}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB",marginBottom:4}}>Ajouter un club</div>
-            <div style={{fontSize:11,color:"#6B7280",marginBottom:14}}>en {addTeamLeague} (club promu, nouveau club...)</div>
-            <input
-              autoFocus
-              placeholder="Nom du club..."
-              value={addTeamName}
-              onChange={e=>setAddTeamName(e.target.value)}
-              onKeyDown={e=>{if(e.key==="Enter")addClub();}}
-              style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"12px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box",marginBottom:12}}
-            />
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <button onClick={()=>setAddTeamLeague(null)} style={{padding:"12px",background:"rgba(255,255,255,.05)",border:"none",borderRadius:12,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
-              <button onClick={addClub} disabled={!addTeamName.trim()} style={{padding:"12px",background:addTeamName.trim()?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:12,color:addTeamName.trim()?"#fff":"#9CA3AF",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Ajouter</button>
+        <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.7)",padding:16}} onClick={()=>{setAddTeamLeague(null);setAddTeamName("");}}>
+          <div style={{background:"#0d1225",borderRadius:18,padding:"20px",maxWidth:360,width:"100%",border:"1px solid rgba(255,255,255,.12)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+              <GameLogo game={addTeamLeague} size={20}/>
+              <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB"}}>Ajouter un club</div>
+              <span style={{fontSize:11,color:"#6B7280",marginLeft:"auto"}}>{addTeamLeague}</span>
+            </div>
+            <div style={{fontSize:11,color:"#6B7280",marginBottom:14}}>Tape le nom du club pour voir les suggestions</div>
+
+            {/* Barre de recherche */}
+            <div style={{position:"relative",marginBottom:8}}>
+              <input
+                autoFocus
+                placeholder="ex: Milan, Real, Bourg..."
+                value={addTeamName}
+                onChange={e=>setAddTeamName(e.target.value)}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"&&addTeamName.trim())addClub();
+                  if(e.key==="Escape"){setAddTeamLeague(null);setAddTeamName("");}
+                }}
+                style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(124,58,237,.4)",borderRadius:12,padding:"12px 14px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+              />
+              {addTeamName&&<button onClick={()=>setAddTeamName("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>}
+            </div>
+
+            {/* Suggestions intelligentes */}
+            {addTeamName.trim().length>=1&&(()=>{
+              const q=addTeamName.trim().toLowerCase();
+              // Chercher dans TOUTES les ligues (pas juste la ligue actuelle)
+              const allMatches=[];
+              const seen=new Set();
+              // D'abord la ligue actuelle
+              Object.entries(ALL_LEAGUE_TEAMS).forEach(([lg,teams])=>{
+                teams.filter(t=>t.toLowerCase().includes(q)).forEach(t=>{
+                  const key=t.toLowerCase();
+                  if(!seen.has(key)){
+                    seen.add(key);
+                    allMatches.push({name:t,lg,current:lg===addTeamLeague});
+                  }
+                });
+              });
+              // Aussi chercher dans EL_TEAM_LOGOS et TEAM_LOGOS (clubs avec logo mais pas dans liste)
+              [...Object.keys(EL_TEAM_LOGOS),...Object.keys(TEAM_LOGOS),...Object.keys(NBA_TEAM_LOGOS)].forEach(t=>{
+                if(t.toLowerCase().includes(q)&&!seen.has(t.toLowerCase())){
+                  seen.add(t.toLowerCase());
+                  allMatches.push({name:t,lg:"?",current:false});
+                }
+              });
+              const sorted=allMatches.sort((a,b)=>{
+                if(a.current&&!b.current)return -1;
+                if(!a.current&&b.current)return 1;
+                return a.name.localeCompare(b.name);
+              }).slice(0,8);
+
+              const alreadyInLeague=(ALL_LEAGUE_TEAMS[addTeamLeague]||[]).some(t=>t.toLowerCase()===q);
+              const exactExists=allMatches.some(m=>m.name.toLowerCase()===q);
+
+              return(
+                <div style={{background:"rgba(8,14,28,.98)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,overflow:"hidden",marginBottom:8,maxHeight:280,overflowY:"auto"}}>
+                  {sorted.map(({name,lg,current})=>{
+                    const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
+                    const inCurrentLeague=(ALL_LEAGUE_TEAMS[addTeamLeague]||[]).includes(name);
+                    return(
+                      <button key={name+lg} onClick={()=>{
+                        setAddTeamName(name);
+                        // Si c'est déjà dans une autre ligue → proposer de l'ajouter directement
+                        if(!inCurrentLeague){
+                          if(!ALL_LEAGUE_TEAMS[addTeamLeague])ALL_LEAGUE_TEAMS[addTeamLeague]=[];
+                          if(!ALL_LEAGUE_TEAMS[addTeamLeague].includes(name)){
+                            ALL_LEAGUE_TEAMS[addTeamLeague].push(name);
+                          }
+                          showToast(name+" ajouté en "+addTeamLeague+" ✓","#22C55E");
+                          setAddTeamName("");setAddTeamLeague(null);
+                        }
+                      }} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.04)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",opacity:inCurrentLeague?0.4:1}}>
+                        <div style={{width:28,height:28,borderRadius:6,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {logo?<img src={logo} alt="" style={{width:24,height:24,objectFit:"contain"}}/>:<span style={{fontSize:13}}>🏀</span>}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:600,color:inCurrentLeague?"#6B7280":"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
+                          <div style={{fontSize:10,color:"#6B7280"}}>{inCurrentLeague?"Déjà dans "+addTeamLeague:lg==="?"?"Logo disponible":lg}</div>
+                        </div>
+                        {!inCurrentLeague&&<span style={{fontSize:10,color:"#22C55E",fontWeight:700,flexShrink:0}}>+ Ajouter</span>}
+                        {inCurrentLeague&&<span style={{fontSize:10,color:"#6B7280",flexShrink:0}}>✓</span>}
+                      </button>
+                    );
+                  })}
+                  {/* Option créer nouveau */}
+                  {!exactExists&&addTeamName.trim().length>=2&&(
+                    <button onClick={addClub} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"rgba(34,197,94,.04)",border:"none",borderTop:"1px solid rgba(34,197,94,.15)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                      <div style={{width:28,height:28,borderRadius:6,background:"rgba(34,197,94,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>+</div>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#22C55E"}}>Créer "{addTeamName.trim()}"</div>
+                        <div style={{fontSize:10,color:"#6B7280"}}>Nouveau club en {addTeamLeague}</div>
+                      </div>
+                    </button>
+                  )}
+                  {sorted.length===0&&addTeamName.trim().length>=2&&(
+                    <button onClick={addClub} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px",background:"rgba(34,197,94,.04)",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                      <span style={{fontSize:20}}>+</span>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#22C55E"}}>Créer "{addTeamName.trim()}"</div>
+                        <div style={{fontSize:10,color:"#6B7280"}}>Aucun club connu trouvé — créer quand même</div>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+              <button onClick={()=>{setAddTeamLeague(null);setAddTeamName("");}} style={{padding:"12px",background:"rgba(255,255,255,.05)",border:"none",borderRadius:12,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+              <button onClick={addClub} disabled={!addTeamName.trim()} style={{padding:"12px",background:addTeamName.trim()?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:12,color:addTeamName.trim()?"#fff":"#6B7280",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Créer nouveau</button>
             </div>
           </div>
         </div>
@@ -4195,6 +4324,129 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── AddClubForm - créer un club avec logo, ligues, coupes ───────────────────
+function AddClubForm({customClubs,setCustomClubs,customCups,showToast,activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters}){
+  const [open,setOpen]=useState(false);
+  const [form,setForm]=useState({name:"",logo:"",leagues:[],cups:[]});
+  const [uploading,setUploading]=useState(false);
+  const [search,setSearch]=useState("");
+  const ALL_LEAGUES_LIST=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+
+  function saveClub(){
+    if(!form.name.trim()){showToast("Donne un nom au club","#F59E0B");return;}
+    const club={id:Date.now(),name:form.name.trim(),logo:form.logo.trim(),leagues:form.leagues,cups:form.cups};
+    const newClubs=[...customClubs,club];
+    setCustomClubs(newClubs);
+    // Injecter dans ALL_LEAGUE_TEAMS en mémoire
+    club.leagues.forEach(lg=>{
+      if(!ALL_LEAGUE_TEAMS[lg])ALL_LEAGUE_TEAMS[lg]=[];
+      if(!ALL_LEAGUE_TEAMS[lg].includes(club.name))ALL_LEAGUE_TEAMS[lg].push(club.name);
+    });
+    if(club.logo){TEAM_LOGOS[club.name]=club.logo;EL_TEAM_LOGOS[club.name]=club.logo;}
+    // Push immédiat localStorage + Supabase
+    try{localStorage.setItem("v7_custom_clubs",JSON.stringify(newClubs));}catch(e){}
+    const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
+    pushTourneyRow({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups,customClubs:newClubs});
+    showToast("🏀 "+club.name+" créé ✓","#22C55E");
+    setForm({name:"",logo:"",leagues:[],cups:[]});
+    setOpen(false);
+  }
+
+  const toggleLeague=(lg)=>setForm(f=>({...f,leagues:f.leagues.includes(lg)?f.leagues.filter(x=>x!==lg):[...f.leagues,lg]}));
+  const toggleCup=(cup)=>setForm(f=>({...f,cups:f.cups.includes(cup)?f.cups.filter(x=>x!==cup):[...f.cups,cup]}));
+
+  return(
+    <div style={{marginBottom:10}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:open?"rgba(34,197,94,.08)":"rgba(255,255,255,.03)",border:"1.5px solid "+(open?"rgba(34,197,94,.3)":"rgba(255,255,255,.08)"),borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:open?10:0}}>
+        <span style={{fontSize:13,fontWeight:700,color:open?"#22C55E":"#E5E7EB"}}>🏀 Créer un club</span>
+        <span style={{fontSize:11,color:"#6B7280"}}>{open?"✕":"▼"}</span>
+      </button>
+      {open&&(
+        <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(34,197,94,.2)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:12}}>
+
+          {/* Nom */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du club *</div>
+            <input autoFocus className="ifield" placeholder="ex: Olimpia Milano" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} style={{marginBottom:0}}/>
+          </div>
+
+          {/* Logo */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Logo</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {form.logo?(
+                <div style={{width:40,height:40,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <img src={form.logo} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>
+                </div>
+              ):(
+                <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.05)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#6B7280"}}>🏀</div>
+              )}
+              <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:12,color:"#60a5fa",fontWeight:600}}>{uploading?"Envoi...":"⬆ Upload"}</span>
+                  <input type="file" accept="image/*" style={{display:"none"}} disabled={uploading} onChange={async e=>{
+                    const file=e.target.files[0];if(!file)return;
+                    setUploading(true);
+                    try{const fn=await supaUploadAvatar(file,"logo_"+(form.name||"club")+"_"+Date.now());const url=AVATARS_BUCKET+encodeURIComponent(fn);setForm(f=>({...f,logo:url}));}
+                    catch(err){alert("Erreur: "+err.message);}
+                    setUploading(false);
+                  }}/>
+                </label>
+                <button onClick={async()=>{try{const url=await pasteImageToSupabase("logo_"+(form.name||"club"));setForm(f=>({...f,logo:url}));}catch(e){alert("📋 "+e.message);}}} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+                  <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>📋 Coller logo</span>
+                </button>
+                <input placeholder="ou colle une URL..." value={form.logo} onChange={e=>setForm(f=>({...f,logo:e.target.value}))} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:9,padding:"7px 12px",color:"#E5E7EB",fontSize:11,fontFamily:"Inter,sans-serif",outline:"none",width:"100%",boxSizing:"border-box"}}/>
+              </div>
+            </div>
+          </div>
+
+          {/* Ligues */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>Ligues</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {ALL_LEAGUES_LIST.map(lg=>{
+                const on=form.leagues.includes(lg);
+                return(
+                  <button key={lg} onClick={()=>toggleLeague(lg)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,border:"1.5px solid "+(on?"rgba(124,58,237,.5)":"rgba(255,255,255,.1)"),background:on?"rgba(124,58,237,.15)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                    <GameLogo game={lg} size={12}/>
+                    <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#a78bfa":"#9CA3AF"}}>{lg}</span>
+                    {on&&<span style={{fontSize:10,color:"#a78bfa"}}>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Coupes */}
+          {customCups&&customCups.length>0&&(
+            <div>
+              <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>Coupes</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {customCups.map(cup=>{
+                  const on=form.cups.includes(cup.id);
+                  return(
+                    <button key={cup.id} onClick={()=>toggleCup(cup.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,border:"1.5px solid "+(on?"rgba(251,191,36,.5)":"rgba(255,255,255,.1)"),background:on?"rgba(251,191,36,.1)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                      {cup.logo&&<img src={cup.logo} alt="" style={{width:14,height:14,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>}
+                      <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#FCD34D":"#9CA3AF"}}>{cup.name}</span>
+                      {on&&<span style={{fontSize:10,color:"#FCD34D"}}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+            <button onClick={()=>{setOpen(false);setForm({name:"",logo:"",leagues:[],cups:[]});}} style={{padding:"11px",background:"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:"#9CA3AF",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Annuler</button>
+            <button onClick={saveClub} disabled={!form.name.trim()} style={{padding:"11px",background:form.name.trim()?"linear-gradient(135deg,#22C55E,#16A34A)":"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:form.name.trim()?"#fff":"#6B7280",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Créer le club</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4391,6 +4643,7 @@ export default function App(){
   const [suiviOpen,setSuiviOpen]=useState({tournois:true,bookmakers:false,prizepicks:false,coupes:false});
   // Coupes personnalisées: [{id, name, logo, clubs:[{name}]}]
   const [customCups,setCustomCups]=useState(()=>{try{const s=localStorage.getItem("v7_custom_cups");return s?JSON.parse(s):[];}catch(e){return[];}});
+  const [customClubs,setCustomClubs]=useState(()=>{try{const s=localStorage.getItem("v7_custom_clubs");return s?JSON.parse(s):[];}catch(e){return[];}});
   const [modalCup,setModalCup]=useState(false); // false | "new" | cupId (édition)
   const [cupForm,setCupForm]=useState({name:"",logo:"",clubs:[]});
   const [editMises,setEditMises]=useState(false);
@@ -4525,7 +4778,7 @@ export default function App(){
       supaFetchPlayers().then(rows=>{
         if(rows && rows.length > 0) {
           // Aliases pour normaliser les anciens noms d'équipes
-          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Partizan":"Partizan Mozzart Bet","Partizan Mozzart Bet Belgrade":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Armani Olimpia Milan":"Olimpia Milano","AX Armani Exchange Milan":"Olimpia Milano","EA7 Emporio Armani Milan":"Olimpia Milano","EA7 Olimpia Milano":"Olimpia Milano","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
+          const TEAM_ALIASES={"Anadolu Efes Istanbul":"Anadolu Efes","Efes Pilsen":"Anadolu Efes","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Besiktas Istanbul":"Beşiktaş Gain","Besiktas JK":"Beşiktaş Gain","Crvena Zvezda Meridianbet Belgrade":"Crvena zvezda Meridianbet","Crvena zvezda mts":"Crvena zvezda Meridianbet","Red Star Belgrade":"Crvena zvezda Meridianbet","Partizan Belgrade":"Partizan Mozzart Bet","Partizan NIS":"Partizan Mozzart Bet","Partizan":"Partizan Mozzart Bet","Partizan Mozzart Bet Belgrade":"Partizan Mozzart Bet","Maccabi FOX Tel Aviv":"Maccabi Rapyd Tel Aviv","Virtus Bologna":"Virtus Olidata Bologna","Segafredo Virtus Bologna":"Virtus Olidata Bologna","Zalgiris Kaunas":"Žalgiris","Zalgiris":"Žalgiris","FC Bayern Munich":"Bayern München","Bayern Munich":"Bayern München","Asvel Villeurbanne":"LDLC ASVEL","ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Villeurbanne":"LDLC ASVEL","LDLC ASVEL Lyon-Villeurbanne":"LDLC ASVEL","Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Baskonia":"Kosner Baskonia","TD Systems Baskonia":"Kosner Baskonia","Kosner Baskonia Vitoria-Gasteiz":"Kosner Baskonia","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos":"Panathinaikos AKTOR","Olympiacos Piraeus":"Olympiacos","Olympiakos":"Olympiacos","Joventut Badalona":"Asisa Joventut","Joventut":"Asisa Joventut","San Pablo Burgos":"Recoletas Salud Burgos","Recoletas San Pablo Burgos":"Recoletas Salud Burgos","BAXI Manresa":"BAXI Manresa","Kids&Us Manresa":"BAXI Manresa","Manresa":"BAXI Manresa","Cosea JL Bourg":"JL Bourg","JL Bourg-en-Bresse":"JL Bourg","Le Mans":"Le Mans Sarthe","Buducnost VOLI":"Budućnost VOLI","Buducnost":"Budućnost VOLI","Cedevita Olimpija Ljubljana":"Cedevita Olimpija","Hapoel Jerusalem":"Hapoel Midtown Jerusalem","Hapoel Bank Yahav Jerusalem":"Hapoel Midtown Jerusalem","Lietkabelis":"Lietkabelis Panevezys","Neptūnas":"Neptūnas Klaipeda","Neptunas":"Neptūnas Klaipeda","Riga Zelli":"Rīgas Zeļļi","Siauliai":"Šiauliai","Slask Wroclaw":"Śląsk Wrocław","Tofas Bursa":"Tofaş","Turk Telekom":"Türk Telekom","Bahcesehir Koleji":"Bahçeşehir Koleji","Niners Chemnitz":"NINERS Chemnitz","Baglietto Derthona Tortona":"Baglietto Derthona","Derthona Basket":"Baglietto Derthona","Napoli Basket":"Napoli Basketball","Elan Chalon":"Élan Chalon","Strasbourg IG":"SIG Strasbourg","Nanterre":"Nanterre 92","Gravelines Dunkerque":"Gravelines-Dunkerque","BCM Gravelines":"Gravelines-Dunkerque","Peristeri":"Peristeri Betsson","Rytas":"Rytas Vilnius","Slavia Prague":"Slavia Prague ERA NBK"};
 
           const obj = {};
           rows.forEach(p => {
@@ -4678,7 +4931,7 @@ export default function App(){
       try{
         const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
         if(SUPA_URL&&SUPA_KEY){
-          const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+          const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups,customClubs}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
           fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
         }
       }catch(e){}
@@ -4887,6 +5140,27 @@ export default function App(){
               const localIds=new Set((prev||[]).map(c=>c.id));
               const merged=[...(prev||[]),...s.customCups.filter(c=>!localIds.has(c.id))];
               try{localStorage.setItem("v7_custom_cups",JSON.stringify(merged));}catch(e){}
+              return merged;
+            });
+          }
+          // Restore customClubs — merge par id
+          if(s.customClubs&&s.customClubs.length>0){
+            setCustomClubs(prev=>{
+              const localIds=new Set((prev||[]).map(c=>c.id));
+              const merged=[...(prev||[]),...s.customClubs.filter(c=>!localIds.has(c.id))];
+              try{localStorage.setItem("v7_custom_clubs",JSON.stringify(merged));}catch(e){}
+              // Injecter dans ALL_LEAGUE_TEAMS en mémoire
+              merged.forEach(club=>{
+                (club.leagues||[]).forEach(lg=>{
+                  if(!ALL_LEAGUE_TEAMS[lg])ALL_LEAGUE_TEAMS[lg]=[];
+                  if(!ALL_LEAGUE_TEAMS[lg].includes(club.name))ALL_LEAGUE_TEAMS[lg].push(club.name);
+                });
+                if(club.logo){
+                  if(TEAM_LOGOS[club.name]!==undefined)TEAM_LOGOS[club.name]=club.logo;
+                  else TEAM_LOGOS[club.name]=club.logo;
+                  EL_TEAM_LOGOS[club.name]=club.logo;
+                }
+              });
               return merged;
             });
           }
@@ -6002,14 +6276,15 @@ export default function App(){
   }
   function saveBookmaker(){
     if(!newBK.trim())return;
-    setBookmakers(b=>[...b,newBK.trim()]);
-    if(newBKPhoto){
-      const updated={...bkPhotos,[newBK.trim()]:newBKPhoto};
-      setBkPhotos(updated);
-      try{localStorage.setItem("v7_bkphotos",JSON.stringify(updated));}catch(e){}
-    }
+    const newName=newBK.trim();
+    const newBks=[...bookmakers,newName];
+    setBookmakers(newBks);
+    const newPhotos=newBKPhoto?{...bkPhotos,[newName]:newBKPhoto}:bkPhotos;
+    if(newBKPhoto) setBkPhotos(newPhotos);
+    // Push immédiat Supabase
+    pushAppRow({bookmakers:newBks,bkPhotos:newPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
     setNewBK("");setNewBKPhoto("");setModalBK(false);
-    showToast(newBK+" ajouté");
+    showToast(newName+" ajouté");
   }
 
   function toggleArr(arr,setter,val){
@@ -10273,6 +10548,15 @@ export default function App(){
             {/* ── AJOUTER JOUEUR ── */}
             <AddPlayerForm setPlayers={setPlayers} showToast={showToast}/>
 
+            {/* ── CRÉER UN CLUB ── */}
+            <AddClubForm
+              customClubs={customClubs} setCustomClubs={setCustomClubs}
+              customCups={customCups} showToast={showToast}
+              activeTourneys={activeTourneys} savedTourneys={savedTourneys}
+              mibActive={mibActive} mibDate={mibDate} testFilter={testFilter}
+              savedTipsters={savedTipsters}
+            />
+
             {/* ── ÉDIT ── */}
             <LeagueEditor allPlayers={allPlayers} setPlayers={setPlayers} showToast={showToast}/>
 
@@ -10322,6 +10606,7 @@ export default function App(){
                             if(!url) delete updated[editingTipsterPhoto.name];
                             setTipsterPhotos(updated);
                             try{localStorage.setItem("v7_tipster_photos",JSON.stringify(updated));}catch(e){}
+                            pushAppRow({bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos:updated,ppData});
                             showToast(editingTipsterPhoto.name+" photo mise à jour","#A78BFA");
                             setEditingTipsterPhoto(null);
                           }} style={{padding:"11px",background:"linear-gradient(135deg,#7C3AED,#3B82F6)",border:"none",borderRadius:10,color:"#fff",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Enregistrer</button>
@@ -10369,6 +10654,7 @@ export default function App(){
                             const updated=savedTipsters.map(t=>t===tip?n:t);
                             setSavedTipsters(updated);
                             try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                            pushTourneyRow({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:{...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]},savedTipsters:updated,customCups});
                             showToast(tip+" → "+n);
                           }} style={{width:30,height:30,background:"rgba(59,130,246,.08)",border:"1px solid rgba(59,130,246,.2)",borderRadius:7,color:"#3B82F6",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
                           <button onClick={()=>{
@@ -10379,6 +10665,7 @@ export default function App(){
                             const updated=savedTipsters.filter(t=>t!==tip);
                             setSavedTipsters(updated);
                             try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                            pushTourneyRow({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:{...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]},savedTipsters:updated,customCups});
                             showToast(tip+" supprimé","#EF4444");
                           }} style={{width:30,height:30,background:"rgba(239,68,68,.06)",border:"1px solid rgba(239,68,68,.18)",borderRadius:7,color:"#EF4444",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
                         </div>
@@ -10393,6 +10680,7 @@ export default function App(){
                     const updated=[...savedTipsters,n];
                     setSavedTipsters(updated);
                     try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(updated));}catch(e){}
+                    pushTourneyRow({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:{...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]},savedTipsters:updated,customCups});
                     showToast("✓ "+n+" ajouté","#A78BFA");
                   }} style={{width:"100%",padding:"10px",background:"rgba(167,139,250,.08)",border:"1px dashed rgba(167,139,250,.3)",borderRadius:10,color:"#a78bfa",cursor:"pointer",fontSize:13,fontFamily:"Inter,sans-serif",fontWeight:600}}>
                     + Ajouter un tipster
@@ -10414,7 +10702,7 @@ export default function App(){
                     <div style={{padding:"0 14px 14px",borderTop:"1px solid #1F2937"}}>
                       <div style={{marginBottom:10,paddingTop:10}}>
                         <div style={{fontSize:10,color:"#6B7280",marginBottom:6,fontWeight:600}}>Bankroll totale ($)</div>
-                        <input type="number" value={bankroll} onChange={e=>setBankroll(parseFloat(e.target.value)||0)}
+                        <input type="number" value={bankroll} onChange={e=>{const v=parseFloat(e.target.value)||0;setBankroll(v);pushAppRow({bookmakers,bkPhotos,bkAccounts,bankroll:v,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});}}
                           style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:8,padding:"8px 12px",color:"#E5E7EB",fontSize:14,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                       </div>
                       <div style={{fontSize:10,color:"#6B7280",marginBottom:8,fontWeight:600}}>6 cases de mise</div>
@@ -10457,14 +10745,18 @@ export default function App(){
                       </button><button onClick={()=>{
                         const newName=prompt("Nouveau nom pour "+bk+":",bk);
                         if(!newName||!newName.trim()||newName.trim()===bk)return;
-                        setBookmakers(b=>b.map(x=>x===bk?newName.trim():x));
+                        const renamedBks=bookmakers.map(x=>x===bk?newName.trim():x);
+                        setBookmakers(renamedBks);
                         setBets(b=>b.map(bet=>bet.bookmaker===bk?{...bet,bookmaker:newName.trim(),updatedAt:Date.now()}:bet));
+                        pushAppRow({bookmakers:renamedBks,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
                         showToast(bk+" → "+newName.trim());
                       }} style={{width:32,height:32,background:"rgba(59,130,246,0.08)",border:"1px solid rgba(59,130,246,0.2)",borderRadius:8,color:"#3B82F6",cursor:"pointer",fontSize:13,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         ✎
                       </button><button onClick={()=>{
                         if(!window.confirm("Supprimer "+bk+" ?"))return;
-                        setBookmakers(b=>b.filter(x=>x!==bk));
+                        const filteredBks=bookmakers.filter(x=>x!==bk);
+                        setBookmakers(filteredBks);
+                        pushAppRow({bookmakers:filteredBks,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
                         showToast(bk+" supprimé","#EF4444");
                       }} style={{width:32,height:32,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.18)",borderRadius:8,color:"#EF4444",cursor:"pointer",fontSize:15,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         ×
@@ -10989,6 +11281,7 @@ export default function App(){
                   if(!url) delete updated[editingBK.name];
                   setBkPhotos(updated);
                   try{localStorage.setItem("v7_bkphotos",JSON.stringify(updated));}catch(e){}
+                  pushAppRow({bookmakers,bkPhotos:updated,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
                   showToast(editingBK.name+" logo mis à jour","#22C55E");
                   setEditingBK(null);
                 }} style={{padding:"11px",background:"linear-gradient(135deg,#00E676,#0EA5E9)",border:"none",borderRadius:10,color:"#0B1220",fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Enregistrer</button>
