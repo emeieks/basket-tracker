@@ -3513,16 +3513,19 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
       setPlayers(p=>({...p,[playerKey]:updated}));
 
       // ── Si le logo d'équipe a changé → mettre à jour TOUS les joueurs de cette équipe ──
-      if(permanentLogo&&permanentLogo!==playerData.team_logo_url&&team){
+      if(permanentLogo&&team){
         const teammates=Object.entries(allPlayers).filter(([k,p])=>
-          k!==playerKey && p.team===team && (!p.team_logo_url||!p.team_logo_url.includes(SUPA_URL))
+          k!==playerKey && p.team===team
         );
+        // Mettre à jour les maps en mémoire immédiatement
+        EL_TEAM_LOGOS[team]=permanentLogo;
+        TEAM_LOGOS[team]=permanentLogo;
+        NBA_TEAM_LOGOS[team]=permanentLogo;
         if(teammates.length>0){
           // Batch update en arrière-plan
           Promise.allSettled(teammates.map(([k,p])=>
             supaUpsertPlayer({name:k,...p,team_logo_url:permanentLogo})
           )).then(()=>{
-            // Mettre à jour le state local aussi
             setPlayers(prev=>{
               const next={...prev};
               teammates.forEach(([k,p])=>{next[k]={...p,team_logo_url:permanentLogo};});
@@ -4758,11 +4761,12 @@ export default function App(){
           const obj=JSON.parse(cached);
           setPlayers(obj);
           // Mettre à jour les maps de logos depuis le cache local
+          // Seulement si l'URL Supabase est valide ET meilleure que le base64 hardcodé
           Object.values(obj).forEach(p=>{
             if(p.team&&p.team_logo_url&&p.team_logo_url.includes(SUPA_URL)){
-              if(EL_TEAM_LOGOS[p.team]!==undefined) EL_TEAM_LOGOS[p.team]=p.team_logo_url;
-              if(TEAM_LOGOS[p.team]!==undefined) TEAM_LOGOS[p.team]=p.team_logo_url;
-              if(NBA_TEAM_LOGOS[p.team]!==undefined) NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
+              EL_TEAM_LOGOS[p.team]=p.team_logo_url;
+              TEAM_LOGOS[p.team]=p.team_logo_url;
+              NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
             }
           });
           // Précharger toutes les photos via le browser cache HTTP natif
@@ -4831,13 +4835,12 @@ export default function App(){
           setPlayers(obj);
 
           // ── Mettre à jour les maps de logos en mémoire avec les URLs Supabase ──
-          // Si un joueur a un team_logo_url Supabase, il prime sur EL_TEAM_LOGOS/TEAM_LOGOS
+          // L'URL Supabase prime TOUJOURS sur le base64 hardcodé
           Object.values(obj).forEach(p=>{
             if(p.team&&p.team_logo_url&&p.team_logo_url.includes(SUPA_URL)){
-              // Mettre à jour les 3 maps en mémoire
-              if(EL_TEAM_LOGOS[p.team]!==undefined) EL_TEAM_LOGOS[p.team]=p.team_logo_url;
-              if(TEAM_LOGOS[p.team]!==undefined) TEAM_LOGOS[p.team]=p.team_logo_url;
-              if(NBA_TEAM_LOGOS[p.team]!==undefined) NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
+              EL_TEAM_LOGOS[p.team]=p.team_logo_url;
+              TEAM_LOGOS[p.team]=p.team_logo_url;
+              NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
             }
           });
           Object.values(obj).forEach(p=>{
