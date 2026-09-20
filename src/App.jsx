@@ -44,7 +44,7 @@ function CachedImg({src,style,alt="",onError,width,height,...rest}){
       width={width}
       height={height}
       decoding="async"
-      style={{...style,opacity:cached?1:0,transition:cached?undefined:"opacity .15s"}}
+      style={{imageRendering:"high-quality",WebkitFontSmoothing:"antialiased",...style,opacity:cached?1:0,transition:cached?undefined:"opacity .15s"}}
       onLoad={e=>{IMG_CACHE.set(src,true);e.target.style.opacity="1";}}
       onError={e=>{if(onError)onError(e);e.target.style.display="none";}}
       {...rest}
@@ -426,7 +426,7 @@ async function supaRehost(externalUrl, name) {
             if(res.ok) resolve(SUPA_URL+"/storage/v1/object/public/avatars/"+path);
             else resolve(externalUrl);
           }catch(e){resolve(externalUrl);}
-        },"image/png",0.92);
+        },"image/png",0.98);
       }catch(e){resolve(externalUrl);}
     };
     img.onerror=()=>resolve(externalUrl);
@@ -1369,7 +1369,7 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
                 {/* Photo joueur */}
                 <div style={{width:34,height:34,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {p.photo_url
-                    ?<img src={optimizePhotoUrl(p.photo_url)} loading="lazy" style={{width:36,height:36,objectFit:"cover",objectPosition:"50% 0%"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
+                    ?<img src={optimizePhotoUrl(p.photo_url)} loading="lazy" style={{width:36,height:36,objectFit:"cover",objectPosition:"50% 15%"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
                     :<span style={{fontSize:14,fontWeight:700,color:"#6B7280"}}>{key[0].toUpperCase()}</span>
                   }
                 </div>
@@ -2498,14 +2498,15 @@ function MesParisView({
 // ── Optimise URL photo joueur pour affichage miniature ───────────────────────
 function optimizePhotoUrl(url){
   if(!url) return url;
-  // NBA CDN : passer de 1040x760 à 260x190 (même qualité, plus petit, mieux cadrée)
+  // Supabase Storage → toujours garder l'URL originale (pleine qualité)
+  if(url.includes(SUPA_URL)) return url;
+  // NBA CDN : garder 1040x760 pour qualité Retina
   if(url.includes("cdn.nba.com/headshots/nba/latest/1040x760/")){
-    return url // garder 1040x760 - meilleure qualité sur Retina;
+    return url;
   }
-  // ESPN full → ESPN combiner avec crop portrait
+  // ESPN full → garder full size, pas de crop via combiner
   if(url.includes("espncdn.com/i/headshots/nba/players/full/")){
-    const id=url.split("/").pop().replace(".png","");
-    return `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${id}.png&w=200&h=145&scale=crop`;
+    return url; // pleine résolution
   }
   return url;
 }
@@ -3516,7 +3517,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
         {/* Player header */}
         <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
           {photo?(
-            <CachedImg src={photo} width={48} height={48} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}}/>
+            <CachedImg src={photo} width={48} height={48} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 15%",flexShrink:0,border:"2px solid rgba(167,139,250,.3)"}}/>
           ):(
             <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(124,58,237,.2)",border:"2px solid rgba(124,58,237,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <span style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{(playerData.name||playerKey).charAt(0).toUpperCase()}</span>
@@ -3559,7 +3560,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               {photoUrl?(
                 <div style={{position:"relative",flexShrink:0}}>
-                  <img src={photoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
+                  <img src={photoUrl} alt="" width="36" height="36" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 15%",border:"1px solid rgba(255,255,255,.1)"}} onError={e=>e.target.style.display="none"}/>
                   {/* Point statut en bas à droite de la photo */}
                   <span style={{position:"absolute",bottom:0,right:0,width:10,height:10,borderRadius:"50%",background:photoRehostFailed?"#EF4444":photoUrl.includes(SUPA_URL)?"#22C55E":"#FBBF24",border:"2px solid #111827",boxShadow:"0 0 4px "+(photoRehostFailed?"#EF4444":photoUrl.includes(SUPA_URL)?"#22C55E":"#FBBF24")}}/>
                 </div>
@@ -3905,7 +3906,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                     <button onClick={()=>{setEditingPlayer({key,data,clickY:window.innerHeight/2});setSearchQ("");}}
                       style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                       {data.photo_url?(
-                        <CachedImg src={data.photo_url} width={32} height={32} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
+                        <CachedImg src={data.photo_url} width={32} height={32} style={{width:32,height:32,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 15%",flexShrink:0}}/>
                       ):(
                         <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                           <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -4158,7 +4159,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <CachedImg src={data.photo_url} width={30} height={30} style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 0%",flexShrink:0}}/>
+                                <CachedImg src={data.photo_url} width={30} height={30} style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",objectPosition:"50% 15%",flexShrink:0}}/>
                               ):(
                                 <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                   <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -6003,6 +6004,8 @@ export default function App(){
     <div style={{minHeight:"100vh",background:"#0B1220",fontFamily:"Inter,system-ui,-apple-system,sans-serif",color:"#E5E7EB",paddingBottom:84}}><style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        img{image-rendering:-webkit-optimize-contrast;image-rendering:high-quality;-webkit-backface-visibility:hidden;backface-visibility:hidden;}
+        img[width="30"],img[width="32"],img[width="36"],img[width="38"],img[width="40"]{will-change:auto;}
         input,textarea,select{background:transparent!important;-webkit-appearance:none;appearance:none;color-scheme:dark;}
         .bet-row-tap:active{background:rgba(255,255,255,.02)!important;transition:background .1s;}
         button:active{opacity:.8;transform:scale(.98);transition:all .1s;}
@@ -10230,7 +10233,7 @@ export default function App(){
                         <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:14}}>Photo — {editingTipsterPhoto.name}</div>
                         <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
                           {editingTipsterPhoto.url?(
-                            <img src={editingTipsterPhoto.url} alt="" style={{width:40,height:40,borderRadius:10,objectFit:"cover",objectPosition:"50% 0%",flexShrink:0,border:"1px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"}/>
+                            <img src={editingTipsterPhoto.url} alt="" style={{width:40,height:40,borderRadius:10,objectFit:"cover",objectPosition:"50% 15%",flexShrink:0,border:"1px solid rgba(167,139,250,.3)"}} onError={e=>e.target.style.display="none"}/>
                           ):(
                             <div style={{width:40,height:40,borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><TipsterIcon size={18} color="#a78bfa"/></div>
                           )}
@@ -10285,7 +10288,7 @@ export default function App(){
                           <button onClick={()=>setEditingTipsterPhoto({name:tip,url:tipPhoto||""})}
                             style={{width:34,height:34,borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer",overflow:"hidden",padding:0}}>
                             {tipPhoto?(
-                              <img src={tipPhoto} alt={tip} style={{width:34,height:34,objectFit:"cover",objectPosition:"50% 0%"}} onError={e=>e.target.style.display="none"}/>
+                              <img src={tipPhoto} alt={tip} style={{width:34,height:34,objectFit:"cover",objectPosition:"50% 15%"}} onError={e=>e.target.style.display="none"}/>
                             ):(
                               <TipsterIcon size={17} color="#a78bfa"/>
                             )}
@@ -10990,7 +10993,7 @@ export default function App(){
                 return(
                   <div style={{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:10,padding:"10px 12px",marginBottom:14}}>
                     <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",position:"relative"}}>
-                      {photo?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 0%"}} onError={e=>e.target.style.display="none"} alt=""/>
+                      {photo?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}} onError={e=>e.target.style.display="none"} alt=""/>
                             :<img src={NBA_LEAGUE_LOGO} style={{width:36,height:36,objectFit:"contain",margin:"4px auto",display:"block"}} alt="NBA"/>}
                       {teamLogo&&<img src={teamLogo} style={{position:"absolute",bottom:0,right:0,width:14,height:14,objectFit:"contain",background:"rgba(0,0,0,.7)",borderRadius:2,padding:1}} onError={e=>e.target.style.display="none"} alt=""/>}
                     </div>
