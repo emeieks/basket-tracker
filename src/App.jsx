@@ -3601,7 +3601,8 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
                       setPhotoUrl(url);
                       setPhotoRehostFailed(false);
                     }else{
-                      alert("Erreur upload Supabase");
+                      const errText=await res.text();
+                      alert("Erreur upload Supabase:\n"+res.status+" — "+errText);
                     }
                   }catch(e){
                     alert("Erreur presse-papier : "+e.message+"\n\nSur iPhone, autorise l'accès au presse-papier quand demandé.");
