@@ -1126,6 +1126,21 @@ async function pasteImageToSupabase(name){
 
 
 // ── Push immédiat settings app vers Supabase ─────────────────────────────────
+function pushBkPhotosRow(bkPhotos){
+  if(!SUPA_URL||!SUPA_KEY)return;
+  try{
+    const row={
+      id:"__settings_bkphotos__",player:"__SETTINGS_BKPHOTOS__",
+      description:JSON.stringify(bkPhotos),
+      odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+      datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+      ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null
+    };
+    fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+      headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+      body:JSON.stringify(row)}).catch(()=>{});
+  }catch(e){}
+}
 function pushAppRow(data){
   if(!SUPA_URL||!SUPA_KEY)return;
   try{
@@ -5171,6 +5186,18 @@ export default function App(){
           }
         }catch(e){}
       }
+      // ── Restore __settings_bkphotos__ (row dédiée) ─────────────────────────────
+      const bkPhotosRow=remote.find(b=>b.player==="__SETTINGS_BKPHOTOS__");
+      if(bkPhotosRow){
+        try{
+          const photos=JSON.parse(bkPhotosRow.description||"{}");
+          if(Object.keys(photos).length>0){
+            setBkPhotos(prev=>({...prev,...photos}));
+            try{localStorage.setItem("v7_bkphotos",JSON.stringify({...bkPhotos,...photos}));}catch(e){}
+          }
+        }catch(e){}
+      }
+
       // ── Restore __settings_app__ ──────────────────────────────────────────────
       const appRow=remote.find(b=>b.player==="__SETTINGS_APP__");
       if(appRow){
@@ -6287,6 +6314,7 @@ export default function App(){
     const newPhotos=newBKPhoto?{...bkPhotos,[newName]:newBKPhoto}:bkPhotos;
     if(newBKPhoto) setBkPhotos(newPhotos);
     // Push immédiat Supabase
+    if(newBKPhoto) pushBkPhotosRow(newPhotos);
     pushAppRow({bookmakers:newBks,bkPhotos:newPhotos,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
     setNewBK("");setNewBKPhoto("");setModalBK(false);
     showToast(newName+" ajouté");
@@ -11286,6 +11314,7 @@ export default function App(){
                   if(!url) delete updated[editingBK.name];
                   setBkPhotos(updated);
                   try{localStorage.setItem("v7_bkphotos",JSON.stringify(updated));}catch(e){}
+                  pushBkPhotosRow(updated);
                   pushAppRow({bookmakers,bkPhotos:updated,bkAccounts,bankroll,depots,hiddenBKs:[...hiddenBKs],stickyBK,lockedStatus,hiddenAnalyseBets:[...hiddenAnalyseBets],blacklist:[...blacklist],simManual,tipsterPhotos,ppData});
                   showToast(editingBK.name+" logo mis à jour","#22C55E");
                   setEditingBK(null);
