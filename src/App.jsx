@@ -2590,7 +2590,7 @@ function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
               return(
                 <button key={p.name} onClick={()=>toggleOut(p.name)}
                   style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:20,border:"1.5px solid "+(isOut?"rgba(239,68,68,.6)":"rgba(255,255,255,.08)"),background:isOut?"rgba(239,68,68,.12)":"rgba(255,255,255,.02)",color:isOut?"#f87171":"#8a9eb8",fontSize:11,fontWeight:isOut?700:500,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
-                  {p.photo_url&&<div style={{width:18,height:18,borderRadius:"50%",overflow:"hidden",flexShrink:0}}><img src={p.photo_url} loading="lazy" style={{width:36,height:36,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
+                  {p.photo_url&&<div style={{width:18,height:18,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><img src={p.photo_url} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
                   {isOut?" ":""}{capName(p.name)}
                 </button>
               );
@@ -2839,7 +2839,7 @@ function AnnonceNBATracker({bets,allPlayers}){
               {filteredPlayers.map(p=>(
                 <button key={p.name} onClick={()=>{setQuery(p.name);setOwnTeam(p.team||"");setForm(f=>({...f,player:p.name,outPlayers:[]}));}}
                   style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 12px",background:"rgba(10,14,28,.99)",border:"none",borderBottom:"1px solid rgba(255,255,255,.05)",color:"#E5E7EB",fontFamily:"Inter,sans-serif",cursor:"pointer",textAlign:"left"}}>
-                  {p.photo_url&&<div style={{width:26,height:26,borderRadius:"50%",overflow:"hidden",flexShrink:0}}><img src={p.photo_url} loading="lazy" style={{width:52,height:52,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
+                  {p.photo_url&&<div style={{width:26,height:26,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><img src={p.photo_url} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
                   <div><div style={{fontWeight:700,fontSize:13}}>{p.name}</div><div style={{fontSize:10,color:"#6B7280"}}>{p.team} · {p.role}</div></div>
                 </button>
               ))}
@@ -3340,7 +3340,7 @@ function PariCombineView({bets,allPlayers,bookmakers,bkPhotos,BK_LOGOS,showToast
             <div style={{position:"absolute",zIndex:50,left:0,right:0,border:"1px solid rgba(255,255,255,.1)",borderRadius:8,marginTop:4,background:"#0D1526",overflow:"hidden",maxHeight:240,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,.5)"}}>
               {searchResults.map(p=>(
                 <button key={p.name} onClick={()=>addPlayerToCombo(p)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.05)",color:"#E5E7EB",fontFamily:"Inter,sans-serif",cursor:"pointer",textAlign:"left"}}>
-                  {p.photo_url&&<div style={{width:28,height:28,borderRadius:"50%",overflow:"hidden",flexShrink:0}}><img src={p.photo_url} loading="lazy" style={{width:56,height:56,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
+                  {p.photo_url&&<div style={{width:28,height:28,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><img src={p.photo_url} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}} onError={e=>e.target.parentElement.style.display="none"} alt=""/></div>}
                   <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,textTransform:"capitalize"}}>{p.name}</div><div style={{fontSize:10,color:"#6B7280"}}>{p.team} · {p.game} · {p.role}</div></div>
                   <span style={{fontSize:11,color:"#a78bfa",fontWeight:700,flexShrink:0}}>+ Ajouter</span>
                 </button>
@@ -3517,7 +3517,7 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
         {/* Player header */}
         <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
           {photo?(
-            <div style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid rgba(167,139,250,.3)",background:"rgba(124,58,237,.08)"}}><CachedImg src={photo} width={96} height={96} style={{width:96,height:96,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left"}}/></div>
+            <div style={{width:48,height:48,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid rgba(167,139,250,.3)",background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><CachedImg src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}}/></div>
           ):(
             <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(124,58,237,.2)",border:"2px solid rgba(124,58,237,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <span style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{(playerData.name||playerKey).charAt(0).toUpperCase()}</span>
@@ -3906,7 +3906,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                     <button onClick={()=>{setEditingPlayer({key,data,clickY:window.innerHeight/2});setSearchQ("");}}
                       style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
                       {data.photo_url?(
-                        <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",flexShrink:0}}><CachedImg src={data.photo_url} width={64} height={64} style={{width:64,height:64,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left",imageRendering:"high-quality"}}/></div>
+                        <div style={{width:32,height:32,borderRadius:"50%",overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><CachedImg src={data.photo_url} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}}/></div>
                       ):(
                         <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                           <span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
@@ -4159,9 +4159,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)"}}>
-                                <CachedImg src={data.photo_url} width={60} height={60} style={{width:60,height:60,objectFit:"cover",objectPosition:"50% 15%",transform:"scale(.5)",transformOrigin:"top left",imageRendering:"high-quality"}}/>
-                              </div>
+                                <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}><CachedImg src={data.photo_url} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%",display:"block"}}/></div>
                               ):(
                                 <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                   <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
