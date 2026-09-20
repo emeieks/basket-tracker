@@ -1104,6 +1104,28 @@ function checkIsTeamBet(b){
   return false;
 }
 
+
+// ── Helper : coller image depuis presse-papier → Supabase ────────────────────
+async function pasteImageToSupabase(name){
+  const items=await navigator.clipboard.read();
+  let blob=null;
+  for(const item of items){
+    const t=item.types.find(x=>x.startsWith("image/"));
+    if(t){blob=await item.getType(t);break;}
+  }
+  if(!blob)throw new Error("Aucune image dans le presse-papier");
+  const ext=blob.type.includes("png")?"png":blob.type.includes("webp")?"webp":"jpg";
+  const safe=(name||"img").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+  const path="photos/players/"+safe+"_"+Date.now()+"."+ext;
+  const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+    method:"POST",
+    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
+    body:blob,
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+}
+
 // ── Helper Supabase pour données secondaires (components) ────────────────────
 // Chaque composant appelle supaSettingsSave(id, data) pour persister dans Supabase
 // et supaSettingsLoad(id) pour récupérer
@@ -3642,15 +3664,13 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
                     try{
                       const filename=await supaUploadAvatar(file,"logo_"+(playerData.team||playerKey));
                       const url=AVATARS_BUCKET+encodeURIComponent(filename);
-                      setTeamLogoUrl(url);
-                      setUploadingLogo(false);
-                    }catch(err){
-                      console.error(err);
-                      setUploadingLogo(false);
-                      alert("Erreur upload: "+err.message);
-                    }
+                      setTeamLogoUrl(url);setUploadingLogo(false);
+                    }catch(err){console.error(err);setUploadingLogo(false);alert("Erreur upload: "+err.message);}
                   }}/>
                 </label>
+                <button onClick={async()=>{setUploadingLogo(true);try{const url=await pasteImageToSupabase("logo_"+(playerData.team||playerKey));setTeamLogoUrl(url);}catch(e){alert("📋 "+e.message);}setUploadingLogo(false);}} disabled={uploadingLogo} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+                  <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>📋 Coller logo</span>
+                </button>
                 <input
                   placeholder="ou colle une URL..."
                   value={teamLogoUrl}
@@ -10500,6 +10520,12 @@ export default function App(){
           const suggestions=search.length>=1
             ?ALL_CLUBS.filter(c=>c.toLowerCase().includes(search)&&!cupForm.clubs.some(x=>x.name===c)).slice(0,6)
             :[];
+          // Ligues qui ont des clubs matchant la recherche
+          const matchLeagues=search.length>=1?Object.entries(ALL_LEAGUE_TEAMS)
+            .filter(([,teams])=>teams.some(t=>t.toLowerCase().includes(search)))
+            .map(([league,teams])=>({league,clubs:teams.filter(t=>t.toLowerCase().includes(search)&&!cupForm.clubs.some(x=>x.name===t))}))
+            .filter(x=>x.clubs.length>0)
+            :[];
           return(
             <div className="moverlay" onClick={()=>setModalCup(false)}>
               <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -10519,7 +10545,22 @@ export default function App(){
                 <div style={{marginBottom:14}}>
                   <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Logo (URL image)</div>
                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    <input className="ifield" value={cupForm.logo} onChange={e=>setCupForm(f=>({...f,logo:e.target.value}))} placeholder="https://…" style={{marginBottom:0,flex:1}}/>
+                    <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+                      <div style={{display:"flex",gap:6}}>
+                        <label style={{display:"flex",alignItems:"center",gap:5,background:"rgba(124,58,237,.1)",border:"1px solid rgba(124,58,237,.25)",borderRadius:9,padding:"7px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+                          <span style={{fontSize:11,color:"#a78bfa",fontWeight:600}}>⬆</span>
+                          <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                            const file=e.target.files[0];if(!file)return;
+                            try{const fn=await supaUploadAvatar(file,"cup_"+(cupForm.name||"coupe"));setCupForm(f=>({...f,logo:AVATARS_BUCKET+encodeURIComponent(fn)}));}
+                            catch(err){alert("Erreur: "+err.message);}
+                          }}/>
+                        </label>
+                        <button onClick={async()=>{try{const url=await pasteImageToSupabase("cup_"+(cupForm.name||"coupe"));setCupForm(f=>({...f,logo:url}));}catch(e){alert("📋 "+e.message);}}} style={{display:"flex",alignItems:"center",gap:5,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:9,padding:"7px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+                          <span style={{fontSize:11,color:"#34d399",fontWeight:600}}>📋</span>
+                        </button>
+                        <input className="ifield" value={cupForm.logo} onChange={e=>setCupForm(f=>({...f,logo:e.target.value}))} placeholder="ou URL…" style={{marginBottom:0,flex:1,fontSize:11}}/>
+                      </div>
+                    </div>
                     {cupForm.logo&&<img src={cupForm.logo} alt="" style={{width:32,height:32,objectFit:"contain",borderRadius:6,border:"1px solid rgba(255,255,255,.1)",flexShrink:0}} onError={e=>e.target.style.opacity="0.2"}/>}
                   </div>
                 </div>
@@ -10546,21 +10587,41 @@ export default function App(){
                     {search&&<button onClick={()=>setCupForm(f=>({...f,_search:""}))} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:16,lineHeight:1}}>×</button>}
                   </div>
 
-                  {/* Suggestions */}
-                  {suggestions.length>0&&(
+                  {/* Suggestions groupées par ligue */}
+                  {(matchLeagues.length>0||search.length>=2)&&(
                     <div style={{background:"rgba(8,14,28,.98)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,overflow:"hidden",marginBottom:8}}>
-                      {suggestions.map(name=>{
-                        const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
-                        return(
-                          <button key={name} onClick={()=>addClubByName(name)}
-                            style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.04)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
-                            <div style={{width:26,height:26,borderRadius:6,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              {logo?<img src={logo} alt="" style={{width:22,height:22,objectFit:"contain"}}/>:<span style={{fontSize:12}}>🏀</span>}
-                            </div>
-                            <span style={{fontSize:13,color:"#E5E7EB",fontWeight:600}}>{name}</span>
-                          </button>
-                        );
-                      })}
+                      {matchLeagues.map(({league,clubs})=>(
+                        <div key={league}>
+                          <div style={{fontSize:9,color:"#6B7280",fontWeight:800,textTransform:"uppercase",letterSpacing:1,padding:"6px 12px 2px",background:"rgba(255,255,255,.02)"}}>{league}</div>
+                          {clubs.slice(0,4).map(name=>{
+                            const logo=TEAM_LOGOS[name]||EL_TEAM_LOGOS[name]||NBA_TEAM_LOGOS[name]||null;
+                            return(
+                              <button key={name} onClick={()=>addClubByName(name)}
+                                style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                                <div style={{width:24,height:24,borderRadius:5,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  {logo?<img src={logo} alt="" style={{width:20,height:20,objectFit:"contain"}}/>:<span style={{fontSize:11}}>🏀</span>}
+                                </div>
+                                <span style={{fontSize:12,color:"#E5E7EB",fontWeight:600}}>{name}</span>
+                                <span style={{fontSize:10,color:"#6B7280",marginLeft:"auto"}}>{league}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                      {/* Option : créer une nouvelle coupe avec ce nom */}
+                      {search.length>=2&&(
+                        <button onClick={()=>{
+                          const newName=cupForm._search.trim();
+                          setModalCup(false);
+                          setTimeout(()=>{
+                            setCupForm({name:newName,logo:"",clubs:[]});
+                            setModalCup("new");
+                          },50);
+                        }} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"rgba(251,191,36,.04)",border:"none",borderTop:"1px solid rgba(251,191,36,.1)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                          <span style={{fontSize:14}}>🏆</span>
+                          <span style={{fontSize:12,color:"#FCD34D",fontWeight:600}}>Créer une coupe "{cupForm._search}"</span>
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -10805,15 +10866,14 @@ export default function App(){
                   <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(124,58,237,.1)",border:"1px solid rgba(124,58,237,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
                     <span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>⬆ Uploader logo</span>
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
-                      const file=e.target.files[0];
-                      if(!file)return;
-                      try{
-                        const filename=await supaUploadAvatar(file,"bk_"+editingBK.name);
-                        const url=AVATARS_BUCKET+encodeURIComponent(filename);
-                        setEditingBK(b=>({...b,logoUrl:url}));
-                      }catch(err){alert("Erreur: "+err.message);}
+                      const file=e.target.files[0];if(!file)return;
+                      try{const filename=await supaUploadAvatar(file,"bk_"+editingBK.name);const url=AVATARS_BUCKET+encodeURIComponent(filename);setEditingBK(b=>({...b,logoUrl:url}));}
+                      catch(err){alert("Erreur: "+err.message);}
                     }}/>
                   </label>
+                  <button onClick={async()=>{try{const url=await pasteImageToSupabase("bk_"+editingBK.name);setEditingBK(b=>({...b,logoUrl:url}));}catch(e){alert("📋 "+e.message);}}} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",width:"100%"}}>
+                    <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>📋 Coller logo</span>
+                  </button>
                   <input
                     autoFocus
                     placeholder="ou colle une URL..."
