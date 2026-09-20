@@ -3451,10 +3451,8 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   async function save(){
     setSaving(true);
     try{
-      // Copier les images externes vers Supabase Storage automatiquement
       const finalPhoto=photoUrl.trim()||playerData.photo_url||null;
       const finalLogo=teamLogoUrl.trim()||playerData.team_logo_url||null;
-      // Rehost si URL externe (canvas → Supabase)
       const [permanentPhoto,permanentLogo]=await Promise.all([
         finalPhoto?supaRehost(finalPhoto,playerKey):Promise.resolve(null),
         finalLogo?supaRehost(finalLogo,"logo_"+(team||playerKey)):Promise.resolve(null),
@@ -4504,6 +4502,14 @@ export default function App(){
         if(cached){
           const obj=JSON.parse(cached);
           setPlayers(obj);
+          // Mettre à jour les maps de logos depuis le cache local
+          Object.values(obj).forEach(p=>{
+            if(p.team&&p.team_logo_url&&p.team_logo_url.includes(SUPA_URL)){
+              if(EL_TEAM_LOGOS[p.team]!==undefined) EL_TEAM_LOGOS[p.team]=p.team_logo_url;
+              if(TEAM_LOGOS[p.team]!==undefined) TEAM_LOGOS[p.team]=p.team_logo_url;
+              if(NBA_TEAM_LOGOS[p.team]!==undefined) NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
+            }
+          });
           // Précharger toutes les photos via le browser cache HTTP natif
           const urls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
           urls.forEach(url=>{
@@ -4569,7 +4575,16 @@ export default function App(){
 
           setPlayers(obj);
 
-          // Précharger toutes les photos (browser cache HTTP)
+          // ── Mettre à jour les maps de logos en mémoire avec les URLs Supabase ──
+          // Si un joueur a un team_logo_url Supabase, il prime sur EL_TEAM_LOGOS/TEAM_LOGOS
+          Object.values(obj).forEach(p=>{
+            if(p.team&&p.team_logo_url&&p.team_logo_url.includes(SUPA_URL)){
+              // Mettre à jour les 3 maps en mémoire
+              if(EL_TEAM_LOGOS[p.team]!==undefined) EL_TEAM_LOGOS[p.team]=p.team_logo_url;
+              if(TEAM_LOGOS[p.team]!==undefined) TEAM_LOGOS[p.team]=p.team_logo_url;
+              if(NBA_TEAM_LOGOS[p.team]!==undefined) NBA_TEAM_LOGOS[p.team]=p.team_logo_url;
+            }
+          });
           Object.values(obj).forEach(p=>{
             if(!p.photo_url||IMG_CACHE.has(p.photo_url))return;
             const img=new Image();img.decoding="async";
@@ -4659,45 +4674,60 @@ export default function App(){
   // Persister tournois actifs + savedTourneys + MIB + testFilter → Supabase
   useEffect(()=>{
     if(!loaded)return;
-    try{
-      const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
-      if(SUPA_URL&&SUPA_KEY){
-        // Row 1 : settings principaux
-        const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
-        fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
-      }
-    }catch(e){}
+    const t=setTimeout(()=>{
+      try{
+        const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
+        if(SUPA_URL&&SUPA_KEY){
+          const settingsRow={id:"__settings_tourneys__",player:"__SETTINGS__",description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups}),odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+          fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(settingsRow)}).catch(function(){});
+        }
+      }catch(e){}
+    },300);
+    return()=>clearTimeout(t);
   },[activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters,customCups,loaded]);
 
   // ── Supabase save : settings app (bookmakers, bkPhotos, bankroll, dépôts, etc.) ──
+  const saveAppSettings=React.useCallback(()=>{
+    if(!loaded||!SUPA_URL||!SUPA_KEY)return;
+    try{
+      let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+      const appRow={
+        id:"__settings_app__",player:"__SETTINGS_APP__",
+        description:JSON.stringify({
+          bookmakers,bkPhotos,bkAccounts,
+          bankroll,depots,
+          overrides:ovSaved,hiddenBKs:[...hiddenBKs],
+          stickyBK,lockedStatus,
+          hiddenAnalyseBets:[...hiddenAnalyseBets],
+          blacklist:[...blacklist],
+          simManual,tipsterPhotos,
+          ppData,
+        }),
+        odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+        datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+        ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null
+      };
+      fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(appRow)}).catch(function(){});
+    }catch(e){}
+  },[bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs,stickyBK,lockedStatus,hiddenAnalyseBets,blacklist,simManual,tipsterPhotos,ppData,loaded]);
+
   useEffect(()=>{
     if(!loaded)return;
-    const t=setTimeout(()=>{
-      try{
-        if(SUPA_URL&&SUPA_KEY){
-          let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
-          const appRow={
-            id:"__settings_app__",player:"__SETTINGS_APP__",
-            description:JSON.stringify({
-              bookmakers,bkPhotos,bkAccounts,
-              bankroll,depots,
-              overrides:ovSaved,hiddenBKs:[...hiddenBKs],
-              stickyBK,lockedStatus,
-              hiddenAnalyseBets:[...hiddenAnalyseBets],
-              blacklist:[...blacklist],
-              simManual,tipsterPhotos,
-              ppData,
-            }),
-            odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
-            datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
-            ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null
-          };
-          fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(appRow)}).catch(function(){});
-        }
-      }catch(e){}
-    },1500);
+    const t=setTimeout(saveAppSettings,300);
     return()=>clearTimeout(t);
-  },[bookmakers,bkPhotos,bkAccounts,bankroll,depots,hiddenBKs,stickyBK,lockedStatus,hiddenAnalyseBets,blacklist,simManual,tipsterPhotos,ppData,loaded]);
+  },[saveAppSettings]);
+
+  // ── Save forcé avant fermeture de page ──
+  useEffect(()=>{
+    if(!loaded)return;
+    const handler=()=>saveAppSettings();
+    window.addEventListener("beforeunload",handler);
+    window.addEventListener("pagehide",handler); // iOS Safari
+    return()=>{
+      window.removeEventListener("beforeunload",handler);
+      window.removeEventListener("pagehide",handler);
+    };
+  },[saveAppSettings]);
 
   // ── Save: localStorage (debounced) ───────────────────────────────────────
   useEffect(()=>{
@@ -10475,7 +10505,25 @@ export default function App(){
                       </div>
                       <button onClick={()=>{setCupForm({name:cup.name,logo:cup.logo,clubs:[...cup.clubs]});setModalCup(cup.id);}}
                         style={{width:32,height:32,background:"rgba(59,130,246,0.08)",border:"1px solid rgba(59,130,246,0.2)",borderRadius:8,color:"#3B82F6",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                      <button onClick={()=>{if(!window.confirm("Supprimer la coupe "+cup.name+" ?"))return;setCustomCups(p=>p.filter(c=>c.id!==cup.id));showToast(cup.name+" supprimée","#EF4444");}}
+                      <button onClick={()=>{if(!window.confirm("Supprimer la coupe "+cup.name+" ?"))return;
+                        const newCups=customCups.filter(c=>c.id!==cup.id);
+                        setCustomCups(newCups);
+                        // Sauvegarder immédiatement
+                        try{
+                          localStorage.setItem("v7_custom_cups",JSON.stringify(newCups));
+                          if(SUPA_URL&&SUPA_KEY){
+                            const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
+                            const row={id:"__settings_tourneys__",player:"__SETTINGS__",
+                              description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups:newCups}),
+                              odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+                              datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+                              ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+                            fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+                              headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+                              body:JSON.stringify(row)}).catch(()=>{});
+                          }
+                        }catch(e){}
+                        showToast(cup.name+" supprimée","#EF4444");}}
                         style={{width:32,height:32,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.18)",borderRadius:8,color:"#EF4444",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
                     </div>
                   ))}
@@ -10532,14 +10580,32 @@ export default function App(){
 
           const saveCup=()=>{
             if(!cupForm.name.trim()){showToast("Donne un nom à la coupe","#F59E0B");return;}
+            let newCups;
             if(isNew){
               const newCup={id:Date.now(),name:cupForm.name.trim(),logo:cupForm.logo.trim(),clubs:cupForm.clubs.filter(c=>c.name.trim())};
-              setCustomCups(p=>[...p,newCup]);
+              newCups=[...customCups,newCup];
+              setCustomCups(newCups);
               showToast("🏆 "+newCup.name+" créée","#FCD34D");
             } else {
-              setCustomCups(p=>p.map(c=>c.id===modalCup?{...c,name:cupForm.name.trim(),logo:cupForm.logo.trim(),clubs:cupForm.clubs.filter(x=>x.name.trim())}:c));
+              newCups=customCups.map(c=>c.id===modalCup?{...c,name:cupForm.name.trim(),logo:cupForm.logo.trim(),clubs:cupForm.clubs.filter(x=>x.name.trim())}:c);
+              setCustomCups(newCups);
               showToast("Coupe mise à jour","#FCD34D");
             }
+            // ── Sauvegarder immédiatement dans Supabase (pas d'attente useEffect) ──
+            try{
+              localStorage.setItem("v7_custom_cups",JSON.stringify(newCups));
+              if(SUPA_URL&&SUPA_KEY){
+                const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
+                const row={id:"__settings_tourneys__",player:"__SETTINGS__",
+                  description:JSON.stringify({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups:newCups}),
+                  odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+                  datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+                  ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+                fetch(SUPA_URL+"/rest/v1/bets",{method:"POST",
+                  headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Prefer":"resolution=merge-duplicates"},
+                  body:JSON.stringify(row)}).catch(()=>{});
+              }
+            }catch(e){}
             setModalCup(false);
           };
           const removeClub=i=>setCupForm(f=>({...f,clubs:f.clubs.filter((_,j)=>j!==i)}));
