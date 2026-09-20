@@ -19,28 +19,19 @@ function CachedImg({src,style,alt="",onError,width,height,...rest}){
   const ref=React.useRef(null);
   React.useEffect(()=>{
     if(!src||!ref.current) return;
-    // Si déjà en cache → afficher immédiatement
     if(IMG_CACHE.has(src)){
       ref.current.src=src;
       ref.current.style.opacity="1";
       return;
     }
-    // Sinon : IntersectionObserver — charger quand visible
-    const obs=new IntersectionObserver(([entry])=>{
-      if(entry.isIntersecting){
-        obs.disconnect();
-        const img=new Image();
-        img.decoding="async";
-        img.onload=()=>{
-          IMG_CACHE.set(src,true);
-          if(ref.current){ref.current.src=src;ref.current.style.opacity="1";}
-        };
-        img.onerror=()=>{if(ref.current)ref.current.style.display="none";};
-        img.src=src;
-      }
-    },{rootMargin:"400px"}); // Précharger 400px avant d'être visible
-    obs.observe(ref.current);
-    return()=>obs.disconnect();
+    const img=new Image();
+    img.decoding="async";
+    img.onload=()=>{
+      IMG_CACHE.set(src,true);
+      if(ref.current){ref.current.src=src;ref.current.style.opacity="1";}
+    };
+    img.onerror=()=>{if(ref.current)ref.current.style.display="none";};
+    img.src=src;
   },[src]);
   return(
     <img
@@ -4489,26 +4480,15 @@ export default function App(){
         if(cached){
           const obj=JSON.parse(cached);
           setPlayers(obj);
-          // Précharger TOUTES les photos immédiatement en parallèle
-          if(typeof window!=="undefined"){
-            const urls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
-            // Batch par 20 pour ne pas saturer le réseau
-            const batchSize=20;
-            const preloadBatch=(start)=>{
-              urls.slice(start,start+batchSize).forEach(url=>{
-                if(IMG_CACHE.has(url))return;
-                const img=new Image();
-                img.decoding="async";
-                img.onload=()=>IMG_CACHE.set(url,true);
-                img.src=url;
-              });
-              if(start+batchSize<urls.length){
-                // Batch suivant dès que possible (rAF pour ne pas bloquer l'UI)
-                requestAnimationFrame(()=>preloadBatch(start+batchSize));
-              }
-            };
-            preloadBatch(0);
-          }
+          // Précharger toutes les photos via le browser cache HTTP natif
+          const urls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
+          urls.forEach(url=>{
+            if(IMG_CACHE.has(url))return;
+            const img=new Image();
+            img.decoding="async";
+            img.onload=()=>IMG_CACHE.set(url,true);
+            img.src=url;
+          });
         }
       }catch(e){}
 
@@ -4565,18 +4545,13 @@ export default function App(){
 
           setPlayers(obj);
 
-          // Précharger toutes les photos en parallèle (batches de 20)
-          const allUrls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
-          const preloadBatch=(start)=>{
-            allUrls.slice(start,start+20).forEach(url=>{
-              if(IMG_CACHE.has(url))return;
-              const img=new Image();img.decoding="async";
-              img.onload=()=>IMG_CACHE.set(url,true);
-              img.src=url;
-            });
-            if(start+20<allUrls.length)requestAnimationFrame(()=>preloadBatch(start+20));
-          };
-          requestAnimationFrame(()=>preloadBatch(0));
+          // Précharger toutes les photos (browser cache HTTP)
+          Object.values(obj).forEach(p=>{
+            if(!p.photo_url||IMG_CACHE.has(p.photo_url))return;
+            const img=new Image();img.decoding="async";
+            img.onload=()=>IMG_CACHE.set(p.photo_url,true);
+            img.src=p.photo_url;
+          });
 
           // Sauvegarder en cache local
           // Migre silencieusement les URLs externes vers Supabase après le chargement
@@ -11811,4 +11786,22 @@ function PPRatioCompiler(){
 
 
 
+}
+
+// ── Service Worker Registration ───────────────────────────────────────────────
+if(typeof window!=="undefined"&&"serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("/sw.js",{scope:"/"})
+      .then(reg=>{
+        reg.addEventListener("updatefound",()=>{
+          const newSW=reg.installing;
+          newSW.addEventListener("statechange",()=>{
+            if(newSW.state==="installed"&&navigator.serviceWorker.controller){
+              newSW.postMessage("SKIP_WAITING");
+            }
+          });
+        });
+      })
+      .catch(err=>console.log("SW error:",err));
+  });
 }
