@@ -18,8 +18,14 @@ function CachedImg({src,style,alt="",onError,width,height,...rest}){
   const cached=IMG_CACHE.has(src);
   const ref=React.useRef(null);
   React.useEffect(()=>{
-    if(cached||!src||!ref.current) return;
-    // IntersectionObserver — charger seulement quand visible
+    if(!src||!ref.current) return;
+    // Si déjà en cache → afficher immédiatement
+    if(IMG_CACHE.has(src)){
+      ref.current.src=src;
+      ref.current.style.opacity="1";
+      return;
+    }
+    // Sinon : IntersectionObserver — charger quand visible
     const obs=new IntersectionObserver(([entry])=>{
       if(entry.isIntersecting){
         obs.disconnect();
@@ -32,10 +38,10 @@ function CachedImg({src,style,alt="",onError,width,height,...rest}){
         img.onerror=()=>{if(ref.current)ref.current.style.display="none";};
         img.src=src;
       }
-    },{rootMargin:"200px"}); // Précharger 200px avant d'être visible
+    },{rootMargin:"400px"}); // Précharger 400px avant d'être visible
     obs.observe(ref.current);
     return()=>obs.disconnect();
-  },[src,cached]);
+  },[src]);
   return(
     <img
       ref={ref}
@@ -44,7 +50,7 @@ function CachedImg({src,style,alt="",onError,width,height,...rest}){
       width={width}
       height={height}
       decoding="async"
-      style={{imageRendering:"high-quality",WebkitFontSmoothing:"antialiased",...style,opacity:cached?1:0,transition:cached?undefined:"opacity .15s"}}
+      style={{imageRendering:"high-quality",WebkitFontSmoothing:"antialiased",...style,opacity:cached?1:0,transition:cached?undefined:"opacity .1s"}}
       onLoad={e=>{IMG_CACHE.set(src,true);e.target.style.opacity="1";}}
       onError={e=>{if(onError)onError(e);e.target.style.display="none";}}
       {...rest}
@@ -4483,13 +4489,25 @@ export default function App(){
         if(cached){
           const obj=JSON.parse(cached);
           setPlayers(obj);
-          // Précharger les photos en arrière-plan dès le cache
+          // Précharger TOUTES les photos immédiatement en parallèle
           if(typeof window!=="undefined"){
-            setTimeout(()=>{
-              Object.values(obj).slice(0,40).forEach(p=>{
-                if(p.photo_url){const i=new Image();i.decoding="async";i.src=p.photo_url;}
+            const urls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
+            // Batch par 20 pour ne pas saturer le réseau
+            const batchSize=20;
+            const preloadBatch=(start)=>{
+              urls.slice(start,start+batchSize).forEach(url=>{
+                if(IMG_CACHE.has(url))return;
+                const img=new Image();
+                img.decoding="async";
+                img.onload=()=>IMG_CACHE.set(url,true);
+                img.src=url;
               });
-            },100);
+              if(start+batchSize<urls.length){
+                // Batch suivant dès que possible (rAF pour ne pas bloquer l'UI)
+                requestAnimationFrame(()=>preloadBatch(start+batchSize));
+              }
+            };
+            preloadBatch(0);
           }
         }
       }catch(e){}
@@ -4547,7 +4565,20 @@ export default function App(){
 
           setPlayers(obj);
 
-          // ── Migration batch photos externes → Supabase Storage (background) ──
+          // Précharger toutes les photos en parallèle (batches de 20)
+          const allUrls=[...new Set(Object.values(obj).map(p=>p.photo_url).filter(Boolean))];
+          const preloadBatch=(start)=>{
+            allUrls.slice(start,start+20).forEach(url=>{
+              if(IMG_CACHE.has(url))return;
+              const img=new Image();img.decoding="async";
+              img.onload=()=>IMG_CACHE.set(url,true);
+              img.src=url;
+            });
+            if(start+20<allUrls.length)requestAnimationFrame(()=>preloadBatch(start+20));
+          };
+          requestAnimationFrame(()=>preloadBatch(0));
+
+          // Sauvegarder en cache local
           // Migre silencieusement les URLs externes vers Supabase après le chargement
           setTimeout(async ()=>{
             const toMigrate=Object.entries(obj).filter(([k,p])=>
