@@ -1933,50 +1933,67 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
           </div>
 
           {/* CLV */}
-          <div style={{margin:"8px 14px 0"}}>
-            <button onClick={()=>setClvOpen(v=>!v)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid rgba(96,165,250,.3)",background:clvOpen?"rgba(96,165,250,.12)":"transparent",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-              📊 CLV {clvValue!==null&&<span style={{color:parseFloat(clvValue)>=0?"#34d399":"#f87171",marginLeft:3}}>{parseFloat(clvValue)>=0?"+":""}{clvValue}%</span>}
+          <div style={{margin:"10px 14px 0"}}>
+            <button onClick={()=>setClvOpen(v=>!v)} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 11px 5px 8px",borderRadius:20,border:"1.5px solid "+(clvOpen?"rgba(99,102,241,.5)":"rgba(99,102,241,.2)"),background:clvOpen?"rgba(99,102,241,.12)":"rgba(99,102,241,.06)",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <polyline points="1,10 4,6 7,8 10,3 13,5" stroke="#818cf8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <circle cx="10" cy="3" r="1.3" fill="#818cf8"/>
+              </svg>
+              <span style={{fontSize:11,fontWeight:800,color:"#818cf8",letterSpacing:.3}}>CLV</span>
+              {clvValue!==null&&(
+                <span style={{fontSize:11,fontWeight:800,color:parseFloat(clvValue)>=0?"#34d399":"#f87171",background:parseFloat(clvValue)>=0?"rgba(52,211,153,.12)":"rgba(248,113,113,.12)",padding:"1px 6px",borderRadius:10,marginLeft:1}}>
+                  {parseFloat(clvValue)>=0?"+":""}{clvValue}%
+                </span>
+              )}
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{marginLeft:1,transition:"transform .15s",transform:clvOpen?"rotate(180deg)":"none"}}>
+                <path d="M1 2.5L4 5.5L7 2.5" stroke="#6366f1" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
             {clvOpen&&(
-              <div style={{marginTop:8,padding:"10px 12px",background:"rgba(8,14,28,.9)",borderRadius:10,border:"1px solid rgba(96,165,250,.2)"}}>
-                <div style={{fontSize:10,color:"#6B7280",marginBottom:8,fontWeight:600}}>Paris: {bet.overUnder} {bet.description} @{bet.odds}</div>
+              <div style={{marginTop:8,padding:"12px",background:"rgba(8,14,28,.95)",borderRadius:12,border:"1px solid rgba(99,102,241,.2)",boxShadow:"0 4px 20px rgba(0,0,0,.4)"}}>
+                <div style={{fontSize:10,color:"#6366f1",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:10}}>Closing Line Value</div>
+                <div style={{fontSize:10,color:"#4a5a6e",marginBottom:10}}>{bet.overUnder} {bet.description} <span style={{color:"#818cf8",fontWeight:700}}>@{bet.odds}</span></div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  <div><div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase"}}>Cut clôture</div>
-                    <input type="number" step="0.5" placeholder="ex: 8.5" value={clvCut} onChange={e=>setClvCut(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"6px 8px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                  <div>
+                    <div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase",letterSpacing:.6}}>Cut clôture</div>
+                    <input type="number" step="0.5" placeholder="ex: 8.5" value={clvCut} onChange={e=>setClvCut(e.target.value)} style={{width:"100%",background:"rgba(99,102,241,.06)",border:"1px solid rgba(99,102,241,.2)",borderRadius:8,padding:"7px 10px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                   </div>
-                  <div><div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase"}}>Cote clôture</div>
-                    <input type="number" step="0.01" placeholder="ex: 1.70" value={clvOdds} onChange={e=>setClvOdds(e.target.value)} style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"6px 8px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                  <div>
+                    <div style={{fontSize:9,color:"#6B7280",marginBottom:4,fontWeight:700,textTransform:"uppercase",letterSpacing:.6}}>Cote clôture</div>
+                    <input type="number" step="0.01" placeholder="ex: 1.70" value={clvOdds} onChange={e=>setClvOdds(e.target.value)} style={{width:"100%",background:"rgba(99,102,241,.06)",border:"1px solid rgba(99,102,241,.2)",borderRadius:8,padding:"7px 10px",color:"#E5E7EB",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                   </div>
                 </div>
                 {clvValue!==null&&(
-                  <div style={{padding:"8px 10px",borderRadius:8,background:parseFloat(clvValue)>=0?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",border:"1px solid "+(parseFloat(clvValue)>=0?"rgba(52,211,153,.3)":"rgba(248,113,113,.3)"),display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div><div style={{fontSize:10,color:"#9CA3AF"}}>CLV (edge vs fermeture)</div>
-                      <button onClick={()=>{if(onSave)onSave({...bet,clvValue:parseFloat(clvValue),clvCutLine:parseFloat(clvCut),clvCutOdds:parseFloat(clvOdds),updatedAt:Date.now()});}} style={{marginTop:4,padding:"2px 8px",background:"rgba(52,211,153,.15)",border:"1px solid rgba(52,211,153,.3)",borderRadius:5,color:"#34d399",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                        💾 Sauvegarder
+                  <div style={{padding:"10px 12px",borderRadius:10,background:parseFloat(clvValue)>=0?"rgba(52,211,153,.08)":"rgba(248,113,113,.08)",border:"1px solid "+(parseFloat(clvValue)>=0?"rgba(52,211,153,.25)":"rgba(248,113,113,.25)"),display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{fontSize:9,color:"#6B7280",fontWeight:600,letterSpacing:.6,textTransform:"uppercase",marginBottom:4}}>Edge vs fermeture</div>
+                      <button onClick={()=>{if(onSave)onSave({...bet,clvValue:parseFloat(clvValue),clvCutLine:parseFloat(clvCut),clvCutOdds:parseFloat(clvOdds),updatedAt:Date.now()});}} style={{padding:"4px 10px",background:"rgba(99,102,241,.15)",border:"1px solid rgba(99,102,241,.3)",borderRadius:6,color:"#818cf8",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                        Sauvegarder
                       </button>
                     </div>
-                    <div style={{fontSize:20,fontWeight:800,color:parseFloat(clvValue)>=0?"#34d399":"#f87171"}}>{parseFloat(clvValue)>=0?"+":""}{clvValue}%</div>
+                    <div style={{fontSize:22,fontWeight:900,color:parseFloat(clvValue)>=0?"#34d399":"#f87171",letterSpacing:-.5}}>{parseFloat(clvValue)>=0?"+":""}{clvValue}%</div>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Ligue / Compétition */}
+          {/* Ligue / Compétition — grille d'icônes */}
           {(()=>{
             const allLeagueOpts=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
             const curGame=bet.game||"?";
             return(
-              <div style={{padding:"10px 14px 4px",display:"flex",flexDirection:"column",gap:6}}>
-                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Ligue / Compétition</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              <div style={{padding:"12px 14px 4px"}}>
+                <div style={{fontSize:9,color:"#4a5a6e",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Ligue / Compétition</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                   {allLeagueOpts.map(lg=>{
                     const on=curGame===lg;
                     return(
                       <button key={lg} onClick={()=>{if(onSave)onSave({...bet,game:lg,league:lg,updatedAt:Date.now()});}}
-                        style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(124,58,237,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.15)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                        <GameLogo game={lg} size={12}/>
-                        <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#a78bfa":"#9CA3AF"}}>{lg}</span>
+                        title={lg}
+                        style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 10px",borderRadius:12,border:"2px solid "+(on?"rgba(124,58,237,.7)":"rgba(255,255,255,.05)"),background:on?"rgba(124,58,237,.12)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .12s",minWidth:44,boxShadow:on?"0 0 12px rgba(124,58,237,.2)":"none"}}>
+                        <GameLogo game={lg} size={22}/>
+                        <span style={{fontSize:9,fontWeight:on?800:500,color:on?"#c4b5fd":"#374151",letterSpacing:.2,whiteSpace:"nowrap"}}>{lg}</span>
                       </button>
                     );
                   })}
@@ -1984,9 +2001,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                     const on=curGame===cup.name;
                     return(
                       <button key={cup.id} onClick={()=>{if(onSave)onSave({...bet,game:cup.name,league:cup.name,updatedAt:Date.now()});}}
-                        style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(251,191,36,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(251,191,36,.1)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                        {cup.logo&&<img src={cup.logo} alt="" style={{width:12,height:12,objectFit:"contain"}}/>}
-                        <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#FCD34D":"#9CA3AF"}}>🏆 {cup.name}</span>
+                        title={cup.name}
+                        style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 10px",borderRadius:12,border:"2px solid "+(on?"rgba(251,191,36,.6)":"rgba(255,255,255,.05)"),background:on?"rgba(251,191,36,.1)":"rgba(255,255,255,.02)",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .12s",minWidth:44,boxShadow:on?"0 0 12px rgba(251,191,36,.2)":"none"}}>
+                        <div style={{width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {cup.logo?<img src={cup.logo} alt="" style={{width:22,height:22,objectFit:"contain"}}/>:<span style={{fontSize:16}}>🏆</span>}
+                        </div>
+                        <span style={{fontSize:9,fontWeight:on?800:500,color:on?"#FCD34D":"#374151",letterSpacing:.2,whiteSpace:"nowrap",maxWidth:52,overflow:"hidden",textOverflow:"ellipsis"}}>{cup.name}</span>
                       </button>
                     );
                   })}
