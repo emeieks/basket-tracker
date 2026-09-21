@@ -471,6 +471,7 @@ async function supaUpsertPlayer(data) {
     avatar_file: data.avatar_file || null,
     team_logo_url: data.team_logo_url || null,
   };
+  if(data.number!=null) payload.number = data.number;
   if (data.id) payload.id = data.id;
   const res = await fetch(SUPA_URL + "/rest/v1/players", {
     method: "POST",
@@ -4052,6 +4053,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
                           {teamLogo&&<img src={teamLogo} alt="" style={{width:11,height:11,objectFit:"contain"}} loading="lazy"/>}
                           <span style={{fontSize:10,color:"#6B7280"}}>{data.team||"Sans équipe"}</span>
+                          {data.number!=null&&<span style={{fontSize:9,color:"#60a5fa",background:"rgba(96,165,250,.1)",padding:"1px 5px",borderRadius:5,fontWeight:800}}>#{data.number}</span>}
                           {data.role&&<span style={{fontSize:9,color:"#a78bfa",background:"rgba(124,58,237,.12)",padding:"1px 5px",borderRadius:6,fontWeight:600}}>{data.role}</span>}
                         </div>
                       </div>
