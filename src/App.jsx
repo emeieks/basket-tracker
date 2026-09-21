@@ -1818,9 +1818,13 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     if(!isTeamBet) return null;
     const rawTeam=bet.player||bet.team||"";
     // Vérifier si c'est un pari dans une coupe → utiliser le logo de la coupe
-    if(bet.description&&(customCups||[]).length>0){
-      // Chercher si le nom d'une coupe apparaît dans la description
-      const matchCup=(customCups||[]).find(c=>bet.description.includes(c.name));
+    if((customCups||[]).length>0){
+      // Chercher par bet.game (le plus fiable) ou dans la description
+      const matchCup=(customCups||[]).find(c=>
+        bet.game===c.name ||
+        bet.league===c.name ||
+        (bet.description&&bet.description.includes(c.name))
+      );
       if(matchCup&&matchCup.logo)return matchCup.logo;
     }
     // Essayer le nom exact d'abord
@@ -5038,9 +5042,11 @@ export default function App(){
             const remoteBets=await betsRes.json();
             if(remoteBets&&remoteBets.length>0){
               const localRaw=localStorage.getItem("v7_bets");
-              const localBets=localRaw?JSON.parse(localRaw):[];
+              const localBets=localRaw?JSON.parse(localRaw).filter(b=>b.player&&!String(b.player).startsWith("__SETTINGS")):[];
+              // Merger : garder la version la plus récente par ID
               const localMap={};localBets.forEach(b=>{localMap[String(b.id)]=b;});
-              const remoteMap={};remoteBets.forEach(b=>{remoteMap[String(b.id)]=b;});
+              const remoteMap={};
+              remoteBets.filter(b=>b.player&&!String(b.player).startsWith("__SETTINGS")).forEach(b=>{remoteMap[String(b.id)]=b;});
               const allIds=new Set([...Object.keys(localMap),...Object.keys(remoteMap)]);
               const merged=[];
               allIds.forEach(id=>{
@@ -6159,7 +6165,7 @@ export default function App(){
     setTimeout(()=>{isSubmittingRef.current=false;},1000);
     const info=findPlayer(f.player)||{game:"?",league:"?",role:"?",team:"?"};
     const stake=parseFloat(f.stake),odds=parseFloat(f.odds);
-    const desc=f.description?f.overUnder+" "+f.description:f.overUnder;
+    const desc=f.description?(f.overUnder?f.overUnder+" "+f.description:f.description):(f.overUnder||"");
     const tname=(()=>{const t=activeTourneys[info.game||f.game];return(t&&(!t.end||new Date(t.end)>=new Date()))?t.name:"";})();
     if(editingBet){
       // Mode édition - remplace le pari existant avec tous les champs
@@ -6236,7 +6242,7 @@ export default function App(){
       return null;
     })();
     const newBet={
-      id:Date.now(),updatedAt:Date.now(),player:form.player,description:desc,overUnder:f.overUnder,
+      id:Date.now()+Math.floor(Math.random()*1000),updatedAt:Date.now(),player:form.player,description:desc,overUnder:f.overUnder,
       odds,stake,bookmaker:f.bookmaker,status:form.status,
       game:f.game||info.game,league:f.league||f.game||info.league,role:info.role,team:info.team,
       datetime:f.datetime||nowDT(),isHeadshot:f.isHeadshot||false,isLive:f.isLive||false,
