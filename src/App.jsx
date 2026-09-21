@@ -6032,21 +6032,26 @@ export default function App(){
     return "NBA";
   },[form.game,form.autoInfo]);
 
-  function addBet(){
-    if(!form.player||!form.odds||!form.stake||!form.bookmaker||!form.description)return;
-    const info=findPlayer(form.player)||{game:"?",league:"?",role:"?",team:"?"};
-    const stake=parseFloat(form.stake),odds=parseFloat(form.odds);
-    const desc=form.description?form.overUnder+" "+form.description:form.overUnder;
-    const tname=(()=>{const t=activeTourneys[info.game];return(t&&(!t.end||new Date(t.end)>=new Date()))?t.name:"";})();
+  const isSubmittingRef=useRef(false);
+  function addBet(overrides={}){
+    const f={...form,...overrides};
+    if(!f.player||!f.odds||!f.stake||!f.bookmaker||!f.description)return;
+    if(isSubmittingRef.current)return;
+    isSubmittingRef.current=true;
+    setTimeout(()=>{isSubmittingRef.current=false;},1000);
+    const info=findPlayer(f.player)||{game:"?",league:"?",role:"?",team:"?"};
+    const stake=parseFloat(f.stake),odds=parseFloat(f.odds);
+    const desc=f.description?f.overUnder+" "+f.description:f.overUnder;
+    const tname=(()=>{const t=activeTourneys[info.game||f.game];return(t&&(!t.end||new Date(t.end)>=new Date()))?t.name:"";})();
     if(editingBet){
       // Mode édition - remplace le pari existant avec tous les champs
-      const newDatetime=form.datetime||nowDT();
-      const ppFinalLineEdit=form.ppDescription||(()=>{
+      const newDatetime=f.datetime||nowDT();
+      const ppFinalLineEdit=f.ppDescription||(()=>{
         const bk=parseFloat(form.description);
-        if(!bk||isNaN(bk)||!form.overUnder||!form.ppMapType)return null;
-        const edge=form.overUnder==="Over"?2.0:2.5;
-        if(form.ppMapType==="H1+H2") return(Math.round((bk*2-edge)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
-        if(form.ppMapType==="Match") return(Math.round((bk-1.5)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
+        if(!bk||isNaN(bk)||!f.overUnder||!f.ppMapType)return null;
+        const edge=f.overUnder==="Over"?2.0:2.5;
+        if(f.ppMapType==="H1+H2") return(Math.round((bk*2-edge)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
+        if(f.ppMapType==="Match") return(Math.round((bk-1.5)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
         return null;
       })();
       const ppEdgeEdit=(()=>{
@@ -6054,24 +6059,24 @@ export default function App(){
         const bk=parseFloat(form.description);
         const pp=parseFloat(ppFinalLineEdit);
         if(isNaN(bk)||isNaN(pp))return null;
-        const ppPerMapE=form.ppMapType==="H1+H2"?pp/2:form.ppMapType==="H1+H2+OT"?pp/3:pp;
-        return parseFloat((form.overUnder==="Over"?ppPerMapE-bk:bk-ppPerMapE).toFixed(2));
+        const ppPerMapE=f.ppMapType==="H1+H2"?pp/2:f.ppMapType==="H1+H2+OT"?pp/3:pp;
+        return parseFloat((f.overUnder==="Over"?ppPerMapE-bk:bk-ppPerMapE).toFixed(2));
       })();
       const updatedBet={
         ...editingBet,
-        player:form.player,description:desc,overUnder:form.overUnder,
-        odds,stake,bookmaker:form.bookmaker,
-        game:form.game||info.game,league:form.league||form.game||info.league,role:info.role,team:info.team,
-        datetime:newDatetime,isHeadshot:form.isHeadshot||false,isLive:form.isLive||false,
-        mapTag:form.mapTag||"",
+        player:form.player,description:desc,overUnder:f.overUnder,
+        odds,stake,bookmaker:f.bookmaker,
+        game:f.game||info.game,league:f.league||f.game||info.league,role:info.role,team:info.team,
+        datetime:newDatetime,isHeadshot:f.isHeadshot||false,isLive:f.isLive||false,
+        mapTag:f.mapTag||"",
         profit:calcProfit(editingBet.status,stake,odds),
         tournament:form.tournament||tname,
         settledAt:editingBet.status!=="pending"?new Date(newDatetime).getTime():(editingBet.settledAt||null),
-        ppMapType:form.ppMapType||null,
+        ppMapType:f.ppMapType||null,
         ppLine:ppFinalLineEdit||null,
         ppEdge:ppEdgeEdit,
       };
-      const editedBK=form.bookmaker;
+      const editedBK=f.bookmaker;
       setBets(b=>{
         const updated=b.map(bet=>bet.id===editingBet.id?updatedBet:bet);
         // Override persistant pour survivre au pull Supabase
@@ -6092,13 +6097,13 @@ export default function App(){
       return;
     }
     // Calcul edge PP
-    const ppFinalLine=form.ppDescription||(()=>{
+    const ppFinalLine=f.ppDescription||(()=>{
       const bk=parseFloat(form.description);
-      if(!bk||isNaN(bk)||!form.overUnder||!form.ppMapType)return null;
-      const edge=form.overUnder==="Over"?2.0:2.5;
-      if(form.ppMapType==="H1+H2") return(Math.round((bk*2-edge)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
-      if(form.ppMapType==="Match") return(Math.round((bk-1.5)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
-      if(form.ppMapType==="H1+H2+OT") return(Math.round((bk*3-(form.overUnder==="Over"?3.0:4.0))*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
+      if(!bk||isNaN(bk)||!f.overUnder||!f.ppMapType)return null;
+      const edge=f.overUnder==="Over"?2.0:2.5;
+      if(f.ppMapType==="H1+H2") return(Math.round((bk*2-edge)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
+      if(f.ppMapType==="Match") return(Math.round((bk-1.5)*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
+      if(f.ppMapType==="H1+H2+OT") return(Math.round((bk*3-(f.overUnder==="Over"?3.0:4.0))*2)/2).toFixed(1)+(form.isHeadshot?" 3 Pts":" Points");
       return null;
     })();
     const ppEdge=(()=>{
@@ -6106,24 +6111,24 @@ export default function App(){
       const bk=parseFloat(form.description);
       const pp=parseFloat(ppFinalLine);
       if(isNaN(bk)||isNaN(pp))return null;
-      const ppPerMap=form.ppMapType==="H1+H2"?pp/2:form.ppMapType==="H1+H2+OT"?pp/3:pp;
+      const ppPerMap=f.ppMapType==="H1+H2"?pp/2:f.ppMapType==="H1+H2+OT"?pp/3:pp;
       // Over: edge = ppPerMap - bk (positive when PP line > bk line)
       // Under: edge = bk - ppPerMap (positive when bk line > PP line)
-      return parseFloat((form.overUnder==="Over"?ppPerMap-bk:bk-ppPerMap).toFixed(2));
+      return parseFloat((f.overUnder==="Over"?ppPerMap-bk:bk-ppPerMap).toFixed(2));
       return null;
     })();
     const newBet={
-      id:Date.now(),updatedAt:Date.now(),player:form.player,description:desc,overUnder:form.overUnder,
-      odds,stake,bookmaker:form.bookmaker,status:form.status,
-      game:form.game||info.game,league:form.league||form.game||info.league,role:info.role,team:info.team,
-      datetime:form.datetime||nowDT(),isHeadshot:form.isHeadshot||false,isLive:form.isLive||false,
-      mapTag:form.mapTag||"",profit:calcProfit(form.status,stake,odds),
+      id:Date.now(),updatedAt:Date.now(),player:form.player,description:desc,overUnder:f.overUnder,
+      odds,stake,bookmaker:f.bookmaker,status:form.status,
+      game:f.game||info.game,league:f.league||f.game||info.league,role:info.role,team:info.team,
+      datetime:f.datetime||nowDT(),isHeadshot:f.isHeadshot||false,isLive:f.isLive||false,
+      mapTag:f.mapTag||"",profit:calcProfit(f.status,stake,odds),
       tournament:tname,
-      ppMapType:form.ppMapType||null,
+      ppMapType:f.ppMapType||null,
       ppLine:ppFinalLine||null,
       ppEdge:ppEdge,
       tipster:tipsterName||null,
-      announceOuts:form.announceOuts||[],
+      announceOuts:f.announceOuts||[],
     };
     if(!lockedTipster)setTipsterName("");
     setBets(b=>{
@@ -6136,10 +6141,10 @@ export default function App(){
     lastPushRef.current=Date.now();
     // Push immédiat vers Supabase (pas d'attente du debounce)
     supaPushBets([newBet]).catch(function(){});
-    const addedBK=form.bookmaker;
+    const addedBK=f.bookmaker;
     setForm(f=>({...EMPTY_FORM(),datetime:nowDT(),bookmaker:stickyBK?f.bookmaker:"",mapTag:f.mapLocked?f.mapTag:"Match",mapLocked:f.mapLocked,status:lockedStatus||"pending"}));
     showToast("Pari enregistré ✓");
-    showBetConfirm(form.status);
+    showBetConfirm(f.status);
     // Filtrer automatiquement par le bookmaker du pari ajouté
     if(addedBK){setFBKs(prev=>prev.includes(addedBK)?prev:[...prev,addedBK]);}
     setView("mesparis");
@@ -7525,8 +7530,22 @@ export default function App(){
                           </button>
                           <button disabled={!canSubmit} onClick={()=>{
                             const finalDesc=tbType==="victoire"?"Victoire "+tbTeam:tbType==="handicap"?tbTeam+" "+tbSign+tbHcp:"Vainqueur "+(form.tbChampComp||tbLeague||"EuroLeague")+" ("+tbTeam+")";
-                            setForm(f=>({...f,player:tbTeam,description:finalDesc,overUnder:"Over",game:tbLeague,tbConfirmed:true,status:f.status||"pending",tipster:tipsterName||null}));
-                            setTimeout(()=>{addBet();setTeamBetMode(false);setForm(f=>({...f,tbTeam:"",tbConfirmed:false,odds:"",stake:"",status:"pending"}));},0);
+                            // Appel direct addBet avec les valeurs du pari équipe
+                            const isTeamLongTerm=tbType==="longtermebets";
+                            const fullDesc=isTeamLongTerm
+                              ?"Vainqueur "+(form.tbChampComp||tbLeague)+" ("+tbTeam+")"
+                              :finalDesc;
+                            addBet({
+                              player:tbTeam,
+                              description:fullDesc,
+                              overUnder:"Over",
+                              game:tbLeague,
+                              league:tbLeague,
+                              tbConfirmed:true,
+                              status:form.status||"pending",
+                              tipster:tipsterName||null,
+                            });
+                            setTeamBetMode(false);
                           }} style={{width:"100%",height:58,background:canSubmit?"linear-gradient(135deg,#7c3aed,#6d5dfc)":"rgba(255,255,255,.04)",border:"none",borderRadius:16,color:canSubmit?"#fff":"rgba(255,255,255,.18)",fontSize:15,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",fontFamily:"Inter,sans-serif",boxShadow:canSubmit?"0 8px 28px rgba(124,58,237,.35)":"none",transition:"all .2s"}}>
                             {canSubmit?"Ajouter à mes paris ✓":"Compléter le formulaire"}
                           </button>
