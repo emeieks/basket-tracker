@@ -1817,6 +1817,13 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   const teamBetLogo=(()=>{
     if(!isTeamBet) return null;
     const rawTeam=bet.player||bet.team||"";
+    // Vérifier si c'est un pari dans une coupe → utiliser le logo de la coupe
+    if(bet.description&&bet.description.startsWith("Vainqueur ")){
+      const desc=bet.description.replace(/^Vainqueur /,"");
+      const cupName=desc.includes(" (")?desc.split(" (")[0]:desc;
+      const cup=(customCups||[]).find(c=>c.name===cupName);
+      if(cup&&cup.logo)return cup.logo;
+    }
     // Essayer le nom exact d'abord
     const direct=TEAM_LOGOS[rawTeam]||EL_TEAM_LOGOS[rawTeam]||NBA_TEAM_LOGOS[rawTeam]||null;
     if(direct)return direct;
@@ -9783,10 +9790,23 @@ export default function App(){
 
               return(
                 <div>
-                  {ALL_GAMES.map(game=>{
-                    const gs=perGameStats[game];
+                  {/* Ligues standards + coupes personnalisées */}
+                  {[...ALL_GAMES,...(customCups||[]).map(c=>c.name)].map(game=>{
+                    const isCupGame=(customCups||[]).some(c=>c.name===game);
+                    const cupObj=isCupGame?(customCups||[]).find(c=>c.name===game):null;
+                    const gs=perGameStats[game]||(isCupGame?(()=>{
+                      const gb=settledFiltered.filter(b=>b.game===game);
+                      if(!gb.length)return null;
+                      const won=gb.filter(b=>b.status==="won").length;
+                      const profit=gb.reduce((s,b)=>s+(b.profit||0),0);
+                      const staked=gb.reduce((s,b)=>s+(b.stake||0),0);
+                      const wr=gb.length?won/gb.length*100:0;
+                      const roi=staked?profit/staked*100:0;
+                      const avgOdds=gb.length?gb.reduce((s,b)=>s+(b.odds||0),0)/gb.length:0;
+                      return{count:gb.length,won,profit,staked,wr,roi,avgOdds,overS:null,underS:null,allPlayers:[],roles:[],tourneys:[]};
+                    })():null);
                     if(!gs)return null;
-                    const cfg=GAME_CFG[game]||{accent:"#9CA3AF"};
+                    const cfg=isCupGame?{accent:"#FCD34D"}:(GAME_CFG[game]||{accent:"#9CA3AF"});
                     const isOpen=!!statsGameOpen[game];
                     const toggle=()=>setStatsGameOpen(s=>({...s,[game]:!s[game]}));
 
@@ -9818,7 +9838,14 @@ export default function App(){
                         {/* Header accordéon */}
                         <button onClick={toggle} style={{width:"100%",display:"flex",flexDirection:"column",background:"#111827",border:"1px solid "+(isOpen?cfg.accent+"55":"#1F2937"),borderRadius:isOpen?"14px 14px 0 0":"14px",padding:"12px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .2s",textAlign:"left"}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                            <div style={{display:"flex",alignItems:"center",gap:8}}><GameLogo game={game} size={20}/><span style={{fontSize:14,fontWeight:800,color:cfg.accent}}>{game}</span><span style={{fontSize:10,color:"#6B7280"}}>{gs.count} paris</span></div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              {isCupGame&&cupObj&&cupObj.logo
+                                ?<img src={cupObj.logo} alt={game} style={{width:20,height:20,objectFit:"contain",flexShrink:0}}/>
+                                :isCupGame?<span style={{fontSize:16}}>🏆</span>
+                                :<GameLogo game={game} size={20}/>}
+                              <span style={{fontSize:14,fontWeight:800,color:cfg.accent}}>{game}</span>
+                              <span style={{fontSize:10,color:"#6B7280"}}>{gs.count} paris</span>
+                            </div>
                             <div style={{display:"flex",alignItems:"center",gap:8}}>
                               <span style={{padding:"2px 8px",borderRadius:6,background:gs.profit>=0?"rgba(34,197,94,.1)":"rgba(239,68,68,.1)",fontSize:11,fontWeight:700,color:gs.profit>=0?"#22C55E":"#EF4444"}}>{gs.profit>=0?"+":""}{gs.profit.toFixed(0)}$</span>
                               <span style={{fontSize:11,color:"#6B7280",transform:isOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▼</span>
