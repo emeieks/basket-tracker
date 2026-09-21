@@ -1818,11 +1818,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     if(!isTeamBet) return null;
     const rawTeam=bet.player||bet.team||"";
     // Vérifier si c'est un pari dans une coupe → utiliser le logo de la coupe
-    if(bet.description&&bet.description.startsWith("Vainqueur ")){
-      const desc=bet.description.replace(/^Vainqueur /,"");
-      const cupName=desc.includes(" (")?desc.split(" (")[0]:desc;
-      const cup=(customCups||[]).find(c=>c.name===cupName);
-      if(cup&&cup.logo)return cup.logo;
+    if(bet.description&&(customCups||[]).length>0){
+      // Chercher si le nom d'une coupe apparaît dans la description
+      const matchCup=(customCups||[]).find(c=>bet.description.includes(c.name));
+      if(matchCup&&matchCup.logo)return matchCup.logo;
     }
     // Essayer le nom exact d'abord
     const direct=TEAM_LOGOS[rawTeam]||EL_TEAM_LOGOS[rawTeam]||NBA_TEAM_LOGOS[rawTeam]||null;
@@ -1884,7 +1883,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
               </span>
               <GameLogo game={bet.game} size={16}/>
               {/* Description stat : seulement pour paris joueur, pas équipe */}
-              {!isTeamBet&&descLine&&(()=>{
+              {descLine&&(()=>{
                 const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
                 if(parts) return(
                   <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>
@@ -5639,6 +5638,8 @@ export default function App(){
     const overByBK={},underByBK={};
     const overByGame={},underByGame={};
     settledFiltered.forEach(b=>{
+      // Exclure les paris équipe des stats Over/Under
+      if(checkIsTeamBet(b))return;
       const isOver=b.overUnder==="Over",isUnder=b.overUnder==="Under";
       if(!isOver&&!isUnder)return;
       const t=isOver?over:under;
@@ -5770,9 +5771,12 @@ export default function App(){
       let hsCnt=0,hsWon=0,hsProfit=0,hsStaked=0;
       let hsNonCnt=0,hsNonWon=0,hsNonProfit=0,hsNonStaked=0;
       const isNBA=(game==="NBA");
-      // Top joueurs
+      // ── Séparer paris joueur vs paris équipe ──────────────────────────────
+      const playerBetsG=gb.filter(b=>!checkIsTeamBet(b));
+      const teamBetsG=gb.filter(b=>checkIsTeamBet(b));
+      // Top joueurs — seulement paris joueur
       const pm={};
-      gb.forEach(b=>{
+      playerBetsG.forEach(b=>{
         if(!pm[b.player])pm[b.player]={player:b.player,count:0,won:0,profit:0,role:b.role||""};
         pm[b.player].count++;pm[b.player].profit+=b.profit;
         if(b.status==="won")pm[b.player].won++;
@@ -5780,9 +5784,9 @@ export default function App(){
       const allPSorted=Object.values(pm).filter(p=>p.count>=1).sort((a,b)=>b.profit-a.profit);
       const topP=allPSorted.slice(0,5);
       const worstP=allPSorted.slice(-5).reverse();
-      // Positions
+      // Positions — seulement paris joueur
       const rm={};
-      gb.forEach(b=>{
+      playerBetsG.forEach(b=>{
         const k=normalizeRole(b.role||"",b.game)||"Inconnu";
         if(!rm[k])rm[k]={role:k,count:0,won:0,profit:0,staked:0};
         rm[k].count++;rm[k].profit+=b.profit;rm[k].staked+=b.stake;
@@ -5874,13 +5878,19 @@ export default function App(){
       // Over/Under stats
       let overCnt=0,overWon=0,overProfit=0,overStaked=0;
       let underCnt=0,underWon=0,underProfit=0,underStaked=0;
-      gb.forEach(b=>{
+      // Over/Under — seulement paris joueur
+      playerBetsG.forEach(b=>{
         if(b.overUnder==="Over"){overCnt++;overProfit+=b.profit;overStaked+=b.stake;if(b.status==="won")overWon++;}
         else if(b.overUnder==="Under"){underCnt++;underProfit+=b.profit;underStaked+=b.stake;if(b.status==="won")underWon++;}
       });
       const overS=overCnt>0?{count:overCnt,won:overWon,profit:overProfit,staked:overStaked,wr:overWon/overCnt*100,roi:overStaked>0?overProfit/overStaked*100:0}:null;
       const underS=underCnt>0?{count:underCnt,won:underWon,profit:underProfit,staked:underStaked,wr:underWon/underCnt*100,roi:underStaked>0?underProfit/underStaked*100:0}:null;
-      result[game]={count:gb.length,won,profit,staked,oddsSum,wr:gb.length>0?won/gb.length*100:0,roi:staked>0?profit/staked*100:0,avgOdds:gb.length>0?oddsSum/gb.length:0,topP,worstP,allPlayers:allPSorted,roles,leagues,maps,tourneys,kills:pointsArr,hs:hsArr,liveS,nonLiveS,hsS,hsNonS,duels:duelsArr,overS,underS};
+      // Stats équipe séparées
+      const vicBetsG=teamBetsG.filter(b=>b.description&&b.description.startsWith("Victoire "));
+      const hcpBetsG=teamBetsG.filter(b=>b.description&&!b.description.startsWith("Victoire ")&&!b.description.startsWith("Vainqueur "));
+      const ltBetsG=teamBetsG.filter(b=>b.description&&b.description.startsWith("Vainqueur "));
+      const calcTeamS=bets=>{if(!bets.length)return null;const c=bets.length,w=bets.filter(b=>b.status==="won").length,p=bets.reduce((s,b)=>s+(b.profit||0),0),st=bets.reduce((s,b)=>s+(b.stake||0),0);return{count:c,won:w,profit:p,staked:st,wr:c>0?w/c*100:0,roi:st>0?p/st*100:0};};
+      result[game]={count:gb.length,won,profit,staked,oddsSum,wr:gb.length>0?won/gb.length*100:0,roi:staked>0?profit/staked*100:0,avgOdds:gb.length>0?oddsSum/gb.length:0,topP,worstP,allPlayers:allPSorted,roles,leagues,maps,tourneys,kills:pointsArr,hs:hsArr,liveS,nonLiveS,hsS,hsNonS,duels:duelsArr,overS,underS,playerCount:playerBetsG.length,teamCount:teamBetsG.length,vicS:calcTeamS(vicBetsG),hcpS:calcTeamS(hcpBetsG),ltS:calcTeamS(ltBetsG)};
     });
     return result;
   },[settledFiltered,allPlayers,customCups]);
@@ -7595,7 +7605,7 @@ export default function App(){
                             addBet({
                               player:tbTeam,
                               description:fullDesc,
-                              overUnder:"Over",
+                              overUnder:"",
                               game:tbLeague,
                               league:tbLeague,
                               tbConfirmed:true,
@@ -10083,6 +10093,7 @@ export default function App(){
               const posBets={};
               POS_LIST.forEach(({key})=>{posBets[key]=[];});
               settledFiltered.forEach(b=>{
+                if(checkIsTeamBet(b))return; // positions = seulement paris joueur
                 const pd=allPlayers[(b.player||"").toLowerCase().trim()];
                 const role=pd&&pd.role&&pd.role.toUpperCase();
                 if(role&&posBets[role])posBets[role].push(b);
