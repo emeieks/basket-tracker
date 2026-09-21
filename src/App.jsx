@@ -185,14 +185,26 @@ function GameLogo({game,size=18}){
       <img src={EL_LOGO_B64} alt="EuroLeague" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );
-  if(game==="Pro A")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBXpNrh-XoYgHEbQOwD6o1oawOHmbDmDjgN5UW5psHuEJ1qG_X1_hUYY8&s=10" alt="Pro A" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
-  if(game==="ACB")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHba4RJ-Vnfw7Tmz6lpvavCaoXCjLzlPExXlEcZJmZHQZmQ21d6oX02y8&s=10" alt="ACB" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="Pro A")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBXpNrh-XoYgHEbQOwD6o1oawOHmbDmDjgN5UW5psHuEJ1qG_X1_hUYY8&s=10" alt="Pro A" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );;
+  if(game==="ACB")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHba4RJ-Vnfw7Tmz6lpvavCaoXCjLzlPExXlEcZJmZHQZmQ21d6oX02y8&s=10" alt="ACB" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );;
   if(game==="Bundesliga")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDW9tDc-bCNxHCLjgIbxlRE4xjZ6qjjKz9pLEpPZ29Vgjr0qMzLm4elEY&s=10" alt="BBL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="Lega")return <img src="https://upload.wikimedia.org/wikipedia/en/9/9d/LegaBasket_Serie_A_Logo.png" alt="Lega" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="EuroCup")return <img src="https://upload.wikimedia.org/wikipedia/en/c/c3/Eurocup_new_logo.png" alt="EuroCup" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
-  if(game==="BCL")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="BCL")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );;
 
-  if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
+  if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:"50%",fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
   const src=L[game];
   if(!src) return null;
   return <img src={src} alt={game} style={{width:size,height:size,objectFit:"cover",display:"block",flexShrink:0}}/>;
@@ -3580,8 +3592,9 @@ function PlayerEditModal({playerKey,playerData,allPlayers,setPlayers,showToast,o
   const [uploadingLogo,setUploadingLogo]=useState(false);
   const [saving,setSaving]=useState(false);
   const [photoRehostFailed,setPhotoRehostFailed]=useState(false);
+  const isNHL=league==="NHL";
   const isNBA=league==="NBA";
-  const positions=isNBA?["PG","SG","SF","PF","C"]:["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
+  const positions=isNHL?["Centre","Ailier Droit","Ailier Gauche","Défenseur Droit","Défenseur Gauche","Gardien"]:isNBA?["PG","SG","SF","PF","C"]:["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
   const teamList=(ALL_LEAGUE_TEAMS[league]||[]).slice().sort();
   const photo=photoUrl||playerData.photo_url||playerData.avatar_url||null;
   const teamLogo=TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
@@ -4616,7 +4629,16 @@ function AddClubForm({customClubs,setCustomClubs,customCups,showToast}){
 // ── AddPlayerForm - composant séparé (hooks autorisés) ───────────────────────
 function AddPlayerForm({setPlayers,showToast}){
   const [addOpen,setAddOpen]=useState(false);
-  const [lf,setLf]=useState({name:"",game:"NBA",league:"NBA",team:"",role:""});
+  const [lf,setLf]=useState({name:"",game:"NBA",league:"NBA",team:"",role:"",photo:""});
+  const [uploadingPhoto,setUploadingPhoto]=useState(false);
+
+  const NHL_POSITIONS=["Centre","Ailier Droit","Ailier Gauche","Défenseur Droit","Défenseur Gauche","Gardien"];
+  const BASKET_POSITIONS_NBA=["PG","SG","SF","PF","C"];
+  const BASKET_POSITIONS_EU=["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"];
+  const isNHL=lf.game==="NHL";
+  const isNBA=lf.game==="NBA";
+  const positions=isNHL?NHL_POSITIONS:isNBA?BASKET_POSITIONS_NBA:BASKET_POSITIONS_EU;
+
   return(
     <div style={{marginBottom:16}}>
       <button onClick={()=>setAddOpen(v=>!v)}
@@ -4625,20 +4647,56 @@ function AddPlayerForm({setPlayers,showToast}){
         <span style={{fontSize:11,color:"#6B7280"}}>{addOpen?"✕":"▼"}</span>
       </button>
       {addOpen&&(
-        <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(124,58,237,.2)",borderRadius:12,padding:"14px"}}>
-          <div style={{marginBottom:10}}>
+        <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(124,58,237,.2)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* Nom */}
+          <div>
             <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Nom du joueur *</div>
-            <input className="ifield" placeholder="Ex: Victor Wembanyama" value={lf.name} onChange={e=>setLf(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
+            <input className="ifield" placeholder={isNHL?"Ex: Nick Suzuki":"Ex: Victor Wembanyama"} value={lf.name} onChange={e=>setLf(p=>({...p,name:e.target.value}))} style={{marginBottom:0}}/>
           </div>
-          <div style={{marginBottom:10}}>
+
+          {/* Photo */}
+          <div>
+            <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Photo (optionnel)</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {lf.photo?(
+                <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",flexShrink:0}}>
+                  <img src={lf.photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                </div>
+              ):(
+                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.05)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#6B7280",fontSize:16}}>👤</div>
+              )}
+              <div style={{flex:1,display:"flex",gap:6,flexWrap:"wrap"}}>
+                <label style={{display:"flex",alignItems:"center",gap:5,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.2)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:11,color:"#60a5fa",fontWeight:600}}>{uploadingPhoto?"Envoi...":"⬆ Upload"}</span>
+                  <input type="file" accept="image/*" style={{display:"none"}} disabled={uploadingPhoto} onChange={async e=>{
+                    const file=e.target.files[0];if(!file)return;
+                    setUploadingPhoto(true);
+                    try{const fn=await supaUploadAvatar(file,(lf.name||"player")+"_"+Date.now());const url=AVATARS_BUCKET+encodeURIComponent(fn);setLf(p=>({...p,photo:url}));}
+                    catch(err){showToast("Erreur photo: "+err.message,"#EF4444");}
+                    setUploadingPhoto(false);
+                  }}/>
+                </label>
+                <button onClick={async()=>{try{const url=await pasteImageToSupabase(lf.name||"player");setLf(p=>({...p,photo:url}));}catch(e){showToast("📋 "+e.message,"#EF4444");}}}
+                  style={{display:"flex",alignItems:"center",gap:5,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.2)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:11,color:"#34d399",fontWeight:600}}>📋 Coller</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Ligue */}
+          <div>
             <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Ligue *</div>
-            <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.game} onChange={e=>setLf(p=>({...p,game:e.target.value,league:e.target.value,team:""}))}>
-              {["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
+            <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.game} onChange={e=>setLf(p=>({...p,game:e.target.value,league:e.target.value,team:"",role:""}))}>
+              {["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"].map(g=>(
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </div>
-          <div style={{marginBottom:10}}>
+
+          {/* Équipe */}
+          <div>
             <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Équipe *</div>
             <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.team} onChange={e=>setLf(p=>({...p,team:e.target.value}))}>
               <option value="">Choisir une équipe…</option>
@@ -4647,28 +4705,28 @@ function AddPlayerForm({setPlayers,showToast}){
               ))}
             </select>
           </div>
-          <div style={{marginBottom:14}}>
+
+          {/* Poste */}
+          <div>
             <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:5}}>Poste</div>
             <select className="ifield" style={{width:"100%",cursor:"pointer"}} value={lf.role} onChange={e=>setLf(p=>({...p,role:e.target.value}))}>
               <option value="">Poste (optionnel)</option>
-              {lf.game==="NBA"
-                ?["PG","SG","SF","PF","C"].map(r=><option key={r} value={r}>{r}</option>)
-                :["Point Guard","Shooting Guard","Small Forward","Power Forward","Center"].map(r=><option key={r} value={r}>{r}</option>)
-              }
+              {positions.map(r=><option key={r} value={r}>{r}</option>)}
             </select>
           </div>
+
           <button
             disabled={!lf.name.trim()||!lf.team}
             onClick={()=>{
               if(!lf.name.trim()||!lf.team)return;
               const rawName=lf.name.toLowerCase().trim();
-              const data={game:lf.game,league:lf.league||lf.game,role:lf.role||"",team:lf.team,name:lf.name.trim()};
+              const data={game:lf.game,league:lf.league||lf.game,role:lf.role||"",team:lf.team,name:lf.name.trim(),photo_url:lf.photo||null,avatar_url:lf.photo||null};
               setPlayers(p=>{
                 supaUpsertPlayer({name:rawName,...data}).catch(()=>{});
                 return{...p,[rawName]:data};
               });
               showToast(lf.name+" ajouté ✓","#A78BFA");
-              setLf({name:"",game:"NBA",league:"NBA",team:"",role:""});
+              setLf({name:"",game:"NBA",league:"NBA",team:"",role:"",photo:""});
               setAddOpen(false);
             }}
             style={{width:"100%",padding:"12px",background:lf.name.trim()&&lf.team?"linear-gradient(135deg,#7C3AED,#3B82F6)":"rgba(255,255,255,.05)",border:"none",borderRadius:10,color:lf.name.trim()&&lf.team?"#fff":"#9CA3AF",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
