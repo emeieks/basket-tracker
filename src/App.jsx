@@ -187,6 +187,10 @@ function GameLogo({game,size=18}){
   if(game==="Lega")return <img src="https://upload.wikimedia.org/wikipedia/en/9/9d/LegaBasket_Serie_A_Logo.png" alt="Lega" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="EuroCup")return <img src="https://upload.wikimedia.org/wikipedia/en/c/c3/Eurocup_new_logo.png" alt="EuroCup" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="BCL")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="NHL"){
+    if(NHL_LOGO_URL)return <img src={NHL_LOGO_URL} alt="NHL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+    return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#000",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0,border:"1px solid rgba(255,255,255,.15)"}}>NHL</span>;
+  }
   if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
   const src=L[game];
   if(!src) return null;
@@ -519,7 +523,7 @@ const BK_LOGOS={};
 
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
+const ALL_GAMES=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
 const LEAGUES_BY_GAME={
   NBA:["Eastern Conference","Western Conference","NBA Finals"],
   EuroLeague:["Regular Season","Final Four","Play-In"],
@@ -561,6 +565,7 @@ const FR_DAYS=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 const QUICK_STAKES=[50,62,75,87,100];
 const GAME_COLORS={
   NBA:{accent:"#C9082A",bg:"rgba(201,8,42,0.08)",border:"rgba(201,8,42,0.25)",logo:"https://www.nba.com/resources/static/team/v2/league/nba-logoman-75-word_white.svg"},
+  NHL:{accent:"#FFFFFF",bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.2)",logo:""},
   EuroLeague:{accent:"#0057A8",bg:"rgba(0,87,168,0.08)",border:"rgba(0,87,168,0.25)",logo:"https://upload.wikimedia.org/wikipedia/en/thumb/9/9c/EuroLeague_logo.png/120px-EuroLeague_logo.png"},
   "EuroCup":{accent:"#e8c84a",bg:"rgba(232,200,74,0.08)",border:"rgba(232,200,74,0.25)",logo:""},
   "BCL":{accent:"#4a90d9",bg:"rgba(74,144,217,0.08)",border:"rgba(74,144,217,0.25)",logo:""},
@@ -606,6 +611,7 @@ const NBA_TEAM_LOGOS = {
   "Washington Wizards":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/wsh.png&h=200&w=200",
 };
 const EL_LOGO_B64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc4JJn1YiaNoPGJHVcgw10vQvx2le4Nc4k1g&s";
+let NHL_LOGO_URL=""; // Défini par l'utilisateur via les settings
 const EL_TEAM_LOGOS = {
   "Anadolu Efes Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgOCxM/a844756c-a58d-4666-93b8-48f7337bc79d.png?width=168&resizeType=fill&format=webp",
   "Besiktas Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
@@ -1992,7 +1998,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
 
           {/* Ligue / Compétition — grille d'icônes */}
           {(()=>{
-            const allLeagueOpts=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+            const allLeagueOpts=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
             const curGame=bet.game||"?";
             return(
               <div style={{padding:"12px 14px 4px"}}>
@@ -2719,7 +2725,7 @@ function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
 // ── AnnonceStatsView ─────────────────────────────────────────────────────────
 function AnnonceStatsView({bets, allPlayers}){
   const settled=bets.filter(b=>b.status!=="pending");
-  const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
+  const ALL_GAMES=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
   const POS_LIST=[
     {key:"PG",label:"Point Guard",color:"#a78bfa"},
     {key:"SG",label:"Shooting Guard",color:"#60a5fa"},
@@ -3035,7 +3041,7 @@ function VictoireEquipeView({bets,setBets,bookmakers,bkPhotos,BK_LOGOS,showToast
       }
     }).catch(()=>{});
   },[]);
-  const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
+  const LEAGUES=["NHL","Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
   const HANDICAP_VALUES=[];for(let v=0.5;v<=34.5;v+=0.5)HANDICAP_VALUES.push(v);
   const THREEPT_VALUES=[];for(let v=0.5;v<=19.5;v+=0.5)THREEPT_VALUES.push(v);
   function getDefaultCompet(date){const d=date?new Date(date):new Date();const dow=d.getDay();return(dow>=2&&dow<=5)?"euro":"champ";}
@@ -4427,7 +4433,7 @@ function AddClubForm({customClubs,setCustomClubs,customCups,showToast}){
   const [form,setForm]=useState({name:"",logo:"",leagues:[],cups:[]});
   const [uploading,setUploading]=useState(false);
   const [search,setSearch]=useState("");
-  const ALL_LEAGUES_LIST=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+  const ALL_LEAGUES_LIST=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   function saveClub(){
     if(!form.name.trim()){showToast("Donne un nom au club","#F59E0B");return;}
@@ -7914,7 +7920,7 @@ export default function App(){
                         const teamNorm=playerTeam.toLowerCase().trim();
                         const officialName=Object.keys(MULTI_LEAGUE_CLUBS).find(k=>k.toLowerCase().trim()===teamNorm)||null;
                         const availLeagues=officialName?MULTI_LEAGUE_CLUBS[officialName]:null;
-                        const leaguesToShow=availLeagues||["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+                        const leaguesToShow=availLeagues||["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
                         return(
                           <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,.65)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}
                             onClick={()=>setForm(f=>({...f,_lgPickerOpen:false}))}>
@@ -9350,7 +9356,7 @@ export default function App(){
               );
             })()}
             {statsTab==="victoire"&&(()=>{
-              const LEAGUES=["Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
+              const LEAGUES=["NHL","Pro A","ACB","Lega","Bundesliga","EuroLeague","EuroCup","BCL"];
               // Tous les paris équipe (victoire + handicap + long terme)
               const isTeamB=b=>checkIsTeamBet(b);
               const teamBets=settledFiltered.filter(isTeamB);
@@ -10855,6 +10861,44 @@ export default function App(){
                   <span style={{fontSize:11,color:"#6B7280"}}>{Object.keys(allPlayers).length} joueurs</span>
                   {customCount>0&&<span style={{fontSize:11,color:"#A78BFA",fontWeight:600}}>✎ {customCount} modifiés</span>}
                 </div>
+              </div>
+            </div>
+
+            {/* ── LOGO NHL ── */}
+            <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(255,255,255,.07)",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <GameLogo game="NHL" size={20}/>
+                  <span style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>Logo NHL</span>
+                </div>
+                {NHL_LOGO_URL&&<span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block"}} title="Logo défini"/>}
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:12,color:"#60a5fa",fontWeight:600}}>⬆ Upload</span>
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                    const file=e.target.files[0];if(!file)return;
+                    try{
+                      const fn=await supaUploadAvatar(file,"nhl_logo");
+                      const url=AVATARS_BUCKET+encodeURIComponent(fn);
+                      NHL_LOGO_URL=url;
+                      GAME_COLORS.NHL.logo=url;
+                      showToast("Logo NHL mis à jour ✓","#22C55E");
+                      e.target.closest("div.card")||e.target.closest("div");
+                    }catch(err){showToast("Erreur: "+err.message,"#EF4444");}
+                  }}/>
+                </label>
+                <button onClick={async()=>{
+                  try{
+                    const url=await pasteImageToSupabase("nhl_logo");
+                    NHL_LOGO_URL=url;
+                    GAME_COLORS.NHL.logo=url;
+                    showToast("Logo NHL collé ✓","#22C55E");
+                  }catch(e){showToast("📋 "+e.message,"#EF4444");}
+                }} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>📋 Coller logo</span>
+                </button>
+                {NHL_LOGO_URL&&<button onClick={()=>{NHL_LOGO_URL="";GAME_COLORS.NHL.logo="";showToast("Logo NHL supprimé","#EF4444");}} style={{background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",color:"#f87171",fontSize:12,fontWeight:600}}>✕ Supprimer</button>}
               </div>
             </div>
 
