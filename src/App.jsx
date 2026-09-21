@@ -1775,7 +1775,7 @@ function LeagueLogo({league,size=18}){
   return <img src={src} alt={league} style={{width:size,height:size,objectFit:"contain",verticalAlign:"middle",borderRadius:2}}/>;
 }
 
-const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSplit,bkPhotos=EMPTY_OBJ,onSave,allTourneys=[],savedTourneys={},allPlayers={}}){
+const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSplit,bkPhotos=EMPTY_OBJ,onSave,allTourneys=[],savedTourneys={},allPlayers={},customCups=[]}){
   const [open,setOpen]=useState(false);
   const [confirmDel,setConfirmDel]=useState(false);
   const [clvOpen,setClvOpen]=useState(false);
@@ -1955,6 +1955,39 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
               </div>
             )}
           </div>
+
+          {/* Ligue / Compétition */}
+          {(()=>{
+            const allLeagueOpts=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+            const curGame=bet.game||"?";
+            return(
+              <div style={{padding:"10px 14px 4px",display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>Ligue / Compétition</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {allLeagueOpts.map(lg=>{
+                    const on=curGame===lg;
+                    return(
+                      <button key={lg} onClick={()=>{if(onSave)onSave({...bet,game:lg,league:lg,updatedAt:Date.now()});}}
+                        style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(124,58,237,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.15)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                        <GameLogo game={lg} size={12}/>
+                        <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#a78bfa":"#9CA3AF"}}>{lg}</span>
+                      </button>
+                    );
+                  })}
+                  {(customCups||[]).map(cup=>{
+                    const on=curGame===cup.name;
+                    return(
+                      <button key={cup.id} onClick={()=>{if(onSave)onSave({...bet,game:cup.name,league:cup.name,updatedAt:Date.now()});}}
+                        style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,border:"1.5px solid "+(on?"rgba(251,191,36,.5)":"rgba(255,255,255,.08)"),background:on?"rgba(251,191,36,.1)":"transparent",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                        {cup.logo&&<img src={cup.logo} alt="" style={{width:12,height:12,objectFit:"contain"}}/>}
+                        <span style={{fontSize:11,fontWeight:on?700:400,color:on?"#FCD34D":"#9CA3AF"}}>🏆 {cup.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Statut */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 14px 0"}}>
@@ -2294,6 +2327,7 @@ function MesParisView({
   onMarkPush,
   allPlayers={},
   fTipster="All",setFTipster,
+  customCups=[],
 }){
   const [collapsedMonths,setCollapsedMonths]=useState(new Set());
   const [selectOpen,setSelectOpen]=useState(false); // separate overlay
@@ -2471,7 +2505,7 @@ function MesParisView({
       {pending.length>0&&(
         <div style={{marginBottom:16}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,padding:"4px 2px"}}><div style={{width:3,height:14,borderRadius:2,background:"#60a5fa",flexShrink:0}}/><span style={{fontSize:11,fontWeight:800,color:"#60A5FA",textTransform:"uppercase",letterSpacing:1.5}}>En attente</span><span style={{background:"rgba(96,165,250,.18)",color:"#93c5fd",fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:6}}>{pending.length}</span><span style={{fontSize:11,color:"#7a9cbd",marginLeft:"auto",fontWeight:600}}>{pending.reduce((s,b)=>s+(b.stake||0),0).toFixed(0)}$ en jeu</span></div><div style={{display:"flex",flexDirection:"column",gap:2}}>
             {pending.map(b=>(
-              <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} allTourneys={allTourneys} savedTourneys={savedTourneys} allPlayers={allPlayers}/>
+              <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} allTourneys={allTourneys} savedTourneys={savedTourneys} allPlayers={allPlayers} customCups={customCups}/>
             ))}
           </div></div>
       )}
@@ -2498,7 +2532,7 @@ function MesParisView({
                       return(
                         <div key={dk} style={{borderTop:di>0?"1px solid #1F2937":"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:"rgba(10,16,32,.97)",borderTop:"1px solid rgba(255,255,255,.03)"}}><span style={{fontSize:13,fontWeight:700,color:"#b8c8de"}}>{fmtDay(dk)}</span><span style={{fontSize:13,fontWeight:700,color:dayProfit>=0?"#00E676":"#EF4444"}}>{dayProfit>=0?"+":""}{dayProfit.toFixed(0)}$</span></div>
                           {dayBets.map(b=>(
-                            <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} allTourneys={allTourneys} savedTourneys={savedTourneys} allPlayers={allPlayers}/>
+                            <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} allTourneys={allTourneys} savedTourneys={savedTourneys} allPlayers={allPlayers} customCups={customCups}/>
                           ))}
                         </div>
                       );
@@ -4349,7 +4383,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 }
 
 // ── AddClubForm - créer un club avec logo, ligues, coupes ───────────────────
-function AddClubForm({customClubs,setCustomClubs,customCups,showToast,activeTourneys,savedTourneys,mibActive,mibDate,testFilter,savedTipsters}){
+function AddClubForm({customClubs,setCustomClubs,customCups,showToast}){
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState({name:"",logo:"",leagues:[],cups:[]});
   const [uploading,setUploading]=useState(false);
@@ -4369,8 +4403,23 @@ function AddClubForm({customClubs,setCustomClubs,customCups,showToast,activeTour
     if(club.logo){TEAM_LOGOS[club.name]=club.logo;EL_TEAM_LOGOS[club.name]=club.logo;}
     // Push immédiat localStorage + Supabase
     try{localStorage.setItem("v7_custom_clubs",JSON.stringify(newClubs));}catch(e){}
-    const serFilter={...testFilter,games:[...testFilter.games],hideTourneys:[...testFilter.hideTourneys],hideLeagues:[...testFilter.hideLeagues],hideRoles:[...testFilter.hideRoles]};
-    pushTourneyRow({activeTourneys,savedTourneys,mibActive,mibDate,testFilter:serFilter,savedTipsters,customCups,customClubs:newClubs});
+    // Push direct Supabase sans dépendre des autres states
+    if(SUPA_URL&&SUPA_KEY){
+      try{
+        const existing=JSON.parse(localStorage.getItem("v7_custom_cups")||"[]");
+        const row={id:"__settings_tourneys__",player:"__SETTINGS__",
+          description:JSON.stringify({customClubs:newClubs,customCups:existing}),
+          odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
+          datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
+          ppMapType:null,ppLine:null,ppEdge:null,updatedAt:Date.now(),splits:null};
+        // Use merge-duplicates so other settings fields are preserved
+        fetch(SUPA_URL+"/rest/v1/bets?id=eq.__settings_tourneys__",{
+          method:"PATCH",
+          headers:{"Content-Type":"application/json","apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY},
+          body:JSON.stringify({description:row.description,updatedAt:Date.now()})
+        }).catch(()=>{});
+      }catch(e){}
+    }
     showToast("🏀 "+club.name+" créé ✓","#22C55E");
     setForm({name:"",logo:"",leagues:[],cups:[]});
     setOpen(false);
@@ -6802,6 +6851,7 @@ export default function App(){
             onMarkPush={function(){lastPushRef.current=Date.now();}}
             allPlayers={allPlayers}
             fTipster={fTipster} setFTipster={setFTipster}
+            customCups={customCups}
           />
         )}
         {view==="calendrier"&&(
@@ -7118,7 +7168,7 @@ export default function App(){
             <div className="stat-bloc">
               {filteredBets.length===0&&<div style={{padding:"18px 15px",color:"#6B7280",fontSize:13}}>Aucun pari</div>}
               {filteredBets.slice(0,(filtresPage)*FILTRES_PER_PAGE).map(b=>(
-                <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos}/>
+                <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} customCups={customCups}/>
               ))}
             </div>
             {filteredBets.length>filtresPage*FILTRES_PER_PAGE&&(
@@ -10717,9 +10767,6 @@ export default function App(){
             <AddClubForm
               customClubs={customClubs} setCustomClubs={setCustomClubs}
               customCups={customCups} showToast={showToast}
-              activeTourneys={activeTourneys} savedTourneys={savedTourneys}
-              mibActive={mibActive} mibDate={mibDate} testFilter={testFilter}
-              savedTipsters={savedTipsters}
             />
 
             {/* ── ÉDIT ── */}
