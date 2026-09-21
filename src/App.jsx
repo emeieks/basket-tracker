@@ -180,17 +180,18 @@ function GameLogo({game,size=18}){
       <img src={NBA_LOGO_B64} alt="NBA" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );
-  if(game==="EuroLeague")return <img src={EL_LOGO_B64} alt="EuroLeague" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
+  if(game==="EuroLeague")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
+      <img src={EL_LOGO_B64} alt="EuroLeague" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );
   if(game==="Pro A")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBXpNrh-XoYgHEbQOwD6o1oawOHmbDmDjgN5UW5psHuEJ1qG_X1_hUYY8&s=10" alt="Pro A" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="ACB")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHba4RJ-Vnfw7Tmz6lpvavCaoXCjLzlPExXlEcZJmZHQZmQ21d6oX02y8&s=10" alt="ACB" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="Bundesliga")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDW9tDc-bCNxHCLjgIbxlRE4xjZ6qjjKz9pLEpPZ29Vgjr0qMzLm4elEY&s=10" alt="BBL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="Lega")return <img src="https://upload.wikimedia.org/wikipedia/en/9/9d/LegaBasket_Serie_A_Logo.png" alt="Lega" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="EuroCup")return <img src="https://upload.wikimedia.org/wikipedia/en/c/c3/Eurocup_new_logo.png" alt="EuroCup" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
   if(game==="BCL")return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
-  if(game==="NHL"){
-    if(NHL_LOGO_URL)return <img src={NHL_LOGO_URL} alt="NHL" style={{width:size,height:size,objectFit:"contain",display:"block",flexShrink:0,borderRadius:3}}/>;
-    return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#000",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0,border:"1px solid rgba(255,255,255,.15)"}}>NHL</span>;
-  }
+
   if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:3,fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
   const src=L[game];
   if(!src) return null;
@@ -523,7 +524,7 @@ const BK_LOGOS={};
 
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const ALL_GAMES=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
+const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
 const LEAGUES_BY_GAME={
   NBA:["Eastern Conference","Western Conference","NBA Finals"],
   EuroLeague:["Regular Season","Final Four","Play-In"],
@@ -565,7 +566,6 @@ const FR_DAYS=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 const QUICK_STAKES=[50,62,75,87,100];
 const GAME_COLORS={
   NBA:{accent:"#C9082A",bg:"rgba(201,8,42,0.08)",border:"rgba(201,8,42,0.25)",logo:"https://www.nba.com/resources/static/team/v2/league/nba-logoman-75-word_white.svg"},
-  NHL:{accent:"#FFFFFF",bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.2)",logo:""},
   EuroLeague:{accent:"#0057A8",bg:"rgba(0,87,168,0.08)",border:"rgba(0,87,168,0.25)",logo:"https://upload.wikimedia.org/wikipedia/en/thumb/9/9c/EuroLeague_logo.png/120px-EuroLeague_logo.png"},
   "EuroCup":{accent:"#e8c84a",bg:"rgba(232,200,74,0.08)",border:"rgba(232,200,74,0.25)",logo:""},
   "BCL":{accent:"#4a90d9",bg:"rgba(74,144,217,0.08)",border:"rgba(74,144,217,0.25)",logo:""},
@@ -611,7 +611,6 @@ const NBA_TEAM_LOGOS = {
   "Washington Wizards":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/wsh.png&h=200&w=200",
 };
 const EL_LOGO_B64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc4JJn1YiaNoPGJHVcgw10vQvx2le4Nc4k1g&s";
-let NHL_LOGO_URL=""; // Défini par l'utilisateur via les settings
 const EL_TEAM_LOGOS = {
   "Anadolu Efes Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgOCxM/a844756c-a58d-4666-93b8-48f7337bc79d.png?width=168&resizeType=fill&format=webp",
   "Besiktas Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
@@ -1079,7 +1078,24 @@ const MULTI_LEAGUE_CLUBS={
 const NBA_TEAMS=["Atlanta Hawks","Boston Celtics","Brooklyn Nets","Charlotte Hornets","Chicago Bulls","Cleveland Cavaliers","Dallas Mavericks","Denver Nuggets","Detroit Pistons","Golden State Warriors","Houston Rockets","Indiana Pacers","LA Clippers","Los Angeles Lakers","Memphis Grizzlies","Miami Heat","Milwaukee Bucks","Minnesota Timberwolves","New Orleans Pelicans","New York Knicks","Oklahoma City Thunder","Orlando Magic","Philadelphia 76ers","Phoenix Suns","Portland Trail Blazers","Sacramento Kings","San Antonio Spurs","Toronto Raptors","Utah Jazz","Washington Wizards"];
 
 // Map ligue → liste d'équipes pour le formulaire d'ajout joueur
+// ── 32 équipes NHL ───────────────────────────────────────────────────────────
+const NHL_TEAMS_LIST=[
+  // Conférence Est — Division Atlantique
+  "Boston Bruins","Buffalo Sabres","Detroit Red Wings","Florida Panthers",
+  "Montreal Canadiens","Ottawa Senators","Tampa Bay Lightning","Toronto Maple Leafs",
+  // Conférence Est — Division Métropolitaine
+  "Carolina Hurricanes","Columbus Blue Jackets","New Jersey Devils","New York Islanders",
+  "New York Rangers","Philadelphia Flyers","Pittsburgh Penguins","Washington Capitals",
+  // Conférence Ouest — Division Centrale
+  "Chicago Blackhawks","Colorado Avalanche","Dallas Stars","Minnesota Wild",
+  "Nashville Predators","St. Louis Blues","Utah Hockey Club","Winnipeg Jets",
+  // Conférence Ouest — Division Pacifique
+  "Anaheim Ducks","Calgary Flames","Edmonton Oilers","Los Angeles Kings",
+  "San Jose Sharks","Seattle Kraken","Vancouver Canucks","Vegas Golden Knights",
+];
+
 const ALL_LEAGUE_TEAMS={
+  "NHL": NHL_TEAMS_LIST,
   "NBA": NBA_TEAMS,
   ...EURO_TEAMS,
 };
@@ -1795,7 +1811,11 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   const profitColor=isPending?"#ffffff":isWon?"#00E676":"#EF4444";
   const profitTxt=isPending?"En cours":((bet.profit||0)>=0?"+":" ")+(bet.profit||0).toFixed(2)+"$";
   const bkLogo=BK_LOGOS[bet.bookmaker]||bkPhotos[bet.bookmaker]||null;
-  const descLine=bet.description||"";
+  const descLine=(()=>{
+    if(isTeamBet)return ""; // pas de description "Over" pour paris équipe
+    const d=bet.description||"";
+    return d.replace(/^Over |^Under /,""); // enlever le préfixe Over/Under
+  })();
   const hasAnnounce=bet.announceOuts&&bet.announceOuts.length>0;
   const glowStyle=!isPending&&(isWon?"0 0 10px rgba(34,197,94,.18)":"0 0 8px rgba(239,68,68,.14)");
 
@@ -2725,7 +2745,7 @@ function AnnonceBlock({team, playerName, allPlayers, outs, onOutsChange}){
 // ── AnnonceStatsView ─────────────────────────────────────────────────────────
 function AnnonceStatsView({bets, allPlayers}){
   const settled=bets.filter(b=>b.status!=="pending");
-  const ALL_GAMES=["NBA","NHL","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
+  const ALL_GAMES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Bundesliga","Lega","HEBA"];
   const POS_LIST=[
     {key:"PG",label:"Point Guard",color:"#a78bfa"},
     {key:"SG",label:"Shooting Guard",color:"#60a5fa"},
@@ -3908,7 +3928,7 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [addTeamName,setAddTeamName]=useState("");
   const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
-  const LEAGUES=["NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
+  const LEAGUES=["NHL","NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   const searchResults=useMemo(()=>{
     const q=searchQ.toLowerCase().trim();
@@ -4020,7 +4040,12 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
 
       {/* ── Barre de recherche unifiée joueurs + clubs ── */}
       <div style={{position:"relative",marginBottom:12}}>
-        <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:14,pointerEvents:"none"}}>🔍</div>
+        <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+            <circle cx="6.5" cy="6.5" r="4.5" stroke="#6B7280" strokeWidth="1.5"/>
+            <line x1="10" y1="10" x2="13.5" y2="13.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </div>
         <input
           value={searchQ}
           onChange={e=>setSearchQ(e.target.value)}
@@ -4347,8 +4372,25 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
           <div key={lg} style={{marginBottom:6,borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,.07)"}}>
             <button onClick={()=>{setOpenLeague(isOpen?null:lg);setOpenTeam(null);}}
               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:isOpen?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",borderBottom:isOpen?"1px solid rgba(255,255,255,.06)":"none"}}>
-              <GameLogo game={lg} size={18}/>
+              {/* Logo ligue cliquable pour NHL */}
+              {lg==="NHL"?(
+                <label title="Modifier le logo NHL" style={{cursor:"pointer",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                  <GameLogo game={lg} size={18}/>
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                    const file=e.target.files[0];if(!file)return;
+                    try{
+                      const fn=await supaUploadAvatar(file,"nhl_logo");
+                      const url=AVATARS_BUCKET+encodeURIComponent(fn);
+                      GAME_COLORS.NHL.logo=url;
+                      showToast("Logo NHL mis à jour ✓","#22C55E");
+                    }catch(err){showToast("Erreur: "+err.message,"#EF4444");}
+                  }}/>
+                </label>
+              ):(
+                <GameLogo game={lg} size={18}/>
+              )}
               <span style={{flex:1,textAlign:"left",fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{lg}</span>
+              {lg==="NHL"&&<button onClick={async e=>{e.stopPropagation();try{const url=await pasteImageToSupabase("nhl_logo");GAME_COLORS.NHL.logo=url;showToast("Logo NHL collé ✓","#22C55E");}catch(err){showToast("📋 "+err.message,"#EF4444");}}} style={{background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.2)",borderRadius:7,padding:"3px 8px",color:"#34d399",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}} title="Coller logo NHL">📋</button>}
               <span style={{fontSize:10,color:"#6B7280"}}>{playerCount} joueurs</span>
               <span style={{fontSize:11,color:isOpen?"#a78bfa":"#6B7280",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
             </button>
@@ -4476,7 +4518,13 @@ function AddClubForm({customClubs,setCustomClubs,customCups,showToast}){
   return(
     <div style={{marginBottom:10}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:open?"rgba(34,197,94,.08)":"rgba(255,255,255,.03)",border:"1.5px solid "+(open?"rgba(34,197,94,.3)":"rgba(255,255,255,.08)"),borderRadius:12,padding:"11px 14px",cursor:"pointer",fontFamily:"Inter,sans-serif",marginBottom:open?10:0}}>
-        <span style={{fontSize:13,fontWeight:700,color:open?"#22C55E":"#E5E7EB"}}>🏀 Créer un club</span>
+        <span style={{display:"inline-flex",alignItems:"center",gap:7}}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1L14 6V14H10V10H6V14H2V6L8 1Z" stroke={open?"#22C55E":"#9CA3AF"} strokeWidth="1.3" strokeLinejoin="round" fill={open?"rgba(34,197,94,.15)":"none"}/>
+                <circle cx="8" cy="7" r="1.5" fill={open?"#22C55E":"#6B7280"}/>
+              </svg>
+              <span style={{fontSize:13,fontWeight:700,color:open?"#22C55E":"#E5E7EB"}}>Créer un club</span>
+            </span>
         <span style={{fontSize:11,color:"#6B7280"}}>{open?"✕":"▼"}</span>
       </button>
       {open&&(
@@ -6713,7 +6761,53 @@ export default function App(){
               const roi2=settled2.length>0&&settled2.reduce((s,b)=>s+(b.stake||0),0)>0
                 ?(settled2.reduce((s,b)=>s+(b.profit||0),0)/settled2.reduce((s,b)=>s+(b.stake||0),0)*100):0;
               return(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}><div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(59,130,246,.18)",borderRadius:14,padding:"13px 12px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,#3b82f6,#60a5fa)"}}/><div style={{fontSize:9,color:"#5a6a7e",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>PARIS</div><div style={{fontSize:22,fontWeight:900,color:"#60a5fa",letterSpacing:"-1px",lineHeight:1,marginBottom:4}}>{settled2.length+pending2}</div><div style={{fontSize:10,color:"#3a4a5a"}}>{pending2>0?pending2+" en cours":won2+"W · "+lost2+"L"}</div></div><div style={{background:"rgba(10,16,34,.98)",border:"1px solid "+(progression>=0?"rgba(0,230,118,.18)":"rgba(239,68,68,.18)"),borderRadius:14,padding:"13px 12px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:progression>=0?"linear-gradient(90deg,#059669,#00E676)":"linear-gradient(90deg,#dc2626,#ef4444)"}}/><div style={{fontSize:9,color:"#5a6a7e",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>PROGRESSION</div><div style={{fontSize:22,fontWeight:900,color:progression>=0?"#00E676":"#ef4444",letterSpacing:"-1px",lineHeight:1,marginBottom:4}}>{progression>=0?"+":""}{progression.toFixed(1)}%</div><div style={{fontSize:10,color:"#3a4a5a"}}>BK: {bankroll.toFixed(0)}$</div></div><div style={{background:"rgba(10,16,34,.98)",border:"1px solid "+(totalProfit>=0?"rgba(0,230,118,.18)":"rgba(239,68,68,.18)"),borderRadius:14,padding:"13px 12px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:totalProfit>=0?"linear-gradient(90deg,#059669,#00E676)":"linear-gradient(90deg,#dc2626,#ef4444)"}}/><div style={{fontSize:9,color:"#5a6a7e",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>PROFIT NET</div><div style={{fontSize:22,fontWeight:900,color:totalProfit>=0?"#00E676":"#ef4444",letterSpacing:"-1px",lineHeight:1,marginBottom:4}}>{totalProfit>=0?"+":""}{totalProfit.toFixed(0)}$</div><div style={{fontSize:10,color:"#3a4a5a"}}>ROI {roi2>=0?"+":""}{roi2.toFixed(1)}%</div></div></div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+
+                  {/* PARIS */}
+                  <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(59,130,246,.18)",borderRadius:16,padding:"14px 12px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,#3b82f6,#60a5fa)"}}/>
+                    {/* Bankroll icon */}
+                    <div style={{marginBottom:8}}>
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <rect x="1" y="5" width="20" height="13" rx="3" stroke="#3b82f6" strokeWidth="1.5"/>
+                        <circle cx="11" cy="11.5" r="3" stroke="#60a5fa" strokeWidth="1.5"/>
+                        <line x1="1" y1="9" x2="21" y2="9" stroke="#3b82f6" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                    <div style={{fontSize:10,color:"#5a6a7e",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",marginBottom:6}}>PARIS</div>
+                    <div style={{fontSize:28,fontWeight:900,color:"#60a5fa",letterSpacing:"-1.5px",lineHeight:1,marginBottom:5}}>{settled2.length+pending2}</div>
+                    <div style={{fontSize:11,color:"#3a4a5a",fontWeight:600}}>{pending2>0?pending2+" en cours":won2+"W · "+lost2+"L"}</div>
+                  </div>
+
+                  {/* PROGRESSION */}
+                  <div style={{background:"rgba(10,16,34,.98)",border:"1px solid "+(progression>=0?"rgba(0,230,118,.18)":"rgba(239,68,68,.18)"),borderRadius:16,padding:"14px 12px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:progression>=0?"linear-gradient(90deg,#059669,#00E676)":"linear-gradient(90deg,#dc2626,#ef4444)"}}/>
+                    <div style={{marginBottom:8}}>
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <polyline points="2,16 7,10 12,13 18,5" stroke={progression>=0?"#00E676":"#ef4444"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                        <polyline points="14,5 18,5 18,9" stroke={progression>=0?"#00E676":"#ef4444"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div style={{fontSize:10,color:"#5a6a7e",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",marginBottom:6}}>PROGRESSION</div>
+                    <div style={{fontSize:28,fontWeight:900,color:progression>=0?"#00E676":"#ef4444",letterSpacing:"-1.5px",lineHeight:1,marginBottom:5}}>{progression>=0?"+":""}{progression.toFixed(1)}%</div>
+                    <div style={{fontSize:11,color:"#3a4a5a",fontWeight:600}}>BK: {bankroll.toFixed(0)}$</div>
+                  </div>
+
+                  {/* PROFIT NET */}
+                  <div style={{background:"rgba(10,16,34,.98)",border:"1px solid "+(totalProfit>=0?"rgba(0,230,118,.18)":"rgba(239,68,68,.18)"),borderRadius:16,padding:"14px 12px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:totalProfit>=0?"linear-gradient(90deg,#059669,#00E676)":"linear-gradient(90deg,#dc2626,#ef4444)"}}/>
+                    <div style={{marginBottom:8}}>
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <circle cx="11" cy="11" r="9" stroke={totalProfit>=0?"#00E676":"#ef4444"} strokeWidth="1.5"/>
+                        <text x="11" y="15" textAnchor="middle" fontSize="10" fontWeight="800" fill={totalProfit>=0?"#00E676":"#ef4444"}>$</text>
+                      </svg>
+                    </div>
+                    <div style={{fontSize:10,color:"#5a6a7e",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",marginBottom:6}}>PROFIT NET</div>
+                    <div style={{fontSize:28,fontWeight:900,color:totalProfit>=0?"#00E676":"#ef4444",letterSpacing:"-1.5px",lineHeight:1,marginBottom:5}}>{totalProfit>=0?"+":""}{totalProfit.toFixed(totalProfit<100&&totalProfit>-100?2:1)}$</div>
+                    <div style={{fontSize:11,color:"#3a4a5a",fontWeight:600}}>ROI {roi2>=0?"+":""}{roi2.toFixed(1)}%</div>
+                  </div>
+
+                </div>
               );
             })()}
 
@@ -6728,44 +6822,74 @@ export default function App(){
 
             {/* ── PARIS RÉCENTS ── */}
             {bets.filter(b=>b.status!=="pending").length>0&&(
-              <div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:10,color:"#4a5a6e",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>Paris récents</span><button onClick={()=>setView("mesparis")} style={{fontSize:11,color:"#a78bfa",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",padding:0}}>
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <span style={{fontSize:10,color:"#4a5a6e",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase"}}>Paris récents</span>
+                  <button onClick={()=>setView("mesparis")} style={{fontSize:11,color:"#a78bfa",fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",padding:0}}>
                     Voir tous ({bets.filter(b=>b.status!=="pending").length}) →
-                  </button></div><div style={{background:"rgba(10,16,32,.99)",borderRadius:14,border:"1px solid rgba(99,130,200,.1)",overflow:"hidden"}}>
-                  {[...bets].filter(b=>b.status!=="pending").sort(function(a,b2){return String(b2.datetime||b2.updatedAt||0).localeCompare(String(a.datetime||a.updatedAt||0));}).slice(0,6).map(function(b,i){
+                  </button>
+                </div>
+                <div style={{background:"rgba(10,16,32,.99)",borderRadius:14,border:"1px solid rgba(99,130,200,.1)",overflow:"hidden"}}>
+                  {[...bets].filter(b=>b.status!=="pending").sort((a,b2)=>String(b2.datetime||b2.updatedAt||0).localeCompare(String(a.datetime||a.updatedAt||0))).slice(0,6).map((b,i)=>{
                     const isWon=b.status==="won";
                     const profitVal=b.profit!=null?b.profit:(isWon?(b.stake||0)*(b.odds-1):-(b.stake||0));
                     const bkLogo=BK_LOGOS[b.bookmaker]||bkPhotos[b.bookmaker]||null;
-                    const descLine=b.description||"";
                     const pd=allPlayers[(b.player||"").toLowerCase().trim()];
+                    const isTeamB=checkIsTeamBet(b);
+                    const playerPhoto=!isTeamB&&pd&&pd.photo_url?pd.photo_url:null;
                     const team=(pd&&pd.team)||b.team;
-                    const teamLogo=team?(b.game==="EuroLeague"?EL_TEAM_LOGOS[team]:b.game==="NBA"?NBA_TEAM_LOGOS[team]:null):null;
-                    const hasAnnounce=b.announceOuts&&b.announceOuts.length>0;
+                    const logoSrc=isTeamB?(TEAM_LOGOS[b.player]||EL_TEAM_LOGOS[b.player]||NBA_TEAM_LOGOS[b.player]||null):(team?(TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null):null);
+                    const descLine=checkIsTeamBet(b)?"":((b.description||"").replace(/^Over |^Under /,""));
                     return(
-                      <div key={b.id} onClick={()=>setView("mesparis")} style={{marginTop:i>0?1:0,cursor:"pointer",borderLeft:"2.5px solid "+(isWon?"#00E676":"#f43f5e"),borderBottom:i<5?"1px solid rgba(255,255,255,.04)":"none"}}><div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
-                          <div style={{width:34,height:34,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                            {teamLogo
-                              ?<img src={teamLogo} style={{width:28,height:28,objectFit:"contain"}} alt={team} onError={e=>e.target.style.display="none"}/>
-                              :<GameLogo game={b.game} size={28}/>
-                            }
-                          </div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:3,flexWrap:"wrap"}}>
-                              <span style={{fontWeight:800,fontSize:14,color:"#f0f4ff",flexShrink:0}}>{(b.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span>
-                              {hasAnnounce&&<span style={{fontSize:8,fontWeight:800,color:"#34d399",background:"rgba(52,211,153,.12)",border:"1px solid rgba(52,211,153,.3)",borderRadius:4,padding:"1px 4px",flexShrink:0}}>ANNONCE</span>}
-                              {descLine&&<><span style={{color:"#2e3d50",fontSize:10,margin:"0 1px"}}>·</span><span style={{fontSize:11,color:"#8a9eb8",flexShrink:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descLine}</span></>}
+                      <div key={b.id} onClick={()=>setView("mesparis")} style={{cursor:"pointer",borderLeft:"2.5px solid "+(isWon?"#00E676":"#f43f5e"),borderBottom:i<5?"1px solid rgba(255,255,255,.04)":"none"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+
+                          {/* Photo joueur ou logo équipe */}
+                          {playerPhoto?(
+                            <div style={{width:42,height:42,borderRadius:10,overflow:"hidden",flexShrink:0,WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
+                              <CachedImg src={playerPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block"}}/>
                             </div>
+                          ):(
+                            <div style={{width:38,height:38,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                              {logoSrc&&<img src={logoSrc} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.12}} onError={e=>e.target.style.display="none"}/>}
+                              <div style={{position:"relative",zIndex:1}}>
+                                {logoSrc?<img src={logoSrc} style={{width:30,height:30,objectFit:"contain"}} alt="" onError={e=>e.target.style.display="none"}/>:<GameLogo game={b.game} size={26}/>}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Infos */}
+                          <div style={{flex:1,minWidth:0}}>
+                            {/* Ligne 1: nom + description */}
+                            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
+                              <span style={{fontWeight:800,fontSize:14,color:"#f0f4ff",flexShrink:0,whiteSpace:"nowrap"}}>
+                                {(b.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
+                              </span>
+                              <GameLogo game={b.game} size={14}/>
+                              {descLine&&<span style={{fontSize:11,color:"#8a9eb8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>}
+                            </div>
+                            {/* Ligne 2: cote • BK logo • mise */}
                             <div style={{display:"flex",alignItems:"center",gap:0}}>
                               <span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>@{b.odds}</span>
-                              {(bkLogo||b.bookmaker)&&<span style={{color:"#3a4e62",margin:"0 4px",fontSize:11}}>·</span>}
-                              {bkLogo?(<img src={bkLogo} alt={b.bookmaker} style={{width:13,height:13,borderRadius:3,objectFit:"cover"}}/>):<span style={{fontSize:11,color:"#7a9cbd"}}>{b.bookmaker}</span>}
-                              {b.stake&&<><span style={{color:"#3a4e62",margin:"0 4px",fontSize:11}}>·</span><span style={{fontSize:11,color:"#7a9cbd"}}>{b.stake}$</span></>}
+                              {b.stake&&<><span style={{color:"#4a5a6e",margin:"0 4px",fontSize:13}}>•</span><span style={{fontSize:11,fontWeight:700,color:"#7a9cbd"}}>{b.stake}$</span></>}
+                              {(bkLogo||b.bookmaker)&&<><span style={{color:"#4a5a6e",margin:"0 4px",fontSize:13}}>•</span>
+                              {bkLogo?<img src={bkLogo} alt={b.bookmaker} title={b.bookmaker} style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>:<span style={{fontSize:11,color:"#7a9cbd"}}>{b.bookmaker}</span>}</>}
                             </div>
                           </div>
-                          <div style={{flexShrink:0,textAlign:"right"}}><div style={{fontWeight:800,fontSize:14,color:isWon?"#00E676":"#f87171"}}>{profitVal>=0?"+":""}{profitVal.toFixed(2)}$</div></div>
-                        </div></div>
+
+                          {/* Profit */}
+                          <div style={{flexShrink:0,textAlign:"right"}}>
+                            <div style={{fontWeight:800,fontSize:14,color:isWon?"#00E676":"#f87171",letterSpacing:"-.3px"}}>
+                              {profitVal>=0?"+":""}{profitVal.toFixed(profitVal<100&&profitVal>-100?2:1)}$
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
                     );
                   })}
-                </div></div>
+                </div>
+              </div>
             )}
 
           </div>
@@ -7251,7 +7375,7 @@ export default function App(){
             <div className="stat-bloc">
               {filteredBets.length===0&&<div style={{padding:"18px 15px",color:"#6B7280",fontSize:13}}>Aucun pari</div>}
               {filteredBets.slice(0,(filtresPage)*FILTRES_PER_PAGE).map(b=>(
-                <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={onSave} customCups={customCups}/>
+                <BetRow key={b.id} bet={b} onStatus={updateStatus} onDelete={deleteBet} onDuplicate={duplicateBet} onEdit={openEdit} onSplit={splitBet} bkPhotos={bkPhotos} onSave={b=>{setBets(prev=>{const next=prev.map(x=>x.id===b.id?b:x);localStorage.setItem("v7_bets",JSON.stringify(next));supaPushBets([b]).catch(()=>{});return next;});}} customCups={customCups}/>
               ))}
             </div>
             {filteredBets.length>filtresPage*FILTRES_PER_PAGE&&(
@@ -10861,44 +10985,6 @@ export default function App(){
                   <span style={{fontSize:11,color:"#6B7280"}}>{Object.keys(allPlayers).length} joueurs</span>
                   {customCount>0&&<span style={{fontSize:11,color:"#A78BFA",fontWeight:600}}>✎ {customCount} modifiés</span>}
                 </div>
-              </div>
-            </div>
-
-            {/* ── LOGO NHL ── */}
-            <div style={{background:"rgba(10,16,34,.98)",border:"1px solid rgba(255,255,255,.07)",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <GameLogo game="NHL" size={20}/>
-                  <span style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>Logo NHL</span>
-                </div>
-                {NHL_LOGO_URL&&<span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block"}} title="Logo défini"/>}
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                <label style={{display:"flex",alignItems:"center",gap:6,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  <span style={{fontSize:12,color:"#60a5fa",fontWeight:600}}>⬆ Upload</span>
-                  <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
-                    const file=e.target.files[0];if(!file)return;
-                    try{
-                      const fn=await supaUploadAvatar(file,"nhl_logo");
-                      const url=AVATARS_BUCKET+encodeURIComponent(fn);
-                      NHL_LOGO_URL=url;
-                      GAME_COLORS.NHL.logo=url;
-                      showToast("Logo NHL mis à jour ✓","#22C55E");
-                      e.target.closest("div.card")||e.target.closest("div");
-                    }catch(err){showToast("Erreur: "+err.message,"#EF4444");}
-                  }}/>
-                </label>
-                <button onClick={async()=>{
-                  try{
-                    const url=await pasteImageToSupabase("nhl_logo");
-                    NHL_LOGO_URL=url;
-                    GAME_COLORS.NHL.logo=url;
-                    showToast("Logo NHL collé ✓","#22C55E");
-                  }catch(e){showToast("📋 "+e.message,"#EF4444");}
-                }} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.25)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
-                  <span style={{fontSize:12,color:"#34d399",fontWeight:600}}>📋 Coller logo</span>
-                </button>
-                {NHL_LOGO_URL&&<button onClick={()=>{NHL_LOGO_URL="";GAME_COLORS.NHL.logo="";showToast("Logo NHL supprimé","#EF4444");}} style={{background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:9,padding:"7px 12px",cursor:"pointer",fontFamily:"Inter,sans-serif",color:"#f87171",fontSize:12,fontWeight:600}}>✕ Supprimer</button>}
               </div>
             </div>
 
