@@ -1848,18 +1848,25 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   return(
     <div style={{borderBottom:"1px solid rgba(255,255,255,.1)",WebkitTapHighlightColor:"transparent",contain:"layout style",borderLeft:"2.5px solid "+(isPending?"#60a5fa":isWon?"#00E676":"#f43f5e"),background:"transparent",position:"relative",transition:"all .15s"}}><div onClick={()=>setOpen(v=>!v)} style={{padding:"11px 13px 11px 12px",cursor:"pointer",userSelect:"none",WebkitUserSelect:"none"}}><div style={{display:"flex",alignItems:"center",gap:11}}>
 
-          {/* Logo équipe avec filigrane derrière */}
-          <div style={{width:37,height:37,borderRadius:9,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-            {logoSrc&&(
-              <img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"120%",height:"120%",objectFit:"contain",opacity:.12,pointerEvents:"none",zIndex:0}} onError={e=>e.target.style.display="none"}/>
-            )}
-            <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
-              {logoSrc
-                ? <img src={logoSrc} style={{width:32,height:32,objectFit:"contain"}} alt={bet.team||bet.player} onError={e=>{e.target.style.display="none";}}/>
-                : <GameLogo game={bet.game} size={30}/>
-              }
-            </div>
-          </div>
+          {/* Photo joueur ou Logo équipe */}
+          {(()=>{
+            const pData2=allPlayers[(bet.player||"").toLowerCase().trim()];
+            const playerPhoto=!isTeamBet&&pData2&&pData2.photo_url?pData2.photo_url:null;
+            if(playerPhoto){return(
+              <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",position:"relative",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
+                {logoSrc&&<img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.1,pointerEvents:"none"}} onError={e=>e.target.style.display="none"}/>}
+                <CachedImg src={playerPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1}}/>
+              </div>
+            );}
+            return(
+              <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                {logoSrc&&<img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"120%",height:"120%",objectFit:"contain",opacity:.12,pointerEvents:"none",zIndex:0}} onError={e=>e.target.style.display="none"}/>}
+                <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
+                  {logoSrc?<img src={logoSrc} style={{width:36,height:36,objectFit:"contain"}} alt={bet.team||bet.player} onError={e=>{e.target.style.display="none";}}/>:<GameLogo game={bet.game} size={30}/>}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
@@ -1904,9 +1911,9 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             {/* Ligne 2 : @cote • BK logo • mise • logo ligue */}
             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"nowrap",overflow:"hidden"}}>
               <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
-              {(bkLogo||bet.bookmaker)&&<span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span>}
-              {bkLogo?(<img src={bkLogo} alt={bet.bookmaker} style={{width:13,height:13,objectFit:"contain",flexShrink:0}}/>):bet.bookmaker?(<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>):null}
               {bet.stake&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.stake}$</span></>}
+              {(bkLogo||bet.bookmaker)&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span>
+              {bkLogo?<img src={bkLogo} alt={bet.bookmaker} title={bet.bookmaker} style={{width:18,height:18,objectFit:"contain",flexShrink:0,borderRadius:3}}/>:<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>}</>}
               {hasAnnounce&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:8,fontWeight:800,color:"#f97316",background:"rgba(249,115,22,.13)",border:"1px solid rgba(249,115,22,.35)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span></>}
               {bet.tipster&&<><span style={{color:"#4a5a6e",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:11,color:"#a78bfa",fontWeight:600,flexShrink:0}}>{bet.tipster}</span></>}
             </div>
