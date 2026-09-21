@@ -5020,15 +5020,40 @@ export default function App(){
     const _initFromSupa=async()=>{
     if(SUPA_URL&&SUPA_KEY){
       try{
-        // 1. Fetch settings rows SÉPARÉMENT (garantit qu'elles sont trouvées)
-        const settingsRes=await fetch(
-          SUPA_URL+"/rest/v1/bets?player=in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\")&select=*",
-          {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
-        );
+        // 1. Fetch settings + paris en parallèle
+        const [settingsRes,betsRes]=await Promise.all([
+          fetch(
+            SUPA_URL+"/rest/v1/bets?player=in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\")&select=*",
+            {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
+          ),
+          fetch(
+            SUPA_URL+"/rest/v1/bets?player=not.in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\",\"__SETTINGS_VICTOIRE_BETS__\",\"__SETTINGS_COMBINE_BETS__\",\"__SETTINGS_ANNONCE_TRACKER__\",\"__SETTINGS_PP_RATIOS__\")&select=*&order=id.asc&limit=5000",
+            {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
+          )
+        ]);
         if(settingsRes.ok){
           const settingsRows=await settingsRes.json();
-
-          // Settings tourneys (coupes, tipsters, tournois, etc.)
+          // ── Traiter les paris ────────────────────────────────────────────────
+          if(betsRes.ok){
+            const remoteBets=await betsRes.json();
+            if(remoteBets&&remoteBets.length>0){
+              const localRaw=localStorage.getItem("v7_bets");
+              const localBets=localRaw?JSON.parse(localRaw):[];
+              const localMap={};localBets.forEach(b=>{localMap[String(b.id)]=b;});
+              const remoteMap={};remoteBets.forEach(b=>{remoteMap[String(b.id)]=b;});
+              const allIds=new Set([...Object.keys(localMap),...Object.keys(remoteMap)]);
+              const merged=[];
+              allIds.forEach(id=>{
+                const loc=localMap[id],rem=remoteMap[id];
+                if(loc&&rem){merged.push((loc.updatedAt||0)>=(rem.updatedAt||0)?loc:rem);}
+                else{merged.push(loc||rem);}
+              });
+              merged.sort((a,b)=>(a.id||0)-(b.id||0));
+              const normalized=merged.map(normalizeBet);
+              setBets(normalized);
+              try{localStorage.setItem("v7_bets",JSON.stringify(normalized));}catch(e){}
+            }
+          }
           const settingsRow=settingsRows.find(b=>b.player==="__SETTINGS__");
           if(settingsRow){
             try{
