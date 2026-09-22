@@ -205,6 +205,11 @@ function GameLogo({game,size=18}){
   );;
 
   if(game==="HEBA")return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,background:"#0050A0",borderRadius:"50%",fontSize:Math.max(5,size-8),fontWeight:900,color:"#fff",flexShrink:0}}>GR</span>;
+  if(game==="NHL")return(
+    <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#000"}}>
+      <img src={NHL_LOGO_B64} alt="NHL" style={{width:"85%",height:"85%",objectFit:"contain",display:"block"}}/>
+    </span>
+  );
   const src=L[game];
   if(!src) return null;
   return <img src={src} alt={game} style={{width:size,height:size,objectFit:"cover",display:"block",flexShrink:0}}/>;
@@ -5138,42 +5143,17 @@ export default function App(){
     const _initFromSupa=async()=>{
     if(SUPA_URL&&SUPA_KEY){
       try{
-        // 1. Fetch settings + paris en parallèle
+        // Fetch settings uniquement (les paris sont gérés par pullFromSupa)
         const [settingsRes,betsRes]=await Promise.all([
           fetch(
-            SUPA_URL+"/rest/v1/bets?player=in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\")&select=*",
+            SUPA_URL+"/rest/v1/bets?player=in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\",\"__SETTINGS_VICTOIRE_BETS__\",\"__SETTINGS_COMBINE_BETS__\",\"__SETTINGS_ANNONCE_TRACKER__\",\"__SETTINGS_PP_RATIOS__\")&select=*",
             {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
           ),
-          fetch(
-            SUPA_URL+"/rest/v1/bets?player=not.in.(\"__SETTINGS__\",\"__SETTINGS_APP__\",\"__SETTINGS_BKPHOTOS__\",\"__SETTINGS_COMP__\",\"__SETTINGS_VICTOIRE_BETS__\",\"__SETTINGS_COMBINE_BETS__\",\"__SETTINGS_ANNONCE_TRACKER__\",\"__SETTINGS_PP_RATIOS__\")&select=*&order=id.asc&limit=5000",
-            {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}}
-          )
+          Promise.resolve({ok:true}) // placeholder
         ]);
-        if(settingsRes.ok){
+        if(settingsRes.ok&&betsRes.ok){
           const settingsRows=await settingsRes.json();
-          // ── Traiter les paris ────────────────────────────────────────────────
-          if(betsRes.ok){
-            const remoteBets=await betsRes.json();
-            if(remoteBets&&remoteBets.length>0){
-              const localRaw=localStorage.getItem("v7_bets");
-              const localBets=localRaw?JSON.parse(localRaw).filter(b=>b.player&&!String(b.player).startsWith("__SETTINGS")):[];
-              // Merger : garder la version la plus récente par ID
-              const localMap={};localBets.forEach(b=>{localMap[String(b.id)]=b;});
-              const remoteMap={};
-              remoteBets.filter(b=>b.player&&!String(b.player).startsWith("__SETTINGS")).forEach(b=>{remoteMap[String(b.id)]=b;});
-              const allIds=new Set([...Object.keys(localMap),...Object.keys(remoteMap)]);
-              const merged=[];
-              allIds.forEach(id=>{
-                const loc=localMap[id],rem=remoteMap[id];
-                if(loc&&rem){merged.push((loc.updatedAt||0)>=(rem.updatedAt||0)?loc:rem);}
-                else{merged.push(loc||rem);}
-              });
-              merged.sort((a,b)=>(a.id||0)-(b.id||0));
-              const normalized=merged.map(normalizeBet);
-              setBets(normalized);
-              try{localStorage.setItem("v7_bets",JSON.stringify(normalized));}catch(e){}
-            }
-          }
+          // Paris gérés par pullFromSupa après setLoaded(true)
           const settingsRow=settingsRows.find(b=>b.player==="__SETTINGS__");
           if(settingsRow){
             try{
@@ -5555,6 +5535,8 @@ export default function App(){
 
   // Pull au chargement
   // Note: pull initial déjà fait dans useEffect init — pullFromSupa utilisé pour refresh périodique seulement
+  // MAIS on déclenche aussi un pull immédiat après le chargement initial
+  useEffect(()=>{if(!loaded)return;pullFromSupa(true);},[loaded]);
 
   // Re-pull quand l app revient au premier plan (iOS background → foreground)
   useEffect(()=>{
