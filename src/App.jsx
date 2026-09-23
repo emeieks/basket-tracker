@@ -2020,15 +2020,13 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
             {/* Ligne 1 : Nom joueur/club · logo ligue · stat */}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden"}}>
-              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",lineHeight:1,flexShrink:0,whiteSpace:"nowrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden",lineHeight:"normal"}}>
+              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",flexShrink:0,whiteSpace:"nowrap",verticalAlign:"middle"}}>
                 {(()=>{
-                  // Paris équipe : afficher nom club + handicap si applicable
                   if(isTeamBet){
                     const club=bet.player||bet.team||"";
                     const clubName=club.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
                     if(bet.description&&bet.description.includes(" +")&&!bet.description.startsWith("Victoire")&&!bet.description.startsWith("Champion")){
-                      // Handicap : extraire "+X.X" ou "-X.X"
                       const m=bet.description.match(/([+-]\d+\.?\d*)/);
                       return m?clubName+" "+m[1]:clubName;
                     }
@@ -2037,10 +2035,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                   return (bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
                 })()}
               </span>
-              <GameLogo game={bet.game} size={16}/>
+              <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={16}/></span>
               {/* Over / Under — uniquement paris joueur */}
               {!isTeamBet&&bet.overUnder&&(
-                <span style={{fontSize:12,fontWeight:700,color:"#8a9eb8",flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:700,color:"#8a9eb8",flexShrink:0,verticalAlign:"middle"}}>
                   {bet.overUnder}
                 </span>
               )}
@@ -2048,12 +2046,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
               {descLine&&(()=>{
                 const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
                 if(parts) return(
-                  <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>
+                  <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
                     <span style={{fontWeight:800,color:"#c8d8f0",fontSize:13}}>{parts[1]}</span>
                     {parts[2]?" "+parts[2]:""}
                   </span>
                 );
-                return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1}}>{descLine}</span>;
+                return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>{descLine}</span>;
               })()}
               {/* Long terme : afficher la ligue */}
               {isLongTerme&&(()=>{
