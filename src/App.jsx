@@ -1966,20 +1966,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     return TEAM_LOGOS[team]||EL_TEAM_LOGOS[team]||NBA_TEAM_LOGOS[team]||null;
   })();
 
-  // Pour victoire/longterm : logo de l'équipe bet.player (c'est le nom du club)
+  // Logo de l'équipe (toujours) — pour la vignette
   const teamBetLogo=(()=>{
     if(!isTeamBet) return null;
     const rawTeam=bet.player||bet.team||"";
-    // Vérifier si c'est un pari dans une coupe → utiliser le logo de la coupe
-    if((customCups||[]).length>0){
-      // Chercher par bet.game (le plus fiable) ou dans la description
-      const matchCup=(customCups||[]).find(c=>
-        bet.game===c.name ||
-        bet.league===c.name ||
-        (bet.description&&bet.description.includes(c.name))
-      );
-      if(matchCup&&matchCup.logo)return matchCup.logo;
-    }
     // Essayer le nom exact d'abord
     const direct=TEAM_LOGOS[rawTeam]||EL_TEAM_LOGOS[rawTeam]||NBA_TEAM_LOGOS[rawTeam]||null;
     if(direct)return direct;
@@ -1987,17 +1977,28 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
     const cleanTeam=rawTeam.replace(/^(Victoire |Vainqueur |Champion )/,"").trim();
     const clean=TEAM_LOGOS[cleanTeam]||EL_TEAM_LOGOS[cleanTeam]||NBA_TEAM_LOGOS[cleanTeam]||null;
     if(clean)return clean;
-    // Essayer avec les alias (Olympiakos → Olympiacos, etc.)
+    // Alias
     const ALIASES={"Olympiakos":"Olympiacos","Olympiacos Piraeus":"Olympiacos","Panathinaikos":"Panathinaikos AKTOR","Panathinaikos Athens":"Panathinaikos AKTOR","Panathinaikos AKTOR Athens":"Panathinaikos AKTOR","Fenerbahce":"Fenerbahçe Tarfin","Fenerbahce Beko":"Fenerbahçe Tarfin","Anadolu Efes":"Anadolu Efes Istanbul","Zalgiris":"Žalgiris","Zalgiris Kaunas":"Žalgiris","Virtus Bologna":"Virtus Olidata Bologna","Bayern Munich":"Bayern München","FC Bayern Munich":"Bayern München","Baskonia":"Kosner Baskonia","ASVEL":"LDLC ASVEL","Real Madrid":"Real Madrid","Barcelona":"FC Barcelona","Fenerbahce Istanbul":"Fenerbahçe Tarfin","Partizan":"Partizan Mozzart Bet","Red Star Belgrade":"Crvena zvezda Meridianbet","Maccabi Tel Aviv":"Maccabi Rapyd Tel Aviv"};
     const aliasTeam=ALIASES[rawTeam]||ALIASES[cleanTeam];
     if(aliasTeam)return TEAM_LOGOS[aliasTeam]||EL_TEAM_LOGOS[aliasTeam]||NBA_TEAM_LOGOS[aliasTeam]||null;
-    // Recherche partielle insensible à la casse
+    // Recherche partielle
     const lc=cleanTeam.toLowerCase();
     for(const map of[TEAM_LOGOS,EL_TEAM_LOGOS,NBA_TEAM_LOGOS]){
       const found=Object.keys(map).find(k=>k.toLowerCase()===lc||k.toLowerCase().includes(lc)||lc.includes(k.toLowerCase()));
       if(found)return map[found];
     }
     return null;
+  })();
+
+  // Logo de la coupe (si le pari est dans une coupe custom) — affiché après le nom
+  const cupBetLogo=(()=>{
+    if(!isTeamBet||(customCups||[]).length===0)return null;
+    const matchCup=(customCups||[]).find(c=>
+      bet.game===c.name ||
+      bet.league===c.name ||
+      (bet.description&&bet.description.includes(c.name))
+    );
+    return matchCup?.logo||null;
   })();
 
   const logoSrc=isTeamBet?(teamBetLogo||teamLogoSrc):teamLogoSrc;
@@ -2043,7 +2044,11 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                   return (bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
                 })()}
               </span>
-              <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={20}/></span>
+              <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}>
+                {cupBetLogo
+                  ?<img src={cupBetLogo} alt="" style={{width:20,height:20,objectFit:"contain",borderRadius:4}} onError={e=>e.target.style.display="none"}/>
+                  :<GameLogo game={bet.game} size={20}/>}
+              </span>
               {/* Over/Under + description : paris joueur ET paris 3pts équipe */}
               {((!isTeamBet)||(isTeamBet&&descLine))&&(bet.overUnder||descLine)&&(
                 <span style={{fontSize:13,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
