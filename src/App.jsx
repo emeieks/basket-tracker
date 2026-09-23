@@ -2038,6 +2038,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                 })()}
               </span>
               <GameLogo game={bet.game} size={16}/>
+              {/* Over / Under — uniquement paris joueur */}
+              {!isTeamBet&&bet.overUnder&&(
+                <span style={{fontSize:12,fontWeight:700,color:"#8a9eb8",flexShrink:0}}>
+                  {bet.overUnder}
+                </span>
+              )}
               {/* Description stat : seulement pour paris joueur, pas équipe */}
               {descLine&&(()=>{
                 const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
@@ -7697,7 +7703,6 @@ export default function App(){
             {/* ── 1. BOOKMAKER ── */}
             {!duelMode&&(()=>{
               const selBK=form.bookmaker||"";
-              const selLogo=BK_LOGOS[selBK]||bkPhotos[selBK]||null;
               return(
                 <div style={{background:"linear-gradient(180deg,rgba(14,20,38,.98),rgba(8,12,24,.99))",borderRadius:18,border:"1px solid rgba(139,92,246,.2)",padding:"11px 12px 12px",marginBottom:8,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -7707,21 +7712,23 @@ export default function App(){
                       <button onClick={()=>setModalBK(true)} style={{padding:"3px 9px",borderRadius:7,border:"1px solid rgba(255,255,255,0.06)",background:"transparent",color:"#555e72",fontSize:10,cursor:"pointer",fontFamily:"Inter,sans-serif",fontWeight:600}}>+</button>
                     </div>
                   </div>
-                  {/* Dropdown */}
-                  <div style={{position:"relative"}}>
-                    {selBK&&selLogo&&(
-                      <img src={selLogo} alt={selBK} style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",width:22,height:22,objectFit:"contain",borderRadius:4,pointerEvents:"none",zIndex:1}}/>
-                    )}
-                    <select value={selBK} onChange={e=>setForm(f=>({...f,bookmaker:e.target.value}))}
-                      style={{width:"100%",height:46,background:"rgba(8,14,28,.9)",border:"1.5px solid "+(selBK?"rgba(139,92,246,.4)":"rgba(255,255,255,.08)"),borderRadius:12,color:selBK?"#c4b5fd":"#6B7280",fontSize:14,fontWeight:selBK?700:500,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none",paddingLeft:selBK&&selLogo?42:14,paddingRight:36,transition:"border-color .15s"}}>
-                      <option value="" style={{background:"#111827",color:"#6B7280"}}>Choisir un bookmaker…</option>
-                      {visibleBKs.map(bk=>(
-                        <option key={bk} value={bk} style={{background:"#111827",color:"#E5E7EB"}}>{bk}</option>
-                      ))}
-                    </select>
-                    {/* Arrow */}
-                    <svg style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",opacity:.4}} width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {/* Grille d'icônes bookmakers */}
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {visibleBKs.map(bk=>{
+                      const logo=BK_LOGOS[bk]||bkPhotos[bk]||null;
+                      const on=selBK===bk;
+                      return(
+                        <button key={bk} onClick={()=>setForm(f=>({...f,bookmaker:on?"":bk}))}
+                          style={{width:52,height:52,borderRadius:13,border:"1.5px solid "+(on?"#A78BFA":"rgba(255,255,255,.08)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.03)",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"border-color .15s,background .15s",position:"relative"}}>
+                          {logo
+                            ?<img src={logo} alt={bk} style={{width:36,height:36,objectFit:"contain",borderRadius:8}} onError={e=>e.target.style.display="none"}/>
+                            :<span style={{fontSize:11,fontWeight:700,color:on?"#a78bfa":"#6B7280",textAlign:"center",padding:"0 4px",lineHeight:1.2}}>{bk.slice(0,4)}</span>}
+                          {on&&<span style={{position:"absolute",top:3,right:3,width:7,height:7,borderRadius:"50%",background:"#a78bfa"}}/>}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {!selBK&&<div style={{marginTop:7,fontSize:11,color:"#4B5563",fontWeight:500,textAlign:"center"}}>Sélectionne un bookmaker</div>}
                 </div>
               );
             })()}
@@ -8160,18 +8167,18 @@ export default function App(){
                       </div>
                     </div>
 
-                    {/* Ligne 2 : Ligue + Poste */}
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",position:"relative"}}>
+                    {/* Ligne 2 : Ligue + Poste sur la même ligne */}
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap",position:"relative"}}>
                       <button
                         onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}));}}
                         title="Changer la ligue du pari"
-                        style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"3px 8px",cursor:"pointer"}}>
+                        style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:8,padding:"4px 9px",cursor:"pointer",flexShrink:0}}>
                         <GameLogo game={form.autoInfo.game} size={13}/>
                         <span style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{form.autoInfo.game}</span>
                         <span style={{fontSize:10.5,color:"#6B7280"}}>▾</span>
                       </button>
                       {form.autoInfo.role&&(
-                        <span style={{fontSize:11,fontWeight:600,color:"#7a9cbd",background:"rgba(96,165,250,.08)",border:"1px solid rgba(96,165,250,.15)",borderRadius:7,padding:"3px 8px"}}>
+                        <span style={{fontSize:11,fontWeight:600,color:"#7a9cbd",background:"rgba(96,165,250,.08)",border:"1px solid rgba(96,165,250,.15)",borderRadius:7,padding:"4px 9px",flexShrink:0}}>
                           {form.autoInfo.role}
                         </span>
                       )}
