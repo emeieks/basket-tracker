@@ -1179,6 +1179,8 @@ function checkIsTeamBet(b){
   if(b.player&&ALL_TEAMS_SET.has(b.player))return true;
   // 4. Description = "NomEquipe +/-X.X" (handicap équipe)
   if(b.description&&/^[A-Z].+[+-]\d+\.?\d+$/.test(b.description))return true;
+  // 5. Description = "NomEquipe Over/Under X.X 3s" (3 points équipe)
+  if(b.description&&/^.+ (Over|Under) \d+\.?\d+ 3s$/.test(b.description))return true;
   return false;
 }
 
@@ -7760,12 +7762,16 @@ export default function App(){
                       {/* Type de pari — une seule couleur violette */}
                       <div>
                         <div style={{...lbl,marginBottom:8}}>Type de pari</div>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-                          {[{k:"victoire",l:"Victoire"},{k:"handicap",l:"Handicap"},{k:"longtermebets",l:"Long terme"}].map(t=>{const on=tbType===t.k;return(
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
+                          {[{k:"victoire",l:"Victoire"},{k:"handicap",l:"Handicap"},{k:"3pts",l:"3 Pts"},{k:"longtermebets",l:"Long terme"}].map(t=>{const on=tbType===t.k;return(
                             <button key={t.k} onClick={()=>{
-                              const desc=t.k==="victoire"?"Victoire "+tbTeam:t.k==="handicap"?tbTeam+" +"+(tbHcp||"3.5"):"Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague||"NBA");
-                              setForm(f=>({...f,tbType:t.k,overUnder:"Over",description:tbTeam?desc:""}));
-                            }} style={{padding:"13px 4px",borderRadius:13,border:"1.5px solid "+(on?"rgba(139,92,246,.6)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.02)",color:on?"#c4b5fd":"#6B7280",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                              let desc="";
+                              if(t.k==="victoire") desc="Victoire "+tbTeam;
+                              else if(t.k==="handicap") desc=tbTeam+" +"+(tbHcp||"3.5");
+                              else if(t.k==="3pts") desc=tbTeam+" Over 5.5 3s";
+                              else desc="Champion "+tbTeam+" — "+(form.tbChampComp||tbLeague||"NBA");
+                              setForm(f=>({...f,tbType:t.k,overUnder:t.k==="3pts"?"Over":"Over",tb3PtsOU:"Over",tb3PtsVal:"5.5",description:tbTeam?desc:""}));
+                            }} style={{padding:"13px 4px",borderRadius:13,border:"1.5px solid "+(on?"rgba(139,92,246,.6)":"rgba(255,255,255,.07)"),background:on?"rgba(124,58,237,.18)":"rgba(255,255,255,.02)",color:on?"#c4b5fd":"#6B7280",fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
                               {t.l}
                             </button>
                           );})}
@@ -7790,6 +7796,39 @@ export default function App(){
                               </select>
                               <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
                             </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 3 Pts équipe — Over/Under + ligne */}
+                      {tbType==="3pts"&&(
+                        <div>
+                          <div style={{...lbl,marginBottom:8}}>3 Points équipe</div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                            {["Over","Under"].map(ou=>{
+                              const active=(form.tb3PtsOU||"Over")===ou;
+                              const col=ou==="Over"?"#22C55E":"#3b82f6";
+                              const curVal=form.tb3PtsVal||"5.5";
+                              return(
+                                <button key={ou} onClick={()=>setForm(f=>({...f,tb3PtsOU:ou,overUnder:ou,description:tbTeam?tbTeam+" "+ou+" "+curVal+" 3s":""}))}
+                                  style={{padding:"13px 4px",borderRadius:13,border:"1.5px solid "+(active?col:"rgba(255,255,255,.07)"),background:active?"rgba(124,58,237,.12)":"rgba(255,255,255,.02)",color:active?col:"#6B7280",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all .15s"}}>
+                                  {ou==="Over"?"▲ Over":"▼ Under"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div style={{position:"relative"}}>
+                            <select
+                              value={form.tb3PtsVal||"5.5"}
+                              onChange={e=>{
+                                const v=e.target.value;
+                                const ou=form.tb3PtsOU||"Over";
+                                setForm(f=>({...f,tb3PtsVal:v,description:tbTeam?tbTeam+" "+ou+" "+v+" 3s":""}));
+                              }}
+                              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:13,padding:"14px 40px 14px 16px",color:"#fff",fontSize:17,fontWeight:800,fontFamily:"Inter,sans-serif",outline:"none",cursor:"pointer",appearance:"none",WebkitAppearance:"none"}}>
+                              {Array.from({length:15},(_,i)=>((i+5.5).toFixed(1))).map(v=><option key={v} value={v}>{v} 3s</option>)}
+                            </select>
+                            <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:"#6B7280",fontSize:13,pointerEvents:"none"}}>▾</span>
                           </div>
                         </div>
                       )}
@@ -8261,8 +8300,8 @@ export default function App(){
                 const selBT=form.betType||null;
                 const selBTObj=BET_TYPES_LIST.find(b=>b.id===selBT);
                 const lineVals=selBT?BET_OPTS[selBT]:BET_OPTS.pts;
-                // Valeur numérique stockée dans betLine (champ dédié) — fallback sur description
-                const selVal=form.betLine||(form.description?form.description.split(" ")[0]:"");
+                // Toujours lire betLine en priorité (jamais depuis description)
+                const selVal=form.betLine||"";
                 // S'assurer que selVal est dans les options du type actuel
                 const validVal=lineVals.includes(selVal)?selVal:"";
 
@@ -8318,10 +8357,9 @@ export default function App(){
                           onChange={e=>{
                             const newBT=e.target.value;
                             const suffix=BET_SUFFIX[newBT]||"Points";
-                            // Garder la valeur actuelle si elle est valide dans le nouveau type, sinon vider
-                            const newOpts=BET_OPTS[newBT]||[];
-                            const keepVal=newOpts.includes(selVal)?selVal:"";
-                            setForm(f=>({...f,betType:newBT,betLine:keepVal,description:keepVal?keepVal+" "+suffix:""}));
+                            // Toujours garder betLine — juste mettre à jour le suffix de la description
+                            const currentLine=form.betLine||"";
+                            setForm(f=>({...f,betType:newBT,description:currentLine?currentLine+" "+suffix:""}));
                           }}
                           style={{...boxStyle(!!selBT,selBTObj?.col||"#a78bfa"),width:"100%",paddingRight:28}}>
                           <option value="">Type…</option>
@@ -8652,7 +8690,7 @@ export default function App(){
               const tipsterMap={};
               settled.forEach(b=>{
                 const t=b.tipster;if(!t)return;
-                if(!tipsterMap[t])tipsterMap[t]={name:t,bets:[],byGame:{},byType:{victoire:[],joueur:[],handicap:[],longterme:[]},ou:{Over:[],Under:[]}};
+                if(!tipsterMap[t])tipsterMap[t]={name:t,bets:[],byGame:{},byType:{victoire:[],joueur:[],handicap:[],longterme:[],pts3:[]},ou:{Over:[],Under:[]}};
                 const tm=tipsterMap[t];
                 tm.bets.push(b);
                 // Par ligue
@@ -8665,6 +8703,7 @@ export default function App(){
                 // Type
                 if(isTeamB(b)){
                   if(b.description&&(b.description.startsWith("Vainqueur ")))tm.byType.longterme.push(b);
+                  else if(b.description&&/^.+ (Over|Under) \d+\.?\d+ 3s$/.test(b.description))tm.byType.pts3.push(b);
                   else if(b.description&&/[+-]\d/.test(b.description)&&!b.description.startsWith("Victoire "))tm.byType.handicap.push(b);
                   else tm.byType.victoire.push(b);
                 } else {
@@ -8716,6 +8755,7 @@ export default function App(){
                       {k:"joueur",l:"Joueur",s:calcS(tip.byType.joueur),c:"#a78bfa"},
                       {k:"victoire",l:"Victoire équipe",s:calcS(tip.byType.victoire),c:"#22C55E"},
                       {k:"handicap",l:"Handicap",s:calcS(tip.byType.handicap),c:"#fbbf24"},
+                      {k:"pts3",l:"3 Pts équipe",s:calcS(tip.byType.pts3),c:"#34d399"},
                       {k:"longterme",l:"Long terme",s:calcS(tip.byType.longterme),c:"#34d399"},
                     ].filter(x=>x.s);
                     const bestType=typeList.length?[...typeList].sort((a,b2)=>b2.s.profit-a.s.profit)[0]:null;
@@ -8768,6 +8808,7 @@ export default function App(){
                                 <SubRow label="Joueur" s={calcS(tip.byType.joueur)} color="#a78bfa"/>
                                 <SubRow label="Victoire équipe" s={calcS(tip.byType.victoire)} color="#22C55E"/>
                                 <SubRow label="Handicap" s={calcS(tip.byType.handicap)} color="#fbbf24"/>
+                                <SubRow label="3 Pts équipe" s={calcS(tip.byType.pts3)} color="#34d399"/>
                                 <SubRow label="Long terme" s={calcS(tip.byType.longterme)} color="#34d399"/>
                               </>
                             )}
@@ -9685,6 +9726,9 @@ export default function App(){
                     const hcpPos=hcp.filter(b=>/\+\d/.test(b.description));
                     const hcpNeg=hcp.filter(b=>/-\d/.test(b.description));
                     const lt=lb.filter(b=>b.description&&b.description.startsWith("Vainqueur "));
+                    const pts3=lb.filter(b=>b.description&&/^.+ (Over|Under) \d+\.?\d+ 3s$/.test(b.description));
+                    const pts3Over=pts3.filter(b=>/Over/.test(b.description));
+                    const pts3Under=pts3.filter(b=>/Under/.test(b.description));
                     const cfg=GAME_CFG[league]||{accent:"#9CA3AF"};
                     return(
                       <AccordionCard key={league} id={"VIC_"+league} title={league} logo={<GameLogo game={league} size={20}/>} s={s} accent={cfg.accent}>
@@ -9700,6 +9744,14 @@ export default function App(){
                             <SubRow label="Tous handicaps" s={calcS(hcp)} color="#fbbf24"/>
                             {hcpPos.length>0&&<SubRow label="Handicap +" s={calcS(hcpPos)} color="#22C55E"/>}
                             {hcpNeg.length>0&&<SubRow label="Handicap −" s={calcS(hcpNeg)} color="#f87171"/>}
+                          </>
+                        )}
+                        {/* 3 Points équipe */}
+                        {pts3.length>0&&(
+                          <><div style={{fontSize:10,color:"#34d399",fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",padding:"10px 14px 4px",borderTop:"1px solid rgba(255,255,255,.04)"}}>🎯 3 Points équipe</div>
+                            <SubRow label="Tous 3 Pts" s={calcS(pts3)} color="#34d399"/>
+                            {pts3Over.length>0&&<SubRow label="Over 3s" s={calcS(pts3Over)} color="#22C55E"/>}
+                            {pts3Under.length>0&&<SubRow label="Under 3s" s={calcS(pts3Under)} color="#60a5fa"/>}
                           </>
                         )}
                         {/* Long terme */}
