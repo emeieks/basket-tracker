@@ -1936,7 +1936,13 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
   const isTeamBet=checkIsTeamBet(bet);
   const isLongTerme=!!(bet.description&&(bet.description.startsWith("Champion ")||bet.description.startsWith("Vainqueur ")));
   const descLine=(()=>{
-    if(isTeamBet)return "";
+    if(isTeamBet){
+      // Pour les paris 3pts équipe, afficher "Over/Under X.X 3s" sans le nom du club
+      const d=bet.description||"";
+      const m3pts=d.match(/^.+ ((?:Over|Under) \d+\.?\d+ 3s)$/);
+      if(m3pts)return m3pts[1];
+      return "";
+    }
     const d=bet.description||"";
     return d.replace(/^Over |^Under /,"");
   })();
@@ -2038,10 +2044,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                 })()}
               </span>
               <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={20}/></span>
-              {/* Over/Under + description stat collés, uniquement paris joueur */}
-              {!isTeamBet&&(bet.overUnder||descLine)&&(
+              {/* Over/Under + description : paris joueur ET paris 3pts équipe */}
+              {((!isTeamBet)||(isTeamBet&&descLine))&&(bet.overUnder||descLine)&&(
                 <span style={{fontSize:13,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
-                  {bet.overUnder&&<span style={{fontWeight:700}}>{bet.overUnder}{descLine?" ":""}</span>}{descLine}
+                  {!isTeamBet&&bet.overUnder&&<span style={{fontWeight:700}}>{bet.overUnder}{descLine?" ":""}</span>}{descLine}
                 </span>
               )}
               {/* Long terme : afficher la ligue */}
