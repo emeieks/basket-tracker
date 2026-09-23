@@ -4590,13 +4590,13 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                                 </div>
                               )}
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize",display:"flex",alignItems:"center",gap:5}}>
+                                <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"capitalize",display:"flex",alignItems:"center",gap:6}}>
                                 {data.name||key}
-                                {data.photo_url&&(data.photo_url.includes(SUPA_URL)?<span title="Photo Supabase ✓" style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>:<span title="Photo externe — cliquer pour héberger" style={{width:6,height:6,borderRadius:"50%",background:"#FBBF24",flexShrink:0,display:"inline-block"}}/>)}
+                                {data.photo_url&&(data.photo_url.includes(SUPA_URL)?<span title="Photo Supabase ✓" style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",flexShrink:0,display:"inline-block"}}/>:<span title="Photo externe — cliquer pour héberger" style={{width:7,height:7,borderRadius:"50%",background:"#FBBF24",flexShrink:0,display:"inline-block"}}/>)}
                               </div>
-                                {data.role&&<div style={{fontSize:10,color:"#6B7280",marginTop:1}}>{data.role}</div>}
+                                {data.role&&<div style={{fontSize:12,color:"#6B7280",marginTop:3}}>{data.role}</div>}
                               </div>
-                              <span style={{fontSize:10,color:"#7D8AA0",flexShrink:0}}>✎</span>
+                              <span style={{fontSize:13,color:"#7D8AA0",flexShrink:0}}>✎</span>
                             </button>
                           ))}
                         </div>
