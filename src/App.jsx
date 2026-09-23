@@ -8149,23 +8149,18 @@ export default function App(){
                   {/* ── Infos joueur (droite) ── */}
                   <div style={{flex:1,padding:"12px 10px 12px 4px",display:"flex",flexDirection:"column",justifyContent:"center",gap:7,minWidth:0}} onClick={()=>form._lgPickerOpen&&setForm(f=>({...f,_lgPickerOpen:false}))}>
 
-                    {/* Ligne 1 : Nom */}
-                    <div style={{fontSize:20,fontWeight:800,letterSpacing:-.4,color:"#f0f4ff",lineHeight:1.1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                      {(form.autoInfo.name||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
+                    {/* Ligne 1 : Nom + logo club */}
+                    <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
+                      {form.autoInfo.team&&(()=>{
+                        const tl=form.autoInfo.team_logo_url||TEAM_LOGOS[form.autoInfo.team]||EL_TEAM_LOGOS[form.autoInfo.team]||NBA_TEAM_LOGOS[form.autoInfo.team]||null;
+                        return tl?<img src={tl} alt="" style={{width:22,height:22,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>:null;
+                      })()}
+                      <div style={{fontSize:20,fontWeight:800,letterSpacing:-.4,color:"#f0f4ff",lineHeight:1.1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                        {(form.autoInfo.name||form.player).split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
+                      </div>
                     </div>
 
-                    {/* Ligne 2 : Club + logo */}
-                    {form.autoInfo.team&&(()=>{
-                      const tl=form.autoInfo.team_logo_url||TEAM_LOGOS[form.autoInfo.team]||EL_TEAM_LOGOS[form.autoInfo.team]||NBA_TEAM_LOGOS[form.autoInfo.team]||null;
-                      return(
-                        <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          {tl&&<img src={tl} alt="" style={{width:18,height:18,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
-                          <span style={{fontSize:13,fontWeight:700,color:"#c8d4e8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{form.autoInfo.team}</span>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Ligne 3 : Ligue + Poste */}
+                    {/* Ligne 2 : Ligue + Poste */}
                     <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",position:"relative"}}>
                       <button
                         onClick={e=>{e.stopPropagation();setForm(f=>({...f,_lgPickerOpen:!f._lgPickerOpen}));}}
