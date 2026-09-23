@@ -1159,23 +1159,85 @@ function checkIsTeamBet(b){
 
 // ── Helper : coller image depuis presse-papier → Supabase ────────────────────
 async function pasteImageToSupabase(name){
-  const items=await navigator.clipboard.read();
-  let blob=null;
+  const safe=(name||"img").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+
+  // ── Helper: upload un blob image vers Supabase ──────────────────────────
+  async function uploadBlob(blob){
+    const ext=blob.type.includes("png")?"png":blob.type.includes("webp")?"webp":"jpg";
+    const path="photos/players/"+safe+"_"+Date.now()+"."+ext;
+    const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+      method:"POST",
+      headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
+      body:blob,
+    });
+    if(!res.ok){const e=await res.text();throw new Error(e);}
+    return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+  }
+
+  // ── Helper: fetch une URL image et retourne un blob ─────────────────────
+  async function urlToBlob(url){
+    // Essai direct d'abord
+    try{
+      const r=await fetch(url);
+      if(r.ok){const b=await r.blob();if(b.type.startsWith("image/"))return b;}
+    }catch(_){}
+    // Fallback: proxy via allorigins pour les URLs bloquées par CORS
+    try{
+      const proxy="https://api.allorigins.win/raw?url="+encodeURIComponent(url);
+      const r=await fetch(proxy);
+      if(r.ok){const b=await r.blob();if(b.size>100)return b;}
+    }catch(_){}
+    throw new Error("Impossible de récupérer l'image depuis l'URL");
+  }
+
+  // ── Lecture presse-papier ────────────────────────────────────────────────
+  let items=[];
+  try{items=await navigator.clipboard.read();}catch(e){
+    // Pas de permission clipboard.read → essai readText pour URL
+    try{
+      const text=(await navigator.clipboard.readText()).trim();
+      if(text.match(/^https?:\/\/.+\.(png|jpg|jpeg|webp|svg|gif)/i)||text.match(/^https?:\/\//)){
+        const blob=await urlToBlob(text);
+        return await uploadBlob(blob);
+      }
+    }catch(_){}
+    throw new Error("Permission presse-papier refusée. Autorise l'accès dans ton navigateur.");
+  }
+
+  // ── Priorité 1 : blob image direct (screenshot, copie fichier) ──────────
   for(const item of items){
     const t=item.types.find(x=>x.startsWith("image/"));
-    if(t){blob=await item.getType(t);break;}
+    if(t){const blob=await item.getType(t);return await uploadBlob(blob);}
   }
-  if(!blob)throw new Error("Aucune image dans le presse-papier");
-  const ext=blob.type.includes("png")?"png":blob.type.includes("webp")?"webp":"jpg";
-  const safe=(name||"img").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
-  const path="photos/players/"+safe+"_"+Date.now()+"."+ext;
-  const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
-    method:"POST",
-    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
-    body:blob,
-  });
-  if(!res.ok){const e=await res.text();throw new Error(e);}
-  return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+
+  // ── Priorité 2 : HTML contenant une balise <img src="..."> ──────────────
+  for(const item of items){
+    if(item.types.includes("text/html")){
+      try{
+        const html=await(await item.getType("text/html")).text();
+        const m=html.match(/src=["']([^"']+)["']/);
+        if(m&&m[1]&&m[1].match(/^https?:\/\//)){
+          const blob=await urlToBlob(m[1]);
+          return await uploadBlob(blob);
+        }
+      }catch(_){}
+    }
+  }
+
+  // ── Priorité 3 : texte brut = URL image ─────────────────────────────────
+  for(const item of items){
+    if(item.types.includes("text/plain")){
+      try{
+        const text=(await(await item.getType("text/plain")).text()).trim();
+        if(text.match(/^https?:\/\//)){
+          const blob=await urlToBlob(text);
+          return await uploadBlob(blob);
+        }
+      }catch(_){}
+    }
+  }
+
+  throw new Error("Aucune image trouvée. Fais clic-droit → \"Copier l'image\" (pas \"Copier le lien\")");
 }
 
 
