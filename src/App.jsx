@@ -2004,7 +2004,7 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             if(playerPhoto){return(
               <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",position:"relative",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
                 {logoSrc&&<img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.1,pointerEvents:"none"}} onError={e=>e.target.style.display="none"}/>}
-                <CachedImg src={playerPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1}}/>
+                <CachedImg src={optimizePhotoUrl(playerPhoto,144)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1,imageRendering:"high-quality"}}/>
               </div>
             );}
             return(
@@ -2036,16 +2036,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                 })()}
               </span>
               <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={16}/></span>
-              {/* Over / Under — uniquement paris joueur */}
-              {!isTeamBet&&bet.overUnder&&(
-                <span style={{fontSize:12,fontWeight:700,color:"#8a9eb8",flexShrink:0,verticalAlign:"middle"}}>
-                  {bet.overUnder}
-                </span>
-              )}
-              {/* Description stat : seulement pour paris joueur, pas équipe */}
-              {descLine&&(
+              {/* Over/Under + description stat collés, uniquement paris joueur */}
+              {!isTeamBet&&(bet.overUnder||descLine)&&(
                 <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
-                  {descLine}
+                  {bet.overUnder&&<span style={{fontWeight:700}}>{bet.overUnder}{descLine?" ":""}</span>}{descLine}
                 </span>
               )}
               {/* Long terme : afficher la ligue */}
