@@ -13,6 +13,23 @@ if(typeof window!=="undefined"&&"serviceWorker" in navigator){
 
 // ── Cache images en mémoire (affichage instantané au 2e affichage) ──────────
 const IMG_CACHE=new Map();
+
+// ── Custom league logos — store global réactif ────────────────────────────────
+// Partagé entre GameLogo (partout dans l'app) et LeagueEditor (Suivi)
+let _customLeagueLogos=(()=>{try{return JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");}catch{return{};}})();
+const _logoListeners=new Set();
+function getCustomLeagueLogo(lg){return _customLeagueLogos[lg]||null;}
+function setCustomLeagueLogo(lg,url){
+  if(url===null||url===undefined){delete _customLeagueLogos[lg];}
+  else{_customLeagueLogos={..._customLeagueLogos,[lg]:url};}
+  localStorage.setItem("customLeagueLogos",JSON.stringify(_customLeagueLogos));
+  _logoListeners.forEach(fn=>fn({..._customLeagueLogos}));
+}
+function useCustomLeagueLogos(){
+  const [logos,setLogos]=React.useState({..._customLeagueLogos});
+  React.useEffect(()=>{_logoListeners.add(setLogos);return()=>_logoListeners.delete(setLogos);},[]);
+  return logos;
+}
 function CachedImg({src,style,alt="",onError,width,height,...rest}){
   if(!src) return null;
   const cached=IMG_CACHE.has(src);
@@ -177,6 +194,15 @@ const L={
   HEBA:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDA0QkE4Ii8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjI4IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IRUJBPC90ZXh0Pjwvc3ZnPg=="
 };
 function GameLogo({game,size=18}){
+  // ── Logo custom réactif (mis à jour dès qu'on change dans Suivi) ──────
+  const customLogos=useCustomLeagueLogos();
+  if(customLogos[game]){
+    return(
+      <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#1a1a2e"}}>
+        <img src={customLogos[game]} alt={game} style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+      </span>
+    );
+  }
   if(game==="NBA")return(
     <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff",flexShrink:0}}>
       <img src={NBA_LOGO_B64} alt="NBA" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
@@ -4021,10 +4047,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [addTeamName,setAddTeamName]=useState("");
   const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
-  const [customLeagueLogos,setCustomLeagueLogos]=useState(()=>{try{return JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");}catch{return{};}});
-  const [logoMenuLg,setLogoMenuLg]=useState(null); // ligue dont le menu logo est ouvert
-  const saveCustomLogo=(lg,url)=>{const next={...customLeagueLogos,[lg]:url};setCustomLeagueLogos(next);localStorage.setItem("customLeagueLogos",JSON.stringify(next));};
-  const deleteCustomLogo=(lg)=>{const next={...customLeagueLogos};delete next[lg];setCustomLeagueLogos(next);localStorage.setItem("customLeagueLogos",JSON.stringify(next));};
+  const customLeagueLogos=useCustomLeagueLogos();
+  const [logoMenuLg,setLogoMenuLg]=useState(null);
+  const saveCustomLogo=(lg,url)=>setCustomLeagueLogo(lg,url);
+  const deleteCustomLogo=(lg)=>setCustomLeagueLogo(lg,null);
   const LEAGUES=["NHL","NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   const searchResults=useMemo(()=>{
@@ -4553,16 +4579,14 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <div style={{padding:"10px 24px",fontSize:11,color:"#7D8AA0"}}>Aucun joueur enregistre</div>
                           ):[...teamPlayers].sort((a,b)=>posRank(a.data.role)-posRank(b.data.role)||(a.data.name||"").localeCompare(b.data.name||"")).map(({key,data})=>(
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
-                              style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
+                              style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"8px 14px 8px 18px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1px solid rgba(255,255,255,.06)",position:"relative"}}>
-                                  {teamLogo&&<img src={teamLogo} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.18,filter:"blur(1px) saturate(1.4)",pointerEvents:"none"}}/>}
-                                  <CachedImg src={optimizePhotoUrl(data.photo_url,88)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1}}/>
+                                <div style={{width:58,height:58,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1.5px solid rgba(255,255,255,.1)"}}>
+                                  <CachedImg src={optimizePhotoUrl(data.photo_url,116)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block"}}/>
                                 </div>
                               ):(
-                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"1px solid rgba(124,58,237,.2)",position:"relative",background:teamLogo?"transparent":"rgba(124,58,237,.12)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  {teamLogo&&<img src={teamLogo} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.22,filter:"blur(1px) saturate(1.4)",pointerEvents:"none"}}/>}
-                                  <span style={{fontSize:16,fontWeight:700,color:"#a78bfa",position:"relative",zIndex:1}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                                <div style={{width:58,height:58,borderRadius:"50%",flexShrink:0,border:"1.5px solid rgba(124,58,237,.25)",background:"rgba(124,58,237,.12)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                  <span style={{fontSize:20,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
                                 </div>
                               )}
                               <div style={{flex:1,minWidth:0}}>
