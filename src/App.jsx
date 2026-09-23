@@ -170,10 +170,10 @@ async function supaDeleteManyBets(ids) {
 
 // ── Game Logos & GameLogo component ──────────────────────────────────────
 const L={
-"Pro A":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDAzMTg5Ii8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjMwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5QUk88L3RleHQ+PC9zdmc+",
-  ACB:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjREE0MjFGIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjM1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5BQ0I8L3RleHQ+PC9zdmc+",
-  Bundesliga:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDA1QUEwIi8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjI0IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5CTEk8L3RleHQ+PC9zdmc+",
-  Lega:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDA2QjM4Ii8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjMwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5MQkE8L3RleHQ+PC9zdmc+",
+"Pro A":"https://upload.wikimedia.org/wikipedia/fr/thumb/d/d2/Betclic_Elite_logo_2023.png/240px-Betclic_Elite_logo_2023.png",
+  ACB:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Logo_liga_ACB.svg/240px-Logo_liga_ACB.svg.png",
+  Bundesliga:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Basketball_Bundesliga_logo.svg/240px-Basketball_Bundesliga_logo.svg.png",
+  Lega:"https://upload.wikimedia.org/wikipedia/en/9/9d/LegaBasket_Serie_A_Logo.png",
   HEBA:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjMDA0QkE4Ii8+PHRleHQgeD0iNTAiIHk9IjYwIiBmb250LXNpemU9IjI4IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IRUJBPC90ZXh0Pjwvc3ZnPg=="
 };
 function GameLogo({game,size=18}){
@@ -189,17 +189,17 @@ function GameLogo({game,size=18}){
   );
   if(game==="Pro A")return(
     <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBXpNrh-XoYgHEbQOwD6o1oawOHmbDmDjgN5UW5psHuEJ1qG_X1_hUYY8&s=10" alt="Pro A" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+      <img src="https://upload.wikimedia.org/wikipedia/fr/thumb/d/d2/Betclic_Elite_logo_2023.png/240px-Betclic_Elite_logo_2023.png" alt="Pro A" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );;
   if(game==="ACB")return(
     <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHba4RJ-Vnfw7Tmz6lpvavCaoXCjLzlPExXlEcZJmZHQZmQ21d6oX02y8&s=10" alt="ACB" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Logo_liga_ACB.svg/240px-Logo_liga_ACB.svg.png" alt="ACB" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );;
   if(game==="Bundesliga")return(
     <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDW9tDc-bCNxHCLjgIbxlRE4xjZ6qjjKz9pLEpPZ29Vgjr0qMzLm4elEY&s=10" alt="Bundesliga" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Basketball_Bundesliga_logo.svg/240px-Basketball_Bundesliga_logo.svg.png" alt="Bundesliga" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );
   if(game==="Lega")return(
@@ -214,7 +214,7 @@ function GameLogo({game,size=18}){
   );
   if(game==="BCL")return(
     <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"#fff"}}>
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOfM_B-Ft8HkiGyTsYadfsXdcGMA4RQiPzXwlC90cE-LMdDDrhlXwtTTMT&s=10" alt="BCL" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
+      <img src="https://upload.wikimedia.org/wikipedia/en/thumb/7/74/Basketball_Champions_League_logo.svg/240px-Basketball_Champions_League_logo.svg.png" alt="BCL" style={{width:"90%",height:"90%",objectFit:"contain",display:"block"}}/>
     </span>
   );;
 
@@ -641,7 +641,7 @@ const NBA_TEAM_LOGOS = {
   "Utah Jazz":            "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/utah.png&h=200&w=200",
   "Washington Wizards":   "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/wsh.png&h=200&w=200",
 };
-const EL_LOGO_B64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc4JJn1YiaNoPGJHVcgw10vQvx2le4Nc4k1g&s";
+const EL_LOGO_B64 = "https://upload.wikimedia.org/wikipedia/en/thumb/9/9c/EuroLeague_logo.png/240px-EuroLeague_logo.png";
 const EL_TEAM_LOGOS = {
   "Anadolu Efes Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjCgOCxM/a844756c-a58d-4666-93b8-48f7337bc79d.png?width=168&resizeType=fill&format=webp",
   "Besiktas Istanbul": "https://media-cdn.cortextech.io/1dU3kpCqReRp93/1BSdBWIjChWbHH/b05e3c54-e672-4b31-9f86-c91e9de7715c.png?width=168&resizeType=fill&format=webp",
@@ -3959,6 +3959,10 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
   const [addTeamName,setAddTeamName]=useState("");
   const [editingTeam,setEditingTeam]=useState(null); // {name, lg} — modal édit club
   const [searchQ,setSearchQ]=useState("");
+  const [customLeagueLogos,setCustomLeagueLogos]=useState(()=>{try{return JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");}catch{return{};}});
+  const [logoMenuLg,setLogoMenuLg]=useState(null); // ligue dont le menu logo est ouvert
+  const saveCustomLogo=(lg,url)=>{const next={...customLeagueLogos,[lg]:url};setCustomLeagueLogos(next);localStorage.setItem("customLeagueLogos",JSON.stringify(next));};
+  const deleteCustomLogo=(lg)=>{const next={...customLeagueLogos};delete next[lg];setCustomLeagueLogos(next);localStorage.setItem("customLeagueLogos",JSON.stringify(next));};
   const LEAGUES=["NHL","NBA","EuroLeague","EuroCup","BCL","Pro A","ACB","Lega","Bundesliga","HEBA"];
 
   const searchResults=useMemo(()=>{
@@ -4400,31 +4404,50 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
         const playerCount=Object.values(teams).reduce((s,arr)=>s+arr.length,0);
         const isOpen=openLeague===lg;
         return(
-          <div key={lg} style={{marginBottom:6,borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,.07)"}}>
-            <button onClick={()=>{setOpenLeague(isOpen?null:lg);setOpenTeam(null);}}
+          <div key={lg} style={{marginBottom:6,borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,.07)",position:"relative"}}>
+            <button onClick={()=>{setOpenLeague(isOpen?null:lg);setOpenTeam(null);setLogoMenuLg(null);}}
               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:isOpen?"rgba(255,255,255,.05)":"rgba(255,255,255,.02)",border:"none",cursor:"pointer",fontFamily:"Inter,sans-serif",borderBottom:isOpen?"1px solid rgba(255,255,255,.06)":"none"}}>
-              {/* Logo ligue cliquable pour NHL */}
-              {lg==="NHL"?(
-                <label title="Modifier le logo NHL" style={{cursor:"pointer",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                  <GameLogo game={lg} size={18}/>
-                  <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
-                    const file=e.target.files[0];if(!file)return;
-                    try{
-                      const fn=await supaUploadAvatar(file,"nhl_logo");
-                      const url=AVATARS_BUCKET+encodeURIComponent(fn);
-                      GAME_COLORS.NHL.logo=url;
-                      showToast("Logo NHL mis à jour ✓","#22C55E");
-                    }catch(err){showToast("Erreur: "+err.message,"#EF4444");}
-                  }}/>
-                </label>
-              ):(
-                <GameLogo game={lg} size={18}/>
-              )}
+              {/* Logo ligue — cliquable pour toutes les ligues */}
+              <span
+                title="Cliquer pour modifier le logo"
+                onClick={e=>{e.stopPropagation();setLogoMenuLg(logoMenuLg===lg?null:lg);}}
+                style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",flexShrink:0,cursor:"pointer",outline:logoMenuLg===lg?"2px solid #7C3AED":"none",outlineOffset:1,transition:"outline .15s"}}>
+                {customLeagueLogos[lg]
+                  ?<img src={customLeagueLogos[lg]} alt={lg} style={{width:22,height:22,objectFit:"contain",borderRadius:"50%"}}/>
+                  :<GameLogo game={lg} size={22}/>}
+              </span>
               <span style={{flex:1,textAlign:"left",fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{lg}</span>
-              {lg==="NHL"&&<button onClick={async e=>{e.stopPropagation();try{const url=await pasteImageToSupabase("nhl_logo");GAME_COLORS.NHL.logo=url;showToast("Logo NHL collé ✓","#22C55E");}catch(err){showToast("📋 "+err.message,"#EF4444");}}} style={{background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.2)",borderRadius:7,padding:"3px 8px",color:"#34d399",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",flexShrink:0}} title="Coller logo NHL">📋</button>}
               <span style={{fontSize:10,color:"#6B7280"}}>{playerCount} joueurs</span>
               <span style={{fontSize:11,color:isOpen?"#a78bfa":"#6B7280",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
             </button>
+            {/* Menu logo inline */}
+            {logoMenuLg===lg&&(
+              <div onClick={e=>e.stopPropagation()} style={{position:"absolute",top:42,left:10,zIndex:999,background:"#111827",border:"1px solid rgba(124,58,237,.4)",borderRadius:10,padding:"8px",display:"flex",flexDirection:"column",gap:5,minWidth:170,boxShadow:"0 8px 24px rgba(0,0,0,.6)"}}>
+                <div style={{fontSize:10,color:"#6B7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,padding:"0 4px 4px",borderBottom:"1px solid rgba(255,255,255,.06)",marginBottom:2}}>Logo {lg}</div>
+                {/* Coller depuis presse-papier */}
+                <button onClick={async()=>{try{const url=await pasteImageToSupabase("league_logo_"+lg.replace(/\s/g,"_"));saveCustomLogo(lg,url);setLogoMenuLg(null);showToast("Logo "+lg+" collé ✓","#22C55E");}catch(err){showToast("📋 "+err.message,"#EF4444");}}}
+                  style={{display:"flex",alignItems:"center",gap:7,background:"rgba(16,185,129,.1)",border:"1px solid rgba(16,185,129,.2)",borderRadius:7,padding:"6px 9px",color:"#34d399",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                  📋 Coller depuis presse-papier
+                </button>
+                {/* Upload fichier */}
+                <label style={{display:"flex",alignItems:"center",gap:7,background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.2)",borderRadius:7,padding:"6px 9px",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>
+                  📁 Choisir un fichier
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                    const file=e.target.files[0];if(!file)return;
+                    try{const fn=await supaUploadAvatar(file,"league_logo_"+lg.replace(/\s/g,"_"));const url=AVATARS_BUCKET+encodeURIComponent(fn);saveCustomLogo(lg,url);setLogoMenuLg(null);showToast("Logo "+lg+" mis à jour ✓","#22C55E");}
+                    catch(err){showToast("Erreur: "+err.message,"#EF4444");}
+                  }}/>
+                </label>
+                {/* Supprimer logo custom */}
+                {customLeagueLogos[lg]&&(
+                  <button onClick={()=>{deleteCustomLogo(lg);setLogoMenuLg(null);showToast("Logo "+lg+" réinitialisé","#F59E0B");}}
+                    style={{display:"flex",alignItems:"center",gap:7,background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:7,padding:"6px 9px",color:"#f87171",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left"}}>
+                    🗑 Supprimer le logo custom
+                  </button>
+                )}
+                <button onClick={()=>setLogoMenuLg(null)} style={{background:"none",border:"none",color:"#4B5563",fontSize:10,cursor:"pointer",fontFamily:"Inter,sans-serif",padding:"2px 4px",textAlign:"left"}}>Fermer ✕</button>
+              </div>
+            )}
 
             {isOpen&&(
               <div style={{background:"rgba(6,10,20,.8)"}}>
@@ -4470,10 +4493,14 @@ function LeagueEditor({allPlayers,setPlayers,showToast}){
                             <button key={key} onClick={(e)=>setEditingPlayer({key,data,clickY:e.clientY})}
                               style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 14px 9px 24px",background:"transparent",border:"none",borderBottom:"1px solid rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"Inter,sans-serif",textAlign:"left",contain:"layout style"}}>
                               {data.photo_url?(
-                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1px solid rgba(255,255,255,.06)"}}><CachedImg src={optimizePhotoUrl(data.photo_url,88)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block"}}/></div>
+                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:"rgba(124,58,237,.08)",WebkitTransform:"translateZ(0)",transform:"translateZ(0)",border:"1px solid rgba(255,255,255,.06)",position:"relative"}}>
+                                  {teamLogo&&<img src={teamLogo} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.18,filter:"blur(1px) saturate(1.4)",pointerEvents:"none"}}/>}
+                                  <CachedImg src={optimizePhotoUrl(data.photo_url,88)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1}}/>
+                                </div>
                               ):(
-                                <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(124,58,237,.12)",border:"1px solid rgba(124,58,237,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                  <span style={{fontSize:16,fontWeight:700,color:"#a78bfa"}}>{(data.name||key).charAt(0).toUpperCase()}</span>
+                                <div style={{width:44,height:44,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"1px solid rgba(124,58,237,.2)",position:"relative",background:teamLogo?"transparent":"rgba(124,58,237,.12)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                  {teamLogo&&<img src={teamLogo} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.22,filter:"blur(1px) saturate(1.4)",pointerEvents:"none"}}/>}
+                                  <span style={{fontSize:16,fontWeight:700,color:"#a78bfa",position:"relative",zIndex:1}}>{(data.name||key).charAt(0).toUpperCase()}</span>
                                 </div>
                               )}
                               <div style={{flex:1,minWidth:0}}>
