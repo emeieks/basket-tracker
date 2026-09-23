@@ -1550,14 +1550,14 @@ const PlayerAC=forwardRef(function PlayerAC({value,onChange,allPlayers,onConfirm
             const freq=betFreq[key]||0;
             return(
               <div key={key} onMouseDown={e=>{e.preventDefault();handleSelect(key);}}
-                style={{display:"flex",alignItems:"center",gap:9,padding:"9px 13px",cursor:"pointer",borderBottom:"1px solid #1F2937",background:isSelected?"rgba(124,58,237,0.08)":"transparent"}}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"10px 13px",cursor:"pointer",borderBottom:"1px solid #1F2937",background:isSelected?"rgba(124,58,237,0.08)":"transparent"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.1)"}
                 onMouseLeave={e=>e.currentTarget.style.background=isSelected?"rgba(124,58,237,0.08)":"transparent"}>
                 {/* Photo joueur */}
-                <div style={{width:34,height:34,borderRadius:8,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{width:46,height:46,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {p.photo_url
-                    ?<img src={optimizePhotoUrl(p.photo_url)} loading="lazy" style={{width:36,height:36,objectFit:"cover",objectPosition:"50% 15%"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
-                    :<span style={{fontSize:14,fontWeight:700,color:"#6B7280"}}>{key[0].toUpperCase()}</span>
+                    ?<img src={optimizePhotoUrl(p.photo_url,92)} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}} alt={key} onError={e=>{e.target.style.display="none";}}/>
+                    :<span style={{fontSize:18,fontWeight:700,color:"#6B7280"}}>{key[0].toUpperCase()}</span>
                   }
                 </div>
                 <div style={{flex:1,minWidth:0}}><span style={{fontWeight:700,fontSize:14,color:"#E5E7EB"}}>{key.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}</span><div style={{fontSize:11,color:"#6B7280",marginTop:1,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
@@ -2002,16 +2002,16 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             const pData2=allPlayers[(bet.player||"").toLowerCase().trim()];
             const playerPhoto=!isTeamBet&&pData2&&pData2.photo_url?pData2.photo_url:null;
             if(playerPhoto){return(
-              <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",position:"relative",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
+              <div style={{width:58,height:58,borderRadius:14,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",position:"relative",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
                 {logoSrc&&<img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",opacity:.1,pointerEvents:"none"}} onError={e=>e.target.style.display="none"}/>}
-                <CachedImg src={optimizePhotoUrl(playerPhoto,144)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1,imageRendering:"high-quality"}}/>
+                <CachedImg src={optimizePhotoUrl(playerPhoto,174)} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 10%",display:"block",position:"relative",zIndex:1,imageRendering:"high-quality"}}/>
               </div>
             );}
             return(
-              <div style={{width:44,height:44,borderRadius:10,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+              <div style={{width:54,height:54,borderRadius:13,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                 {logoSrc&&<img src={logoSrc} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"120%",height:"120%",objectFit:"contain",opacity:.12,pointerEvents:"none",zIndex:0}} onError={e=>e.target.style.display="none"}/>}
                 <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
-                  {logoSrc?<img src={logoSrc} style={{width:36,height:36,objectFit:"contain"}} alt={bet.team||bet.player} onError={e=>{e.target.style.display="none";}}/>:<GameLogo game={bet.game} size={30}/>}
+                  {logoSrc?<img src={logoSrc} style={{width:42,height:42,objectFit:"contain"}} alt={bet.team||bet.player} onError={e=>{e.target.style.display="none";}}/>:<GameLogo game={bet.game} size={36}/>}
                 </div>
               </div>
             );
