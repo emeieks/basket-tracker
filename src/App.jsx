@@ -2020,8 +2020,8 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
           {/* Centre */}
           <div style={{flex:1,minWidth:0}}>
             {/* Ligne 1 : Nom joueur/club · logo ligue · stat */}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,overflow:"hidden",lineHeight:"normal"}}>
-              <span style={{fontWeight:800,fontSize:14.5,color:"#f0f4ff",letterSpacing:"-.4px",flexShrink:0,whiteSpace:"nowrap",verticalAlign:"middle"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,overflow:"hidden",lineHeight:"normal"}}>
+              <span style={{fontWeight:800,fontSize:17,color:"#f0f4ff",letterSpacing:"-.4px",flexShrink:0,whiteSpace:"nowrap",verticalAlign:"middle"}}>
                 {(()=>{
                   if(isTeamBet){
                     const club=bet.player||bet.team||"";
@@ -2035,10 +2035,10 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                   return (bet.player||"").split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
                 })()}
               </span>
-              <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={16}/></span>
+              <span style={{display:"inline-flex",alignItems:"center",flexShrink:0}}><GameLogo game={bet.game} size={20}/></span>
               {/* Over/Under + description stat collés, uniquement paris joueur */}
               {!isTeamBet&&(bet.overUnder||descLine)&&(
-                <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
+                <span style={{fontSize:13,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
                   {bet.overUnder&&<span style={{fontWeight:700}}>{bet.overUnder}{descLine?" ":""}</span>}{descLine}
                 </span>
               )}
@@ -2052,12 +2052,12 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
             </div>
             {/* Ligne 2 : @cote • BK logo • mise • logo ligue */}
             <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"nowrap",overflow:"hidden"}}>
-              <span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
-              {bet.stake&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.stake}$</span></>}
+              <span style={{fontSize:13,fontWeight:700,color:"#7a9cbd",letterSpacing:"-.1px",flexShrink:0}}>@{bet.odds}</span>
+              {bet.stake&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:13,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.stake}$</span></>}
               {(bkLogo||bet.bookmaker)&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span>
-              {bkLogo?<img src={bkLogo} alt={bet.bookmaker} title={bet.bookmaker} style={{width:18,height:18,objectFit:"contain",flexShrink:0,borderRadius:3}}/>:<span style={{fontSize:11,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>}</>}
-              {hasAnnounce&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:9.5,fontWeight:800,color:"#f97316",background:"rgba(249,115,22,.13)",border:"1px solid rgba(249,115,22,.35)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span></>}
-              {bet.tipster&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:11,color:"#a78bfa",fontWeight:600,flexShrink:0}}>{bet.tipster}</span></>}
+              {bkLogo?<img src={bkLogo} alt={bet.bookmaker} title={bet.bookmaker} style={{width:22,height:22,objectFit:"contain",flexShrink:0,borderRadius:3}}/>:<span style={{fontSize:12,fontWeight:700,color:"#7a9cbd",flexShrink:0}}>{bet.bookmaker}</span>}</>}
+              {hasAnnounce&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:10,fontWeight:800,color:"#f97316",background:"rgba(249,115,22,.13)",border:"1px solid rgba(249,115,22,.35)",borderRadius:4,padding:"1px 5px",letterSpacing:.3,flexShrink:0}}>ANNONCE</span></>}
+              {bet.tipster&&<><span style={{color:"#7D8AA0",margin:"0 5px",fontSize:14,lineHeight:1,flexShrink:0}}>•</span><span style={{fontSize:12,color:"#a78bfa",fontWeight:600,flexShrink:0}}>{bet.tipster}</span></>}
             </div>
           </div>
 
