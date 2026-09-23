@@ -2043,16 +2043,11 @@ const BetRow=memo(function BetRow({bet,onStatus,onDelete,onDuplicate,onEdit,onSp
                 </span>
               )}
               {/* Description stat : seulement pour paris joueur, pas équipe */}
-              {descLine&&(()=>{
-                const parts=descLine.match(/^(\d+\.?\d*)\s*(.*)$/);
-                if(parts) return(
-                  <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
-                    <span style={{fontWeight:800,color:"#c8d8f0",fontSize:13}}>{parts[1]}</span>
-                    {parts[2]?" "+parts[2]:""}
-                  </span>
-                );
-                return <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>{descLine}</span>;
-              })()}
+              {descLine&&(
+                <span style={{fontSize:12,color:"#8a9eb8",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:1,verticalAlign:"middle"}}>
+                  {descLine}
+                </span>
+              )}
               {/* Long terme : afficher la ligue */}
               {isLongTerme&&(()=>{
                 const m=bet.description&&bet.description.match(/—\s*(.+)$/);
