@@ -23,8 +23,19 @@ function setCustomLeagueLogo(lg,url){
   if(url===null||url===undefined){delete _customLeagueLogos[lg];}
   else{_customLeagueLogos={..._customLeagueLogos,[lg]:url};}
   localStorage.setItem("customLeagueLogos",JSON.stringify(_customLeagueLogos));
+  supaSettingsSave("__settings_custom_league_logos__",_customLeagueLogos);
   _logoListeners.forEach(fn=>fn({..._customLeagueLogos}));
 }
+// Charger depuis Supabase au démarrage
+supaSettingsLoad("__settings_custom_league_logos__").then(remote=>{
+  if(remote&&typeof remote==="object"&&Object.keys(remote).length>0){
+    const local=_customLeagueLogos;
+    const merged={...remote,...local}; // local prioritaire
+    _customLeagueLogos=merged;
+    localStorage.setItem("customLeagueLogos",JSON.stringify(merged));
+    _logoListeners.forEach(fn=>fn({...merged}));
+  }
+}).catch(()=>{});
 function useCustomLeagueLogos(){
   const [logos,setLogos]=React.useState({..._customLeagueLogos});
   React.useEffect(()=>{_logoListeners.add(setLogos);return()=>_logoListeners.delete(setLogos);},[]);
@@ -136,6 +147,17 @@ async function supaPullBets() {
       ppEdge:b.pp_edge!=null?b.pp_edge:null,
     });
   });
+}
+
+// Fetch dédié aux rows settings (description complète)
+async function supaPullSettings() {
+  if(!SUPA_URL||!SUPA_KEY) return [];
+  try{
+    const rows = await supaFetch(
+      `/rest/v1/bets?select=id,player,description&player=in.(__SETTINGS__,__SETTINGS_APP__,__SETTINGS_BKPHOTOS__,__SETTINGS_COMP__)&limit=200`
+    );
+    return rows||[];
+  }catch(e){ return []; }
 }
 
 async function supaPushBets(bets) {
@@ -5320,12 +5342,27 @@ export default function App(){
                 try{localStorage.setItem("v7_bmakers",JSON.stringify(a.bookmakers));}catch(e){}
               }
               if(a.bkPhotos&&Object.keys(a.bkPhotos).length>0)setBkPhotos(prev=>({...prev,...a.bkPhotos}));
+              if(a.bkAccounts&&Object.keys(a.bkAccounts).length>0)setBkAccounts(prev=>({...prev,...a.bkAccounts}));
               if(a.bankroll!=null&&a.bankroll>0)setBankroll(a.bankroll);
               if(a.depots&&a.depots.length>0)setDepots(a.depots);
               if(a.tipsterPhotos&&Object.keys(a.tipsterPhotos).length>0)setTipsterPhotos(prev=>({...prev,...a.tipsterPhotos}));
               if(a.hiddenBKs&&a.hiddenBKs.length>0)setHiddenBKs(new Set(a.hiddenBKs));
+              if(a.hiddenAnalyseBets&&a.hiddenAnalyseBets.length>0)setHiddenAnalyseBets(new Set(a.hiddenAnalyseBets));
               if(a.blacklist&&a.blacklist.length>0)setBlacklist(new Set(a.blacklist));
               if(a.simManual&&Object.keys(a.simManual).length>0)setSimManual(prev=>({...prev,...a.simManual}));
+              if(a.ppData&&a.ppData.length>0)setPpData(a.ppData);
+              if(a.stickyBK!=null)setStickyBK(a.stickyBK);
+              if(a.lockedStatus!=null)setLockedStatus(a.lockedStatus);
+              // Restaurer les logos ligues custom
+              if(a.customLeagueLogos&&Object.keys(a.customLeagueLogos).length>0){
+                try{
+                  const cur=JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");
+                  const merged={...a.customLeagueLogos,...cur};
+                  localStorage.setItem("customLeagueLogos",JSON.stringify(merged));
+                  _customLeagueLogos=merged;
+                  _logoListeners.forEach(fn=>fn({...merged}));
+                }catch(e){}
+              }
             }catch(e){}
           }
 
@@ -5333,6 +5370,21 @@ export default function App(){
           const bkPhotosRow=settingsRows.find(b=>b.player==="__SETTINGS_BKPHOTOS__");
           if(bkPhotosRow){
             try{const photos=JSON.parse(bkPhotosRow.description||"{}");if(Object.keys(photos).length>0)setBkPhotos(prev=>({...prev,...photos}));}catch(e){}
+          }
+
+          // Logos ligues custom (row dédiée __SETTINGS_COMP__)
+          const logoRow=settingsRows.find(b=>b.id==="__settings_custom_league_logos__");
+          if(logoRow){
+            try{
+              const logos=JSON.parse(logoRow.description||"{}");
+              if(Object.keys(logos).length>0){
+                const cur=JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");
+                const merged={...logos,...cur};
+                localStorage.setItem("customLeagueLogos",JSON.stringify(merged));
+                _customLeagueLogos=merged;
+                _logoListeners.forEach(fn=>fn({...merged}));
+              }
+            }catch(e){}
           }
         }
 
@@ -5369,6 +5421,12 @@ export default function App(){
     if(!loaded||!restoredFromSupa||!SUPA_URL||!SUPA_KEY)return;
     try{
       let ovSaved={};try{ovSaved=JSON.parse(localStorage.getItem("v7_overrides")||"{}");}catch(e){}
+      let annonceTracker={};try{annonceTracker=JSON.parse(localStorage.getItem("v7_annonce_tracker")||"{}");}catch(e){}
+      let victoireBets=[];try{victoireBets=JSON.parse(localStorage.getItem("v7_victoire_bets")||"[]");}catch(e){}
+      let combineBets=[];try{combineBets=JSON.parse(localStorage.getItem("v7_combine_bets")||"[]");}catch(e){}
+      let ppRatios={};try{ppRatios=JSON.parse(localStorage.getItem("v7_pp_ratios")||"{}");}catch(e){}
+      let customLeagueLogos={};try{customLeagueLogos=JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");}catch(e){}
+      let recentPlayers=[];try{recentPlayers=JSON.parse(localStorage.getItem("v7_recent_players")||"[]");}catch(e){}
       const appRow={
         id:"__settings_app__",player:"__SETTINGS_APP__",
         description:JSON.stringify({
@@ -5380,6 +5438,12 @@ export default function App(){
           blacklist:[...blacklist],
           simManual,tipsterPhotos,
           ppData,
+          annonceTracker,
+          victoireBets,
+          combineBets,
+          ppRatios,
+          customLeagueLogos,
+          recentPlayers,
         }),
         odds:1,stake:0,bookmaker:"",status:"pending",game:"",league:"",role:"",team:"",
         datetime:"",isHeadshot:false,isLive:false,mapTag:"",profit:0,tournament:"",
@@ -5609,7 +5673,6 @@ export default function App(){
         try{
           const a=JSON.parse(appRow.description||"{}");
           if(a.bookmakers&&a.bookmakers.length>0){
-            // Utiliser exactement la liste Supabase — respecter les suppressions
             setBookmakers(a.bookmakers);
             try{localStorage.setItem("v7_bmakers",JSON.stringify(a.bookmakers));}catch(e){}
           }
@@ -5630,6 +5693,13 @@ export default function App(){
           if(a.simManual&&Object.keys(a.simManual).length>0){setSimManual(prev=>({...prev,...a.simManual}));}
           if(a.tipsterPhotos&&Object.keys(a.tipsterPhotos).length>0){setTipsterPhotos(prev=>({...prev,...a.tipsterPhotos}));}
           if(a.ppData&&a.ppData.length>0){setPpData(a.ppData);}
+          // ── Nouveaux champs synchronisés ─────────────────────────────────────
+          if(a.annonceTracker&&Object.keys(a.annonceTracker).length>0){try{const cur=JSON.parse(localStorage.getItem("v7_annonce_tracker")||"{}");localStorage.setItem("v7_annonce_tracker",JSON.stringify({...a.annonceTracker,...cur}));}catch(e){}}
+          if(a.victoireBets&&a.victoireBets.length>0){try{const cur=JSON.parse(localStorage.getItem("v7_victoire_bets")||"[]");const ids=new Set(cur.map(b=>b.id));const merged3=[...cur,...a.victoireBets.filter(b=>!ids.has(b.id))];localStorage.setItem("v7_victoire_bets",JSON.stringify(merged3));}catch(e){}}
+          if(a.combineBets&&a.combineBets.length>0){try{const cur=JSON.parse(localStorage.getItem("v7_combine_bets")||"[]");const ids=new Set(cur.map(b=>b.id));const merged3=[...cur,...a.combineBets.filter(b=>!ids.has(b.id))];localStorage.setItem("v7_combine_bets",JSON.stringify(merged3));}catch(e){}}
+          if(a.ppRatios&&Object.keys(a.ppRatios).length>0){try{const cur=JSON.parse(localStorage.getItem("v7_pp_ratios")||"{}");localStorage.setItem("v7_pp_ratios",JSON.stringify({...a.ppRatios,...cur}));}catch(e){}}
+          if(a.customLeagueLogos&&Object.keys(a.customLeagueLogos).length>0){try{const cur=JSON.parse(localStorage.getItem("customLeagueLogos")||"{}");const merged3={...a.customLeagueLogos,...cur};localStorage.setItem("customLeagueLogos",JSON.stringify(merged3));_customLeagueLogos=merged3;_logoListeners.forEach(fn=>fn({...merged3}));}catch(e){}}
+          if(a.recentPlayers&&a.recentPlayers.length>0){try{if(!localStorage.getItem("v7_recent_players"))localStorage.setItem("v7_recent_players",JSON.stringify(a.recentPlayers));}catch(e){}}
         }catch(e){}
       }
 
