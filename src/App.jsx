@@ -436,18 +436,174 @@ function useToast(){
 }
 
 // Photo joueur avec lazy loading
+
+// ── Logos ligues (ESPN/CDN) ───────────────────────────────────────────────────
+const LEAGUE_LOGOS={
+  "NBA":"https://a.espncdn.com/i/leaguelogos/nba/500/scoreboard.png",
+  "EuroLeague":"https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/EuroLeague_Basketball_logo.svg/200px-EuroLeague_Basketball_logo.svg.png",
+  "EuroCup":"https://upload.wikimedia.org/wikipedia/en/thumb/3/34/EuroCup_Basketball_logo.svg/200px-EuroCup_Basketball_logo.svg.png",
+  "BCL":"https://upload.wikimedia.org/wikipedia/en/thumb/5/5d/Basketball_Champions_League_logo.svg/200px-Basketball_Champions_League_logo.svg.png",
+  "ACB":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Liga_ACB_logo.svg/200px-Liga_ACB_logo.svg.png",
+  "Betclic Elite":"https://upload.wikimedia.org/wikipedia/fr/thumb/9/9e/Betclic_ELITE_logo_2021.svg/200px-Betclic_ELITE_logo_2021.svg.png",
+  "Lega A":"https://upload.wikimedia.org/wikipedia/it/thumb/6/67/LBA_logo.svg/200px-LBA_logo.svg.png",
+  "BBL":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/BBL_Logo_2018.svg/200px-BBL_Logo_2018.svg.png",
+};
+
+
+
+// ── Couleurs équipes ──────────────────────────────────────────────────────────
+const TEAM_COLORS={
+  "Atlanta Hawks":{p:"#C8102E",s:"#FDB927"},
+  "Boston Celtics":{p:"#007A33",s:"#BA9653"},
+  "Brooklyn Nets":{p:"#000000",s:"#FFFFFF"},
+  "Charlotte Hornets":{p:"#1D1160",s:"#00788C"},
+  "Chicago Bulls":{p:"#CE1141",s:"#000000"},
+  "Cleveland Cavaliers":{p:"#860038",s:"#FDBB30"},
+  "Dallas Mavericks":{p:"#00538C",s:"#002B5E"},
+  "Denver Nuggets":{p:"#0E2240",s:"#FEC524"},
+  "Detroit Pistons":{p:"#C8102E",s:"#1D42BA"},
+  "Golden State Warriors":{p:"#1D428A",s:"#FFC72C"},
+  "Houston Rockets":{p:"#CE1141",s:"#000000"},
+  "Indiana Pacers":{p:"#002D62",s:"#FDBB30"},
+  "LA Clippers":{p:"#C8102E",s:"#1D428A"},
+  "Los Angeles Lakers":{p:"#552583",s:"#FDB927"},
+  "Memphis Grizzlies":{p:"#5D76A9",s:"#12173F"},
+  "Miami Heat":{p:"#98002E",s:"#F9A01B"},
+  "Milwaukee Bucks":{p:"#00471B",s:"#EEE1C6"},
+  "Minnesota Timberwolves":{p:"#0C2340",s:"#236192"},
+  "New Orleans Pelicans":{p:"#0C2340",s:"#C8102E"},
+  "New York Knicks":{p:"#006BB6",s:"#F58426"},
+  "Oklahoma City Thunder":{p:"#007AC1",s:"#EF3B24"},
+  "Orlando Magic":{p:"#0077C0",s:"#C4CED4"},
+  "Philadelphia 76ers":{p:"#006BB6",s:"#ED174C"},
+  "Phoenix Suns":{p:"#1D1160",s:"#E56020"},
+  "Portland Trail Blazers":{p:"#E03A3E",s:"#000000"},
+  "Sacramento Kings":{p:"#5A2D81",s:"#63727A"},
+  "San Antonio Spurs":{p:"#C4CED4",s:"#000000"},
+  "Toronto Raptors":{p:"#CE1141",s:"#000000"},
+  "Utah Jazz":{p:"#002B5C",s:"#00471B"},
+  "Washington Wizards":{p:"#002B5C",s:"#E31837"},
+  "Olimpia Milano":{p:"#CC0000",s:"#000000"},
+  "Virtus Bologna":{p:"#000000",s:"#FFFFFF"},
+  "FC Barcelona":{p:"#A50044",s:"#004D98"},
+  "Real Madrid":{p:"#FEBE10",s:"#FFFFFF"},
+  "LDLC ASVEL":{p:"#002F6C",s:"#E63329"},
+  "Paris Basketball":{p:"#0055A4",s:"#EF4135"},
+  "Panathinaikos AKTOR":{p:"#00703C",s:"#FFFFFF"},
+  "Olympiacos":{p:"#CC0000",s:"#FFFFFF"},
+  "Fenerbahce Tarfin":{p:"#004A97",s:"#FFCC00"},
+  "Bayern Munchen":{p:"#DC052D",s:"#0066B2"},
+  "Partizan Mozzart Bet":{p:"#000000",s:"#FFFFFF"},
+  "Maccabi Rapyd Tel Aviv":{p:"#FFCC00",s:"#007A33"},
+  "Zalgiris":{p:"#006400",s:"#FFFFFF"},
+  "Anadolu Efes":{p:"#002B5C",s:"#C8A84B"},
+  "Kosner Baskonia":{p:"#0055A4",s:"#FF0000"},
+  "Hapoel IBI Tel Aviv":{p:"#CC0000",s:"#FFFFFF"},
+  "Besiktas Gain":{p:"#000000",s:"#FFFFFF"},
+  "Valencia Basket":{p:"#000000",s:"#FF6600"},
+  "Dubai Basketball":{p:"#004F9F",s:"#C9A84C"},
+  "Crvena Zvezda Meridianbet Belgrade":{p:"#CC0000",s:"#FFFFFF"},
+};
+
+// Helper: obtenir couleur équipe
+function getTeamColor(team){
+  if(!team)return null;
+  return TEAM_COLORS[team]||null;
+}
+
+// Composant carte joueur pro (format vertical avec couleur équipe)
+const PlayerCard=memo(function PlayerCard({player,size=56,onClick,onPhotoClick,uploading=false}){
+  const photo=player.photo_url||player.avatar_url;
+  const tc=getTeamColor(player.team);
+  const primaryColor=tc?.p||"#1F2937";
+  const secondaryColor=tc?.s||"#374151";
+  const displayName=player.name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+
+  return(
+    <div onClick={onClick}
+      style={{display:"flex",alignItems:"center",gap:12,
+        padding:"10px 12px",
+        background:"#0A0F1E",
+        border:"1px solid rgba(255,255,255,.05)",
+        borderRadius:16,marginBottom:6,cursor:"pointer",
+        position:"relative",overflow:"hidden",
+        transition:"border-color .15s"}}>
+
+      {/* Bande couleur équipe à gauche */}
+      <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
+        background:`linear-gradient(180deg,${primaryColor},${secondaryColor})`}}/>
+
+      {/* Photo avec fond couleur équipe */}
+      <div style={{
+        width:size,height:size,borderRadius:"50%",flexShrink:0,
+        background:`linear-gradient(135deg,${primaryColor}CC,${secondaryColor}88)`,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        position:"relative",
+        boxShadow:`0 4px 12px ${primaryColor}55`,
+        border:`2px solid ${primaryColor}44`}}>
+        {photo?(
+          <img src={photo} alt={displayName} loading="lazy" decoding="async"
+            style={{width:"100%",height:"100%",borderRadius:"50%",
+              objectFit:"cover",objectPosition:"50% 8%"}}
+            onError={e=>{e.target.style.display="none";}}/>
+        ):(
+          <span style={{fontSize:size*0.38}}>👤</span>
+        )}
+      </div>
+
+      {/* Infos */}
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:14,fontWeight:700,color:"#F3F4F6",
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+          letterSpacing:.1}}>{displayName}</div>
+        <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
+          {player.role&&<span style={{
+            fontSize:10,fontWeight:800,color:primaryColor==="|#FFFFFF"?"#A78BFA":primaryColor,
+            background:`${primaryColor}22`,
+            border:`1px solid ${primaryColor}44`,
+            borderRadius:5,padding:"1px 6px",letterSpacing:.5}}>{player.role}</span>}
+          {player.game&&LEAGUE_LOGOS[player.game]&&(
+            <img src={LEAGUE_LOGOS[player.game]} alt={player.game}
+              style={{width:14,height:14,objectFit:"contain",opacity:.85}}/>
+          )}
+          {player.game&&!LEAGUE_LOGOS[player.game]&&(
+            <span style={{fontSize:10,color:"#6B7280"}}>{player.game}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Bouton photo */}
+      {onPhotoClick&&(
+        <button disabled={uploading}
+          onClick={e=>{e.stopPropagation();onPhotoClick();}}
+          style={{flexShrink:0,width:32,height:32,borderRadius:9,
+            border:"1px solid rgba(255,255,255,.08)",background:"transparent",
+            color:"#6B7280",cursor:"pointer",fontSize:15,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {uploading?"⏳":"📷"}
+        </button>
+      )}
+    </div>
+  );
+});
+
+
 const PlayerPhoto=memo(function PlayerPhoto({url,size=44,style={}}){
   const[err,setErr]=useState(false);
   if(!url||err)return(
-    <div style={{width:size,height:size,borderRadius:"50%",background:"#1F2937",
+    <div style={{width:size,height:size,borderRadius:"50%",
+      background:"linear-gradient(135deg,#1F2937,#111827)",
       display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:size*0.4,flexShrink:0,...style}}>👤</div>
+      fontSize:size*0.4,flexShrink:0,flexShrink:0,
+      boxShadow:"0 2px 8px rgba(0,0,0,.4)",...style}}>👤</div>
   );
   return(
-    <img src={url} alt="" loading="lazy"
+    <img src={url} alt="" loading="lazy" decoding="async"
       onError={()=>setErr(true)}
       style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",
-        objectPosition:"50% 10%",flexShrink:0,...style}}/>
+        objectPosition:"50% 8%",flexShrink:0,
+        imageRendering:"high-quality",
+        boxShadow:"0 2px 8px rgba(0,0,0,.35)",...style}}/>
   );
 });
 
@@ -490,7 +646,14 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
               <PlayerPhoto url={p.photo_url||p.avatar_url} size={36}/>
               <div>
                 <div className="player-name">{p.name}</div>
-                <div className="player-meta">{[p.team,p.game].filter(Boolean).join(" · ")}</div>
+                <div className="player-meta" style={{display:"flex",alignItems:"center",gap:4}}>
+                  {p.team&&<span>{p.team}</span>}
+                  {p.game&&LEAGUE_LOGOS[p.game]&&(
+                    <img src={LEAGUE_LOGOS[p.game]} alt={p.game}
+                      style={{width:12,height:12,objectFit:"contain",opacity:.8}}/>
+                  )}
+                  {p.game&&!LEAGUE_LOGOS[p.game]&&<span>· {p.game}</span>}
+                </div>
               </div>
             </div>
           ))}
@@ -706,14 +869,37 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
         <div className="modal-handle"/>
 
         {/* Header joueur */}
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
-          <PlayerPhoto url={photo} size={56}/>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>{
+          (()=>{
+            const tc2=getTeamColor(bet.team||pData?.team);
+            const pc2=tc2?.p||"#1F2937";
+            const sc2=tc2?.s||"#374151";
+            return(
+              <div style={{width:64,height:64,borderRadius:"50%",flexShrink:0,
+                background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                border:`2px solid ${pc2}66`,boxShadow:`0 4px 16px ${pc2}55`,
+                overflow:"hidden"}}>
+                {photo
+                  ?<img src={photo} loading="lazy" decoding="async"
+                      style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
+                  :<span style={{fontSize:26}}>👤</span>}
+              </div>
+            );
+          })()
+        }
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{bet.player}</div>
             <div style={{fontSize:13,color:"#9CA3AF",marginTop:2}}>
               {bet.description||"—"}
             </div>
-            {bet.game&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{bet.game}</div>}
+            {bet.game&&(
+              <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                {LEAGUE_LOGOS[bet.game]&&<img src={LEAGUE_LOGOS[bet.game]} alt={bet.game}
+                  style={{width:14,height:14,objectFit:"contain",opacity:.8}}/>}
+                <span style={{fontSize:11,color:"#6B7280"}}>{bet.game}</span>
+              </div>
+            )}
           </div>
           <div className={"badge badge-"+bet.status}>
             {bet.status==="pending"?"En cours":bet.status==="won"?"Gagné":bet.status==="lost"?"Perdu":"Void"}
@@ -909,16 +1095,37 @@ function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
           const photo=pData?.photo_url||pData?.avatar_url;
           const profitNum=parseFloat(b.profit||0);
           const bkObj=bookmakers?.find(bk=>bk.name===b.bookmaker);
+          const tc=getTeamColor(b.team||pData?.team);
+          const pc=tc?.p||"#1F2937";
+          const sc2=tc?.s||"#374151";
           return(
-              <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}>
-              <PlayerPhoto url={photo} size={44}/>
+              <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}
+                style={{position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
+                background:`linear-gradient(180deg,${pc},${sc2})`}}/>
+              <div style={{width:44,height:44,borderRadius:"50%",flexShrink:0,
+                background:`linear-gradient(135deg,${pc}BB,${sc2}66)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                border:`2px solid ${pc}44`,boxShadow:`0 2px 8px ${pc}44`,
+                overflow:"hidden",marginLeft:4}}>
+                {photo
+                  ?<img src={photo} loading="lazy" decoding="async"
+                      style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}
+                      onError={e=>{e.target.style.display="none";}}/>
+                  :<span style={{fontSize:18}}>👤</span>}
+              </div>
               <div className="bet-info">
                 <div className="bet-player">{b.player}</div>
                 <div className="bet-desc">
                   <span className={"badge badge-"+b.status} style={{fontSize:10,padding:"2px 7px"}}>
                     {b.status==="pending"?"En cours":b.status==="won"?"✓ Gagné":b.status==="lost"?"✗ Perdu":"Void"}
                   </span>
-                  {b.description&&<span style={{marginLeft:6,color:"#9CA3AF"}}>{b.description}</span>}
+                  {b.game&&LEAGUE_LOGOS[b.game]&&(
+                    <img src={LEAGUE_LOGOS[b.game]} alt={b.game}
+                      style={{width:14,height:14,objectFit:"contain",
+                        marginLeft:5,verticalAlign:"middle",opacity:.8}}/>
+                  )}
+                  {b.description&&<span style={{marginLeft:4,color:"#9CA3AF"}}>{b.description}</span>}
                 </div>
               </div>
               <div className="bet-right">
@@ -1298,47 +1505,13 @@ function EditView({showToast}){
         <div key={pos} style={{marginBottom:4}}>
           <div style={{fontSize:10,fontWeight:800,color:"#7C3AED",
             letterSpacing:1.5,textTransform:"uppercase",
-            padding:"6px 4px 4px",marginBottom:2}}>{pos}</div>
-          {pList.map(p=>{
-            const photo=p.photo_url||p.avatar_url;
-            const displayName=formatName(p.name);
-            return(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,
-                padding:"10px 12px",background:"#0F1629",
-                border:"1px solid rgba(255,255,255,.06)",
-                borderRadius:14,marginBottom:6,cursor:"pointer"}}
-                onClick={()=>setEditingPlayer(p)}>
-                <div style={{position:"relative",flexShrink:0}}>
-                  {photo
-                    ?<img src={photo} alt={displayName} loading="lazy"
-                        style={{width:52,height:52,borderRadius:"50%",
-                          objectFit:"cover",objectPosition:"50% 8%",
-                          background:"#1F2937",boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}/>
-                    :<div style={{width:52,height:52,borderRadius:"50%",
-                        background:"#1F2937",display:"flex",alignItems:"center",
-                        justifyContent:"center",fontSize:20,
-                        boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}>👤</div>
-                  }
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14,fontWeight:700,color:"#F3F4F6",
-                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{displayName}</div>
-                  <div style={{fontSize:11,marginTop:1}}>
-                    <span style={{color:"#A78BFA",fontWeight:600}}>{p.role||"—"}</span>
-                    {p.game&&<span style={{marginLeft:6,color:"#4B5563"}}>· {p.game}</span>}
-                  </div>
-                </div>
-                <button disabled={uploadingId===p.id}
-                  onClick={e=>{e.stopPropagation();pastePlayerPhoto(p);}}
-                  style={{flexShrink:0,width:34,height:34,borderRadius:9,
-                    border:"1px solid rgba(255,255,255,.08)",background:"transparent",
-                    color:"#6B7280",cursor:"pointer",fontSize:16,
-                    display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {uploadingId===p.id?"⏳":"📷"}
-                </button>
-              </div>
-            );
-          })}
+            padding:"8px 4px 4px",marginBottom:2}}>{pos}</div>
+          {pList.map(p=>(
+            <PlayerCard key={p.id} player={p} size={56}
+              onClick={()=>setEditingPlayer(p)}
+              onPhotoClick={()=>pastePlayerPhoto(p)}
+              uploading={uploadingId===p.id}/>
+          ))}
         </div>
       ))}
 
