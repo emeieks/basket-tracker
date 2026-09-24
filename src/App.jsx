@@ -5252,7 +5252,13 @@ export default function App(){
               if(s.savedTourneys&&Object.keys(s.savedTourneys).length>0)setSavedTourneys(s.savedTourneys);
               if(s.mibActive!==undefined)setMibActive(!!s.mibActive);
               if(s.mibDate)setMibDate(s.mibDate);
-              if(s.savedTipsters&&s.savedTipsters.length>0)setSavedTipsters(s.savedTipsters);
+              if(s.savedTipsters&&s.savedTipsters.length>0){
+                setSavedTipsters(prev=>{
+                  const merged=[...new Set([...(prev||[]),...s.savedTipsters])];
+                  try{localStorage.setItem("v7_saved_tipsers",JSON.stringify(merged));}catch(e){}
+                  return merged;
+                });
+              }
               if(s.customCups&&s.customCups.length>0){
                 setCustomCups(s.customCups);
                 try{localStorage.setItem("v7_custom_cups",JSON.stringify(s.customCups));}catch(e){}
@@ -6410,6 +6416,7 @@ export default function App(){
         period:f.period||"",
         profit:calcProfit(editingBet.status,stake,odds),
         tournament:form.tournament||tname,
+        tipster:tipsterName||editingBet.tipster||null,
         settledAt:editingBet.status!=="pending"?new Date(newDatetime).getTime():(editingBet.settledAt||null),
         ppMapType:f.ppMapType||null,
         ppLine:ppFinalLineEdit||null,
