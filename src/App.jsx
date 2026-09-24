@@ -1126,11 +1126,69 @@ function EditView({showToast}){
   }
 
   // ── NIVEAU 1 : Ligues ──────────────────────────────────────────
+  const[globalSearch,setGlobalSearch]=useState("");
+
   if(!selectedLeague)return(
     <div style={{padding:"16px"}}>
-      <div style={{fontSize:12,color:"#6B7280",fontWeight:600,marginBottom:14,
-        textTransform:"uppercase",letterSpacing:.8}}>Sélectionne une ligue</div>
-      {leagues.map(lg=>(
+      {/* Recherche globale */}
+      <div style={{position:"relative",marginBottom:16}}>
+        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
+          fontSize:16,color:"#6B7280",pointerEvents:"none"}}>🔍</span>
+        <input className="form-input"
+          placeholder="Rechercher joueur ou club… (ex: lj, curry, lakers)"
+          value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)}
+          style={{paddingLeft:38}}/>
+        {globalSearch&&(
+          <button onClick={()=>setGlobalSearch("")}
+            style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+              background:"transparent",border:"none",color:"#6B7280",
+              cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>
+        )}
+      </div>
+
+      {/* Résultats recherche globale */}
+      {globalSearch.length>=1&&(()=>{
+        const q=globalSearch.toLowerCase().trim();
+        // Résultats clubs
+        const clubMatches=[];
+        // On ne peut pas chercher tous les joueurs sans les charger — on cherche dans les ligues/clubs
+        const leagueMatches=leagues.filter(l=>l.name.toLowerCase().includes(q));
+        return(
+          <div style={{marginBottom:16}}>
+            {leagueMatches.length>0&&(
+              <>
+                <div style={{fontSize:10,fontWeight:800,color:"#7C3AED",
+                  letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Ligues</div>
+                {leagueMatches.map(lg=>(
+                  <div key={lg.id} style={{display:"flex",alignItems:"center",gap:12,
+                    padding:"10px 12px",background:"#0F1629",
+                    border:"1px solid rgba(124,58,237,.2)",
+                    borderRadius:12,marginBottom:6,cursor:"pointer"}}
+                    onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}>
+                    {lg.logo
+                      ?<img src={lg.logo} style={{width:36,height:36,objectFit:"contain",
+                          borderRadius:8,background:"#1F2937",padding:3}} alt=""/>
+                      :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
+                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏀</div>
+                    }
+                    <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB"}}>{lg.name}</div>
+                    <span style={{marginLeft:"auto",color:"#4B5563",fontSize:18}}>›</span>
+                  </div>
+                ))}
+              </>
+            )}
+            {leagueMatches.length===0&&(
+              <div style={{textAlign:"center",color:"#6B7280",padding:"20px 0",fontSize:13}}>
+                Aucune ligue trouvée — sélectionne une ligue pour chercher les joueurs
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {!globalSearch&&<div style={{fontSize:12,color:"#6B7280",fontWeight:600,marginBottom:14,
+        textTransform:"uppercase",letterSpacing:.8}}>Sélectionne une ligue</div>}
+      {!globalSearch&&leagues.map(lg=>(
         <div key={lg.id} style={{display:"flex",alignItems:"center",gap:12,
           padding:14,background:"#111827",border:"1px solid #1F2937",
           borderRadius:14,marginBottom:8,cursor:"pointer"}}
@@ -1206,11 +1264,47 @@ function EditView({showToast}){
   );
 
   // ── NIVEAU 3 : Joueurs ─────────────────────────────────────────
+  const[search,setSearch]=useState("");
+
+  // Normaliser nom : Prénom Nom
+  function formatName(name){
+    return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+  }
+
+  // Ordre positions
+  const POS_ORDER=["PG","SG","SF","PF","C","G","F","Guard","Wing","Forward","Big",""];
+  function posRank(role){const i=POS_ORDER.indexOf(role||"");return i===-1?99:i;}
+
+  // Filtrer + trier joueurs
+  const searchLow=search.toLowerCase().trim();
+  const filteredPlayers=[...players]
+    .filter(p=>{
+      if(!searchLow)return true;
+      const n=p.name.toLowerCase();
+      // Cherche par initiales (ex: "lj" → LeBron James) ou substring
+      const words=n.split(" ");
+      const initials=words.map(w=>w[0]||"").join("");
+      return n.includes(searchLow)||initials.includes(searchLow);
+    })
+    .sort((a,b)=>{
+      const pd=posRank(a.role)-posRank(b.role);
+      if(pd!==0)return pd;
+      return a.name.localeCompare(b.name);
+    });
+
+  // Grouper par position
+  const groups={};
+  filteredPlayers.forEach(p=>{
+    const pos=p.role||"Autre";
+    if(!groups[pos])groups[pos]=[];
+    groups[pos].push(p);
+  });
+
   return(
     <div style={{padding:"16px"}}>
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-        <button onClick={()=>setSelectedClub(null)}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+        <button onClick={()=>{setSelectedClub(null);setSearch("");}}
           style={{background:"transparent",border:"none",color:"#A78BFA",
             cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
         {selectedClub.logo
@@ -1227,35 +1321,92 @@ function EditView({showToast}){
           title="Changer logo club">📷</button>
       </div>
 
+      {/* Barre de recherche */}
+      <div style={{position:"relative",marginBottom:14}}>
+        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
+          fontSize:16,color:"#6B7280",pointerEvents:"none"}}>🔍</span>
+        <input className="form-input" placeholder="Rechercher un joueur… (ex: lj, curry)"
+          value={search} onChange={e=>setSearch(e.target.value)}
+          style={{paddingLeft:38}}/>
+        {search&&(
+          <button onClick={()=>setSearch("")}
+            style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+              background:"transparent",border:"none",color:"#6B7280",
+              cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>
+        )}
+      </div>
+
       {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
 
-      {!loading&&players.length===0&&(
+      {!loading&&filteredPlayers.length===0&&(
         <div className="empty">
           <div className="empty-icon">👤</div>
-          <div className="empty-text">Aucun joueur</div>
-          <div className="empty-sub">Ce club n'a pas de joueurs dans la DB</div>
+          <div className="empty-text">{search?"Aucun résultat":"Aucun joueur"}</div>
+          <div className="empty-sub">{search?"Essaie d'autres initiales":"Ce club n'a pas de joueurs dans la DB"}</div>
         </div>
       )}
 
-      {players.map(p=>(
-        <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,
-          padding:14,background:"#111827",border:"1px solid #1F2937",
-          borderRadius:14,marginBottom:8,cursor:"pointer"}}
-          onClick={()=>setEditingPlayer(p)}>
-          <PlayerPhoto url={p.photo_url||p.avatar_url} size={44}/>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
-              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-            <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
-              {[p.role,p.game].filter(Boolean).join(" · ")}
-            </div>
-          </div>
-          <button className="icon-btn"
-            title="Coller photo"
-            disabled={uploadingId===p.id}
-            onClick={e=>{e.stopPropagation();pastePlayerPhoto(p);}}>
-            {uploadingId===p.id?"⏳":"📷"}
-          </button>
+      {/* Joueurs groupés par position */}
+      {Object.entries(groups).map(([pos,pList])=>(
+        <div key={pos} style={{marginBottom:4}}>
+          {/* Label position */}
+          <div style={{fontSize:10,fontWeight:800,color:"#7C3AED",
+            letterSpacing:1.5,textTransform:"uppercase",
+            padding:"6px 4px 4px",marginBottom:2}}>{pos}</div>
+
+          {pList.map(p=>{
+            const photo=p.photo_url||p.avatar_url;
+            const displayName=formatName(p.name);
+            return(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,
+                padding:"10px 12px",background:"#0F1629",
+                border:"1px solid rgba(255,255,255,.06)",
+                borderRadius:14,marginBottom:6,cursor:"pointer",
+                transition:"border-color .15s"}}
+                onClick={()=>setEditingPlayer(p)}>
+                {/* Photo haute qualité */}
+                <div style={{position:"relative",flexShrink:0}}>
+                  {photo?(
+                    <img src={photo} alt={displayName}
+                      loading="lazy"
+                      decoding="async"
+                      style={{width:52,height:52,borderRadius:"50%",
+                        objectFit:"cover",objectPosition:"50% 8%",
+                        background:"#1F2937",
+                        boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}
+                      onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}
+                    />
+                  ):null}
+                  <div style={{width:52,height:52,borderRadius:"50%",
+                    background:"linear-gradient(135deg,#1F2937,#111827)",
+                    display:photo?"none":"flex",alignItems:"center",
+                    justifyContent:"center",fontSize:20,flexShrink:0,
+                    boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}>👤</div>
+                </div>
+
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#F3F4F6",
+                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                    letterSpacing:.1}}>{displayName}</div>
+                  <div style={{fontSize:11,color:"#6B7280",marginTop:1}}>
+                    <span style={{color:"#A78BFA",fontWeight:600}}>{p.role||"—"}</span>
+                    {p.game&&<span style={{marginLeft:6,color:"#4B5563"}}>· {p.game}</span>}
+                  </div>
+                </div>
+
+                <button
+                  title="Coller photo"
+                  disabled={uploadingId===p.id}
+                  onClick={e=>{e.stopPropagation();pastePlayerPhoto(p);}}
+                  style={{flexShrink:0,width:34,height:34,borderRadius:9,
+                    border:"1px solid rgba(255,255,255,.08)",background:"transparent",
+                    color:"#6B7280",cursor:"pointer",fontSize:16,
+                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {uploadingId===p.id?"⏳":"📷"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       ))}
 
