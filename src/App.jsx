@@ -1515,6 +1515,8 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
           ))}
         </>
       )}
+
+      {tab==="edit"&&<EditView showToast={showToast}/>}
     </div>
   );
 }
