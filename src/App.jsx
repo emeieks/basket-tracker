@@ -548,7 +548,7 @@ const PlayerAvatar=memo(function PlayerAvatar({
       display:"flex",alignItems:"flex-end",justifyContent:"center",
       ...style
     }}>
-      {/* Logo équipe en watermark centré derrière le joueur */}
+      {/* Logo équipe en watermark — grand, centré, bien visible */}
       {hasLogo&&(
         <img
           src={resolvedLogo}
@@ -556,14 +556,14 @@ const PlayerAvatar=memo(function PlayerAvatar({
           onError={()=>setLogoErr(true)}
           style={{
             position:"absolute",
-            right:"50%",
-            bottom:"50%",
-            transform:"translate(50%,50%)",
-            width:lgW,
-            height:lgH,
+            top:"50%",
+            left:"50%",
+            transform:"translate(-50%,-45%)",
+            width:"110%",
+            height:"110%",
             objectFit:"contain",
-            opacity:0.18,
-            filter:"blur(0.4px) saturate(0.8)",
+            opacity:0.28,
+            filter:"saturate(0.6) blur(0.3px)",
             pointerEvents:"none",
             zIndex:0,
           }}
@@ -939,9 +939,10 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                   }}>
                     {getTeamLogo(p.team,p.team_logo_url)&&(
                       <img src={getTeamLogo(p.team,p.team_logo_url)} alt=""
-                        style={{position:"absolute",width:"80%",height:"80%",
-                          objectFit:"contain",opacity:.2,
-                          top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                        style={{position:"absolute",width:"110%",height:"110%",
+                          objectFit:"contain",opacity:.28,
+                          top:"50%",left:"50%",transform:"translate(-50%,-45%)",
+                          filter:"saturate(0.6)",
                           pointerEvents:"none",zIndex:0}}/>
                     )}
                     {(p.photo_url||p.avatar_url)?(
@@ -1014,9 +1015,10 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               <img
                 src={tl}
                 alt=""
-                style={{position:"absolute",width:"78%",height:"78%",
-                  objectFit:"contain",opacity:.22,
-                  top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                style={{position:"absolute",width:"110%",height:"110%",
+                  objectFit:"contain",opacity:.28,
+                  top:"50%",left:"50%",transform:"translate(-50%,-45%)",
+                  filter:"saturate(0.6)",
                   pointerEvents:"none",zIndex:0}}/>
               ):null;
             })()}
@@ -1237,9 +1239,10 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
           }}>
             {resolvedTeamLogo&&(
               <img src={resolvedTeamLogo} alt=""
-                style={{position:"absolute",width:"76%",height:"76%",
-                  objectFit:"contain",opacity:.22,
-                  top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                style={{position:"absolute",width:"110%",height:"110%",
+                  objectFit:"contain",opacity:.28,
+                  top:"50%",left:"50%",transform:"translate(-50%,-45%)",
+                  filter:"saturate(0.6)",
                   pointerEvents:"none",zIndex:0}}/>
             )}
             {photo
