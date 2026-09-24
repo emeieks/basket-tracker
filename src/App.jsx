@@ -520,10 +520,11 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
   const secondaryColor=tc?.s||"#374151";
   const displayName=player.name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 
+  const photoW=Math.round(size*1.37);
   return(
     <div onClick={onClick}
       style={{display:"flex",alignItems:"center",gap:12,
-        padding:"10px 12px",
+        padding:"8px 12px",
         background:"#0A0F1E",
         border:"1px solid rgba(255,255,255,.05)",
         borderRadius:16,marginBottom:6,cursor:"pointer",
@@ -534,25 +535,22 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
       <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
         background:`linear-gradient(180deg,${primaryColor},${secondaryColor})`}}/>
 
-      {/* Photo avec fond couleur équipe */}
+      {/* Photo format ESPN avec fond couleur équipe */}
       <div style={{
-        width:size,height:size,borderRadius:"50%",flexShrink:0,
-        background:`linear-gradient(135deg,${primaryColor}CC,${secondaryColor}88)`,
-        display:"flex",alignItems:"center",justifyContent:"center",
-        position:"relative",
-        boxShadow:`0 4px 12px ${primaryColor}55`,
-        border:`2px solid ${primaryColor}44`}}>
+        width:photoW,height:size,flexShrink:0,
+        background:`linear-gradient(180deg,transparent,${primaryColor}28)`,
+        display:"flex",alignItems:"flex-end",justifyContent:"center",
+        position:"relative",overflow:"hidden",
+        borderRadius:10}}>
         {photo?(
           <img src={photo} alt={displayName} loading="lazy" decoding="async"
-            style={{width:"100%",height:"100%",borderRadius:"50%",
-              objectFit:"cover",objectPosition:"50% 8%",
+            style={{width:photoW,height:size,
+              objectFit:"contain",objectPosition:"50% 85%",
               WebkitBackfaceVisibility:"hidden",
-              backfaceVisibility:"hidden",
-              transform:"translateZ(0)",
-              willChange:"transform"}}
+              transform:"translateZ(0)"}}
             onError={e=>{e.target.style.display="none";}}/>
         ):(
-          <span style={{fontSize:size*0.38}}>👤</span>
+          <span style={{fontSize:size*0.5,paddingBottom:4}}>👤</span>
         )}
       </div>
 
@@ -595,27 +593,25 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
 
 const PlayerPhoto=memo(function PlayerPhoto({url,size=44,style={}}){
   const[err,setErr]=useState(false);
+  // Format ESPN: ratio 70x51 = ~1.37
+  const w=Math.round(size*1.37);
+  const h=size;
   if(!url||err)return(
-    <div style={{width:size,height:size,borderRadius:"50%",
-      background:"linear-gradient(135deg,#1F2937,#111827)",
+    <div style={{width:w,height:h,flexShrink:0,
       display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:size*0.4,flexShrink:0,flexShrink:0,
-      boxShadow:"0 2px 8px rgba(0,0,0,.4)",...style}}>👤</div>
+      fontSize:h*0.5,...style}}>👤</div>
   );
   return(
     <img src={url} alt="" loading="lazy" decoding="async"
       onError={()=>setErr(true)}
       style={{
-        width:size,height:size,
-        borderRadius:"50%",
-        objectFit:"cover",
-        objectPosition:"50% 8%",
+        width:w,height:h,
+        objectFit:"contain",
+        objectPosition:"50% 100%",
         flexShrink:0,
-        boxShadow:"0 2px 12px rgba(0,0,0,.4)",
         WebkitBackfaceVisibility:"hidden",
         backfaceVisibility:"hidden",
         transform:"translateZ(0)",
-        willChange:"transform",
         ...style
       }}/>
   );
@@ -1166,7 +1162,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                     border:`2px solid ${pc2}44`,overflow:"hidden"}}>
                     {photo
                       ?<img src={photo} loading="lazy" decoding="async"
-                          style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%",
+                          style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
                             WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
                       :<span style={{fontSize:24}}>👤</span>}
                   </div>
@@ -1453,7 +1449,8 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
                 overflow:"hidden"}}>
                 {photo
                   ?<img src={photo} loading="lazy" decoding="async"
-                      style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
+                      style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
+                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
                   :<span style={{fontSize:26}}>👤</span>}
               </div>
             );
@@ -1611,7 +1608,7 @@ function HomeView({bets,players}){
 }
 
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
-function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
+function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
   const[filter,setFilter]=useState("all");
   const[search,setSearch]=useState("");
 
@@ -1674,42 +1671,73 @@ function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
                 style={{position:"relative",overflow:"hidden",padding:"12px 14px"}}>
               <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
                 background:`linear-gradient(180deg,${pc},${sc2})`}}/>
-              <div style={{width:56,height:56,borderRadius:"50%",flexShrink:0,
-                background:`linear-gradient(135deg,${pc}BB,${sc2}66)`,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                border:`2px solid ${pc}44`,boxShadow:`0 2px 8px ${pc}44`,
-                overflow:"hidden",marginLeft:4}}>
+              <div style={{width:70,height:51,flexShrink:0,
+                background:`linear-gradient(180deg,transparent,${pc}22)`,
+                display:"flex",alignItems:"flex-end",justifyContent:"center",
+                overflow:"hidden",borderRadius:8,marginLeft:4}}>
                 {photo
                   ?<img src={photo} loading="lazy" decoding="async"
-                      style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}
+                      style={{width:70,height:51,objectFit:"contain",objectPosition:"50% 85%",
+                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}
                       onError={e=>{e.target.style.display="none";}}/>
-                  :<span style={{fontSize:18}}>👤</span>}
+                  :<span style={{fontSize:22,paddingBottom:2}}>👤</span>}
               </div>
               <div className="bet-info">
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div className="bet-player">{b.player}</div>
-                {b.bet_type==="team"&&<span style={{fontSize:9,fontWeight:800,
-                  color:"#F59E0B",background:"rgba(245,158,11,.12)",
-                  border:"1px solid rgba(245,158,11,.25)",
-                  borderRadius:4,padding:"1px 5px",letterSpacing:.5}}>ÉQUIPE</span>}
-              </div>
-                <div className="bet-desc">
-                  <span className={"badge badge-"+b.status} style={{fontSize:10,padding:"2px 7px"}}>
-                    {b.status==="pending"?"En cours":b.status==="won"?"✓ Gagné":b.status==="lost"?"✗ Perdu":"Void"}
+
+                {/* Ligne 1: Nom + logo ligue + description */}
+                <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:4,
+                  whiteSpace:"nowrap",overflow:"hidden"}}>
+                  <span style={{fontSize:14,fontWeight:700,color:"#F3F4F6",flexShrink:0}}>
+                    {formatName(b.player)}
                   </span>
                   {b.game&&LEAGUE_LOGOS[b.game]&&(
-                    <img src={LEAGUE_LOGOS[b.game]} alt={b.game}
-                      style={{width:14,height:14,objectFit:"contain",
-                        marginLeft:5,verticalAlign:"middle",opacity:.8}}/>
+                    <img src={LEAGUE_LOGOS[b.game]} alt={b.game} flexShrink={0}
+                      style={{width:14,height:14,objectFit:"contain",opacity:.85,flexShrink:0}}/>
                   )}
-                  {b.description&&<span style={{marginLeft:4,color:"#9CA3AF"}}>{b.description}</span>}
+                  {b.description&&(
+                    <span style={{fontSize:12,color:"#9CA3AF",
+                      overflow:"hidden",textOverflow:"ellipsis"}}>
+                      {b.description}
+                    </span>
+                  )}
+                  {b.bet_type==="team"&&<span style={{fontSize:9,fontWeight:800,
+                    color:"#F59E0B",background:"rgba(245,158,11,.12)",
+                    border:"1px solid rgba(245,158,11,.25)",
+                    borderRadius:4,padding:"1px 5px",flexShrink:0}}>ÉQUIPE</span>}
+                </div>
+
+                {/* Ligne 2: Cote · Mise · Logo BK · Tipster */}
+                <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#E5E7EB"}}>@{b.odds}</span>
+                  <span style={{fontSize:11,color:"#374151",margin:"0 4px"}}>·</span>
+                  <span style={{fontSize:11,color:"#9CA3AF"}}>{b.stake}$</span>
+                  {b.bookmaker&&(()=>{
+                    const bkObj=bkPhotos?.[b.bookmaker];
+                    return(
+                      <>
+                        <span style={{fontSize:11,color:"#374151",margin:"0 4px"}}>·</span>
+                        {bkObj
+                          ?<img src={bkObj} alt={b.bookmaker}
+                              style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>
+                          :<span style={{fontSize:11,color:"#6B7280"}}>{b.bookmaker}</span>
+                        }
+                      </>
+                    );
+                  })()}
+                  {b.tipster&&(
+                    <>
+                      <span style={{fontSize:11,color:"#374151",margin:"0 4px"}}>·</span>
+                      <span style={{fontSize:11,color:"#A78BFA",fontWeight:600}}>{b.tipster}</span>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="bet-right">
+
+              {/* Profit à droite */}
+              <div className="bet-right" style={{flexShrink:0}}>
                 <div className={"bet-profit"+(profitNum>0?" pos":profitNum<0?" neg":" neu")}>
                   {profitNum>0?"+":""}{profitNum.toFixed(0)}$
                 </div>
-                <div className="bet-odds">@{b.odds}{b.bookmaker?" · "+b.bookmaker:""}</div>
               </div>
             </div>
           );
@@ -2534,7 +2562,7 @@ export default function App(){
         {/* Contenu */}
         <div style={{paddingTop:12}}>
           {view==="home"&&<HomeView bets={bets} players={players}/>}
-          {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
+          {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             onSelectBet={setSelectedBet} onEdit={openEdit}/>}
           {view==="stats"&&<StatsView bets={bets}/>}
           {view==="settings"&&<SettingsView
@@ -2602,4 +2630,9 @@ export default function App(){
       </div>
     </>
   );
+}
+// ── Helper formatName global ─────────────────────────────────────────────────
+function formatName(name){
+  if(!name)return"";
+  return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 }
