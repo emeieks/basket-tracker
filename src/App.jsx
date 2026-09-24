@@ -439,16 +439,18 @@ function useToast(){
 // Photo joueur avec lazy loading
 
 // ── Logos ligues (ESPN/CDN) ───────────────────────────────────────────────────
-const LEAGUE_LOGOS={
-  "NBA":"https://a.espncdn.com/i/leaguelogos/nba/500/scoreboard.png",
-  "EuroLeague":"https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/EuroLeague_Basketball_logo.svg/200px-EuroLeague_Basketball_logo.svg.png",
-  "EuroCup":"https://upload.wikimedia.org/wikipedia/en/thumb/3/34/EuroCup_Basketball_logo.svg/200px-EuroCup_Basketball_logo.svg.png",
-  "BCL":"https://upload.wikimedia.org/wikipedia/en/thumb/5/5d/Basketball_Champions_League_logo.svg/200px-Basketball_Champions_League_logo.svg.png",
-  "ACB":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Liga_ACB_logo.svg/200px-Liga_ACB_logo.svg.png",
-  "Betclic Elite":"https://upload.wikimedia.org/wikipedia/fr/thumb/9/9e/Betclic_ELITE_logo_2021.svg/200px-Betclic_ELITE_logo_2021.svg.png",
-  "Lega A":"https://upload.wikimedia.org/wikipedia/it/thumb/6/67/LBA_logo.svg/200px-LBA_logo.svg.png",
-  "BBL":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/BBL_Logo_2018.svg/200px-BBL_Logo_2018.svg.png",
-};
+// LEAGUE_LOGOS est maintenant dynamique — merge Supabase + fallback
+// Mis à jour depuis l'App via setLeagueLogos
+let LEAGUE_LOGOS_DYNAMIC={};
+function getLeagueLogo(game,leagueLogos={}){
+  // Priorité 1: logo uploadé dans Supabase (via Édition)
+  if(leagueLogos[game])return leagueLogos[game];
+  // Priorité 2: logo dynamique global
+  if(LEAGUE_LOGOS_DYNAMIC[game])return LEAGUE_LOGOS_DYNAMIC[game];
+  return null;
+}
+// Garder LEAGUE_LOGOS pour compatibilité (sera mergé avec Supabase)
+const LEAGUE_LOGOS={};
 
 
 
@@ -535,22 +537,30 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
       <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
         background:`linear-gradient(180deg,${primaryColor},${secondaryColor})`}}/>
 
-      {/* Photo format ESPN avec fond couleur équipe */}
+      {/* Photo format ESPN avec logo club en arrière-plan */}
       <div style={{
         width:photoW,height:size,flexShrink:0,
         background:`linear-gradient(180deg,transparent,${primaryColor}28)`,
         display:"flex",alignItems:"flex-end",justifyContent:"center",
         position:"relative",overflow:"hidden",
         borderRadius:10}}>
+        {/* Logo club en watermark */}
+        {player.team_logo_url&&(
+          <img src={player.team_logo_url} alt=""
+            style={{position:"absolute",right:-4,bottom:-4,
+              width:size*0.7,height:size*0.7,
+              objectFit:"contain",opacity:.12,
+              filter:"grayscale(30%)"}}/>
+        )}
         {photo?(
           <img src={photo} alt={displayName} loading="lazy" decoding="async"
             style={{width:photoW,height:size,
               objectFit:"contain",objectPosition:"50% 85%",
               WebkitBackfaceVisibility:"hidden",
-              transform:"translateZ(0)"}}
+              transform:"translateZ(0)",position:"relative",zIndex:1}}
             onError={e=>{e.target.style.display="none";}}/>
         ):(
-          <span style={{fontSize:size*0.5,paddingBottom:4}}>👤</span>
+          <span style={{fontSize:size*0.5,paddingBottom:4,position:"relative",zIndex:1,color:"#4B5563"}}>○</span>
         )}
       </div>
 
@@ -565,11 +575,11 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
             background:`${primaryColor}22`,
             border:`1px solid ${primaryColor}44`,
             borderRadius:5,padding:"1px 6px",letterSpacing:.5}}>{player.role}</span>}
-          {player.game&&LEAGUE_LOGOS[player.game]&&(
-            <img src={LEAGUE_LOGOS[player.game]} alt={player.game}
+          {player.game&&getLeagueLogo(player.game)&&(
+            <img src={getLeagueLogo(player.game)} alt={player.game}
               style={{width:14,height:14,objectFit:"contain",opacity:.85}}/>
           )}
-          {player.game&&!LEAGUE_LOGOS[player.game]&&(
+          {player.game&&!getLeagueLogo(player.game)&&(
             <span style={{fontSize:10,color:"#6B7280"}}>{player.game}</span>
           )}
         </div>
@@ -583,7 +593,7 @@ const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,u
             border:"1px solid rgba(255,255,255,.08)",background:"transparent",
             color:"#6B7280",cursor:"pointer",fontSize:15,
             display:"flex",alignItems:"center",justifyContent:"center"}}>
-          {uploading?"⏳":"📷"}
+          {uploading?"...":"⊕"}
         </button>
       )}
     </div>
@@ -599,7 +609,7 @@ const PlayerPhoto=memo(function PlayerPhoto({url,size=44,style={}}){
   if(!url||err)return(
     <div style={{width:w,height:h,flexShrink:0,
       display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:h*0.5,...style}}>👤</div>
+      fontSize:h*0.5,...style}}>○</div>
   );
   return(
     <img src={url} alt="" loading="lazy" decoding="async"
@@ -658,11 +668,11 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
                 <div className="player-name">{p.name}</div>
                 <div className="player-meta" style={{display:"flex",alignItems:"center",gap:4}}>
                   {p.team&&<span>{p.team}</span>}
-                  {p.game&&LEAGUE_LOGOS[p.game]&&(
-                    <img src={LEAGUE_LOGOS[p.game]} alt={p.game}
+                  {p.game&&getLeagueLogo(p.game)&&(
+                    <img src={getLeagueLogo(p.game)} alt={p.game}
                       style={{width:12,height:12,objectFit:"contain",opacity:.8}}/>
                   )}
-                  {p.game&&!LEAGUE_LOGOS[p.game]&&<span>· {p.game}</span>}
+                  {p.game&&!getLeagueLogo(p.game)&&<span>· {p.game}</span>}
                 </div>
               </div>
             </div>
@@ -676,11 +686,11 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 
 // ── FORMULAIRE PARI ÉQUIPE ────────────────────────────────────────────────────
 const TEAM_BET_TYPES=[
-  {key:"moneyline", label:"🏆 Moneyline", desc:"Équipe X gagne"},
-  {key:"handicap",  label:"➕ Handicap",  desc:"Équipe X -/+ points"},
-  {key:"total",     label:"🎯 Total match",desc:"Over/Under total du match"},
-  {key:"team_total",label:"📊 Total équipe",desc:"Over/Under points d'une équipe"},
-  {key:"half",      label:"⏱ Mi-temps",   desc:"Over/Under 1ère mi-temps"},
+  {key:"moneyline", label:"Moneyline", desc:"Équipe X gagne"},
+  {key:"handicap",  label:"Handicap",  desc:"Équipe X -/+ points"},
+  {key:"total",     label:"Total match",desc:"Over/Under total du match"},
+  {key:"team_total",label:"Total équipe",desc:"Over/Under points d'une équipe"},
+  {key:"half",      label:"Mi-temps",   desc:"Over/Under 1ère mi-temps"},
 ];
 
 function AddTeamBetModal({bookmakers,tipsters=[],leagues=[],onSave,onClose,editBet=null}){
@@ -950,7 +960,7 @@ function AddTeamBetModal({bookmakers,tipsters=[],leagues=[],onSave,onClose,editB
         </div>
 
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          {saving?"Enregistrement…":editBet?"✓ Modifier":"⊕ Ajouter le pari"}
+          {saving?"Enregistrement…":editBet?"Modifier":"+ Ajouter le pari"}
         </button>
         <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
           Annuler
@@ -1096,7 +1106,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         <div style={{position:"relative",marginBottom:12}}>
           <span style={{position:"absolute",left:12,top:"50%",
             transform:"translateY(-50%)",fontSize:16,color:"#6B7280",
-            pointerEvents:"none"}}>🔍</span>
+            pointerEvents:"none"}}>⌕</span>
           <input className="form-input" autoFocus
             placeholder="Joueur ou équipe… (ex: lj, BOS, Lakers)"
             value={search} onChange={e=>setSearch(e.target.value)}
@@ -1111,7 +1121,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         {allTeams.length>0&&(
           <div style={{marginBottom:10}}>
             <div style={{fontSize:10,fontWeight:800,color:"#F59E0B",
-              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>🏀 Équipes</div>
+              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>◉ Équipes</div>
             {allTeams.map(team=>{
               const tc2=getTeamColor(team);
               const pc2=tc2?.p||"#1F2937";
@@ -1126,7 +1136,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                   <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
                     background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
                     display:"flex",alignItems:"center",justifyContent:"center",
-                    border:`2px solid ${pc2}44`,fontSize:18}}>🏀</div>
+                    border:`2px solid ${pc2}44`,fontSize:18}}>◉</div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB"}}>{team}</div>
                     {playerOfTeam?.game&&<div style={{fontSize:11,color:"#6B7280"}}>{playerOfTeam.game}</div>}
@@ -1144,7 +1154,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         {playerResults.length>0&&(
           <div>
             <div style={{fontSize:10,fontWeight:800,color:"#A78BFA",
-              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>👤 Joueurs</div>
+              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>○ Joueurs</div>
             {playerResults.map(p=>{
               const tc2=getTeamColor(p.team);
               const pc2=tc2?.p||"#1F2937";
@@ -1164,7 +1174,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                       ?<img src={photo} loading="lazy" decoding="async"
                           style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
                             WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
-                      :<span style={{fontSize:24}}>👤</span>}
+                      :<span style={{fontSize:24,color:"#4B5563"}}>○</span>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
@@ -1183,7 +1193,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
 
         {search.length>=1&&playerResults.length===0&&allTeams.length===0&&(
           <div className="empty">
-            <div className="empty-icon">🔍</div>
+            <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>⌕</div>
             <div className="empty-text">Aucun résultat</div>
             <div className="empty-sub">Essaie "lj", "BOS", "Lakers"…</div>
           </div>
@@ -1217,11 +1227,11 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
             background:`linear-gradient(135deg,${pc}CC,${tc?.s||"#374151"}88)`,
             display:"flex",alignItems:"center",justifyContent:"center",
             border:`2px solid ${pc}44`,overflow:"hidden"}}>
-            {isTeamBet?<span style={{fontSize:22}}>🏀</span>:(()=>{
+            {isTeamBet?<span style={{fontSize:22,color:"#374151"}}>◉</span>:(()=>{
               const photo=form.playerObj?.photo_url||form.playerObj?.avatar_url;
               return photo
                 ?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
-                :<span style={{fontSize:22}}>👤</span>;
+                :<span style={{fontSize:22}}>○</span>;
             })()}
           </div>
           <div style={{flex:1,minWidth:0}}>
@@ -1245,11 +1255,11 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               <label className="form-label">Type</label>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                 {[
-                  {key:"moneyline",label:"🏆 Moneyline"},
-                  {key:"handicap", label:"➕ Handicap"},
-                  {key:"total",    label:"🎯 Total match"},
-                  {key:"team_total",label:"📊 Total équipe"},
-                  {key:"half",    label:"⏱ Mi-temps"},
+                  {key:"moneyline",label:"Moneyline"},
+                  {key:"handicap", label:"Handicap"},
+                  {key:"total",    label:"Total match"},
+                  {key:"team_total",label:"Total équipe"},
+                  {key:"half",    label:"Mi-temps"},
                 ].map(t=>(
                   <button key={t.key} onClick={()=>f("betType",t.key)}
                     style={{padding:"9px 10px",borderRadius:10,cursor:"pointer",
@@ -1397,7 +1407,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         </div>
 
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          {saving?"Enregistrement…":editBet?"✓ Modifier":"⊕ Ajouter le pari"}
+          {saving?"Enregistrement…":editBet?"Modifier":"+ Ajouter le pari"}
         </button>
         <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
           Annuler
@@ -1451,7 +1461,7 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
                   ?<img src={photo} loading="lazy" decoding="async"
                       style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
                         WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
-                  :<span style={{fontSize:26}}>👤</span>}
+                  :<span style={{fontSize:26,color:"#4B5563"}}>○</span>}
               </div>
             );
           })()
@@ -1463,7 +1473,7 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
             </div>
             {bet.game&&(
               <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-                {LEAGUE_LOGOS[bet.game]&&<img src={LEAGUE_LOGOS[bet.game]} alt={bet.game}
+                {getLeagueLogo(bet.game)&&<img src={getLeagueLogo(bet.game)} alt={bet.game}
                   style={{width:14,height:14,objectFit:"contain",opacity:.8}}/>}
                 <span style={{fontSize:11,color:"#6B7280"}}>{bet.game}</span>
               </div>
@@ -1502,15 +1512,15 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
         {(bet.tipster||bet.notes||bet.created_at)&&(
           <div className="card-sm" style={{marginBottom:16}}>
             {bet.tipster&&<div style={{fontSize:12,color:"#A78BFA",marginBottom:4}}>
-              🎯 Tipster: {bet.tipster}</div>}
+              ◎ Tipster: {bet.tipster}</div>}
             {bet.notes&&<div style={{fontSize:12,color:"#9CA3AF",marginBottom:4}}>
-              📝 {bet.notes}</div>}
+              ✦ {bet.notes}</div>}
             {bet.created_at&&<div style={{fontSize:11,color:"#6B7280"}}>
               {new Date(bet.created_at).toLocaleString("fr-CA")}</div>}
           </div>
         )}
 
-        <button className="btn btn-danger" onClick={remove}>🗑 Supprimer</button>
+        <button className="btn btn-danger" onClick={remove}>Supprimer</button>
         <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>Fermer</button>
       </div>
     </div>
@@ -1625,7 +1635,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
     <div>
       {/* Search */}
       <div style={{padding:"12px 16px 0"}}>
-        <input className="form-input" placeholder="🔍  Rechercher un joueur…"
+        <input className="form-input" placeholder="⌕  Rechercher un joueur…"
           value={search} onChange={e=>setSearch(e.target.value)}/>
       </div>
 
@@ -1654,7 +1664,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
       <div style={{padding:"0 16px"}}>
         {filtered.length===0?(
           <div className="empty">
-            <div className="empty-icon">📋</div>
+            <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>≡</div>
             <div className="empty-text">Aucun pari{search?" trouvé":""}</div>
             <div className="empty-sub">{search?"Essaie un autre terme":"Ajoute ton premier pari +"}</div>
           </div>
@@ -1674,13 +1684,21 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
               <div style={{width:70,height:51,flexShrink:0,
                 background:`linear-gradient(180deg,transparent,${pc}22)`,
                 display:"flex",alignItems:"flex-end",justifyContent:"center",
-                overflow:"hidden",borderRadius:8,marginLeft:4}}>
+                overflow:"hidden",borderRadius:8,marginLeft:4,position:"relative"}}>
+                {/* Logo club watermark */}
+                {pData?.team_logo_url&&(
+                  <img src={pData.team_logo_url} alt=""
+                    style={{position:"absolute",right:-2,bottom:-2,
+                      width:32,height:32,objectFit:"contain",
+                      opacity:.12,filter:"grayscale(20%)"}}/>
+                )}
                 {photo
                   ?<img src={photo} loading="lazy" decoding="async"
                       style={{width:70,height:51,objectFit:"contain",objectPosition:"50% 85%",
-                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}
+                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)",
+                        position:"relative",zIndex:1}}
                       onError={e=>{e.target.style.display="none";}}/>
-                  :<span style={{fontSize:22,paddingBottom:2}}>👤</span>}
+                  :<span style={{fontSize:22,paddingBottom:2,position:"relative",zIndex:1,color:"#4B5563"}}>○</span>}
               </div>
               <div className="bet-info">
 
@@ -1690,8 +1708,8 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                   <span style={{fontSize:14,fontWeight:700,color:"#F3F4F6",flexShrink:0}}>
                     {formatName(b.player)}
                   </span>
-                  {b.game&&LEAGUE_LOGOS[b.game]&&(
-                    <img src={LEAGUE_LOGOS[b.game]} alt={b.game} flexShrink={0}
+                  {b.game&&getLeagueLogo(b.game)&&(
+                    <img src={getLeagueLogo(b.game)} alt={b.game} flexShrink={0}
                       style={{width:14,height:14,objectFit:"contain",opacity:.85,flexShrink:0}}/>
                   )}
                   {b.description&&(
@@ -1777,7 +1795,7 @@ function StatsView({bets}){
 
   if(bets.length===0)return(
     <div className="empty" style={{marginTop:40}}>
-      <div className="empty-icon">📊</div>
+      <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>▦</div>
       <div className="empty-text">Pas encore de données</div>
       <div className="empty-sub">Ajoute des paris pour voir tes stats</div>
     </div>
@@ -1952,9 +1970,9 @@ function EditView({showToast}){
       <div style={{padding:"16px"}}>
         <div style={{position:"relative",marginBottom:16}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
-            fontSize:16,color:"#6B7280",pointerEvents:"none"}}>🔍</span>
+            fontSize:16,color:"#6B7280",pointerEvents:"none"}}>⌕</span>
           <input className="form-input"
-            placeholder="Rechercher une ligue… (NBA, Euro…)"
+            placeholder="Joueur, ligue ou club… (ex: curry, NBA, Lakers)"
             value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)}
             style={{paddingLeft:38}}/>
           {globalSearch&&(
@@ -1964,6 +1982,22 @@ function EditView({showToast}){
                 cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>
           )}
         </div>
+
+        {/* Résultats joueurs depuis players */}
+        {globalSearch.length>=2&&(()=>{
+          const q=globalSearch.toLowerCase().trim();
+          const playerHits=Object.values(leagues).length>0?[]:[];
+          // Chercher dans players via fetch on-demand n'est pas possible ici
+          // On affiche juste les ligues matchantes
+          const leagueHits=leagues.filter(l=>l.name.toLowerCase().includes(q));
+          if(leagueHits.length===0)return(
+            <div style={{textAlign:"center",color:"#6B7280",fontSize:13,padding:"16px 0"}}>
+              Aucune ligue trouvée — entre dans une ligue pour chercher les joueurs
+            </div>
+          );
+          return null;
+        })()}
+
         {!globalSearch&&<div style={{fontSize:12,color:"#6B7280",fontWeight:600,
           marginBottom:14,textTransform:"uppercase",letterSpacing:.8}}>Sélectionne une ligue</div>}
         {leagueMatches.map(lg=>(
@@ -1976,14 +2010,14 @@ function EditView({showToast}){
                   borderRadius:10,background:"#1F2937",padding:4,flexShrink:0}} alt=""/>
               :<div style={{width:44,height:44,borderRadius:10,background:"#1F2937",
                   display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:22,flexShrink:0}}>🏀</div>
+                  fontSize:22,flexShrink:0}}>◉</div>
             }
             <div style={{flex:1}}>
               <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB"}}>{lg.name}</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button className="icon-btn" title="Changer logo"
-                onClick={e=>{e.stopPropagation();pasteLeagueLogo(lg);}}>📷</button>
+                onClick={e=>{e.stopPropagation();pasteLeagueLogo(lg);}}>⊕</button>
               <span style={{color:"#4B5563",fontSize:20}}>›</span>
             </div>
           </div>
@@ -2004,17 +2038,27 @@ function EditView({showToast}){
             ?<img src={selectedLeague.logo} style={{width:36,height:36,
                 objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
             :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏀</div>
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◉</div>
           }
           <div style={{flex:1}}>
             <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedLeague.name}</div>
             <div style={{fontSize:11,color:"#6B7280"}}>{clubs.length} clubs</div>
           </div>
           <button className="icon-btn" onClick={()=>pasteLeagueLogo(selectedLeague)}
-            title="Changer logo ligue">📷</button>
+            title="Changer logo ligue">⊕</button>
         </div>
-        {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
-        {clubs.map(club=>(
+        {/* Recherche club */}
+      <div style={{position:"relative",marginBottom:14}}>
+        <input className="form-input"
+          placeholder="Rechercher un club…"
+          value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
+          style={{paddingLeft:14}}/>
+        {playerSearch&&<button onClick={()=>setPlayerSearch("")}
+          style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+            background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18}}>×</button>}
+      </div>
+      {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
+        {clubs.filter(c=>!playerSearch||c.name.toLowerCase().includes(playerSearch.toLowerCase())).map(club=>(
           <div key={club.id} style={{display:"flex",alignItems:"center",gap:12,
             padding:14,background:"#111827",border:"1px solid #1F2937",
             borderRadius:14,marginBottom:8,cursor:"pointer"}}
@@ -2024,7 +2068,7 @@ function EditView({showToast}){
                   borderRadius:10,background:"#1F2937",padding:4,flexShrink:0}} alt=""/>
               :<div style={{width:44,height:44,borderRadius:10,background:"#1F2937",
                   display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:20,flexShrink:0}}>🏟</div>
+                  fontSize:20,flexShrink:0}}>◫</div>
             }
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
@@ -2032,7 +2076,7 @@ function EditView({showToast}){
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button className="icon-btn" title="Changer logo"
-                onClick={e=>{e.stopPropagation();pasteClubLogo(club);}}>📷</button>
+                onClick={e=>{e.stopPropagation();pasteClubLogo(club);}}>⊕</button>
               <span style={{color:"#4B5563",fontSize:20}}>›</span>
             </div>
           </div>
@@ -2074,18 +2118,18 @@ function EditView({showToast}){
           ?<img src={selectedClub.logo} style={{width:36,height:36,
               objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
           :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏟</div>
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◫</div>
         }
         <div style={{flex:1}}>
           <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedClub.name}</div>
           <div style={{fontSize:11,color:"#6B7280"}}>{players.length} joueurs</div>
         </div>
-        <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}>📷</button>
+        <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}>⊕</button>
       </div>
 
       <div style={{position:"relative",marginBottom:14}}>
         <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
-          fontSize:16,color:"#6B7280",pointerEvents:"none"}}>🔍</span>
+          fontSize:16,color:"#6B7280",pointerEvents:"none"}}>⌕</span>
         <input className="form-input"
           placeholder="Rechercher… (ex: lj, curry)"
           value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
@@ -2101,7 +2145,7 @@ function EditView({showToast}){
       {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
       {!loading&&filteredPlayers.length===0&&(
         <div className="empty">
-          <div className="empty-icon">👤</div>
+          <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>○</div>
           <div className="empty-text">{playerSearch?"Aucun résultat":"Aucun joueur"}</div>
         </div>
       )}
@@ -2163,7 +2207,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
             <div style={{position:"absolute",bottom:0,right:0,width:24,height:24,
               borderRadius:"50%",background:"#7C3AED",border:"2px solid #0F1629",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
-              {uploadingId===player.id?"⏳":"📷"}
+              {uploadingId===player.id?"...":"⊕"}
             </div>
           </div>
           <div style={{flex:1}}>
@@ -2174,7 +2218,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               style={{padding:"7px 14px",fontSize:12,width:"auto"}}
               onClick={onPastePhoto}
               disabled={uploadingId===player.id}>
-              {uploadingId===player.id?"Upload…":"📋 Coller nouvelle photo"}
+              {uploadingId===player.id?"Upload…":"Coller une photo"}
             </button>
           </div>
         </div>
@@ -2217,7 +2261,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
         </div>
 
         <button className="btn btn-primary" onClick={save} disabled={saving}>
-          {saving?"Sauvegarde…":"✓ Sauvegarder"}
+          {saving?"Sauvegarde…":"Sauvegarder"}
         </button>
         <button className="btn btn-secondary" onClick={onClose}
           style={{marginTop:8}}>Annuler</button>
@@ -2272,11 +2316,11 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
       {/* Tabs */}
       <div className="tabs">
         <button className={"tab"+(tab==="bookmakers"?" active":"")}
-          onClick={()=>setTab("bookmakers")}>🏦 BK</button>
+          onClick={()=>setTab("bookmakers")}>◉ BK</button>
         <button className={"tab"+(tab==="tipsters"?" active":"")}
-          onClick={()=>setTab("tipsters")}>🎯 Tips</button>
+          onClick={()=>setTab("tipsters")}>◎ Tips</button>
         <button className={"tab"+(tab==="edit"?" active":"")}
-          onClick={()=>setTab("edit")}>✏️ Édition</button>
+          onClick={()=>setTab("edit")}>✎ Édition</button>
       </div>
 
       {/* ── TAB BOOKMAKERS ── */}
@@ -2293,7 +2337,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
 
           {bookmakers.length===0&&(
             <div className="empty">
-              <div className="empty-icon">🏦</div>
+              <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>◉</div>
               <div className="empty-text">Aucun bookmaker</div>
               <div className="empty-sub">Ajoute tes bookmakers pour les utiliser dans tes paris</div>
             </div>
@@ -2303,7 +2347,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
             <div key={bk.id} className="bk-card">
               {bk.logo
                 ?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
-                :<div className="bk-logo-placeholder">🏦</div>
+                :<div className="bk-logo-placeholder">◉</div>
               }
               <div style={{flex:1,minWidth:0}}>
                 <div className="bk-name">{bk.name}</div>
@@ -2355,7 +2399,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
 
           {tipsters.length===0&&(
             <div className="empty">
-              <div className="empty-icon">🎯</div>
+              <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>◎</div>
               <div className="empty-text">Aucun tipster</div>
               <div className="empty-sub">Ajoute tes tipsters pour les associer à tes paris</div>
             </div>
@@ -2363,7 +2407,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
 
           {tipsters.map(t=>(
             <div key={t.id} className="bk-card">
-              <div className="bk-logo-placeholder" style={{fontSize:22}}>🎯</div>
+              <div className="bk-logo-placeholder" style={{fontSize:20,color:"#374151"}}>◎</div>
               <div style={{flex:1}}>
                 <div className="bk-name">{t.name}</div>
               </div>
@@ -2395,7 +2439,7 @@ function BKModal({bk,existing,onClose,onSave}){
       const logoUrl=await pasteImageToSupabase("bk_"+(name||"logo"));
       setLogo(logoUrl);
     }catch(e){
-      alert("📋 "+e.message);
+      alert("⊕ "+e.message);
     }
     setUploading(false);
   }
@@ -2419,12 +2463,12 @@ function BKModal({bk,existing,onClose,onSave}){
             ?<img src={logo} style={{width:64,height:64,borderRadius:14,objectFit:"contain",
                 background:"#1F2937",padding:6}} alt="logo"/>
             :<div style={{width:64,height:64,borderRadius:14,background:"#1F2937",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🏦</div>
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>◉</div>
           }
           <div style={{flex:1}}>
             <button className="btn btn-secondary" style={{marginBottom:8}}
               onClick={pasteLogo} disabled={uploading}>
-              {uploading?"Upload…":"📋 Coller un logo"}
+              {uploading?"Upload…":"Coller un logo"}
             </button>
             {logo&&(
               <button className="btn btn-danger"
@@ -2451,7 +2495,7 @@ function BKModal({bk,existing,onClose,onSave}){
         </div>
 
         <button className="btn btn-primary" onClick={save}>
-          {bk?"✓ Sauvegarder":"+ Ajouter"}
+          {bk?"Sauvegarder":"+ Ajouter"}
         </button>
         <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
           Annuler
@@ -2479,11 +2523,17 @@ export default function App(){
   const{toast,show:showToast}=useToast();
   const pollRef=useRef(null);
 
-  // Charger les joueurs et bookmakers au démarrage
+  // Charger les joueurs, bookmakers, tipsters et logos ligues au démarrage
   useEffect(()=>{
     fetchPlayers().then(setPlayers).catch(()=>{});
     fetchBookmakers().then(setBookmakers).catch(()=>{});
     fetchTipsters().then(setTipsters).catch(()=>{});
+    // Charger logos ligues depuis Supabase et les rendre globaux
+    fetchLeagues().then(rows=>{
+      const map={};
+      rows.forEach(l=>{if(l.logo)map[l.name]=l.logo;});
+      LEAGUE_LOGOS_DYNAMIC=map;
+    }).catch(()=>{});
   },[]);
 
   // Charger les paris
@@ -2527,7 +2577,7 @@ export default function App(){
       justifyContent:"center",height:"100vh",gap:16}}>
       <div style={{width:48,height:48,borderRadius:16,
         background:"linear-gradient(135deg,#7C3AED,#3B82F6)",
-        display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🏀</div>
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>◉</div>
       <div style={{color:"#6B7280",fontSize:14}}>Chargement…</div>
     </div>
   );
@@ -2578,20 +2628,20 @@ export default function App(){
         <nav className="nav">
           <button className={"nav-btn"+(view==="home"?" active":"")}
             onClick={()=>setView("home")}>
-            <span className="nav-icon">🏠</span>ACCUEIL
+            <span className="nav-icon" style={{fontSize:22,fontWeight:300}}>⌂</span>ACCUEIL
           </button>
           <button className={"nav-btn"+(view==="bets"?" active":"")}
             onClick={()=>setView("bets")}>
-            <span className="nav-icon">📋</span>MES PARIS
+            <span className="nav-icon" style={{fontSize:20}}>≡</span>MES PARIS
           </button>
-          <button className="nav-add" onClick={()=>setShowAdd(true)}>+</button>
+          <button className="nav-add" onClick={()=>setShowAdd(true)} style={{fontSize:28,fontWeight:200}}>+</button>
           <button className={"nav-btn"+(view==="stats"?" active":"")}
             onClick={()=>setView("stats")}>
-            <span className="nav-icon">📊</span>STATS
+            <span className="nav-icon" style={{fontSize:20}}>◫</span>STATS
           </button>
           <button className={"nav-btn"+(view==="settings"?" active":"")}
             onClick={()=>setView("settings")}>
-            <span className="nav-icon">⚙️</span>SETTINGS
+            <span className="nav-icon" style={{fontSize:20}}>◈</span>SETTINGS
           </button>
         </nav>
 
