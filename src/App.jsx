@@ -600,7 +600,7 @@ const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast(){
   const[toast,setToast]=useState(null);
-  const show=useCallback((msg,color="#34D399")=>{
+  const show=useCallback((msg,color="#22C55E")=>{
     setToast({msg,color});
     setTimeout(()=>setToast(null),2500);
   },[]);
@@ -1377,8 +1377,8 @@ function BankrollChart({bets,range}){
   });
 
   const isPos=pts[pts.length-1].v>=0;
-  const lineColor=isPos?"#34D399":"#F87171";
-  const gradStart=isPos?"rgba(52,211,153,0.35)":"rgba(248,113,113,0.35)";
+  const lineColor=isPos?"#22C55E":"#F87171";
+  const gradStart=isPos?"rgba(34,197,94,0.3)":"rgba(248,113,113,0.3)";
   const gradEnd="rgba(0,0,0,0)";
 
   return(
@@ -1435,7 +1435,7 @@ function HomeView({bets,players,onNavigate}){
   const initialBankroll=staked-profit;
   const progression=initialBankroll>0?profit/initialBankroll*100:0;
   const isPos=profit>=0;
-  const accentColor=isPos?"#34D399":"#F87171";
+  const accentColor=isPos?"#22C55E":"#F87171";
 
   return(
     <div style={{paddingBottom:8}}>
@@ -1503,18 +1503,20 @@ function HomeView({bets,players,onNavigate}){
       {/* ── 4 STATS CARDS ── */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,padding:"0 12px"}}>
         {[
-          {label:"PARIS",value:bets.length,fmt:v=>v},
-          {label:"BÉNÉFICE",value:profit,fmt:v=>(v>0?"+":"")+v.toFixed(2)+"$"},
-          {label:"ROI",value:roi,fmt:v=>(v>0?"+":"")+v.toFixed(2)+"%"},
-          {label:"WIN RATE",value:wr,fmt:v=>v.toFixed(1)+"%"},
-        ].map(({label,value,fmt})=>(
+          {label:"PARIS",value:bets.length,green:false,fmt:v=>v},
+          {label:"BÉNÉFICE",value:profit,green:profit>=0,fmt:v=>(v>0?"+":"")+v.toFixed(2)+"$"},
+          {label:"ROI",value:roi,green:roi>=0,fmt:v=>(v>0?"+":"")+v.toFixed(2)+"%"},
+          {label:"PROGRESSION",value:progression,green:progression>=0,fmt:v=>(v>0?"+":"")+v.toFixed(1)+"%"},
+        ].map(({label,value,green,fmt})=>(
           <div key={label} style={{
             background:"#1C1C1F",border:"1px solid #2A2A2E",
             borderRadius:12,padding:"16px 14px",
           }}>
             <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.28)",
               letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>{label}</div>
-            <div style={{fontSize:26,fontWeight:900,color:"#F2F2F7",letterSpacing:-1,lineHeight:1}}>
+            <div style={{fontSize:26,fontWeight:900,
+              color:green?"#22C55E":value<0?"#F87171":"#F2F2F7",
+              letterSpacing:-1,lineHeight:1}}>
               {fmt(value)}
             </div>
           </div>
@@ -1544,7 +1546,7 @@ function HomeView({bets,players,onNavigate}){
                 borderRadius:12,position:"relative",overflow:"hidden",
               }}>
                 <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
-                  background:b.status==="won"?"#34D399":b.status==="lost"?"#F87171":"rgba(255,255,255,.5)"}}/>
+                  background:b.status==="won"?"#22C55E":b.status==="lost"?"#F87171":"rgba(255,255,255,.4)"}}/>
                 <PlayerAvatar w={52} h={38} photoUrl={photo} teamLogoUrl={tl}
                   teamName={b.team||pData?.team} round={false} logoSize={0.8}
                   style={{marginLeft:4,borderRadius:8}}/>
@@ -1557,7 +1559,7 @@ function HomeView({bets,players,onNavigate}){
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontSize:14,fontWeight:800,
-                    color:profitNum>0?"#fff":profitNum<0?"rgba(255,255,255,.3)":"rgba(255,255,255,.2)"}}>
+                    color:profitNum>0?"#22C55E":profitNum<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {profitNum>0?"+":""}{profitNum.toFixed(0)}$
                   </div>
                   <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>@{b.odds}</div>
@@ -1715,7 +1717,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
               }}>
                 <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.5)"}}>{s.label}</span>
                 <span style={{fontSize:13,fontWeight:800,
-                  color:isPos?"#fff":"rgba(255,255,255,.35)"}}>
+                  color:isPos?"#22C55E":"#F87171"}}>
                   {isPos?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -1732,7 +1734,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
             ? null // pas de watermark si c'est déjà un logo d'équipe
             : getTeamLogo(b.team||pData?.team,pData?.team_logo_url);
           const profitNum=parseFloat(b.profit||0);
-          const statusColor=b.status==="won"?"#34D399":b.status==="lost"?"#F87171":b.status==="void"?"rgba(255,255,255,.25)":"rgba(255,255,255,.5)";
+          const statusColor=b.status==="won"?"#22C55E":b.status==="lost"?"#F87171":b.status==="void"?"rgba(255,255,255,.2)":"rgba(255,255,255,.4)";
           const bkLogo=bkPhotos?.[b.bookmaker];
 
           // Extraire le badge type (Map 1, Map 2, etc.) depuis la description ou un champ
@@ -1794,12 +1796,12 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                 {/* Infos */}
                 <div style={{flex:1,minWidth:0}}>
                   {/* Ligne 1 : nom · description · badge Map */}
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:5,flexWrap:"wrap"}}>
-                    <span style={{fontSize:14,fontWeight:800,color:"#F2F2F7",letterSpacing:-.2}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                    <span style={{fontSize:15,fontWeight:800,color:"#F2F2F7",letterSpacing:-.3}}>
                       {isTeamBet?(b.team||formatName(b.player)):formatName(b.player)}
                     </span>
                     {descClean&&(
-                      <span style={{fontSize:12,color:"rgba(255,255,255,.45)",fontWeight:500}}>
+                      <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
                         · {descClean}
                       </span>
                     )}
@@ -1813,28 +1815,36 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                       }}>{mapBadge}</span>
                     )}
                   </div>
+                  {/* Logo ligue */}
+                  {b.game&&getLeagueLogo(b.game)&&(
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}>
+                      <img src={getLeagueLogo(b.game)} alt={b.game}
+                        style={{width:14,height:14,objectFit:"contain",opacity:.6}}/>
+                      <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:600}}>{b.game}</span>
+                    </div>
+                  )}
                   {/* Ligne 2 : @odds · stake · bookmaker logo · tipster */}
                   <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
-                    <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)"}}>@{b.odds}</span>
-                    <span style={{fontSize:12,color:"rgba(255,255,255,.2)",margin:"0 5px"}}>·</span>
-                    <span style={{fontSize:12,color:"rgba(255,255,255,.45)"}}>{b.stake}$</span>
+                    <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>@{b.odds}</span>
+                    <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
+                    <span style={{fontSize:13,color:"rgba(255,255,255,.45)"}}>{b.stake}$</span>
                     {bkLogo&&(
                       <>
-                        <span style={{fontSize:12,color:"rgba(255,255,255,.2)",margin:"0 5px"}}>·</span>
+                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
                         <img src={bkLogo} alt={b.bookmaker}
-                          style={{width:16,height:16,objectFit:"contain",borderRadius:3,opacity:.85}}/>
+                          style={{width:17,height:17,objectFit:"contain",borderRadius:3,opacity:.85}}/>
                       </>
                     )}
                     {!bkLogo&&b.bookmaker&&(
                       <>
-                        <span style={{fontSize:12,color:"rgba(255,255,255,.2)",margin:"0 5px"}}>·</span>
-                        <span style={{fontSize:12,color:"rgba(255,255,255,.35)"}}>{b.bookmaker}</span>
+                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
+                        <span style={{fontSize:13,color:"rgba(255,255,255,.35)"}}>{b.bookmaker}</span>
                       </>
                     )}
                     {b.tipster&&(
                       <>
-                        <span style={{fontSize:12,color:"rgba(255,255,255,.2)",margin:"0 5px"}}>·</span>
-                        <span style={{fontSize:12,color:"rgba(255,255,255,.6)",fontWeight:700}}>{b.tipster}</span>
+                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
+                        <span style={{fontSize:13,color:"rgba(255,255,255,.6)",fontWeight:700}}>{b.tipster}</span>
                       </>
                     )}
                   </div>
@@ -1844,14 +1854,11 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                 <div style={{flexShrink:0,textAlign:"right"}}>
                   <div style={{
                     fontSize:16,fontWeight:900,letterSpacing:-.5,
-                    color:profitNum>0?"#fff":profitNum<0?"rgba(255,255,255,.3)":"rgba(255,255,255,.2)",
+                    color:profitNum>0?"#22C55E":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
                   }}>
                     {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
                   </div>
-                  {b.game&&getLeagueLogo(b.game)&&(
-                    <img src={getLeagueLogo(b.game)} alt={b.game}
-                      style={{width:14,height:14,objectFit:"contain",opacity:.5,marginTop:4}}/>
-                  )}
+
                 </div>
               </div>
             </div>
@@ -1909,7 +1916,7 @@ function StatsView({bets}){
               <div key={g} style={{marginBottom:10,paddingBottom:10,borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7"}}>{g}</span>
-                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#34D399":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {s.profit>0?"+":""}{s.profit.toFixed(2)}$
                   </span>
                 </div>
@@ -1930,7 +1937,7 @@ function StatsView({bets}){
                   <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{stat}</div>
                   <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>{s.won+s.lost} paris · WR {wr.toFixed(0)}%</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#34D399":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -1945,7 +1952,7 @@ function StatsView({bets}){
             <div key={m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
               <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{m}</div>
               <div style={{textAlign:"right"}}>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#34D399":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
                 <span style={{fontSize:11,color:"rgba(255,255,255,.28)",marginLeft:8}}>{s.count} paris</span>
@@ -2588,7 +2595,7 @@ export default function App(){
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <div style={{width:8,height:8,borderRadius:"50%",
-              background:syncing?"rgba(255,255,255,.6)":"#34D399",
+              background:syncing?"rgba(255,255,255,.6)":"#6366F1",
               boxShadow:"0 0 6px "+(syncing?"rgba(245,158,11,.8)":"rgba(34,197,94,.8)")}}/>
             <button onClick={()=>loadBets(true)}
               style={{background:"transparent",border:"none",color:"rgba(255,255,255,.28)",cursor:"pointer",fontSize:18,padding:"4px 8px"}}>↻</button>
