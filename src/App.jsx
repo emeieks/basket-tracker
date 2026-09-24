@@ -1795,35 +1795,25 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
 
                 {/* Infos */}
                 <div style={{flex:1,minWidth:0}}>
-                  {/* Ligne 1 : nom · description · badge Map */}
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                  {/* Ligne 1 : nom · logo ligue · description · badge Map */}
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6,flexWrap:"wrap"}}>
                     <span style={{fontSize:15,fontWeight:800,color:"#F2F2F7",letterSpacing:-.3}}>
                       {isTeamBet?(b.team||formatName(b.player)):formatName(b.player)}
                     </span>
+                    {b.game&&getLeagueLogo(b.game)&&(
+                      <img src={getLeagueLogo(b.game)} alt={b.game}
+                        style={{width:15,height:15,objectFit:"contain",opacity:.7,flexShrink:0}}/>
+                    )}
                     {descClean&&(
                       <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
                         · {descClean}
                       </span>
                     )}
                     {mapBadge&&(
-                      <span style={{
-                        fontSize:10,fontWeight:800,letterSpacing:.3,
-                        color:"#F2F2F7",
-                        background:"rgba(99,102,241,.25)",
-                        border:"1px solid rgba(99,102,241,.4)",
-                        borderRadius:6,padding:"2px 7px",flexShrink:0,
-                      }}>{mapBadge}</span>
+                      <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",background:"rgba(99,102,241,.25)",border:"1px solid rgba(99,102,241,.4)",borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
                     )}
                   </div>
-                  {/* Logo ligue */}
-                  {b.game&&getLeagueLogo(b.game)&&(
-                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}>
-                      <img src={getLeagueLogo(b.game)} alt={b.game}
-                        style={{width:14,height:14,objectFit:"contain",opacity:.6}}/>
-                      <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:600}}>{b.game}</span>
-                    </div>
-                  )}
-                  {/* Ligne 2 : @odds · stake · bookmaker logo · tipster */}
+                  {/* Ligne 2 : @odds · mise · bookmaker · tipster */}
                   <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
                     <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>@{b.odds}</span>
                     <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
