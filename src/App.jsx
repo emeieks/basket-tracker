@@ -237,8 +237,9 @@ async function pasteImageToSupabase(name){
 // ── STYLES CSS ────────────────────────────────────────────────────────────────
 const CSS=`
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:#0B1220;color:#E5E7EB;font-family:Inter,system-ui,sans-serif;min-height:100vh;}
+body{background:#0B1220;color:#E5E7EB;font-family:Inter,system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
 input,select,textarea,button{font-family:inherit;}
+img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0);}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:#1F2937;border-radius:4px;}
@@ -544,7 +545,11 @@ const PlayerCard=memo(function PlayerCard({player,size=56,onClick,onPhotoClick,u
         {photo?(
           <img src={photo} alt={displayName} loading="lazy" decoding="async"
             style={{width:"100%",height:"100%",borderRadius:"50%",
-              objectFit:"cover",objectPosition:"50% 8%"}}
+              objectFit:"cover",objectPosition:"50% 8%",
+              WebkitBackfaceVisibility:"hidden",
+              backfaceVisibility:"hidden",
+              transform:"translateZ(0)",
+              willChange:"transform"}}
             onError={e=>{e.target.style.display="none";}}/>
         ):(
           <span style={{fontSize:size*0.38}}>👤</span>
@@ -600,10 +605,19 @@ const PlayerPhoto=memo(function PlayerPhoto({url,size=44,style={}}){
   return(
     <img src={url} alt="" loading="lazy" decoding="async"
       onError={()=>setErr(true)}
-      style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",
-        objectPosition:"50% 8%",flexShrink:0,
-        imageRendering:"high-quality",
-        boxShadow:"0 2px 8px rgba(0,0,0,.35)",...style}}/>
+      style={{
+        width:size,height:size,
+        borderRadius:"50%",
+        objectFit:"cover",
+        objectPosition:"50% 8%",
+        flexShrink:0,
+        boxShadow:"0 2px 12px rgba(0,0,0,.4)",
+        WebkitBackfaceVisibility:"hidden",
+        backfaceVisibility:"hidden",
+        transform:"translateZ(0)",
+        willChange:"transform",
+        ...style
+      }}/>
   );
 });
 
