@@ -195,13 +195,23 @@ async function pasteImageToSupabase(name){
   const safe=(name||"img").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
   async function uploadBlob(blob){
     const ext=blob.type.includes("png")?"png":blob.type.includes("webp")?"webp":"jpg";
-    const path="photos/players/"+safe+"_"+Date.now()+"."+ext;
-    const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+    const rand=Math.random().toString(36).slice(2,7);
+    const path="photos/players/"+safe+"_"+Date.now()+"_"+rand+"."+ext;
+    // Essai POST d'abord
+    let res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
       method:"POST",
       headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
       body:blob,
     });
-    if(!res.ok)throw new Error("Upload échoué");
+    // Si 409, essayer avec PUT
+    if(!res.ok&&res.status===409){
+      res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+        method:"PUT",
+        headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
+        body:blob,
+      });
+    }
+    if(!res.ok){const err=await res.text();throw new Error("Upload "+res.status+": "+err);}
     return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
   }
   let items=[];
