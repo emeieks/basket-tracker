@@ -63,6 +63,39 @@ async function deleteBet(id){
   if(!r.ok)throw new Error("delete: "+r.status);
 }
 
+
+// ── BOOKMAKERS API ────────────────────────────────────────────────────────────
+async function fetchBookmakers(){
+  const r=await fetch(SUPA_URL+"/rest/v1/bookmakers?select=*&order=name.asc",{headers:H});
+  if(!r.ok)throw new Error("fetch bookmakers: "+r.status);
+  return r.json();
+}
+
+async function insertBookmaker(bk){
+  const r=await fetch(SUPA_URL+"/rest/v1/bookmakers",{
+    method:"POST",
+    headers:{...H,"Prefer":"return=representation"},
+    body:JSON.stringify(bk),
+  });
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  return r.json();
+}
+
+async function updateBookmaker(id,fields){
+  const r=await fetch(SUPA_URL+"/rest/v1/bookmakers?id=eq."+id,{
+    method:"PATCH",
+    headers:{...H,"Prefer":"return=representation"},
+    body:JSON.stringify(fields),
+  });
+  if(!r.ok)throw new Error("update bookmaker: "+r.status);
+  return r.json();
+}
+
+async function deleteBookmaker(id){
+  const r=await fetch(SUPA_URL+"/rest/v1/bookmakers?id=eq."+id,{method:"DELETE",headers:H});
+  if(!r.ok)throw new Error("delete bookmaker: "+r.status);
+}
+
 async function fetchPlayers(){
   let all=[],offset=0,limit=500;
   while(true){
@@ -265,6 +298,21 @@ input,select,textarea,button{font-family:inherit;}
   color:#6B7280;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;}
 .seg-btn.active{background:#7C3AED;color:#fff;}
 
+/* SETTINGS */
+.bk-card{display:flex;align-items:center;gap:12px;padding:14px;
+  background:#111827;border:1px solid #1F2937;border-radius:14px;margin-bottom:8px;}
+.bk-logo{width:44px;height:44px;border-radius:10px;object-fit:contain;
+  background:#1F2937;padding:4px;flex-shrink:0;}
+.bk-logo-placeholder{width:44px;height:44px;border-radius:10px;background:#1F2937;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.bk-name{font-size:14px;font-weight:700;color:#E5E7EB;}
+.bk-actions{display:flex;gap:6px;margin-left:auto;}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid #1F2937;
+  background:transparent;color:#6B7280;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.icon-btn:hover{border-color:#374151;color:#E5E7EB;}
+.icon-btn.danger:hover{border-color:rgba(239,68,68,.4);color:#EF4444;background:rgba(239,68,68,.05);}
+
 /* HEADER */
 .header{padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between;}
 .header-title{font-size:22px;font-weight:900;color:#E5E7EB;letter-spacing:-.5px;}
@@ -292,7 +340,7 @@ input,select,textarea,button{font-family:inherit;}
 `;
 
 // ── BOOKMAKERS ────────────────────────────────────────────────────────────────
-const BOOKMAKERS=["Pinnacle","ps3838","Bet365","Unibet","Winamax","Betclic","Bwin","1xBet","Betway","DraftKings","FanDuel","BetMGM","Autre"];
+const DEFAULT_BOOKMAKERS=["Pinnacle","ps3838","Bet365","Unibet","Winamax","Betclic","Bwin","1xBet","Betway","DraftKings","FanDuel","BetMGM","Autre"];
 const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Points+Rebonds+Assists","3 Points Made","Steals","Blocks","Turnovers","Fantasy Score","Double-Double","Minutes"];
 const LEAGUES=["NBA","EuroLeague","EuroCup","Pro A","ACB","Lega","Bundesliga","BCL","HEBA"];
 
@@ -719,7 +767,7 @@ function HomeView({bets,players}){
 }
 
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
-function BetsView({bets,players,onSelectBet,onEdit}){
+function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
   const[filter,setFilter]=useState("all");
   const[search,setSearch]=useState("");
 
@@ -773,8 +821,9 @@ function BetsView({bets,players,onSelectBet,onEdit}){
           const pData=players.find(p=>p.name===b.player);
           const photo=pData?.photo_url||pData?.avatar_url;
           const profitNum=parseFloat(b.profit||0);
+          const bkObj=bookmakers?.find(bk=>bk.name===b.bookmaker);
           return(
-            <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}>
+              <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}>
               <PlayerPhoto url={photo} size={44}/>
               <div className="bet-info">
                 <div className="bet-player">{b.player}</div>
@@ -802,29 +851,23 @@ function BetsView({bets,players,onSelectBet,onEdit}){
 // ── VUE STATS ─────────────────────────────────────────────────────────────────
 function StatsView({bets}){
   const settled=bets.filter(b=>b.status==="won"||b.status==="lost");
-
-  // Par ligue
   const byGame={};
   bets.forEach(b=>{
     const k=b.game||"Autre";
-    if(!byGame[k])byGame[k]={won:0,lost:0,profit:0,stake:0};
+    if(!byGame[k])byGame[k]={won:0,lost:0,profit:0};
     byGame[k].profit+=parseFloat(b.profit||0);
-    byGame[k].stake+=b.status!=="pending"?parseFloat(b.stake||0):0;
     if(b.status==="won")byGame[k].won++;
     if(b.status==="lost")byGame[k].lost++;
   });
-
-  // Par stat type
   const byStat={};
   bets.forEach(b=>{
-    const k=b.description?.replace(/^(Over|Under)\s[\d.]+\s/,"") ||"Autre";
+    const raw=b.description||"Autre";
+    const k=raw.replace(/^(Over|Under)\s[\d.]+\s/,"");
     if(!byStat[k])byStat[k]={won:0,lost:0,profit:0};
     byStat[k].profit+=parseFloat(b.profit||0);
     if(b.status==="won")byStat[k].won++;
     if(b.status==="lost")byStat[k].lost++;
   });
-
-  // Par mois
   const byMonth={};
   settled.forEach(b=>{
     const m=b.created_at?.slice(0,7)||"?";
@@ -843,52 +886,37 @@ function StatsView({bets}){
 
   return(
     <div style={{padding:"16px"}}>
-
-      {/* Par ligue */}
       {Object.keys(byGame).length>0&&(
         <div className="card" style={{marginBottom:12}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",
-            textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>
-            Par Ligue
-          </div>
+          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Par Ligue</div>
           {Object.entries(byGame).sort((a,b)=>Math.abs(b[1].profit)-Math.abs(a[1].profit)).map(([g,s])=>{
             const wr=s.won+s.lost>0?s.won/(s.won+s.lost)*100:0;
             return(
               <div key={g} style={{marginBottom:10,paddingBottom:10,borderBottom:"1px solid #1F2937"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontSize:13,fontWeight:700,color:"#E5E7EB"}}>{g}</span>
-                  <span style={{fontSize:14,fontWeight:800,
-                    color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
+                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
                     {s.profit>0?"+":""}{s.profit.toFixed(2)}$
                   </span>
                 </div>
-                <div style={{fontSize:11,color:"#6B7280"}}>
-                  {s.won}G · {s.lost}P · WR {wr.toFixed(0)}%
-                </div>
+                <div style={{fontSize:11,color:"#6B7280"}}>{s.won}G · {s.lost}P · WR {wr.toFixed(0)}%</div>
               </div>
             );
           })}
         </div>
       )}
-
-      {/* Par type de stat */}
       {Object.keys(byStat).length>0&&(
         <div className="card" style={{marginBottom:12}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",
-            textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>
-            Par Type de Stat
-          </div>
+          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Par Type de Stat</div>
           {Object.entries(byStat).sort((a,b)=>b[1].profit-a[1].profit).slice(0,8).map(([stat,s])=>{
             const wr=s.won+s.lost>0?s.won/(s.won+s.lost)*100:0;
             return(
-              <div key={stat} style={{display:"flex",justifyContent:"space-between",
-                alignItems:"center",padding:"7px 0",borderBottom:"1px solid #1F2937"}}>
+              <div key={stat} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #1F2937"}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB"}}>{stat}</div>
                   <div style={{fontSize:10,color:"#6B7280"}}>{s.won+s.lost} paris · WR {wr.toFixed(0)}%</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,
-                  color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -896,21 +924,14 @@ function StatsView({bets}){
           })}
         </div>
       )}
-
-      {/* Par mois */}
       {Object.keys(byMonth).length>0&&(
         <div className="card">
-          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",
-            textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>
-            Par Mois
-          </div>
+          <div style={{fontSize:12,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Par Mois</div>
           {Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([m,s])=>(
-            <div key={m} style={{display:"flex",justifyContent:"space-between",
-              alignItems:"center",padding:"7px 0",borderBottom:"1px solid #1F2937"}}>
+            <div key={m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #1F2937"}}>
               <div style={{fontSize:12,fontWeight:600,color:"#E5E7EB"}}>{m}</div>
               <div style={{textAlign:"right"}}>
-                <span style={{fontSize:13,fontWeight:800,
-                  color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#EF4444":"#9CA3AF"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
                 <span style={{fontSize:11,color:"#6B7280",marginLeft:8}}>{s.count} paris</span>
@@ -923,9 +944,170 @@ function StatsView({bets}){
   );
 }
 
+// ── VUE SETTINGS / BOOKMAKERS ─────────────────────────────────────────────────
+function SettingsView({bookmakers,onUpdate,showToast}){
+  const[showAdd,setShowAdd]=useState(false);
+  const[editBK,setEditBK]=useState(null);
+
+  function openEdit(bk){ setEditBK(bk); setShowAdd(false); }
+  function openAdd(){ setEditBK(null); setShowAdd(true); }
+
+  async function deleteBK(bk){
+    if(!window.confirm("Supprimer "+bk.name+" ?"))return;
+    try{
+      await deleteBookmaker(bk.id);
+      onUpdate();
+      showToast(bk.name+" supprimé","#EF4444");
+    }catch(e){
+      showToast("Erreur: "+e.message,"#EF4444");
+    }
+  }
+
+  return(
+    <div style={{padding:"16px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontSize:13,color:"#6B7280",fontWeight:600}}>
+          {bookmakers.length} bookmaker{bookmakers.length!==1?"s":""}
+        </div>
+        <button className="btn btn-primary" style={{width:"auto",padding:"9px 18px",fontSize:13}}
+          onClick={openAdd}>+ Ajouter</button>
+      </div>
+
+      {bookmakers.length===0&&(
+        <div className="empty">
+          <div className="empty-icon">🏦</div>
+          <div className="empty-text">Aucun bookmaker</div>
+          <div className="empty-sub">Ajoute tes bookmakers pour les utiliser dans tes paris</div>
+        </div>
+      )}
+
+      {bookmakers.map(bk=>(
+        <div key={bk.name} className="bk-card">
+          {bk.logo
+            ?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
+            :<div className="bk-logo-placeholder">🏦</div>
+          }
+          <div style={{flex:1,minWidth:0}}>
+            <div className="bk-name">{bk.name}</div>
+            {bk.url&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{bk.url}</div>}
+          </div>
+          <div className="bk-actions">
+            <button className="icon-btn" onClick={()=>openEdit(bk)} title="Modifier">✎</button>
+            <button className="icon-btn danger" onClick={()=>deleteBK(bk)} title="Supprimer">×</button>
+          </div>
+        </div>
+      ))}
+
+      {(showAdd||editBK)&&(
+        <BKModal
+          bk={editBK}
+          existing={bookmakers.map(b=>b.name)}
+          onClose={()=>{setShowAdd(false);setEditBK(null);}}
+          onSave={async(newBK)=>{
+            try{
+              if(editBK){
+                await updateBookmaker(editBK.id,{logo:newBK.logo,url:newBK.url});
+              }else{
+                await insertBookmaker({id:uuid(),name:newBK.name,logo:newBK.logo||null,url:newBK.url||null});
+              }
+              onUpdate();
+              setShowAdd(false);
+              setEditBK(null);
+              showToast((editBK?"Modifié: ":"Ajouté: ")+newBK.name);
+            }catch(e){
+              showToast("Erreur: "+e.message,"#EF4444");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── MODAL BOOKMAKER ───────────────────────────────────────────────────────────
+function BKModal({bk,existing,onClose,onSave}){
+  const[name,setName]=useState(bk?.name||"");
+  const[logo,setLogo]=useState(bk?.logo||"");
+  const[url,setUrl]=useState(bk?.url||"");
+  const[uploading,setUploading]=useState(false);
+
+  async function pasteLogo(){
+    setUploading(true);
+    try{
+      const logoUrl=await pasteImageToSupabase("bk_"+(name||"logo"));
+      setLogo(logoUrl);
+    }catch(e){
+      alert("📋 "+e.message);
+    }
+    setUploading(false);
+  }
+
+  function save(){
+    const n=name.trim();
+    if(!n){alert("Le nom est obligatoire");return;}
+    if(!bk&&existing.includes(n)){alert(n+" existe déjà");return;}
+    onSave({name:n,logo:logo||null,url:url.trim()||null});
+  }
+
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div className="modal-title">{bk?"Modifier bookmaker":"Nouveau bookmaker"}</div>
+
+        {/* Logo preview */}
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          {logo
+            ?<img src={logo} style={{width:64,height:64,borderRadius:14,objectFit:"contain",
+                background:"#1F2937",padding:6}} alt="logo"/>
+            :<div style={{width:64,height:64,borderRadius:14,background:"#1F2937",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🏦</div>
+          }
+          <div style={{flex:1}}>
+            <button className="btn btn-secondary" style={{marginBottom:8}}
+              onClick={pasteLogo} disabled={uploading}>
+              {uploading?"Upload…":"📋 Coller un logo"}
+            </button>
+            {logo&&(
+              <button className="btn btn-danger"
+                onClick={()=>setLogo("")}>Supprimer le logo</button>
+            )}
+          </div>
+        </div>
+
+        {/* Nom */}
+        <div className="form-group">
+          <label className="form-label">Nom *</label>
+          <input className="form-input" placeholder="ex: Pinnacle"
+            value={name} onChange={e=>setName(e.target.value)}
+            disabled={!!bk}/>
+          {bk&&<div style={{fontSize:11,color:"#6B7280",marginTop:4}}>
+            Le nom ne peut pas être modifié</div>}
+        </div>
+
+        {/* URL optionnel */}
+        <div className="form-group">
+          <label className="form-label">Site web (optionnel)</label>
+          <input className="form-input" placeholder="ex: pinnacle.com"
+            value={url} onChange={e=>setUrl(e.target.value)}/>
+        </div>
+
+        <button className="btn btn-primary" onClick={save}>
+          {bk?"✓ Sauvegarder":"+ Ajouter"}
+        </button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
 export default function App(){
   const[bets,setBets]=useState([]);
+  const[bookmakers,setBookmakers]=useState([]);
   const[players,setPlayers]=useState([]);
   const[view,setView]=useState("home");
   const[loading,setLoading]=useState(true);
@@ -937,9 +1119,10 @@ export default function App(){
   const{toast,show:showToast}=useToast();
   const pollRef=useRef(null);
 
-  // Charger les joueurs une fois
+  // Charger les joueurs et bookmakers au démarrage
   useEffect(()=>{
     fetchPlayers().then(setPlayers).catch(()=>{});
+    fetchBookmakers().then(setBookmakers).catch(()=>{});
   },[]);
 
   // Charger les paris
@@ -1011,16 +1194,21 @@ export default function App(){
               boxShadow:"0 0 6px "+(syncing?"rgba(245,158,11,.8)":"rgba(34,197,94,.8)")}}/>
             <button onClick={()=>loadBets(true)}
               style={{background:"transparent",border:"none",color:"#6B7280",
-                cursor:"pointer",fontSize:18}}>↻</button>
+                cursor:"pointer",fontSize:18,padding:"4px 8px"}}>↻</button>
           </div>
         </div>
 
         {/* Contenu */}
         <div style={{paddingTop:12}}>
           {view==="home"&&<HomeView bets={bets} players={players}/>}
-          {view==="bets"&&<BetsView bets={bets} players={players}
+          {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             onSelectBet={setSelectedBet} onEdit={openEdit}/>}
           {view==="stats"&&<StatsView bets={bets}/>}
+          {view==="settings"&&<SettingsView
+            bookmakers={bookmakers}
+            onUpdate={()=>fetchBookmakers().then(setBookmakers).catch(()=>{})}
+            showToast={showToast}
+          />}
         </div>
 
         {/* Nav */}
@@ -1038,8 +1226,9 @@ export default function App(){
             onClick={()=>setView("stats")}>
             <span className="nav-icon">📊</span>STATS
           </button>
-          <button className="nav-btn" onClick={()=>loadBets(true)}>
-            <span className="nav-icon">☁️</span>SYNC
+          <button className={"nav-btn"+(view==="settings"?" active":"")}
+            onClick={()=>setView("settings")}>
+            <span className="nav-icon">⚙️</span>SETTINGS
           </button>
         </nav>
 
@@ -1047,7 +1236,8 @@ export default function App(){
         {(showAdd||editBet)&&(
           <AddBetModal
             players={players}
-            bookmakers={BOOKMAKERS}
+            bookmakers={bookmakers.length>0?bookmakers.map(b=>b.name):DEFAULT_BOOKMAKERS}
+            bookmarkerObjs={bookmakers}
             editBet={editBet}
             onClose={()=>{setShowAdd(false);setEditBet(null);}}
             onSave={()=>{
