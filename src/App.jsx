@@ -96,6 +96,29 @@ async function deleteBookmaker(id){
   if(!r.ok)throw new Error("delete bookmaker: "+r.status);
 }
 
+// ── TIPSTERS API ──────────────────────────────────────────────────────────────
+async function fetchTipsters(){
+  const r=await fetch(SUPA_URL+"/rest/v1/tipsters?select=*&order=name.asc",{headers:H});
+  if(!r.ok)throw new Error("fetch tipsters: "+r.status);
+  return r.json();
+}
+
+async function insertTipster(t){
+  const r=await fetch(SUPA_URL+"/rest/v1/tipsters",{
+    method:"POST",
+    headers:{...H,"Prefer":"return=representation"},
+    body:JSON.stringify(t),
+  });
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  return r.json();
+}
+
+async function deleteTipster(id){
+  const r=await fetch(SUPA_URL+"/rest/v1/tipsters?id=eq."+id,{method:"DELETE",headers:H});
+  if(!r.ok)throw new Error("delete tipster: "+r.status);
+}
+
+
 async function fetchPlayers(){
   let all=[],offset=0,limit=500;
   while(true){
@@ -422,7 +445,7 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 }
 
 // ── FORMULAIRE AJOUT PARI ─────────────────────────────────────────────────────
-function AddBetModal({players,bookmakers,onSave,onClose,editBet=null}){
+function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null}){
   const[form,setForm]=useState(editBet?{
     player:editBet.player||"",
     playerObj:null,
@@ -568,8 +591,16 @@ function AddBetModal({players,bookmakers,onSave,onClose,editBet=null}){
           </div>
           <div style={{flex:1}}>
             <label className="form-label">Tipster</label>
-            <input className="form-input" placeholder="Optionnel"
-              value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
+            {tipsters.length>0?(
+              <select className="form-select" value={form.tipster}
+                onChange={e=>f("tipster",e.target.value)}>
+                <option value="">Aucun</option>
+                {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
+              </select>
+            ):(
+              <input className="form-input" placeholder="Optionnel"
+                value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
+            )}
           </div>
         </div>
 
@@ -944,85 +975,155 @@ function StatsView({bets}){
   );
 }
 
-// ── VUE SETTINGS / BOOKMAKERS ─────────────────────────────────────────────────
-function SettingsView({bookmakers,onUpdate,showToast}){
+// ── VUE SETTINGS ─────────────────────────────────────────────────────────────
+function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
+  const[tab,setTab]=useState("bookmakers");
   const[showAdd,setShowAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
+  const[showAddTip,setShowAddTip]=useState(false);
 
-  function openEdit(bk){ setEditBK(bk); setShowAdd(false); }
-  function openAdd(){ setEditBK(null); setShowAdd(true); }
-
+  // ── Bookmakers ──
   async function deleteBK(bk){
     if(!window.confirm("Supprimer "+bk.name+" ?"))return;
     try{
       await deleteBookmaker(bk.id);
-      onUpdate();
+      onUpdateBK();
       showToast(bk.name+" supprimé","#EF4444");
-    }catch(e){
-      showToast("Erreur: "+e.message,"#EF4444");
-    }
+    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+  }
+
+  // ── Tipsters ──
+  async function deleteTip(t){
+    if(!window.confirm("Supprimer "+t.name+" ?"))return;
+    try{
+      await deleteTipster(t.id);
+      onUpdateTip();
+      showToast(t.name+" supprimé","#EF4444");
+    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+  }
+
+  async function addTipster(){
+    const name=prompt("Nom du tipster :");
+    if(!name||!name.trim())return;
+    const n=name.trim();
+    if(tipsters.find(t=>t.name===n)){showToast(n+" existe déjà","#F59E0B");return;}
+    try{
+      await insertTipster({id:uuid(),name:n});
+      onUpdateTip();
+      showToast(n+" ajouté ✓");
+    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
   }
 
   return(
     <div style={{padding:"16px"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <div style={{fontSize:13,color:"#6B7280",fontWeight:600}}>
-          {bookmakers.length} bookmaker{bookmakers.length!==1?"s":""}
-        </div>
-        <button className="btn btn-primary" style={{width:"auto",padding:"9px 18px",fontSize:13}}
-          onClick={openAdd}>+ Ajouter</button>
+      {/* Tabs */}
+      <div className="tabs">
+        <button className={"tab"+(tab==="bookmakers"?" active":"")}
+          onClick={()=>setTab("bookmakers")}>🏦 Bookmakers ({bookmakers.length})</button>
+        <button className={"tab"+(tab==="tipsters"?" active":"")}
+          onClick={()=>setTab("tipsters")}>🎯 Tipsters ({tipsters.length})</button>
       </div>
 
-      {bookmakers.length===0&&(
-        <div className="empty">
-          <div className="empty-icon">🏦</div>
-          <div className="empty-text">Aucun bookmaker</div>
-          <div className="empty-sub">Ajoute tes bookmakers pour les utiliser dans tes paris</div>
-        </div>
+      {/* ── TAB BOOKMAKERS ── */}
+      {tab==="bookmakers"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{fontSize:13,color:"#6B7280",fontWeight:600}}>
+              {bookmakers.length} bookmaker{bookmakers.length!==1?"s":""}
+            </div>
+            <button className="btn btn-primary"
+              style={{width:"auto",padding:"9px 18px",fontSize:13}}
+              onClick={()=>{setEditBK(null);setShowAdd(true);}}>+ Ajouter</button>
+          </div>
+
+          {bookmakers.length===0&&(
+            <div className="empty">
+              <div className="empty-icon">🏦</div>
+              <div className="empty-text">Aucun bookmaker</div>
+              <div className="empty-sub">Ajoute tes bookmakers pour les utiliser dans tes paris</div>
+            </div>
+          )}
+
+          {bookmakers.map(bk=>(
+            <div key={bk.id} className="bk-card">
+              {bk.logo
+                ?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
+                :<div className="bk-logo-placeholder">🏦</div>
+              }
+              <div style={{flex:1,minWidth:0}}>
+                <div className="bk-name">{bk.name}</div>
+                {bk.url&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{bk.url}</div>}
+              </div>
+              <div className="bk-actions">
+                <button className="icon-btn" title="Modifier"
+                  onClick={()=>{setEditBK(bk);setShowAdd(true);}}>✎</button>
+                <button className="icon-btn danger" title="Supprimer"
+                  onClick={()=>deleteBK(bk)}>×</button>
+              </div>
+            </div>
+          ))}
+
+          {showAdd&&(
+            <BKModal
+              bk={editBK}
+              existing={bookmakers.map(b=>b.name)}
+              onClose={()=>{setShowAdd(false);setEditBK(null);}}
+              onSave={async(newBK)=>{
+                try{
+                  if(editBK){
+                    await updateBookmaker(editBK.id,{logo:newBK.logo,url:newBK.url});
+                  }else{
+                    await insertBookmaker({id:uuid(),name:newBK.name,logo:newBK.logo||null,url:newBK.url||null});
+                  }
+                  onUpdateBK();
+                  setShowAdd(false);
+                  setEditBK(null);
+                  showToast((editBK?"Modifié: ":"Ajouté: ")+newBK.name);
+                }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+              }}
+            />
+          )}
+        </>
       )}
 
-      {bookmakers.map(bk=>(
-        <div key={bk.name} className="bk-card">
-          {bk.logo
-            ?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
-            :<div className="bk-logo-placeholder">🏦</div>
-          }
-          <div style={{flex:1,minWidth:0}}>
-            <div className="bk-name">{bk.name}</div>
-            {bk.url&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{bk.url}</div>}
+      {/* ── TAB TIPSTERS ── */}
+      {tab==="tipsters"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{fontSize:13,color:"#6B7280",fontWeight:600}}>
+              {tipsters.length} tipster{tipsters.length!==1?"s":""}
+            </div>
+            <button className="btn btn-primary"
+              style={{width:"auto",padding:"9px 18px",fontSize:13}}
+              onClick={addTipster}>+ Ajouter</button>
           </div>
-          <div className="bk-actions">
-            <button className="icon-btn" onClick={()=>openEdit(bk)} title="Modifier">✎</button>
-            <button className="icon-btn danger" onClick={()=>deleteBK(bk)} title="Supprimer">×</button>
-          </div>
-        </div>
-      ))}
 
-      {(showAdd||editBK)&&(
-        <BKModal
-          bk={editBK}
-          existing={bookmakers.map(b=>b.name)}
-          onClose={()=>{setShowAdd(false);setEditBK(null);}}
-          onSave={async(newBK)=>{
-            try{
-              if(editBK){
-                await updateBookmaker(editBK.id,{logo:newBK.logo,url:newBK.url});
-              }else{
-                await insertBookmaker({id:uuid(),name:newBK.name,logo:newBK.logo||null,url:newBK.url||null});
-              }
-              onUpdate();
-              setShowAdd(false);
-              setEditBK(null);
-              showToast((editBK?"Modifié: ":"Ajouté: ")+newBK.name);
-            }catch(e){
-              showToast("Erreur: "+e.message,"#EF4444");
-            }
-          }}
-        />
+          {tipsters.length===0&&(
+            <div className="empty">
+              <div className="empty-icon">🎯</div>
+              <div className="empty-text">Aucun tipster</div>
+              <div className="empty-sub">Ajoute tes tipsters pour les associer à tes paris</div>
+            </div>
+          )}
+
+          {tipsters.map(t=>(
+            <div key={t.id} className="bk-card">
+              <div className="bk-logo-placeholder" style={{fontSize:22}}>🎯</div>
+              <div style={{flex:1}}>
+                <div className="bk-name">{t.name}</div>
+              </div>
+              <div className="bk-actions">
+                <button className="icon-btn danger" title="Supprimer"
+                  onClick={()=>deleteTip(t)}>×</button>
+              </div>
+            </div>
+          ))}
+        </>
       )}
     </div>
   );
 }
+
 
 // ── MODAL BOOKMAKER ───────────────────────────────────────────────────────────
 function BKModal({bk,existing,onClose,onSave}){
@@ -1108,6 +1209,7 @@ function BKModal({bk,existing,onClose,onSave}){
 export default function App(){
   const[bets,setBets]=useState([]);
   const[bookmakers,setBookmakers]=useState([]);
+  const[tipsters,setTipsters]=useState([]);
   const[players,setPlayers]=useState([]);
   const[view,setView]=useState("home");
   const[loading,setLoading]=useState(true);
@@ -1123,6 +1225,7 @@ export default function App(){
   useEffect(()=>{
     fetchPlayers().then(setPlayers).catch(()=>{});
     fetchBookmakers().then(setBookmakers).catch(()=>{});
+    fetchTipsters().then(setTipsters).catch(()=>{});
   },[]);
 
   // Charger les paris
@@ -1206,7 +1309,9 @@ export default function App(){
           {view==="stats"&&<StatsView bets={bets}/>}
           {view==="settings"&&<SettingsView
             bookmakers={bookmakers}
-            onUpdate={()=>fetchBookmakers().then(setBookmakers).catch(()=>{})}
+            onUpdateBK={()=>fetchBookmakers().then(setBookmakers).catch(()=>{})}
+            tipsters={tipsters}
+            onUpdateTip={()=>fetchTipsters().then(setTipsters).catch(()=>{})}
             showToast={showToast}
           />}
         </div>
@@ -1237,6 +1342,7 @@ export default function App(){
           <AddBetModal
             players={players}
             bookmakers={bookmakers.length>0?bookmakers.map(b=>b.name):DEFAULT_BOOKMAKERS}
+            tipsters={tipsters}
             bookmarkerObjs={bookmakers}
             editBet={editBet}
             onClose={()=>{setShowAdd(false);setEditBet(null);}}
