@@ -31,6 +31,11 @@ function nowDT(){
     String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
 
+function formatName(name){
+  if(!name)return"";
+  return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+}
+
 // ── API SUPABASE ──────────────────────────────────────────────────────────────
 async function fetchBets(){
   const r=await fetch(SUPA_URL+"/rest/v1/bets?select=*&order=created_at.desc",{headers:H});
@@ -62,7 +67,6 @@ async function deleteBet(id){
   const r=await fetch(SUPA_URL+"/rest/v1/bets?id=eq."+id,{method:"DELETE",headers:H});
   if(!r.ok)throw new Error("delete: "+r.status);
 }
-
 
 // ── BOOKMAKERS API ────────────────────────────────────────────────────────────
 async function fetchBookmakers(){
@@ -145,7 +149,6 @@ async function fetchClubs(league){
 }
 
 async function upsertClub(name,league,logo){
-  // Toujours PATCH — cherche par name+league exact
   const enc=v=>encodeURIComponent(v);
   const url=SUPA_URL+"/rest/v1/clubs?name=eq."+enc(name)+"&league=eq."+enc(league);
   const r=await fetch(url,{
@@ -153,9 +156,7 @@ async function upsertClub(name,league,logo){
     headers:{...H},
     body:JSON.stringify({logo}),
   });
-  // PATCH retourne 200 ou 204 si ok
   if(r.status===200||r.status===204||r.ok)return true;
-  // Sinon on log et on ignore (le logo s'affiche quand même côté state)
   console.warn("upsertClub warning:",r.status,await r.text().catch(()=>""));
   return false;
 }
@@ -170,22 +171,11 @@ async function updatePlayer(id,fields){
   return r.json();
 }
 
-async function fetchPlayersByLeague(league){
-  const r=await fetch(
-    SUPA_URL+"/rest/v1/players?game=eq."+encodeURIComponent(league)+"&select=*&order=team.asc,name.asc",
-    {headers:H}
-  );
-  if(!r.ok)throw new Error("fetch players: "+r.status);
-  return r.json();
-}
-
-
-
 async function fetchPlayers(){
   let all=[],offset=0,limit=500;
   while(true){
     const r=await fetch(
-      SUPA_URL+"/rest/v1/players?select=name,game,team,role,photo_url,avatar_url&order=name.asc&limit="+limit+"&offset="+offset,
+      SUPA_URL+"/rest/v1/players?select=name,game,team,role,photo_url,avatar_url,team_logo_url&order=name.asc&limit="+limit+"&offset="+offset,
       {headers:H}
     );
     if(!r.ok)break;
@@ -203,13 +193,11 @@ async function pasteImageToSupabase(name){
     const ext=blob.type.includes("png")?"png":blob.type.includes("webp")?"webp":"jpg";
     const rand=Math.random().toString(36).slice(2,7);
     const path="photos/players/"+safe+"_"+Date.now()+"_"+rand+"."+ext;
-    // Essai POST d'abord
     let res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
       method:"POST",
       headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":blob.type,"x-upsert":"true"},
       body:blob,
     });
-    // Si 409, essayer avec PUT
     if(!res.ok&&res.status===409){
       res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
         method:"PUT",
@@ -311,6 +299,13 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .btn-danger{background:rgba(239,68,68,.1);color:#EF4444;border:1px solid rgba(239,68,68,.2);}
 .btn-sm{padding:7px 14px;font-size:12px;border-radius:8px;}
 
+/* PLAYER AVATAR — conteneur unifié avec logo watermark */
+.player-avatar-wrap{position:relative;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border-radius:10px;}
+.player-avatar-wrap .team-logo-bg{position:absolute;object-fit:contain;pointer-events:none;}
+.player-avatar-wrap .player-img{position:relative;z-index:1;object-fit:contain;object-position:50% 85%;
+  -webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0);}
+.player-avatar-wrap .player-placeholder{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+
 /* PLAYER AUTOCOMPLETE */
 .autocomplete{position:relative;}
 .autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;
@@ -319,8 +314,6 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .autocomplete-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
   cursor:pointer;transition:background .1s;}
 .autocomplete-item:hover,.autocomplete-item.active{background:rgba(124,58,237,.1);}
-.player-photo{width:36px;height:36px;border-radius:50%;object-fit:cover;
-  object-position:50% 10%;background:#1F2937;flex-shrink:0;}
 .player-name{font-size:13px;font-weight:600;color:#E5E7EB;}
 .player-meta{font-size:11px;color:#6B7280;}
 
@@ -329,10 +322,6 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
   background:#111827;border:1px solid #1F2937;border-radius:14px;margin-bottom:8px;
   cursor:pointer;transition:border-color .15s;}
 .bet-row:hover{border-color:#374151;}
-.bet-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;
-  object-position:50% 10%;background:#1F2937;flex-shrink:0;}
-.bet-photo-placeholder{width:44px;height:44px;border-radius:50%;background:#1F2937;
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .bet-info{flex:1;min-width:0;}
 .bet-player{font-size:14px;font-weight:700;color:#E5E7EB;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -435,42 +424,15 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .filter-chip.active{background:rgba(124,58,237,.15);border-color:#7C3AED;color:#A78BFA;}
 `;
 
-// ── BOOKMAKERS ────────────────────────────────────────────────────────────────
-const DEFAULT_BOOKMAKERS=["Pinnacle","ps3838","Bet365","Unibet","Winamax","Betclic","Bwin","1xBet","Betway","DraftKings","FanDuel","BetMGM","Autre"];
-const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Points+Rebonds+Assists","3 Points Made","Steals","Blocks","Turnovers","Fantasy Score","Double-Double","Minutes"];
-const LEAGUES=["NBA","EuroLeague","EuroCup","Pro A","ACB","Lega","Bundesliga","BCL","HEBA"];
-
-// ── COMPOSANTS ────────────────────────────────────────────────────────────────
-
-// Toast
-function useToast(){
-  const[toast,setToast]=useState(null);
-  const show=useCallback((msg,color="#22C55E")=>{
-    setToast({msg,color});
-    setTimeout(()=>setToast(null),2500);
-  },[]);
-  return{toast,show};
-}
-
-// Photo joueur avec lazy loading
-
-// ── Logos ligues (ESPN/CDN) ───────────────────────────────────────────────────
-// LEAGUE_LOGOS est maintenant dynamique — merge Supabase + fallback
-// Mis à jour depuis l'App via setLeagueLogos
+// ── LEAGUE LOGOS (dynamique depuis Supabase) ─────────────────────────────────
 let LEAGUE_LOGOS_DYNAMIC={};
 function getLeagueLogo(game,leagueLogos={}){
-  // Priorité 1: logo uploadé dans Supabase (via Édition)
   if(leagueLogos[game])return leagueLogos[game];
-  // Priorité 2: logo dynamique global
   if(LEAGUE_LOGOS_DYNAMIC[game])return LEAGUE_LOGOS_DYNAMIC[game];
   return null;
 }
-// Garder LEAGUE_LOGOS pour compatibilité (sera mergé avec Supabase)
-const LEAGUE_LOGOS={};
 
-
-
-// ── Couleurs équipes ──────────────────────────────────────────────────────────
+// ── COULEURS ÉQUIPES ──────────────────────────────────────────────────────────
 const TEAM_COLORS={
   "Atlanta Hawks":{p:"#C8102E",s:"#FDB927"},
   "Boston Celtics":{p:"#007A33",s:"#BA9653"},
@@ -524,21 +486,126 @@ const TEAM_COLORS={
   "Crvena Zvezda Meridianbet Belgrade":{p:"#CC0000",s:"#FFFFFF"},
 };
 
-// Helper: obtenir couleur équipe
 function getTeamColor(team){
   if(!team)return null;
   return TEAM_COLORS[team]||null;
 }
 
-// Composant carte joueur pro (format vertical avec couleur équipe)
+// ── COMPOSANT UNIVERSEL : Avatar joueur avec logo équipe en watermark ─────────
+// Utilisé partout sur le site de façon cohérente
+// w = largeur totale du conteneur, h = hauteur
+// teamLogoUrl = URL du logo uploadé dans Édition (team_logo_url du joueur)
+// photoUrl = photo du joueur
+// teamName = nom de l'équipe (pour les couleurs)
+// round = true pour cercle, false pour rectangle arrondi
+// logoSize = taille du logo watermark en % (0..1), défaut 0.75
+const PlayerAvatar=memo(function PlayerAvatar({
+  w=70,h=51,
+  photoUrl=null,
+  teamLogoUrl=null,
+  teamName=null,
+  round=false,
+  logoSize=0.75,
+  style={},
+}){
+  const[photoErr,setPhotoErr]=useState(false);
+  const[logoErr,setLogoErr]=useState(false);
+  const tc=getTeamColor(teamName);
+  const pc=tc?.p||"#1F2937";
+  const sc=tc?.s||"#374151";
+  const borderR=round?"50%":"10px";
+  const lgW=Math.round(w*logoSize);
+  const lgH=Math.round(h*logoSize);
+  const hasLogo=teamLogoUrl&&!logoErr;
+  const hasPhoto=photoUrl&&!photoErr;
+
+  return(
+    <div style={{
+      width:w,height:h,flexShrink:0,
+      position:"relative",overflow:"hidden",
+      borderRadius:borderR,
+      background:`linear-gradient(160deg,${pc}22 0%,${sc}18 100%)`,
+      display:"flex",alignItems:"flex-end",justifyContent:"center",
+      ...style
+    }}>
+      {/* Logo équipe en watermark centré derrière le joueur */}
+      {hasLogo&&(
+        <img
+          src={teamLogoUrl}
+          alt=""
+          onError={()=>setLogoErr(true)}
+          style={{
+            position:"absolute",
+            right:"50%",
+            bottom:"50%",
+            transform:"translate(50%,50%)",
+            width:lgW,
+            height:lgH,
+            objectFit:"contain",
+            opacity:0.18,
+            filter:"blur(0.4px) saturate(0.8)",
+            pointerEvents:"none",
+            zIndex:0,
+          }}
+        />
+      )}
+
+      {/* Photo joueur */}
+      {hasPhoto?(
+        <img
+          src={photoUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={()=>setPhotoErr(true)}
+          style={{
+            position:"relative",
+            zIndex:1,
+            width:w,
+            height:h,
+            objectFit:"contain",
+            objectPosition:"50% 85%",
+            WebkitBackfaceVisibility:"hidden",
+            backfaceVisibility:"hidden",
+            transform:"translateZ(0)",
+          }}
+        />
+      ):(
+        <span style={{
+          position:"relative",zIndex:1,
+          fontSize:Math.round(h*0.42),
+          paddingBottom:4,
+          color:"#4B5563",
+        }}>○</span>
+      )}
+    </div>
+  );
+});
+
+// ── BOOKMAKERS ────────────────────────────────────────────────────────────────
+const DEFAULT_BOOKMAKERS=["Pinnacle","ps3838","Bet365","Unibet","Winamax","Betclic","Bwin","1xBet","Betway","DraftKings","FanDuel","BetMGM","Autre"];
+const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Points+Rebonds+Assists","3 Points Made","Steals","Blocks","Turnovers","Fantasy Score","Double-Double","Minutes"];
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function useToast(){
+  const[toast,setToast]=useState(null);
+  const show=useCallback((msg,color="#22C55E")=>{
+    setToast({msg,color});
+    setTimeout(()=>setToast(null),2500);
+  },[]);
+  return{toast,show};
+}
+
+// ── PLAYER CARD (EditView) ─────────────────────────────────────────────────────
 const PlayerCard=memo(function PlayerCard({player,size=72,clubLogo=null,onClick,onPhotoClick,uploading=false}){
   const photo=player.photo_url||player.avatar_url;
+  const teamLogoUrl=clubLogo||player.team_logo_url||null;
   const tc=getTeamColor(player.team);
   const primaryColor=tc?.p||"#1F2937";
   const secondaryColor=tc?.s||"#374151";
-  const displayName=player.name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
-
+  const displayName=formatName(player.name);
   const photoW=Math.round(size*1.37);
+
   return(
     <div onClick={onClick}
       style={{display:"flex",alignItems:"center",gap:12,
@@ -548,46 +615,25 @@ const PlayerCard=memo(function PlayerCard({player,size=72,clubLogo=null,onClick,
         borderRadius:16,marginBottom:6,cursor:"pointer",
         position:"relative",overflow:"hidden",
         transition:"border-color .15s"}}>
-
-      {/* Bande couleur équipe à gauche */}
       <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
         background:`linear-gradient(180deg,${primaryColor},${secondaryColor})`}}/>
 
-      {/* Photo format ESPN avec logo club en arrière-plan */}
-      <div style={{
-        width:photoW,height:size,flexShrink:0,
-        background:`linear-gradient(180deg,transparent,${primaryColor}28)`,
-        display:"flex",alignItems:"flex-end",justifyContent:"center",
-        position:"relative",overflow:"hidden",
-        borderRadius:10}}>
-        {/* Logo club en watermark */}
-        {(clubLogo||player.team_logo_url)&&(
-          <img src={clubLogo||player.team_logo_url} alt=""
-            style={{position:"absolute",right:-4,bottom:-4,
-              width:size*0.7,height:size*0.7,
-              objectFit:"contain",opacity:.15,
-              filter:"grayscale(20%)"}}/>
-        )}
-        {photo?(
-          <img src={photo} alt={displayName} loading="lazy" decoding="async"
-            style={{width:photoW,height:size,
-              objectFit:"contain",objectPosition:"50% 85%",
-              WebkitBackfaceVisibility:"hidden",
-              transform:"translateZ(0)",position:"relative",zIndex:1}}
-            onError={e=>{e.target.style.display="none";}}/>
-        ):(
-          <span style={{fontSize:size*0.5,paddingBottom:4,position:"relative",zIndex:1,color:"#4B5563"}}>○</span>
-        )}
-      </div>
+      <PlayerAvatar
+        w={photoW} h={size}
+        photoUrl={photo}
+        teamLogoUrl={teamLogoUrl}
+        teamName={player.team}
+        round={false}
+        logoSize={0.72}
+      />
 
-      {/* Infos */}
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:14,fontWeight:700,color:"#F3F4F6",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
           letterSpacing:.1}}>{displayName}</div>
         <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
           {player.role&&<span style={{
-            fontSize:10,fontWeight:800,color:primaryColor==="|#FFFFFF"?"#A78BFA":primaryColor,
+            fontSize:10,fontWeight:800,color:primaryColor,
             background:`${primaryColor}22`,
             border:`1px solid ${primaryColor}44`,
             borderRadius:5,padding:"1px 6px",letterSpacing:.5}}>{player.role}</span>}
@@ -601,7 +647,6 @@ const PlayerCard=memo(function PlayerCard({player,size=72,clubLogo=null,onClick,
         </div>
       </div>
 
-      {/* Bouton photo */}
       {onPhotoClick&&(
         <button disabled={uploading}
           onClick={e=>{e.stopPropagation();onPhotoClick();}}
@@ -616,34 +661,7 @@ const PlayerCard=memo(function PlayerCard({player,size=72,clubLogo=null,onClick,
   );
 });
 
-
-const PlayerPhoto=memo(function PlayerPhoto({url,size=44,style={}}){
-  const[err,setErr]=useState(false);
-  // Format ESPN: ratio 70x51 = ~1.37
-  const w=Math.round(size*1.37);
-  const h=size;
-  if(!url||err)return(
-    <div style={{width:w,height:h,flexShrink:0,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:h*0.5,...style}}>○</div>
-  );
-  return(
-    <img src={url} alt="" loading="lazy" decoding="async"
-      onError={()=>setErr(true)}
-      style={{
-        width:w,height:h,
-        objectFit:"contain",
-        objectPosition:"50% 100%",
-        flexShrink:0,
-        WebkitBackfaceVisibility:"hidden",
-        backfaceVisibility:"hidden",
-        transform:"translateZ(0)",
-        ...style
-      }}/>
-  );
-});
-
-// Autocomplete joueur
+// ── AUTOCOMPLETE JOUEUR ───────────────────────────────────────────────────────
 function PlayerAutocomplete({value,onChange,players,onSelect}){
   const[open,setOpen]=useState(false);
   const[idx,setIdx]=useState(0);
@@ -679,9 +697,17 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
           {filtered.map((p,i)=>(
             <div key={p.name} className={"autocomplete-item"+(i===idx?" active":"")}
               onMouseDown={()=>{onSelect(p);setOpen(false);}}>
-              <PlayerPhoto url={p.photo_url||p.avatar_url} size={36}/>
+              {/* Avatar avec logo dans l'autocomplete */}
+              <PlayerAvatar
+                w={48} h={36}
+                photoUrl={p.photo_url||p.avatar_url}
+                teamLogoUrl={p.team_logo_url||null}
+                teamName={p.team}
+                round={false}
+                logoSize={0.7}
+              />
               <div>
-                <div className="player-name">{p.name}</div>
+                <div className="player-name">{formatName(p.name)}</div>
                 <div className="player-meta" style={{display:"flex",alignItems:"center",gap:4}}>
                   {p.team&&<span>{p.team}</span>}
                   {p.game&&getLeagueLogo(p.game)&&(
@@ -699,300 +725,11 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
   );
 }
 
-
-// ── FORMULAIRE PARI ÉQUIPE ────────────────────────────────────────────────────
-const TEAM_BET_TYPES=[
-  {key:"moneyline", label:"Moneyline", desc:"Équipe X gagne"},
-  {key:"handicap",  label:"Handicap",  desc:"Équipe X -/+ points"},
-  {key:"total",     label:"Total match",desc:"Over/Under total du match"},
-  {key:"team_total",label:"Total équipe",desc:"Over/Under points d'une équipe"},
-  {key:"half",      label:"Mi-temps",   desc:"Over/Under 1ère mi-temps"},
-];
-
-function AddTeamBetModal({bookmakers,tipsters=[],leagues=[],onSave,onClose,editBet=null}){
-  const[form,setForm]=useState(editBet?{
-    betType:editBet.bet_type||"moneyline",
-    team:editBet.team||"",
-    opponent:editBet.opponent||"",
-    game:editBet.game||"",
-    ou:editBet.over_under||"Over",
-    line:editBet.line||"",
-    odds:editBet.odds||"",
-    stake:editBet.stake||"",
-    bookmaker:editBet.bookmaker||"",
-    status:editBet.status||"pending",
-    tipster:editBet.tipster||"",
-    notes:editBet.notes||"",
-  }:{
-    betType:"moneyline",
-    team:"",opponent:"",game:"",
-    ou:"Over",line:"",odds:"",stake:"",
-    bookmaker:bookmakers[0]||"",
-    status:"pending",tipster:"",notes:"",
-  });
-  const[saving,setSaving]=useState(false);
-  const[clubs,setClubs]=useState([]);
-  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
-
-  // Charger clubs quand ligue change
-  useEffect(()=>{
-    if(!form.game)return;
-    fetch(SUPA_URL+"/rest/v1/clubs?league=eq."+encodeURIComponent(form.game)+"&order=name.asc",{headers:H})
-      .then(r=>r.json()).then(cs=>setClubs(Array.isArray(cs)?cs:[])).catch(()=>{});
-  },[form.game]);
-
-  const betTypeInfo=TEAM_BET_TYPES.find(t=>t.key===form.betType)||TEAM_BET_TYPES[0];
-  const needsLine=["handicap","total","team_total","half"].includes(form.betType);
-  const needsOU=["total","team_total","half"].includes(form.betType);
-  const tc=getTeamColor(form.team);
-  const pc=tc?.p||"#7C3AED";
-
-  async function submit(){
-    if(!form.team||!form.odds||!form.stake){
-      alert("Équipe, cote et mise sont obligatoires");return;
-    }
-    setSaving(true);
-    const odds=parseFloat(form.odds);
-    const stake=parseFloat(form.stake);
-
-    // Construire description
-    let desc="";
-    if(form.betType==="moneyline") desc=form.team+" gagne";
-    else if(form.betType==="handicap") desc=form.team+" "+form.line;
-    else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
-    else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line;
-    else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" (1re mi-temps)";
-
-    const bet={
-      player:form.team, // team name dans champ player pour compatibilité
-      team:form.team,
-      opponent:form.opponent||null,
-      description:desc,
-      over_under:form.ou||null,
-      line:form.line?parseFloat(form.line):null,
-      odds,stake,
-      bookmaker:form.bookmaker||null,
-      status:form.status,
-      profit:calcProfit(form.status,stake,odds),
-      game:form.game||null,
-      tipster:form.tipster||null,
-      notes:form.notes||null,
-      bet_type:"team",
-    };
-    try{
-      if(editBet){
-        await updateBet(editBet.id,bet);
-      }else{
-        await insertBet({...bet,id:uuid()});
-      }
-      onSave();
-      onClose();
-    }catch(e){alert("Erreur: "+e.message);}
-    setSaving(false);
-  }
-
-  return(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal-sheet">
-        <div className="modal-handle"/>
-        <div className="modal-title">{editBet?"Modifier":"Nouveau pari équipe"}</div>
-
-        {/* Type de pari */}
-        <div className="form-group">
-          <label className="form-label">Type de pari</label>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {TEAM_BET_TYPES.map(t=>(
-              <button key={t.key}
-                onClick={()=>f("betType",t.key)}
-                style={{display:"flex",alignItems:"center",gap:10,
-                  padding:"10px 14px",borderRadius:11,cursor:"pointer",
-                  border:"1px solid "+(form.betType===t.key?"#7C3AED":"#1F2937"),
-                  background:form.betType===t.key?"rgba(124,58,237,.12)":"rgba(255,255,255,.02)",
-                  textAlign:"left"}}>
-                <span style={{fontSize:16}}>{t.label.split(" ")[0]}</span>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,
-                    color:form.betType===t.key?"#A78BFA":"#E5E7EB"}}>
-                    {t.label.split(" ").slice(1).join(" ")}
-                  </div>
-                  <div style={{fontSize:11,color:"#6B7280"}}>{t.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Ligue */}
-        <div className="form-group">
-          <label className="form-label">Ligue</label>
-          <select className="form-select" value={form.game}
-            onChange={e=>{f("game",e.target.value);f("team","");f("opponent","");}}>
-            <option value="">Sélectionner…</option>
-            {["NBA","EuroLeague","EuroCup","BCL","ACB","Betclic Elite","Lega A","BBL"].map(l=>(
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Équipe */}
-        <div className="form-group">
-          <label className="form-label">
-            {form.betType==="total"?"Équipe locale":"Équipe pariée"}
-          </label>
-          {clubs.length>0?(
-            <select className="form-select" value={form.team}
-              onChange={e=>f("team",e.target.value)}>
-              <option value="">Sélectionner…</option>
-              {clubs.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
-            </select>
-          ):(
-            <input className="form-input" placeholder="Nom de l'équipe"
-              value={form.team} onChange={e=>f("team",e.target.value)}/>
-          )}
-          {/* Preview couleur équipe */}
-          {form.team&&tc&&(
-            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
-              <div style={{width:28,height:28,borderRadius:"50%",
-                background:`linear-gradient(135deg,${pc},${tc.s})`,
-                border:`2px solid ${pc}55`}}/>
-              <span style={{fontSize:12,color:"#9CA3AF",fontWeight:600}}>{form.team}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Adversaire (optionnel) */}
-        {clubs.length>0&&(
-          <div className="form-group">
-            <label className="form-label">Adversaire (optionnel)</label>
-            <select className="form-select" value={form.opponent}
-              onChange={e=>f("opponent",e.target.value)}>
-              <option value="">Sélectionner…</option>
-              {clubs.filter(c=>c.name!==form.team).map(c=>(
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Over/Under + Ligne */}
-        {needsLine&&(
-          <div className="form-group">
-            <label className="form-label">
-              {form.betType==="handicap"?"Handicap (ex: -5.5)":"Ligne"}
-            </label>
-            <div style={{display:"flex",gap:10}}>
-              {needsOU&&(
-                <div className="segment" style={{flex:"0 0 auto",minWidth:120}}>
-                  {["Over","Under"].map(o=>(
-                    <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
-                      onClick={()=>f("ou",o)}>{o}</button>
-                  ))}
-                </div>
-              )}
-              <input className="form-input" type="number" step="0.5"
-                placeholder={form.betType==="handicap"?"-5.5":"220.5"}
-                value={form.line} onChange={e=>f("line",e.target.value)}
-                style={{flex:1}}/>
-            </div>
-          </div>
-        )}
-
-        {/* Description générée */}
-        {form.team&&(
-          <div style={{background:"rgba(124,58,237,.08)",border:"1px solid rgba(124,58,237,.2)",
-            borderRadius:10,padding:"10px 14px",marginBottom:14}}>
-            <div style={{fontSize:11,color:"#7C3AED",fontWeight:700,
-              textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Pari</div>
-            <div style={{fontSize:14,fontWeight:600,color:"#E5E7EB"}}>
-              {form.betType==="moneyline"&&form.team+" gagne"}
-              {form.betType==="handicap"&&form.team+" "+form.line}
-              {form.betType==="total"&&(form.ou||"Over")+" "+form.line+" pts (match total)"}
-              {form.betType==="team_total"&&form.team+" "+(form.ou||"Over")+" "+form.line+" pts"}
-              {form.betType==="half"&&(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)"}
-            </div>
-            {form.opponent&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
-              vs {form.opponent}
-            </div>}
-          </div>
-        )}
-
-        {/* Cote + Mise */}
-        <div style={{display:"flex",gap:10}} className="form-group">
-          <div style={{flex:1}}>
-            <label className="form-label">Cote</label>
-            <input className="form-input" type="number" step="0.01" placeholder="1.85"
-              value={form.odds} onChange={e=>f("odds",e.target.value)}/>
-          </div>
-          <div style={{flex:1}}>
-            <label className="form-label">Mise ($)</label>
-            <input className="form-input" type="number" placeholder="100"
-              value={form.stake} onChange={e=>f("stake",e.target.value)}/>
-          </div>
-        </div>
-
-        {/* Bookmaker */}
-        <div className="form-group">
-          <label className="form-label">Bookmaker</label>
-          <select className="form-select" value={form.bookmaker}
-            onChange={e=>f("bookmaker",e.target.value)}>
-            <option value="">Aucun</option>
-            {bookmakers.map(b=><option key={b}>{b}</option>)}
-          </select>
-        </div>
-
-        {/* Statut */}
-        <div className="form-group">
-          <label className="form-label">Statut</label>
-          <div className="status-row">
-            {["pending","won","lost","void"].map(s=>(
-              <button key={s} className={"status-btn "+s+(form.status===s?" active":"")}
-                onClick={()=>f("status",s)}>
-                {s==="pending"?"En cours":s==="won"?"Gagné":s==="lost"?"Perdu":"Void"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tipster */}
-        <div className="form-group">
-          <label className="form-label">Tipster</label>
-          {tipsters.length>0?(
-            <select className="form-select" value={form.tipster}
-              onChange={e=>f("tipster",e.target.value)}>
-              <option value="">Aucun</option>
-              {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
-            </select>
-          ):(
-            <input className="form-input" placeholder="Optionnel"
-              value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
-          )}
-        </div>
-
-        {/* Notes */}
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <input className="form-input" placeholder="Optionnel"
-            value={form.notes} onChange={e=>f("notes",e.target.value)}/>
-        </div>
-
-        <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          {saving?"Enregistrement…":editBet?"Modifier":"+ Ajouter le pari"}
-        </button>
-        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
-          Annuler
-        </button>
-      </div>
-    </div>
-  );
-}
-
-
-// ── FORMULAIRE AJOUT PARI (Joueur + Équipe) ──────────────────────────────────
+// ── FORMULAIRE AJOUT/EDIT PARI ────────────────────────────────────────────────
 function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null}){
-  const[step,setStep]=useState(editBet?"form":"search"); // search → form
+  const[step,setStep]=useState(editBet?"form":"search");
   const[search,setSearch]=useState("");
-  const[selectedType,setSelectedType]=useState(null); // {type:"player"|"team", data}
-  const[clubs,setClubs]=useState([]);
+  const[selectedType,setSelectedType]=useState(null);
   const[saving,setSaving]=useState(false);
   const[form,setForm]=useState(editBet?{
     player:editBet.player||"",
@@ -1007,7 +744,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
     game:editBet.game||"",
     tipster:editBet.tipster||"",
     notes:editBet.notes||"",
-    // team fields
     betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
     team:editBet.team||"",
     opponent:editBet.opponent||"",
@@ -1021,10 +757,9 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
 
   const isTeamBet=editBet?.bet_type==="team"||(selectedType?.type==="team");
 
-  // Recherche joueurs + équipes
   const searchLow=search.toLowerCase().trim();
   const playerResults=searchLow.length>=1
-    ?Object.values(players).filter(p=>{
+    ?players.filter(p=>{
         const n=p.name.toLowerCase();
         const words=n.split(" ");
         const initials=words.map(w=>w[0]||"").join("");
@@ -1032,19 +767,11 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
       }).slice(0,6)
     :[];
 
-  // Chercher dans tous les clubs via players (teams uniques)
   const allTeams=searchLow.length>=1
-    ?[...new Set(Object.values(players).map(p=>p.team).filter(Boolean))]
+    ?[...new Set(players.map(p=>p.team).filter(Boolean))]
         .filter(t=>t.toLowerCase().includes(searchLow))
         .slice(0,4)
     :[];
-
-  // Charger clubs si équipe sélectionnée
-  useEffect(()=>{
-    if(!form.game||!isTeamBet)return;
-    fetch(SUPA_URL+"/rest/v1/clubs?league=eq."+encodeURIComponent(form.game)+"&order=name.asc",{headers:H})
-      .then(r=>r.json()).then(cs=>setClubs(Array.isArray(cs)?cs:[])).catch(()=>{});
-  },[form.game,isTeamBet]);
 
   function selectPlayer(p){
     f("player",p.name);f("playerObj",p);
@@ -1054,8 +781,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
   }
 
   function selectTeam(teamName){
-    // Trouver la ligue de ce club depuis players
-    const playerOfTeam=Object.values(players).find(p=>p.team===teamName);
+    const playerOfTeam=players.find(p=>p.team===teamName);
     const game=playerOfTeam?.game||"";
     f("team",teamName);f("game",game);
     setSelectedType({type:"team",data:{name:teamName,game}});
@@ -1066,7 +792,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
     const odds=parseFloat(form.odds);
     const stake=parseFloat(form.stake);
     if(!odds||!stake){alert("Cote et mise obligatoires");return;}
-
     let bet;
     if(isTeamBet){
       if(!form.team){alert("Sélectionne une équipe");return;}
@@ -1117,8 +842,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
       <div className="modal-sheet">
         <div className="modal-handle"/>
         <div className="modal-title">Nouveau pari</div>
-
-        {/* Barre de recherche */}
         <div style={{position:"relative",marginBottom:12}}>
           <span style={{position:"absolute",left:12,top:"50%",
             transform:"translateY(-50%)",fontSize:16,color:"#6B7280",
@@ -1133,7 +856,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               cursor:"pointer",fontSize:18}}>×</button>}
         </div>
 
-        {/* Résultats équipes */}
         {allTeams.length>0&&(
           <div style={{marginBottom:10}}>
             <div style={{fontSize:10,fontWeight:800,color:"#F59E0B",
@@ -1142,22 +864,30 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               const tc2=getTeamColor(team);
               const pc2=tc2?.p||"#1F2937";
               const sc2=tc2?.s||"#374151";
-              const playerOfTeam=Object.values(players).find(p=>p.team===team);
+              const playerOfTeam=players.find(p=>p.team===team);
+              const teamLogoUrl=playerOfTeam?.team_logo_url||null;
               return(
                 <div key={team} onClick={()=>selectTeam(team)}
                   style={{display:"flex",alignItems:"center",gap:12,
                     padding:"10px 12px",background:"#0F1629",
                     border:"1px solid rgba(245,158,11,.2)",
                     borderRadius:12,marginBottom:6,cursor:"pointer"}}>
-                  <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
-                    background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    border:`2px solid ${pc2}44`,fontSize:18}}>◉</div>
+                  {/* Logo équipe ou cercle couleur */}
+                  {teamLogoUrl?(
+                    <img src={teamLogoUrl} alt={team}
+                      style={{width:40,height:40,objectFit:"contain",borderRadius:8,
+                        background:"#1F2937",padding:3,flexShrink:0}}/>
+                  ):(
+                    <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
+                      background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      border:`2px solid ${pc2}44`,fontSize:18}}>◉</div>
+                  )}
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB"}}>{team}</div>
                     {playerOfTeam?.game&&<div style={{fontSize:11,color:"#6B7280"}}>{playerOfTeam.game}</div>}
                   </div>
-                  <span style={{fontSize:10,fontWeight:800,color:"#F59E0B",
+                  <span style={{fontSize:9,fontWeight:800,color:"#F59E0B",
                     background:"rgba(245,158,11,.12)",border:"1px solid rgba(245,158,11,.25)",
                     borderRadius:5,padding:"2px 7px"}}>ÉQUIPE</span>
                 </div>
@@ -1166,7 +896,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
           </div>
         )}
 
-        {/* Résultats joueurs */}
         {playerResults.length>0&&(
           <div>
             <div style={{fontSize:10,fontWeight:800,color:"#A78BFA",
@@ -1175,27 +904,39 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               const tc2=getTeamColor(p.team);
               const pc2=tc2?.p||"#1F2937";
               const sc2=tc2?.s||"#374151";
-              const photo=p.photo_url||p.avatar_url;
               return(
                 <div key={p.name} onClick={()=>selectPlayer(p)}
                   style={{display:"flex",alignItems:"center",gap:12,
                     padding:"10px 12px",background:"#0F1629",
                     border:"1px solid rgba(255,255,255,.06)",
                     borderRadius:12,marginBottom:6,cursor:"pointer"}}>
-                  <div style={{width:56,height:56,borderRadius:"50%",flexShrink:0,
+                  {/* PlayerAvatar dans la recherche */}
+                  <div style={{
+                    width:56,height:56,borderRadius:"50%",flexShrink:0,
                     background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    border:`2px solid ${pc2}44`,overflow:"hidden"}}>
-                    {photo
-                      ?<img src={photo} loading="lazy" decoding="async"
-                          style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
-                            WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
-                      :<span style={{fontSize:24,color:"#4B5563"}}>○</span>}
+                    border:`2px solid ${pc2}44`,overflow:"hidden",
+                    position:"relative",display:"flex",alignItems:"flex-end",justifyContent:"center",
+                  }}>
+                    {p.team_logo_url&&(
+                      <img src={p.team_logo_url} alt=""
+                        style={{position:"absolute",width:"80%",height:"80%",
+                          objectFit:"contain",opacity:.2,
+                          top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                          pointerEvents:"none",zIndex:0}}/>
+                    )}
+                    {(p.photo_url||p.avatar_url)?(
+                      <img src={p.photo_url||p.avatar_url} loading="lazy" decoding="async"
+                        style={{width:"100%",height:"100%",objectFit:"contain",
+                          objectPosition:"50% 85%",position:"relative",zIndex:1,
+                          WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
+                    ):(
+                      <span style={{fontSize:24,color:"#4B5563",position:"relative",zIndex:1}}>○</span>
+                    )}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
                       whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                      {p.name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ")}
+                      {formatName(p.name)}
                     </div>
                     <div style={{fontSize:11,color:"#6B7280"}}>
                       {[p.role,p.team].filter(Boolean).join(" · ")}
@@ -1214,42 +955,65 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
             <div className="empty-sub">Essaie "lj", "BOS", "Lakers"…</div>
           </div>
         )}
-
         {search.length===0&&(
           <div style={{textAlign:"center",padding:"24px 0",color:"#4B5563",fontSize:13}}>
             Tape le nom d'un joueur ou d'une équipe
           </div>
         )}
-
-        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:16}}>
-          Annuler
-        </button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:16}}>Annuler</button>
       </div>
     </div>
   );
 
   // ── ÉTAPE 2 : Formulaire ──────────────────────────────────────
+  const avatarPlayerObj=isTeamBet?null:form.playerObj;
+  const avatarTeamLogoUrl=avatarPlayerObj?.team_logo_url||null;
+
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal-sheet">
         <div className="modal-handle"/>
-
-        {/* Header avec retour */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
           {!editBet&&<button onClick={()=>setStep("search")}
             style={{background:"transparent",border:"none",color:"#A78BFA",
               cursor:"pointer",fontSize:22,padding:0,lineHeight:1}}>‹</button>}
-          <div style={{width:48,height:48,borderRadius:"50%",flexShrink:0,
+
+          {/* Avatar header formulaire */}
+          <div style={{
+            width:52,height:52,borderRadius:"50%",flexShrink:0,
             background:`linear-gradient(135deg,${pc}CC,${tc?.s||"#374151"}88)`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            border:`2px solid ${pc}44`,overflow:"hidden"}}>
-            {isTeamBet?<span style={{fontSize:22,color:"#374151"}}>◉</span>:(()=>{
-              const photo=form.playerObj?.photo_url||form.playerObj?.avatar_url;
-              return photo
-                ?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
-                :<span style={{fontSize:22}}>○</span>;
-            })()}
+            border:`2px solid ${pc}44`,overflow:"hidden",
+            position:"relative",display:"flex",alignItems:"flex-end",justifyContent:"center",
+          }}>
+            {/* Logo équipe watermark dans le header */}
+            {(isTeamBet
+              // Pour pari équipe: chercher le logo dans players
+              ?(players.find(p=>p.team===form.team)?.team_logo_url||null)
+              :avatarTeamLogoUrl
+            )&&(
+              <img
+                src={isTeamBet
+                  ?(players.find(p=>p.team===form.team)?.team_logo_url||null)
+                  :avatarTeamLogoUrl}
+                alt=""
+                style={{position:"absolute",width:"78%",height:"78%",
+                  objectFit:"contain",opacity:.22,
+                  top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                  pointerEvents:"none",zIndex:0}}/>
+            )}
+            {isTeamBet
+              ?<span style={{fontSize:24,color:"#374151",position:"relative",zIndex:1}}>◉</span>
+              :(()=>{
+                const photo=form.playerObj?.photo_url||form.playerObj?.avatar_url;
+                return photo
+                  ?<img src={photo} style={{width:"100%",height:"100%",
+                      objectFit:"cover",objectPosition:"50% 8%",
+                      position:"relative",zIndex:1}}/>
+                  :<span style={{fontSize:22,position:"relative",zIndex:1}}>○</span>;
+              })()
+            }
           </div>
+
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB",
               whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
@@ -1266,7 +1030,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         {/* ── PARI ÉQUIPE ── */}
         {isTeamBet&&(
           <>
-            {/* Type */}
             <div className="form-group">
               <label className="form-label">Type</label>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
@@ -1288,20 +1051,14 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                 ))}
               </div>
             </div>
-
-            {/* Adversaire */}
             <div className="form-group">
               <label className="form-label">vs Adversaire (optionnel)</label>
               <input className="form-input" placeholder="Nom de l'adversaire"
                 value={form.opponent} onChange={e=>f("opponent",e.target.value)}/>
             </div>
-
-            {/* Over/Under + Ligne */}
             {["handicap","total","team_total","half"].includes(form.betType)&&(
               <div className="form-group">
-                <label className="form-label">
-                  {form.betType==="handicap"?"Handicap":"Ligne"}
-                </label>
+                <label className="form-label">{form.betType==="handicap"?"Handicap":"Ligne"}</label>
                 <div style={{display:"flex",gap:10}}>
                   {["total","team_total","half"].includes(form.betType)&&(
                     <div className="segment" style={{flex:"0 0 auto",minWidth:120}}>
@@ -1318,8 +1075,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                 </div>
               </div>
             )}
-
-            {/* Résumé du pari */}
             <div style={{background:`${pc}12`,border:`1px solid ${pc}30`,
               borderRadius:12,padding:"10px 14px",marginBottom:14}}>
               <div style={{fontSize:12,fontWeight:700,color:pc,marginBottom:3}}>Pari</div>
@@ -1337,33 +1092,31 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
 
         {/* ── PARI JOUEUR ── */}
         {!isTeamBet&&(
-          <>
-            <div className="form-group">
-              <label className="form-label">Pari</label>
-              <div className="segment" style={{marginBottom:10}}>
-                {["Over","Under"].map(o=>(
-                  <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
-                    onClick={()=>f("ou",o)}>{o}</button>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <input className="form-input" type="number" step="0.5"
-                  placeholder="Ligne (ex: 24.5)" value={form.line}
-                  onChange={e=>f("line",e.target.value)} style={{flex:1}}/>
-                <select className="form-select" value={form.stat}
-                  onChange={e=>f("stat",e.target.value)} style={{flex:1}}>
-                  {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
-                    "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                    "Turnovers","Fantasy Score","Minutes"].map(s=>(
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+          <div className="form-group">
+            <label className="form-label">Pari</label>
+            <div className="segment" style={{marginBottom:10}}>
+              {["Over","Under"].map(o=>(
+                <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
+                  onClick={()=>f("ou",o)}>{o}</button>
+              ))}
             </div>
-          </>
+            <div style={{display:"flex",gap:10}}>
+              <input className="form-input" type="number" step="0.5"
+                placeholder="Ligne (ex: 24.5)" value={form.line}
+                onChange={e=>f("line",e.target.value)} style={{flex:1}}/>
+              <select className="form-select" value={form.stat}
+                onChange={e=>f("stat",e.target.value)} style={{flex:1}}>
+                {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+                  "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
+                  "Turnovers","Fantasy Score","Minutes"].map(s=>(
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         )}
 
-        {/* ── COMMUN : Cote + Mise ── */}
+        {/* COMMUN */}
         <div style={{display:"flex",gap:10}} className="form-group">
           <div style={{flex:1}}>
             <label className="form-label">Cote</label>
@@ -1376,8 +1129,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               value={form.stake} onChange={e=>f("stake",e.target.value)}/>
           </div>
         </div>
-
-        {/* Bookmaker */}
         <div className="form-group">
           <label className="form-label">Bookmaker</label>
           <select className="form-select" value={form.bookmaker}
@@ -1386,8 +1137,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
             {bookmakers.map(b=><option key={b}>{b}</option>)}
           </select>
         </div>
-
-        {/* Statut */}
         <div className="form-group">
           <label className="form-label">Statut</label>
           <div className="status-row">
@@ -1399,8 +1148,6 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
             ))}
           </div>
         </div>
-
-        {/* Tipster */}
         <div className="form-group">
           <label className="form-label">Tipster</label>
           {tipsters.length>0?(
@@ -1414,20 +1161,15 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
           )}
         </div>
-
-        {/* Notes */}
         <div className="form-group">
           <label className="form-label">Notes</label>
           <input className="form-input" placeholder="Optionnel"
             value={form.notes} onChange={e=>f("notes",e.target.value)}/>
         </div>
-
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           {saving?"Enregistrement…":editBet?"Modifier":"+ Ajouter le pari"}
         </button>
-        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
-          Annuler
-        </button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>Annuler</button>
       </div>
     </div>
   );
@@ -1438,8 +1180,11 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
   const[saving,setSaving]=useState(false);
   const pData=players.find(p=>p.name===bet.player);
   const photo=pData?.photo_url||pData?.avatar_url;
-
+  const teamLogoUrl=pData?.team_logo_url||null;
   const profitNum=parseFloat(bet.profit||0);
+  const tc=getTeamColor(bet.team||pData?.team);
+  const pc=tc?.p||"#1F2937";
+  const sc=tc?.s||"#374151";
 
   async function changeStatus(status){
     setSaving(true);
@@ -1460,33 +1205,33 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal-sheet">
         <div className="modal-handle"/>
-
-        {/* Header joueur */}
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>{
-          (()=>{
-            const tc2=getTeamColor(bet.team||pData?.team);
-            const pc2=tc2?.p||"#1F2937";
-            const sc2=tc2?.s||"#374151";
-            return(
-              <div style={{width:80,height:80,borderRadius:"50%",flexShrink:0,
-                background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                border:`2px solid ${pc2}66`,boxShadow:`0 4px 20px ${pc2}55`,
-                overflow:"hidden"}}>
-                {photo
-                  ?<img src={photo} loading="lazy" decoding="async"
-                      style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"50% 85%",
-                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
-                  :<span style={{fontSize:26,color:"#4B5563"}}>○</span>}
-              </div>
-            );
-          })()
-        }
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          {/* Grand avatar avec logo dans le détail */}
+          <div style={{
+            width:90,height:90,borderRadius:"50%",flexShrink:0,
+            background:`linear-gradient(135deg,${pc}CC,${sc}88)`,
+            border:`2px solid ${pc}66`,
+            boxShadow:`0 4px 20px ${pc}55`,
+            overflow:"hidden",position:"relative",
+            display:"flex",alignItems:"flex-end",justifyContent:"center",
+          }}>
+            {teamLogoUrl&&(
+              <img src={teamLogoUrl} alt=""
+                style={{position:"absolute",width:"76%",height:"76%",
+                  objectFit:"contain",opacity:.22,
+                  top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+                  pointerEvents:"none",zIndex:0}}/>
+            )}
+            {photo
+              ?<img src={photo} loading="lazy" decoding="async"
+                  style={{width:"100%",height:"100%",objectFit:"contain",
+                    objectPosition:"50% 85%",position:"relative",zIndex:1,
+                    WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
+              :<span style={{fontSize:26,color:"#4B5563",position:"relative",zIndex:1}}>○</span>}
+          </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{bet.player}</div>
-            <div style={{fontSize:13,color:"#9CA3AF",marginTop:2}}>
-              {bet.description||"—"}
-            </div>
+            <div style={{fontSize:13,color:"#9CA3AF",marginTop:2}}>{bet.description||"—"}</div>
             {bet.game&&(
               <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
                 {getLeagueLogo(bet.game)&&<img src={getLeagueLogo(bet.game)} alt={bet.game}
@@ -1500,18 +1245,15 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
           </div>
         </div>
 
-        {/* Profit */}
         <div className="card" style={{marginBottom:16,textAlign:"center"}}>
           <div className={"profit-big "+(profitNum>0?"pos":profitNum<0?"neg":"neu")}>
             {profitNum>0?"+":""}{profitNum.toFixed(2)}$
           </div>
           <div style={{fontSize:12,color:"#6B7280",marginTop:4}}>
-            Cote {bet.odds} · Mise {bet.stake}$
-            {bet.bookmaker?" · "+bet.bookmaker:""}
+            Cote {bet.odds} · Mise {bet.stake}${bet.bookmaker?" · "+bet.bookmaker:""}
           </div>
         </div>
 
-        {/* Changer statut */}
         <div className="form-group">
           <label className="form-label">Changer le statut</label>
           <div className="status-row">
@@ -1524,15 +1266,11 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
           </div>
         </div>
 
-        {/* Infos */}
         {(bet.tipster||bet.notes||bet.created_at)&&(
           <div className="card-sm" style={{marginBottom:16}}>
-            {bet.tipster&&<div style={{fontSize:12,color:"#A78BFA",marginBottom:4}}>
-              ◎ Tipster: {bet.tipster}</div>}
-            {bet.notes&&<div style={{fontSize:12,color:"#9CA3AF",marginBottom:4}}>
-              ✦ {bet.notes}</div>}
-            {bet.created_at&&<div style={{fontSize:11,color:"#6B7280"}}>
-              {new Date(bet.created_at).toLocaleString("fr-CA")}</div>}
+            {bet.tipster&&<div style={{fontSize:12,color:"#A78BFA",marginBottom:4}}>◎ Tipster: {bet.tipster}</div>}
+            {bet.notes&&<div style={{fontSize:12,color:"#9CA3AF",marginBottom:4}}>✦ {bet.notes}</div>}
+            {bet.created_at&&<div style={{fontSize:11,color:"#6B7280"}}>{new Date(bet.created_at).toLocaleString("fr-CA")}</div>}
           </div>
         )}
 
@@ -1554,16 +1292,10 @@ function HomeView({bets,players}){
   const roi=staked>0?profit/staked*100:0;
   const wr=won+lost>0?won/(won+lost)*100:0;
 
-  // Courbe bankroll simplifiée (derniers 10 jours)
-  const sorted=[...settled].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-
   return(
     <div style={{padding:"16px 16px 0"}}>
-      {/* Profit principal */}
       <div className="card" style={{textAlign:"center",padding:"24px 16px",marginBottom:12}}>
-        <div style={{fontSize:11,color:"#6B7280",fontWeight:700,letterSpacing:1,marginBottom:8}}>
-          PROFIT NET
-        </div>
+        <div style={{fontSize:11,color:"#6B7280",fontWeight:700,letterSpacing:1,marginBottom:8}}>PROFIT NET</div>
         <div className={"profit-big "+(profit>0?"pos":profit<0?"neg":"neu")}>
           {profit>0?"+":""}{profit.toFixed(2)}$
         </div>
@@ -1571,8 +1303,6 @@ function HomeView({bets,players}){
           {won}G · {lost}P · {pending} en cours
         </div>
       </div>
-
-      {/* Stats grid */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value" style={{color:wr>=55?"#22C55E":wr>=45?"#F59E0B":"#EF4444"}}>
@@ -1595,8 +1325,6 @@ function HomeView({bets,players}){
           <div className="stat-label">Total misé</div>
         </div>
       </div>
-
-      {/* Par bookmaker */}
       {bets.length>0&&(()=>{
         const byBK={};
         bets.forEach(b=>{
@@ -1610,9 +1338,7 @@ function HomeView({bets,players}){
         return(
           <div className="card" style={{marginBottom:12}}>
             <div style={{fontSize:12,fontWeight:700,color:"#6B7280",
-              textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>
-              Par Bookmaker
-            </div>
+              textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Par Bookmaker</div>
             {entries.map(([bk,s])=>(
               <div key={bk} style={{display:"flex",justifyContent:"space-between",
                 alignItems:"center",padding:"8px 0",borderBottom:"1px solid #1F2937"}}>
@@ -1649,13 +1375,10 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
 
   return(
     <div>
-      {/* Search */}
       <div style={{padding:"12px 16px 0"}}>
         <input className="form-input" placeholder="⌕  Rechercher un joueur…"
           value={search} onChange={e=>setSearch(e.target.value)}/>
       </div>
-
-      {/* Filtres */}
       <div className="filter-row" style={{marginTop:10}}>
         {[
           {k:"all",label:"Tous ("+bets.length+")"},
@@ -1668,15 +1391,13 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
             onClick={()=>setFilter(k)}>{label}</button>
         ))}
       </div>
-
-      {/* Profit filtré */}
       {filter!=="all"&&filtered.length>0&&(
-        <div style={{padding:"0 16px 8px",fontSize:13,color:profitFiltered>=0?"#22C55E":"#EF4444",fontWeight:700}}>
+        <div style={{padding:"0 16px 8px",fontSize:13,
+          color:profitFiltered>=0?"#22C55E":"#EF4444",fontWeight:700}}>
           {profitFiltered>=0?"+":""}{profitFiltered.toFixed(2)}$ sur {filtered.length} paris
         </div>
       )}
 
-      {/* Liste */}
       <div style={{padding:"0 16px"}}>
         {filtered.length===0?(
           <div className="empty">
@@ -1687,45 +1408,37 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         ):filtered.map(b=>{
           const pData=players.find(p=>p.name===b.player);
           const photo=pData?.photo_url||pData?.avatar_url;
+          // Priorité: team_logo_url du joueur (uploadé dans Édition)
+          const teamLogoUrl=pData?.team_logo_url||null;
           const profitNum=parseFloat(b.profit||0);
-          const bkObj=bookmakers?.find(bk=>bk.name===b.bookmaker);
           const tc=getTeamColor(b.team||pData?.team);
           const pc=tc?.p||"#1F2937";
           const sc2=tc?.s||"#374151";
           return(
-              <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}
-                style={{position:"relative",overflow:"hidden",padding:"12px 14px"}}>
+            <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}
+              style={{position:"relative",overflow:"hidden",padding:"12px 14px"}}>
               <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
                 background:`linear-gradient(180deg,${pc},${sc2})`}}/>
-              <div style={{width:70,height:51,flexShrink:0,
-                background:`linear-gradient(180deg,transparent,${pc}22)`,
-                display:"flex",alignItems:"flex-end",justifyContent:"center",
-                overflow:"hidden",borderRadius:8,marginLeft:4,position:"relative"}}>
-                {/* Logo club watermark */}
-                {pData?.team_logo_url&&(
-                  <img src={pData.team_logo_url} alt=""
-                    style={{position:"absolute",right:-2,bottom:-2,
-                      width:32,height:32,objectFit:"contain",
-                      opacity:.12,filter:"grayscale(20%)"}}/>
-                )}
-                {photo
-                  ?<img src={photo} loading="lazy" decoding="async"
-                      style={{width:70,height:51,objectFit:"contain",objectPosition:"50% 85%",
-                        WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)",
-                        position:"relative",zIndex:1}}
-                      onError={e=>{e.target.style.display="none";}}/>
-                  :<span style={{fontSize:22,paddingBottom:2,position:"relative",zIndex:1,color:"#4B5563"}}>○</span>}
-              </div>
-              <div className="bet-info">
 
-                {/* Ligne 1: Nom + logo ligue + description */}
+              {/* Avatar ESPN avec logo équipe watermark */}
+              <PlayerAvatar
+                w={70} h={51}
+                photoUrl={photo}
+                teamLogoUrl={teamLogoUrl}
+                teamName={b.team||pData?.team}
+                round={false}
+                logoSize={0.78}
+                style={{marginLeft:4,borderRadius:8}}
+              />
+
+              <div className="bet-info">
                 <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:4,
                   whiteSpace:"nowrap",overflow:"hidden"}}>
                   <span style={{fontSize:14,fontWeight:700,color:"#F3F4F6",flexShrink:0}}>
                     {formatName(b.player)}
                   </span>
                   {b.game&&getLeagueLogo(b.game)&&(
-                    <img src={getLeagueLogo(b.game)} alt={b.game} flexShrink={0}
+                    <img src={getLeagueLogo(b.game)} alt={b.game}
                       style={{width:14,height:14,objectFit:"contain",opacity:.85,flexShrink:0}}/>
                   )}
                   {b.description&&(
@@ -1739,19 +1452,17 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                     border:"1px solid rgba(245,158,11,.25)",
                     borderRadius:4,padding:"1px 5px",flexShrink:0}}>ÉQUIPE</span>}
                 </div>
-
-                {/* Ligne 2: Cote · Mise · Logo BK · Tipster */}
                 <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
                   <span style={{fontSize:11,fontWeight:700,color:"#E5E7EB"}}>@{b.odds}</span>
                   <span style={{fontSize:11,color:"#374151",margin:"0 4px"}}>·</span>
                   <span style={{fontSize:11,color:"#9CA3AF"}}>{b.stake}$</span>
                   {b.bookmaker&&(()=>{
-                    const bkObj=bkPhotos?.[b.bookmaker];
+                    const bkLogo=bkPhotos?.[b.bookmaker];
                     return(
                       <>
                         <span style={{fontSize:11,color:"#374151",margin:"0 4px"}}>·</span>
-                        {bkObj
-                          ?<img src={bkObj} alt={b.bookmaker}
+                        {bkLogo
+                          ?<img src={bkLogo} alt={b.bookmaker}
                               style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>
                           :<span style={{fontSize:11,color:"#6B7280"}}>{b.bookmaker}</span>
                         }
@@ -1766,8 +1477,6 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                   )}
                 </div>
               </div>
-
-              {/* Profit à droite */}
               <div className="bet-right" style={{flexShrink:0}}>
                 <div className={"bet-profit"+(profitNum>0?" pos":profitNum<0?" neg":" neu")}>
                   {profitNum>0?"+":""}{profitNum.toFixed(0)}$
@@ -1878,9 +1587,7 @@ function StatsView({bets}){
 }
 
 // ── VUE ÉDITION ──────────────────────────────────────────────────────────────
-
 function EditView({showToast}){
-  // ── Tous les hooks en haut (règle React) ─────────────────────
   const[leagues,setLeagues]=useState([]);
   const[selectedLeague,setSelectedLeague]=useState(null);
   const[clubs,setClubs]=useState([]);
@@ -1892,7 +1599,6 @@ function EditView({showToast}){
   const[globalSearch,setGlobalSearch]=useState("");
   const[playerSearch,setPlayerSearch]=useState("");
 
-  // Charger ligues
   useEffect(()=>{
     fetchLeagues().then(rows=>{
       const ORDER=['NBA','EuroLeague','EuroCup','BCL','ACB','Betclic Elite','Lega A','BBL'];
@@ -1904,35 +1610,19 @@ function EditView({showToast}){
     }).catch(()=>{});
   },[]);
 
-  // Charger clubs quand ligue sélectionnée
   useEffect(()=>{
     if(!selectedLeague)return;
-    setLoading(true);
-    setSelectedClub(null);
-    setPlayers([]);
-    fetchClubs(selectedLeague.name)
-      .then(cs=>setClubs(cs))
-      .catch(()=>{})
-      .finally(()=>setLoading(false));
+    setLoading(true);setSelectedClub(null);setPlayers([]);
+    fetchClubs(selectedLeague.name).then(cs=>setClubs(cs)).catch(()=>{}).finally(()=>setLoading(false));
   },[selectedLeague]);
 
-  // Charger joueurs quand club sélectionné
   useEffect(()=>{
     if(!selectedClub)return;
-    setLoading(true);
-    setPlayers([]);
-    setPlayerSearch("");
+    setLoading(true);setPlayers([]);setPlayerSearch("");
     fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(selectedClub.name)+"&select=*&order=name.asc",{headers:H})
-      .then(r=>r.json())
-      .then(rows=>setPlayers(Array.isArray(rows)?rows:[]))
-      .catch(()=>{})
-      .finally(()=>setLoading(false));
+      .then(r=>r.json()).then(rows=>setPlayers(Array.isArray(rows)?rows:[])).catch(()=>{}).finally(()=>setLoading(false));
   },[selectedClub]);
 
-  // Helpers
-  function formatName(name){
-    return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
-  }
   const POS_ORDER=["PG","SG","SF","PF","C","G","F","Guard","Wing","Forward","Big",""];
   function posRank(role){const i=POS_ORDER.indexOf(role||"");return i===-1?99:i;}
 
@@ -1942,7 +1632,6 @@ function EditView({showToast}){
       await updateLeague(lg.id,{logo:url});
       setLeagues(prev=>prev.map(l=>l.id===lg.id?{...l,logo:url}:l));
       if(selectedLeague?.id===lg.id)setSelectedLeague(prev=>({...prev,logo:url}));
-      // Mettre à jour LEAGUE_LOGOS_DYNAMIC immédiatement
       LEAGUE_LOGOS_DYNAMIC[lg.name]=url;
       showToast("Logo "+lg.name+" mis à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
@@ -1951,18 +1640,12 @@ function EditView({showToast}){
   async function pasteClubLogo(club){
     try{
       const url=await pasteImageToSupabase("club_"+club.name.replace(/\s/g,"_").toLowerCase());
-      // 1. Mettre à jour state clubs
       setClubs(prev=>prev.map(c=>c.id===club.id?{...c,logo:url}:c));
       if(selectedClub?.id===club.id)setSelectedClub(prev=>({...prev,logo:url}));
-      // 2. Mettre à jour state players (watermark)
       setPlayers(prev=>prev.map(p=>p.team===club.name?{...p,team_logo_url:url}:p));
-      // 3. Sauvegarder logo club dans Supabase
       upsertClub(club.name,selectedLeague.name,url).catch(e=>console.warn("Club logo:",e));
-      // 4. Mettre à jour team_logo_url de TOUS les joueurs du club dans Supabase
       fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(club.name),{
-        method:"PATCH",
-        headers:{...H},
-        body:JSON.stringify({team_logo_url:url}),
+        method:"PATCH",headers:{...H},body:JSON.stringify({team_logo_url:url}),
       }).catch(e=>console.warn("Players team_logo_url:",e));
       showToast("Logo "+club.name+" mis à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
@@ -1989,43 +1672,26 @@ function EditView({showToast}){
     }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
   }
 
-  // ── NIVEAU 1 : Ligues ──────────────────────────────────────────
+  // Niveau 1 : Ligues
   if(!selectedLeague){
     const leagueMatches=globalSearch.length>=1
       ?leagues.filter(l=>l.name.toLowerCase().includes(globalSearch.toLowerCase()))
       :leagues;
     return(
-      <div style={{padding:"16px"}}>
+      <div style={{padding:"0"}}>
         <div style={{position:"relative",marginBottom:16}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
             fontSize:16,color:"#6B7280",pointerEvents:"none"}}>⌕</span>
           <input className="form-input"
-            placeholder="Joueur, ligue ou club… (ex: curry, NBA, Lakers)"
+            placeholder="Joueur, ligue ou club…"
             value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)}
             style={{paddingLeft:38}}/>
           {globalSearch&&(
             <button onClick={()=>setGlobalSearch("")}
               style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
-                background:"transparent",border:"none",color:"#6B7280",
-                cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>
+                background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18}}>×</button>
           )}
         </div>
-
-        {/* Résultats joueurs depuis players */}
-        {globalSearch.length>=2&&(()=>{
-          const q=globalSearch.toLowerCase().trim();
-          const playerHits=Object.values(leagues).length>0?[]:[];
-          // Chercher dans players via fetch on-demand n'est pas possible ici
-          // On affiche juste les ligues matchantes
-          const leagueHits=leagues.filter(l=>l.name.toLowerCase().includes(q));
-          if(leagueHits.length===0)return(
-            <div style={{textAlign:"center",color:"#6B7280",fontSize:13,padding:"16px 0"}}>
-              Aucune ligue trouvée — entre dans une ligue pour chercher les joueurs
-            </div>
-          );
-          return null;
-        })()}
-
         {!globalSearch&&<div style={{fontSize:12,color:"#6B7280",fontWeight:600,
           marginBottom:14,textTransform:"uppercase",letterSpacing:.8}}>Sélectionne une ligue</div>}
         {leagueMatches.map(lg=>(
@@ -2037,8 +1703,7 @@ function EditView({showToast}){
               ?<img src={lg.logo} style={{width:44,height:44,objectFit:"contain",
                   borderRadius:10,background:"#1F2937",padding:4,flexShrink:0}} alt=""/>
               :<div style={{width:44,height:44,borderRadius:10,background:"#1F2937",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:22,flexShrink:0}}>◉</div>
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>◉</div>
             }
             <div style={{flex:1}}>
               <div style={{fontSize:15,fontWeight:700,color:"#E5E7EB"}}>{lg.name}</div>
@@ -2054,53 +1719,42 @@ function EditView({showToast}){
     );
   }
 
-  // ── NIVEAU 2 : Clubs ───────────────────────────────────────────
+  // Niveau 2 : Clubs
   if(!selectedClub){
     return(
-      <div style={{padding:"16px"}}>
+      <div style={{padding:"0"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
           <button onClick={()=>setSelectedLeague(null)}
-            style={{background:"transparent",border:"none",color:"#A78BFA",
-              cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
+            style={{background:"transparent",border:"none",color:"#A78BFA",cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
           {selectedLeague.logo
-            ?<img src={selectedLeague.logo} style={{width:36,height:36,
-                objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
-            :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◉</div>
+            ?<img src={selectedLeague.logo} style={{width:36,height:36,objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
+            :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◉</div>
           }
           <div style={{flex:1}}>
             <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedLeague.name}</div>
             <div style={{fontSize:11,color:"#6B7280"}}>{clubs.length} clubs</div>
           </div>
-          <button className="icon-btn" onClick={()=>pasteLeagueLogo(selectedLeague)}
-            title="Changer logo ligue">⊕</button>
+          <button className="icon-btn" onClick={()=>pasteLeagueLogo(selectedLeague)}>⊕</button>
         </div>
-        {/* Recherche club */}
-      <div style={{position:"relative",marginBottom:14}}>
-        <input className="form-input"
-          placeholder="Rechercher un club…"
-          value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
-          style={{paddingLeft:14}}/>
-        {playerSearch&&<button onClick={()=>setPlayerSearch("")}
-          style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
-            background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18}}>×</button>}
-      </div>
-      {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
+        <div style={{position:"relative",marginBottom:14}}>
+          <input className="form-input" placeholder="Rechercher un club…"
+            value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}/>
+          {playerSearch&&<button onClick={()=>setPlayerSearch("")}
+            style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+              background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18}}>×</button>}
+        </div>
+        {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
         {clubs.filter(c=>!playerSearch||c.name.toLowerCase().includes(playerSearch.toLowerCase())).map(club=>(
           <div key={club.id} style={{display:"flex",alignItems:"center",gap:12,
             padding:14,background:"#111827",border:"1px solid #1F2937",
             borderRadius:14,marginBottom:8,cursor:"pointer"}}
             onClick={()=>setSelectedClub(club)}>
             {club.logo
-              ?<img src={club.logo} style={{width:44,height:44,objectFit:"contain",
-                  borderRadius:10,background:"#1F2937",padding:4,flexShrink:0}} alt=""/>
-              :<div style={{width:44,height:44,borderRadius:10,background:"#1F2937",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:20,flexShrink:0}}>◫</div>
+              ?<img src={club.logo} style={{width:44,height:44,objectFit:"contain",borderRadius:10,background:"#1F2937",padding:4,flexShrink:0}} alt=""/>
+              :<div style={{width:44,height:44,borderRadius:10,background:"#1F2937",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>◫</div>
             }
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
-                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{club.name}</div>
+              <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{club.name}</div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button className="icon-btn" title="Changer logo"
@@ -2113,15 +1767,15 @@ function EditView({showToast}){
     );
   }
 
-  // ── NIVEAU 3 : Joueurs ─────────────────────────────────────────
-  const searchLow=playerSearch.toLowerCase().trim();
+  // Niveau 3 : Joueurs
+  const searchLow2=playerSearch.toLowerCase().trim();
   const filteredPlayers=[...players]
     .filter(p=>{
-      if(!searchLow)return true;
+      if(!searchLow2)return true;
       const n=p.name.toLowerCase();
       const words=n.split(" ");
       const initials=words.map(w=>w[0]||"").join("");
-      return n.includes(searchLow)||initials.includes(searchLow);
+      return n.includes(searchLow2)||initials.includes(searchLow2);
     })
     .sort((a,b)=>{
       const pd=posRank(a.role)-posRank(b.role);
@@ -2137,16 +1791,13 @@ function EditView({showToast}){
   });
 
   return(
-    <div style={{padding:"16px"}}>
+    <div style={{padding:"0"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
         <button onClick={()=>{setSelectedClub(null);setPlayerSearch("");}}
-          style={{background:"transparent",border:"none",color:"#A78BFA",
-            cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
+          style={{background:"transparent",border:"none",color:"#A78BFA",cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
         {selectedClub.logo
-          ?<img src={selectedClub.logo} style={{width:36,height:36,
-              objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
-          :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◫</div>
+          ?<img src={selectedClub.logo} style={{width:36,height:36,objectFit:"contain",borderRadius:8,background:"#1F2937",padding:4}} alt=""/>
+          :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>◫</div>
         }
         <div style={{flex:1}}>
           <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedClub.name}</div>
@@ -2154,22 +1805,17 @@ function EditView({showToast}){
         </div>
         <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}>⊕</button>
       </div>
-
       <div style={{position:"relative",marginBottom:14}}>
-        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
-          fontSize:16,color:"#6B7280",pointerEvents:"none"}}>⌕</span>
-        <input className="form-input"
-          placeholder="Rechercher… (ex: lj, curry)"
+        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#6B7280",pointerEvents:"none"}}>⌕</span>
+        <input className="form-input" placeholder="Rechercher…"
           value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
           style={{paddingLeft:38}}/>
         {playerSearch&&(
           <button onClick={()=>setPlayerSearch("")}
             style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
-              background:"transparent",border:"none",color:"#6B7280",
-              cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>
+              background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18}}>×</button>
         )}
       </div>
-
       {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
       {!loading&&filteredPlayers.length===0&&(
         <div className="empty">
@@ -2177,12 +1823,10 @@ function EditView({showToast}){
           <div className="empty-text">{playerSearch?"Aucun résultat":"Aucun joueur"}</div>
         </div>
       )}
-
       {Object.entries(groups).map(([pos,pList])=>(
         <div key={pos} style={{marginBottom:4}}>
           <div style={{fontSize:10,fontWeight:800,color:"#7C3AED",
-            letterSpacing:1.5,textTransform:"uppercase",
-            padding:"8px 4px 4px",marginBottom:2}}>{pos}</div>
+            letterSpacing:1.5,textTransform:"uppercase",padding:"8px 4px 4px",marginBottom:2}}>{pos}</div>
           {pList.map(p=>(
             <PlayerCard key={p.id} player={p} size={72}
               clubLogo={selectedClub?.logo||p.team_logo_url||null}
@@ -2192,7 +1836,6 @@ function EditView({showToast}){
           ))}
         </div>
       ))}
-
       {editingPlayer&&(
         <PlayerEditModal
           player={editingPlayer}
@@ -2214,8 +1857,9 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
   const[team,setTeam]=useState(player.team||"");
   const[game,setGame]=useState(player.game||"");
   const[saving,setSaving]=useState(false);
-
   const ROLES=["PG","SG","SF","PF","C","Guard","Wing","Forward","Big","G","F"];
+  const photo=player.photo_url||player.avatar_url;
+  const teamLogoUrl=player.team_logo_url||null;
 
   async function save(){
     if(saving)return;
@@ -2228,11 +1872,17 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal-sheet">
         <div className="modal-handle"/>
-
-        {/* Photo + nom */}
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          {/* Photo joueur avec logo dans l'éditeur */}
           <div style={{position:"relative"}}>
-            <PlayerPhoto url={player.photo_url||player.avatar_url} size={88}/>
+            <PlayerAvatar
+              w={120} h={88}
+              photoUrl={photo}
+              teamLogoUrl={teamLogoUrl}
+              teamName={team}
+              round={false}
+              logoSize={0.72}
+            />
             <div style={{position:"absolute",bottom:0,right:0,width:24,height:24,
               borderRadius:"50%",background:"#7C3AED",border:"2px solid #0F1629",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
@@ -2251,26 +1901,19 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
             </button>
           </div>
         </div>
-
-        {/* Ligue */}
         <div className="form-group">
           <label className="form-label">Ligue</label>
-          <select className="form-select" value={game}
-            onChange={e=>setGame(e.target.value)}>
+          <select className="form-select" value={game} onChange={e=>setGame(e.target.value)}>
             <option value="">Sélectionner…</option>
             {leagues.map(l=><option key={l.id} value={l.name}>{l.name}</option>)}
           </select>
         </div>
-
-        {/* Club */}
         <div className="form-group">
           <label className="form-label">Club</label>
           {clubs.filter(c=>c.league===game).length>0?(
-            <select className="form-select" value={team}
-              onChange={e=>setTeam(e.target.value)}>
+            <select className="form-select" value={team} onChange={e=>setTeam(e.target.value)}>
               <option value="">Sélectionner…</option>
-              {clubs.filter(c=>c.league===game)
-                .sort((a,b)=>a.name.localeCompare(b.name))
+              {clubs.filter(c=>c.league===game).sort((a,b)=>a.name.localeCompare(b.name))
                 .map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           ):(
@@ -2278,54 +1921,44 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               value={team} onChange={e=>setTeam(e.target.value)}/>
           )}
         </div>
-
-        {/* Position */}
         <div className="form-group">
           <label className="form-label">Position</label>
-          <select className="form-select" value={role}
-            onChange={e=>setRole(e.target.value)}>
+          <select className="form-select" value={role} onChange={e=>setRole(e.target.value)}>
             <option value="">Sélectionner…</option>
             {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
           </select>
         </div>
-
         <button className="btn btn-primary" onClick={save} disabled={saving}>
           {saving?"Sauvegarde…":"Sauvegarder"}
         </button>
-        <button className="btn btn-secondary" onClick={onClose}
-          style={{marginTop:8}}>Annuler</button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>Annuler</button>
       </div>
     </div>
   );
 }
 
-
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
 function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
   const[tab,setTab]=useState("bookmakers");
   const[showAdd,setShowAdd]=useState(false);
-  const[showTeamAdd,setShowTeamAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
-  const[showAddTip,setShowAddTip]=useState(false);
 
-  // ── Bookmakers ──
   async function deleteBK(bk){
     if(!window.confirm("Supprimer "+bk.name+" ?"))return;
     try{
       await deleteBookmaker(bk.id);
       onUpdateBK();
       showToast(bk.name+" supprimé","#EF4444");
-    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+    }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
   }
 
-  // ── Tipsters ──
   async function deleteTip(t){
     if(!window.confirm("Supprimer "+t.name+" ?"))return;
     try{
       await deleteTipster(t.id);
       onUpdateTip();
       showToast(t.name+" supprimé","#EF4444");
-    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+    }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
   }
 
   async function addTipster(){
@@ -2337,22 +1970,17 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
       await insertTipster({id:uuid(),name:n});
       onUpdateTip();
       showToast(n+" ajouté ✓");
-    }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+    }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
   }
 
   return(
     <div style={{padding:"16px"}}>
-      {/* Tabs */}
       <div className="tabs">
-        <button className={"tab"+(tab==="bookmakers"?" active":"")}
-          onClick={()=>setTab("bookmakers")}>◉ BK</button>
-        <button className={"tab"+(tab==="tipsters"?" active":"")}
-          onClick={()=>setTab("tipsters")}>◎ Tips</button>
-        <button className={"tab"+(tab==="edit"?" active":"")}
-          onClick={()=>setTab("edit")}>✎ Édition</button>
+        <button className={"tab"+(tab==="bookmakers"?" active":"")} onClick={()=>setTab("bookmakers")}>◉ BK</button>
+        <button className={"tab"+(tab==="tipsters"?" active":"")} onClick={()=>setTab("tipsters")}>◎ Tips</button>
+        <button className={"tab"+(tab==="edit"?" active":"")} onClick={()=>setTab("edit")}>✎ Édition</button>
       </div>
 
-      {/* ── TAB BOOKMAKERS ── */}
       {tab==="bookmakers"&&(
         <>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -2363,7 +1991,6 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
               style={{width:"auto",padding:"9px 18px",fontSize:13}}
               onClick={()=>{setEditBK(null);setShowAdd(true);}}>+ Ajouter</button>
           </div>
-
           {bookmakers.length===0&&(
             <div className="empty">
               <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>◉</div>
@@ -2371,50 +1998,36 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
               <div className="empty-sub">Ajoute tes bookmakers pour les utiliser dans tes paris</div>
             </div>
           )}
-
           {bookmakers.map(bk=>(
             <div key={bk.id} className="bk-card">
-              {bk.logo
-                ?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
-                :<div className="bk-logo-placeholder">◉</div>
-              }
+              {bk.logo?<img src={bk.logo} className="bk-logo" alt={bk.name}/>
+                :<div className="bk-logo-placeholder">◉</div>}
               <div style={{flex:1,minWidth:0}}>
                 <div className="bk-name">{bk.name}</div>
                 {bk.url&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{bk.url}</div>}
               </div>
               <div className="bk-actions">
-                <button className="icon-btn" title="Modifier"
-                  onClick={()=>{setEditBK(bk);setShowAdd(true);}}>✎</button>
-                <button className="icon-btn danger" title="Supprimer"
-                  onClick={()=>deleteBK(bk)}>×</button>
+                <button className="icon-btn" onClick={()=>{setEditBK(bk);setShowAdd(true);}}>✎</button>
+                <button className="icon-btn danger" onClick={()=>deleteBK(bk)}>×</button>
               </div>
             </div>
           ))}
-
           {showAdd&&(
-            <BKModal
-              bk={editBK}
-              existing={bookmakers.map(b=>b.name)}
+            <BKModal bk={editBK} existing={bookmakers.map(b=>b.name)}
               onClose={()=>{setShowAdd(false);setEditBK(null);}}
               onSave={async(newBK)=>{
                 try{
-                  if(editBK){
-                    await updateBookmaker(editBK.id,{logo:newBK.logo,url:newBK.url});
-                  }else{
-                    await insertBookmaker({id:uuid(),name:newBK.name,logo:newBK.logo||null,url:newBK.url||null});
-                  }
-                  onUpdateBK();
-                  setShowAdd(false);
-                  setEditBK(null);
+                  if(editBK){await updateBookmaker(editBK.id,{logo:newBK.logo,url:newBK.url});}
+                  else{await insertBookmaker({id:uuid(),name:newBK.name,logo:newBK.logo||null,url:newBK.url||null});}
+                  onUpdateBK();setShowAdd(false);setEditBK(null);
                   showToast((editBK?"Modifié: ":"Ajouté: ")+newBK.name);
-                }catch(e){ showToast("Erreur: "+e.message,"#EF4444"); }
+                }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
               }}
             />
           )}
         </>
       )}
 
-      {/* ── TAB TIPSTERS ── */}
       {tab==="tipsters"&&(
         <>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -2425,7 +2038,6 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
               style={{width:"auto",padding:"9px 18px",fontSize:13}}
               onClick={addTipster}>+ Ajouter</button>
           </div>
-
           {tipsters.length===0&&(
             <div className="empty">
               <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>◎</div>
@@ -2433,16 +2045,12 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
               <div className="empty-sub">Ajoute tes tipsters pour les associer à tes paris</div>
             </div>
           )}
-
           {tipsters.map(t=>(
             <div key={t.id} className="bk-card">
               <div className="bk-logo-placeholder" style={{fontSize:20,color:"#374151"}}>◎</div>
-              <div style={{flex:1}}>
-                <div className="bk-name">{t.name}</div>
-              </div>
+              <div style={{flex:1}}><div className="bk-name">{t.name}</div></div>
               <div className="bk-actions">
-                <button className="icon-btn danger" title="Supprimer"
-                  onClick={()=>deleteTip(t)}>×</button>
+                <button className="icon-btn danger" onClick={()=>deleteTip(t)}>×</button>
               </div>
             </div>
           ))}
@@ -2453,7 +2061,6 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
     </div>
   );
 }
-
 
 // ── MODAL BOOKMAKER ───────────────────────────────────────────────────────────
 function BKModal({bk,existing,onClose,onSave}){
@@ -2467,9 +2074,7 @@ function BKModal({bk,existing,onClose,onSave}){
     try{
       const logoUrl=await pasteImageToSupabase("bk_"+(name||"logo"));
       setLogo(logoUrl);
-    }catch(e){
-      alert("⊕ "+e.message);
-    }
+    }catch(e){alert("⊕ "+e.message);}
     setUploading(false);
   }
 
@@ -2485,55 +2090,35 @@ function BKModal({bk,existing,onClose,onSave}){
       <div className="modal-sheet">
         <div className="modal-handle"/>
         <div className="modal-title">{bk?"Modifier bookmaker":"Nouveau bookmaker"}</div>
-
-        {/* Logo preview */}
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
           {logo
-            ?<img src={logo} style={{width:64,height:64,borderRadius:14,objectFit:"contain",
-                background:"#1F2937",padding:6}} alt="logo"/>
-            :<div style={{width:64,height:64,borderRadius:14,background:"#1F2937",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>◉</div>
+            ?<img src={logo} style={{width:64,height:64,borderRadius:14,objectFit:"contain",background:"#1F2937",padding:6}} alt="logo"/>
+            :<div style={{width:64,height:64,borderRadius:14,background:"#1F2937",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>◉</div>
           }
           <div style={{flex:1}}>
-            <button className="btn btn-secondary" style={{marginBottom:8}}
-              onClick={pasteLogo} disabled={uploading}>
+            <button className="btn btn-secondary" style={{marginBottom:8}} onClick={pasteLogo} disabled={uploading}>
               {uploading?"Upload…":"Coller un logo"}
             </button>
-            {logo&&(
-              <button className="btn btn-danger"
-                onClick={()=>setLogo("")}>Supprimer le logo</button>
-            )}
+            {logo&&<button className="btn btn-danger" onClick={()=>setLogo("")}>Supprimer le logo</button>}
           </div>
         </div>
-
-        {/* Nom */}
         <div className="form-group">
           <label className="form-label">Nom *</label>
           <input className="form-input" placeholder="ex: Pinnacle"
-            value={name} onChange={e=>setName(e.target.value)}
-            disabled={!!bk}/>
-          {bk&&<div style={{fontSize:11,color:"#6B7280",marginTop:4}}>
-            Le nom ne peut pas être modifié</div>}
+            value={name} onChange={e=>setName(e.target.value)} disabled={!!bk}/>
+          {bk&&<div style={{fontSize:11,color:"#6B7280",marginTop:4}}>Le nom ne peut pas être modifié</div>}
         </div>
-
-        {/* URL optionnel */}
         <div className="form-group">
           <label className="form-label">Site web (optionnel)</label>
           <input className="form-input" placeholder="ex: pinnacle.com"
             value={url} onChange={e=>setUrl(e.target.value)}/>
         </div>
-
-        <button className="btn btn-primary" onClick={save}>
-          {bk?"Sauvegarder":"+ Ajouter"}
-        </button>
-        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
-          Annuler
-        </button>
+        <button className="btn btn-primary" onClick={save}>{bk?"Sauvegarder":"+ Ajouter"}</button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>Annuler</button>
       </div>
     </div>
   );
 }
-
 
 // ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
 export default function App(){
@@ -2544,7 +2129,6 @@ export default function App(){
   const[view,setView]=useState("home");
   const[loading,setLoading]=useState(true);
   const[showAdd,setShowAdd]=useState(false);
-  const[showTeamAdd,setShowTeamAdd]=useState(false);
   const[selectedBet,setSelectedBet]=useState(null);
   const[editBet,setEditBet]=useState(null);
   const[syncing,setSyncing]=useState(false);
@@ -2552,12 +2136,10 @@ export default function App(){
   const{toast,show:showToast}=useToast();
   const pollRef=useRef(null);
 
-  // Charger les joueurs, bookmakers, tipsters et logos ligues au démarrage
   useEffect(()=>{
     fetchPlayers().then(setPlayers).catch(()=>{});
     fetchBookmakers().then(setBookmakers).catch(()=>{});
     fetchTipsters().then(setTipsters).catch(()=>{});
-    // Charger logos ligues depuis Supabase et les rendre globaux
     fetchLeagues().then(rows=>{
       const map={};
       rows.forEach(l=>{if(l.logo)map[l.name]=l.logo;});
@@ -2565,7 +2147,6 @@ export default function App(){
     }).catch(()=>{});
   },[]);
 
-  // Charger les paris
   const loadBets=useCallback(async(silent=false)=>{
     if(!silent)setLoading(true);
     else setSyncing(true);
@@ -2573,33 +2154,23 @@ export default function App(){
       const data=await fetchBets();
       setBets(data);
       setLastSync(new Date());
-    }catch(e){
-      if(!silent)console.error(e);
-    }
+    }catch(e){if(!silent)console.error(e);}
     setLoading(false);
     setSyncing(false);
   },[]);
 
-  // Chargement initial
   useEffect(()=>{loadBets();},[loadBets]);
 
-  // Poll toutes les 30s quand l'app est visible
   useEffect(()=>{
     pollRef.current=setInterval(()=>{
       if(document.visibilityState==="visible")loadBets(true);
     },30000);
     const onVisible=()=>{if(document.visibilityState==="visible")loadBets(true);};
     document.addEventListener("visibilitychange",onVisible);
-    return()=>{
-      clearInterval(pollRef.current);
-      document.removeEventListener("visibilitychange",onVisible);
-    };
+    return()=>{clearInterval(pollRef.current);document.removeEventListener("visibilitychange",onVisible);};
   },[loadBets]);
 
-  function openEdit(bet){
-    setSelectedBet(null);
-    setEditBet(bet);
-  }
+  function openEdit(bet){setSelectedBet(null);setEditBet(bet);}
 
   if(loading)return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",
@@ -2615,8 +2186,6 @@ export default function App(){
     <>
       <style>{CSS}</style>
       <div className="app">
-
-        {/* Header */}
         <div className="header">
           <div>
             <div className="header-title">
@@ -2633,15 +2202,14 @@ export default function App(){
               background:syncing?"#F59E0B":"#22C55E",
               boxShadow:"0 0 6px "+(syncing?"rgba(245,158,11,.8)":"rgba(34,197,94,.8)")}}/>
             <button onClick={()=>loadBets(true)}
-              style={{background:"transparent",border:"none",color:"#6B7280",
-                cursor:"pointer",fontSize:18,padding:"4px 8px"}}>↻</button>
+              style={{background:"transparent",border:"none",color:"#6B7280",cursor:"pointer",fontSize:18,padding:"4px 8px"}}>↻</button>
           </div>
         </div>
 
-        {/* Contenu */}
         <div style={{paddingTop:12}}>
           {view==="home"&&<HomeView bets={bets} players={players}/>}
-          {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
+          {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
+            bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             onSelectBet={setSelectedBet} onEdit={openEdit}/>}
           {view==="stats"&&<StatsView bets={bets}/>}
           {view==="settings"&&<SettingsView
@@ -2653,34 +2221,27 @@ export default function App(){
           />}
         </div>
 
-        {/* Nav */}
         <nav className="nav">
-          <button className={"nav-btn"+(view==="home"?" active":"")}
-            onClick={()=>setView("home")}>
+          <button className={"nav-btn"+(view==="home"?" active":"")} onClick={()=>setView("home")}>
             <span className="nav-icon" style={{fontSize:22,fontWeight:300}}>⌂</span>ACCUEIL
           </button>
-          <button className={"nav-btn"+(view==="bets"?" active":"")}
-            onClick={()=>setView("bets")}>
+          <button className={"nav-btn"+(view==="bets"?" active":"")} onClick={()=>setView("bets")}>
             <span className="nav-icon" style={{fontSize:20}}>≡</span>MES PARIS
           </button>
           <button className="nav-add" onClick={()=>setShowAdd(true)} style={{fontSize:28,fontWeight:200}}>+</button>
-          <button className={"nav-btn"+(view==="stats"?" active":"")}
-            onClick={()=>setView("stats")}>
+          <button className={"nav-btn"+(view==="stats"?" active":"")} onClick={()=>setView("stats")}>
             <span className="nav-icon" style={{fontSize:20}}>◫</span>STATS
           </button>
-          <button className={"nav-btn"+(view==="settings"?" active":"")}
-            onClick={()=>setView("settings")}>
+          <button className={"nav-btn"+(view==="settings"?" active":"")} onClick={()=>setView("settings")}>
             <span className="nav-icon" style={{fontSize:20}}>◈</span>SETTINGS
           </button>
         </nav>
 
-        {/* Modals */}
         {(showAdd||editBet)&&(
           <AddBetModal
             players={players}
             bookmakers={bookmakers.length>0?bookmakers.map(b=>b.name):DEFAULT_BOOKMAKERS}
             tipsters={tipsters}
-            bookmarkerObjs={bookmakers}
             editBet={editBet}
             onClose={()=>{setShowAdd(false);setEditBet(null);}}
             onSave={()=>{
@@ -2690,7 +2251,7 @@ export default function App(){
           />
         )}
 
-{selectedBet&&(
+        {selectedBet&&(
           <BetDetailModal
             bet={selectedBet}
             players={players}
@@ -2700,7 +2261,6 @@ export default function App(){
           />
         )}
 
-        {/* Toast */}
         {toast&&(
           <div className="toast" style={{borderColor:toast.color,color:toast.color}}>
             {toast.msg}
@@ -2709,9 +2269,4 @@ export default function App(){
       </div>
     </>
   );
-}
-// ── Helper formatName global ─────────────────────────────────────────────────
-function formatName(name){
-  if(!name)return"";
-  return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 }
