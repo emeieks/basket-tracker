@@ -118,6 +118,62 @@ async function deleteTipster(id){
   if(!r.ok)throw new Error("delete tipster: "+r.status);
 }
 
+// ── LEAGUES & CLUBS API ───────────────────────────────────────────────────────
+async function fetchLeagues(){
+  const r=await fetch(SUPA_URL+"/rest/v1/leagues?select=*&order=name.asc",{headers:H});
+  if(!r.ok)throw new Error("fetch leagues: "+r.status);
+  return r.json();
+}
+
+async function updateLeague(id,fields){
+  const r=await fetch(SUPA_URL+"/rest/v1/leagues?id=eq."+id,{
+    method:"PATCH",
+    headers:{...H,"Prefer":"return=representation"},
+    body:JSON.stringify(fields),
+  });
+  if(!r.ok)throw new Error("update league: "+r.status);
+  return r.json();
+}
+
+async function fetchClubs(league){
+  const url=league
+    ?SUPA_URL+"/rest/v1/clubs?league=eq."+encodeURIComponent(league)+"&order=name.asc"
+    :SUPA_URL+"/rest/v1/clubs?select=*&order=name.asc";
+  const r=await fetch(url,{headers:H});
+  if(!r.ok)throw new Error("fetch clubs: "+r.status);
+  return r.json();
+}
+
+async function upsertClub(name,league,logo){
+  const r=await fetch(SUPA_URL+"/rest/v1/clubs",{
+    method:"POST",
+    headers:{...H,"Prefer":"resolution=merge-duplicates,return=representation"},
+    body:JSON.stringify({id:uuid(),name,league,logo}),
+  });
+  if(!r.ok)throw new Error("upsert club: "+r.status);
+  return r.json();
+}
+
+async function updatePlayer(id,fields){
+  const r=await fetch(SUPA_URL+"/rest/v1/players?id=eq."+id,{
+    method:"PATCH",
+    headers:{...H,"Prefer":"return=representation"},
+    body:JSON.stringify(fields),
+  });
+  if(!r.ok)throw new Error("update player: "+r.status);
+  return r.json();
+}
+
+async function fetchPlayersByLeague(league){
+  const r=await fetch(
+    SUPA_URL+"/rest/v1/players?game=eq."+encodeURIComponent(league)+"&select=*&order=team.asc,name.asc",
+    {headers:H}
+  );
+  if(!r.ok)throw new Error("fetch players: "+r.status);
+  return r.json();
+}
+
+
 
 async function fetchPlayers(){
   let all=[],offset=0,limit=500;
@@ -975,6 +1031,298 @@ function StatsView({bets}){
   );
 }
 
+// ── VUE ÉDITION ──────────────────────────────────────────────────────────────
+function EditView({showToast}){
+  const[leagues,setLeagues]=useState([]);
+  const[selectedLeague,setSelectedLeague]=useState(null);
+  const[clubs,setClubs]=useState([]);
+  const[players,setPlayers]=useState([]);
+  const[selectedClub,setSelectedClub]=useState(null);
+  const[loading,setLoading]=useState(false);
+  const[editingPlayer,setEditingPlayer]=useState(null);
+  const[editingLeague,setEditingLeague]=useState(null);
+  const[editingClub,setEditingClub]=useState(null);
+  const[allLeagueNames]=useState(["NBA","EuroLeague","ACB","Betclic Elite","Lega A","BBL"]);
+
+  // Charger ligues
+  useEffect(()=>{
+    fetchLeagues().then(setLeagues).catch(()=>{});
+  },[]);
+
+  // Charger joueurs quand ligue sélectionnée
+  useEffect(()=>{
+    if(!selectedLeague)return;
+    setLoading(true);
+    setSelectedClub(null);
+    setPlayers([]);
+    Promise.all([
+      fetchPlayersByLeague(selectedLeague.name),
+      fetchClubs(selectedLeague.name),
+    ]).then(([ps,cs])=>{
+      setPlayers(ps);
+      setClubs(cs);
+    }).catch(()=>{}).finally(()=>setLoading(false));
+  },[selectedLeague]);
+
+  // Clubs avec joueurs groupés
+  const clubGroups=players.reduce((acc,p)=>{
+    const club=p.team||"Sans équipe";
+    if(!acc[club])acc[club]=[];
+    acc[club].push(p);
+    return acc;
+  },{});
+
+  const filteredPlayers=selectedClub
+    ?players.filter(p=>(p.team||"Sans équipe")===selectedClub)
+    :players;
+
+  // ── EDIT LIGUE ──
+  async function saveLogo(type,id,name){
+    try{
+      const url=await pasteImageToSupabase(type+"_"+name.replace(/\s/g,"_").toLowerCase());
+      if(type==="league"){
+        await updateLeague(id,{logo:url});
+        setLeagues(prev=>prev.map(l=>l.id===id?{...l,logo:url}:l));
+        if(selectedLeague?.id===id)setSelectedLeague(prev=>({...prev,logo:url}));
+      }else if(type==="club"){
+        await upsertClub(name,selectedLeague.name,url);
+        setClubs(prev=>prev.map(c=>c.name===name?{...c,logo:url}:c));
+      }else if(type==="player"){
+        await updatePlayer(id,{photo_url:url,avatar_url:url});
+        setPlayers(prev=>prev.map(p=>p.id===id?{...p,photo_url:url}:p));
+        if(editingPlayer?.id===id)setEditingPlayer(prev=>({...prev,photo_url:url}));
+      }
+      showToast("Photo mise à jour ✓");
+    }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
+  }
+
+  async function savePlayer(p,fields){
+    try{
+      await updatePlayer(p.id,fields);
+      setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,...fields}:pl));
+      setEditingPlayer(null);
+      showToast("Joueur mis à jour ✓");
+    }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
+  }
+
+  // ── NIVEAU 1 : Liste des ligues ──
+  if(!selectedLeague)return(
+    <div style={{padding:"16px"}}>
+      <div style={{fontSize:13,color:"#6B7280",fontWeight:600,marginBottom:14}}>
+        Sélectionne une ligue pour éditer
+      </div>
+      {leagues.map(lg=>(
+        <div key={lg.id} className="bk-card" style={{cursor:"pointer"}}
+          onClick={()=>setSelectedLeague(lg)}>
+          {lg.logo
+            ?<img src={lg.logo} className="bk-logo" alt={lg.name}/>
+            :<div className="bk-logo-placeholder" style={{fontSize:20}}>🏀</div>
+          }
+          <div style={{flex:1}}>
+            <div className="bk-name">{lg.name}</div>
+            <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+              {players.length>0&&selectedLeague?.id===lg.id
+                ?players.length+" joueurs":""}</div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <button className="icon-btn" title="Changer logo ligue"
+              onClick={e=>{e.stopPropagation();saveLogo("league",lg.id,lg.name);}}>📷</button>
+            <span style={{color:"#4B5563",fontSize:18}}>›</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── NIVEAU 2 : Clubs de la ligue ──
+  if(!selectedClub)return(
+    <div style={{padding:"16px"}}>
+      {/* Header ligue */}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <button onClick={()=>setSelectedLeague(null)}
+          style={{background:"transparent",border:"none",color:"#A78BFA",
+            cursor:"pointer",fontSize:22,padding:0}}>‹</button>
+        {selectedLeague.logo
+          ?<img src={selectedLeague.logo} style={{width:36,height:36,objectFit:"contain",borderRadius:8}} alt=""/>
+          :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏀</div>
+        }
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedLeague.name}</div>
+          <div style={{fontSize:11,color:"#6B7280"}}>{players.length} joueurs · {Object.keys(clubGroups).length} clubs</div>
+        </div>
+        <button className="icon-btn" title="Changer logo ligue"
+          onClick={()=>saveLogo("league",selectedLeague.id,selectedLeague.name)}>📷</button>
+      </div>
+
+      {loading&&<div style={{textAlign:"center",color:"#6B7280",padding:32}}>Chargement…</div>}
+
+      {/* Liste des clubs */}
+      {Object.entries(clubGroups).sort((a,b)=>a[0].localeCompare(b[0])).map(([club,ps])=>{
+        const clubData=clubs.find(c=>c.name===club);
+        return(
+          <div key={club} className="bk-card" style={{cursor:"pointer"}}
+            onClick={()=>setSelectedClub(club)}>
+            {clubData?.logo
+              ?<img src={clubData.logo} className="bk-logo" alt={club}/>
+              :<div className="bk-logo-placeholder" style={{fontSize:18}}>🏟</div>
+            }
+            <div style={{flex:1}}>
+              <div className="bk-name">{club}</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{ps.length} joueur{ps.length!==1?"s":""}</div>
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button className="icon-btn" title="Changer logo club"
+                onClick={e=>{e.stopPropagation();saveLogo("club",clubData?.id,club);}}>📷</button>
+              <span style={{color:"#4B5563",fontSize:18}}>›</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // ── NIVEAU 3 : Joueurs du club ──
+  return(
+    <div style={{padding:"16px"}}>
+      {/* Header club */}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <button onClick={()=>setSelectedClub(null)}
+          style={{background:"transparent",border:"none",color:"#A78BFA",
+            cursor:"pointer",fontSize:22,padding:0}}>‹</button>
+        {(()=>{const cd=clubs.find(c=>c.name===selectedClub);return cd?.logo
+          ?<img src={cd.logo} style={{width:36,height:36,objectFit:"contain",borderRadius:8}} alt=""/>
+          :<div style={{width:36,height:36,borderRadius:8,background:"#1F2937",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏟</div>;
+        })()}
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{selectedClub}</div>
+          <div style={{fontSize:11,color:"#6B7280"}}>{filteredPlayers.length} joueurs</div>
+        </div>
+        <button className="icon-btn" title="Changer logo club"
+          onClick={()=>{const cd=clubs.find(c=>c.name===selectedClub);saveLogo("club",cd?.id,selectedClub);}}>📷</button>
+      </div>
+
+      {/* Liste joueurs */}
+      {filteredPlayers.map(p=>(
+        <div key={p.id} className="bk-card" style={{cursor:"pointer"}}
+          onClick={()=>setEditingPlayer(p)}>
+          <PlayerPhoto url={p.photo_url||p.avatar_url} size={44}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div className="bk-name">{p.name}</div>
+            <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+              {[p.role,p.team].filter(Boolean).join(" · ")}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <button className="icon-btn" title="Changer photo"
+              onClick={e=>{e.stopPropagation();saveLogo("player",p.id,p.name);}}>📷</button>
+            <span style={{color:"#4B5563",fontSize:18}}>›</span>
+          </div>
+        </div>
+      ))}
+
+      {/* Modal édition joueur */}
+      {editingPlayer&&(
+        <PlayerEditModal
+          player={editingPlayer}
+          leagues={leagues.map(l=>l.name).concat(allLeagueNames).filter((v,i,a)=>a.indexOf(v)===i)}
+          clubs={clubs}
+          onClose={()=>setEditingPlayer(null)}
+          onSaveLogo={()=>saveLogo("player",editingPlayer.id,editingPlayer.name)}
+          onSave={savePlayer}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── MODAL ÉDITION JOUEUR ──────────────────────────────────────────────────────
+function PlayerEditModal({player,leagues,clubs,onClose,onSaveLogo,onSave,showToast}){
+  const[name,setName]=useState(player.name||"");
+  const[role,setRole]=useState(player.role||"");
+  const[team,setTeam]=useState(player.team||"");
+  const[game,setGame]=useState(player.game||"");
+  const[saving,setSaving]=useState(false);
+
+  const ROLES=["PG","SG","SF","PF","C","Guard","Forward","Center","G","F"];
+  const teamOptions=[...new Set(clubs.filter(c=>c.league===game).map(c=>c.name))].sort();
+
+  async function save(){
+    setSaving(true);
+    await onSave(player,{name,role,team,game,league:game});
+    setSaving(false);
+  }
+
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+
+        {/* Photo + nom */}
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          <div style={{position:"relative",cursor:"pointer"}} onClick={onSaveLogo}>
+            <PlayerPhoto url={player.photo_url||player.avatar_url} size={64}/>
+            <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,
+              borderRadius:"50%",background:"#7C3AED",display:"flex",
+              alignItems:"center",justifyContent:"center",fontSize:12}}>📷</div>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB"}}>{player.name}</div>
+            <button className="btn btn-secondary"
+              style={{marginTop:6,padding:"6px 12px",fontSize:12,width:"auto"}}
+              onClick={onSaveLogo}>📋 Coller nouvelle photo</button>
+          </div>
+        </div>
+
+        {/* Ligue */}
+        <div className="form-group">
+          <label className="form-label">Ligue</label>
+          <select className="form-select" value={game}
+            onChange={e=>{setGame(e.target.value);setTeam("");}}>
+            <option value="">Sélectionner…</option>
+            {leagues.map(l=><option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+
+        {/* Équipe */}
+        <div className="form-group">
+          <label className="form-label">Équipe</label>
+          {teamOptions.length>0?(
+            <select className="form-select" value={team}
+              onChange={e=>setTeam(e.target.value)}>
+              <option value="">Sélectionner…</option>
+              {teamOptions.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+          ):(
+            <input className="form-input" placeholder="Nom de l'équipe"
+              value={team} onChange={e=>setTeam(e.target.value)}/>
+          )}
+        </div>
+
+        {/* Position */}
+        <div className="form-group">
+          <label className="form-label">Position</label>
+          <select className="form-select" value={role}
+            onChange={e=>setRole(e.target.value)}>
+            <option value="">Sélectionner…</option>
+            {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+
+        <button className="btn btn-primary" onClick={save} disabled={saving}>
+          {saving?"Sauvegarde…":"✓ Sauvegarder"}
+        </button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
 function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
   const[tab,setTab]=useState("bookmakers");
@@ -1019,9 +1367,11 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
       {/* Tabs */}
       <div className="tabs">
         <button className={"tab"+(tab==="bookmakers"?" active":"")}
-          onClick={()=>setTab("bookmakers")}>🏦 Bookmakers ({bookmakers.length})</button>
+          onClick={()=>setTab("bookmakers")}>🏦 BK</button>
         <button className={"tab"+(tab==="tipsters"?" active":"")}
-          onClick={()=>setTab("tipsters")}>🎯 Tipsters ({tipsters.length})</button>
+          onClick={()=>setTab("tipsters")}>🎯 Tips</button>
+        <button className={"tab"+(tab==="edit"?" active":"")}
+          onClick={()=>setTab("edit")}>✏️ Édition</button>
       </div>
 
       {/* ── TAB BOOKMAKERS ── */}
