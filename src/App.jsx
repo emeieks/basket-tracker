@@ -663,48 +663,85 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
   );
 }
 
-// ── FORMULAIRE AJOUT PARI ─────────────────────────────────────────────────────
-function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null}){
+
+// ── FORMULAIRE PARI ÉQUIPE ────────────────────────────────────────────────────
+const TEAM_BET_TYPES=[
+  {key:"moneyline", label:"🏆 Moneyline", desc:"Équipe X gagne"},
+  {key:"handicap",  label:"➕ Handicap",  desc:"Équipe X -/+ points"},
+  {key:"total",     label:"🎯 Total match",desc:"Over/Under total du match"},
+  {key:"team_total",label:"📊 Total équipe",desc:"Over/Under points d'une équipe"},
+  {key:"half",      label:"⏱ Mi-temps",   desc:"Over/Under 1ère mi-temps"},
+];
+
+function AddTeamBetModal({bookmakers,tipsters=[],leagues=[],onSave,onClose,editBet=null}){
   const[form,setForm]=useState(editBet?{
-    player:editBet.player||"",
-    playerObj:null,
-    stat:editBet.description||"",
+    betType:editBet.bet_type||"moneyline",
+    team:editBet.team||"",
+    opponent:editBet.opponent||"",
+    game:editBet.game||"",
     ou:editBet.over_under||"Over",
     line:editBet.line||"",
     odds:editBet.odds||"",
     stake:editBet.stake||"",
     bookmaker:editBet.bookmaker||"",
     status:editBet.status||"pending",
-    game:editBet.game||"",
     tipster:editBet.tipster||"",
     notes:editBet.notes||"",
   }:{
-    player:"",playerObj:null,stat:"Points",ou:"Over",line:"",
-    odds:"",stake:"",bookmaker:bookmakers[0]||"",
-    status:"pending",game:"",tipster:"",notes:"",
+    betType:"moneyline",
+    team:"",opponent:"",game:"",
+    ou:"Over",line:"",odds:"",stake:"",
+    bookmaker:bookmakers[0]||"",
+    status:"pending",tipster:"",notes:"",
   });
   const[saving,setSaving]=useState(false);
+  const[clubs,setClubs]=useState([]);
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
 
+  // Charger clubs quand ligue change
+  useEffect(()=>{
+    if(!form.game)return;
+    fetch(SUPA_URL+"/rest/v1/clubs?league=eq."+encodeURIComponent(form.game)+"&order=name.asc",{headers:H})
+      .then(r=>r.json()).then(cs=>setClubs(Array.isArray(cs)?cs:[])).catch(()=>{});
+  },[form.game]);
+
+  const betTypeInfo=TEAM_BET_TYPES.find(t=>t.key===form.betType)||TEAM_BET_TYPES[0];
+  const needsLine=["handicap","total","team_total","half"].includes(form.betType);
+  const needsOU=["total","team_total","half"].includes(form.betType);
+  const tc=getTeamColor(form.team);
+  const pc=tc?.p||"#7C3AED";
+
   async function submit(){
-    if(!form.player||!form.odds||!form.stake){
-      alert("Joueur, cote et mise sont obligatoires");return;
+    if(!form.team||!form.odds||!form.stake){
+      alert("Équipe, cote et mise sont obligatoires");return;
     }
     setSaving(true);
     const odds=parseFloat(form.odds);
     const stake=parseFloat(form.stake);
+
+    // Construire description
+    let desc="";
+    if(form.betType==="moneyline") desc=form.team+" gagne";
+    else if(form.betType==="handicap") desc=form.team+" "+form.line;
+    else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
+    else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line;
+    else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" (1re mi-temps)";
+
     const bet={
-      player:form.player,
-      description:form.stat||null,
+      player:form.team, // team name dans champ player pour compatibilité
+      team:form.team,
+      opponent:form.opponent||null,
+      description:desc,
       over_under:form.ou||null,
       line:form.line?parseFloat(form.line):null,
       odds,stake,
       bookmaker:form.bookmaker||null,
       status:form.status,
       profit:calcProfit(form.status,stake,odds),
-      game:form.game||form.playerObj?.game||null,
+      game:form.game||null,
       tipster:form.tipster||null,
       notes:form.notes||null,
+      bet_type:"team",
     };
     try{
       if(editBet){
@@ -714,52 +751,134 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
       }
       onSave();
       onClose();
-    }catch(e){
-      alert("Erreur: "+e.message);
-    }
+    }catch(e){alert("Erreur: "+e.message);}
     setSaving(false);
   }
-
-  const desc=form.ou&&form.line&&form.stat
-    ?form.ou+" "+form.line+" "+form.stat
-    :form.stat||"";
 
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal-sheet">
         <div className="modal-handle"/>
-        <div className="modal-title">{editBet?"Modifier le pari":"Nouveau pari"}</div>
+        <div className="modal-title">{editBet?"Modifier":"Nouveau pari équipe"}</div>
 
-        {/* Joueur */}
+        {/* Type de pari */}
         <div className="form-group">
-          <label className="form-label">Joueur</label>
-          <PlayerAutocomplete value={form.player} players={players}
-            onChange={v=>f("player",v)}
-            onSelect={p=>{f("player",p.name);f("playerObj",p);if(p.game)f("game",p.game);}}/>
-        </div>
-
-        {/* Over / Under */}
-        <div className="form-group">
-          <label className="form-label">Pari</label>
-          <div className="segment" style={{marginBottom:10}}>
-            {["Over","Under"].map(o=>(
-              <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
-                onClick={()=>f("ou",o)}>{o}</button>
+          <label className="form-label">Type de pari</label>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {TEAM_BET_TYPES.map(t=>(
+              <button key={t.key}
+                onClick={()=>f("betType",t.key)}
+                style={{display:"flex",alignItems:"center",gap:10,
+                  padding:"10px 14px",borderRadius:11,cursor:"pointer",
+                  border:"1px solid "+(form.betType===t.key?"#7C3AED":"#1F2937"),
+                  background:form.betType===t.key?"rgba(124,58,237,.12)":"rgba(255,255,255,.02)",
+                  textAlign:"left"}}>
+                <span style={{fontSize:16}}>{t.label.split(" ")[0]}</span>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,
+                    color:form.betType===t.key?"#A78BFA":"#E5E7EB"}}>
+                    {t.label.split(" ").slice(1).join(" ")}
+                  </div>
+                  <div style={{fontSize:11,color:"#6B7280"}}>{t.desc}</div>
+                </div>
+              </button>
             ))}
           </div>
+        </div>
 
-          {/* Ligne */}
-          <div style={{display:"flex",gap:10}}>
-            <input className="form-input" type="number" step="0.5" placeholder="Ligne (ex: 24.5)"
-              value={form.line} onChange={e=>f("line",e.target.value)}
-              style={{flex:1}}/>
-            <select className="form-select" value={form.stat}
-              onChange={e=>f("stat",e.target.value)} style={{flex:1}}>
-              {STATS_TYPES.map(s=><option key={s}>{s}</option>)}
+        {/* Ligue */}
+        <div className="form-group">
+          <label className="form-label">Ligue</label>
+          <select className="form-select" value={form.game}
+            onChange={e=>{f("game",e.target.value);f("team","");f("opponent","");}}>
+            <option value="">Sélectionner…</option>
+            {["NBA","EuroLeague","EuroCup","BCL","ACB","Betclic Elite","Lega A","BBL"].map(l=>(
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Équipe */}
+        <div className="form-group">
+          <label className="form-label">
+            {form.betType==="total"?"Équipe locale":"Équipe pariée"}
+          </label>
+          {clubs.length>0?(
+            <select className="form-select" value={form.team}
+              onChange={e=>f("team",e.target.value)}>
+              <option value="">Sélectionner…</option>
+              {clubs.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+            </select>
+          ):(
+            <input className="form-input" placeholder="Nom de l'équipe"
+              value={form.team} onChange={e=>f("team",e.target.value)}/>
+          )}
+          {/* Preview couleur équipe */}
+          {form.team&&tc&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+              <div style={{width:28,height:28,borderRadius:"50%",
+                background:`linear-gradient(135deg,${pc},${tc.s})`,
+                border:`2px solid ${pc}55`}}/>
+              <span style={{fontSize:12,color:"#9CA3AF",fontWeight:600}}>{form.team}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Adversaire (optionnel) */}
+        {clubs.length>0&&(
+          <div className="form-group">
+            <label className="form-label">Adversaire (optionnel)</label>
+            <select className="form-select" value={form.opponent}
+              onChange={e=>f("opponent",e.target.value)}>
+              <option value="">Sélectionner…</option>
+              {clubs.filter(c=>c.name!==form.team).map(c=>(
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
             </select>
           </div>
-          {desc&&<div style={{marginTop:8,fontSize:12,color:"#A78BFA",fontWeight:600}}>→ {desc}</div>}
-        </div>
+        )}
+
+        {/* Over/Under + Ligne */}
+        {needsLine&&(
+          <div className="form-group">
+            <label className="form-label">
+              {form.betType==="handicap"?"Handicap (ex: -5.5)":"Ligne"}
+            </label>
+            <div style={{display:"flex",gap:10}}>
+              {needsOU&&(
+                <div className="segment" style={{flex:"0 0 auto",minWidth:120}}>
+                  {["Over","Under"].map(o=>(
+                    <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
+                      onClick={()=>f("ou",o)}>{o}</button>
+                  ))}
+                </div>
+              )}
+              <input className="form-input" type="number" step="0.5"
+                placeholder={form.betType==="handicap"?"-5.5":"220.5"}
+                value={form.line} onChange={e=>f("line",e.target.value)}
+                style={{flex:1}}/>
+            </div>
+          </div>
+        )}
+
+        {/* Description générée */}
+        {form.team&&(
+          <div style={{background:"rgba(124,58,237,.08)",border:"1px solid rgba(124,58,237,.2)",
+            borderRadius:10,padding:"10px 14px",marginBottom:14}}>
+            <div style={{fontSize:11,color:"#7C3AED",fontWeight:700,
+              textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Pari</div>
+            <div style={{fontSize:14,fontWeight:600,color:"#E5E7EB"}}>
+              {form.betType==="moneyline"&&form.team+" gagne"}
+              {form.betType==="handicap"&&form.team+" "+form.line}
+              {form.betType==="total"&&(form.ou||"Over")+" "+form.line+" pts (match total)"}
+              {form.betType==="team_total"&&form.team+" "+(form.ou||"Over")+" "+form.line+" pts"}
+              {form.betType==="half"&&(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)"}
+            </div>
+            {form.opponent&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+              vs {form.opponent}
+            </div>}
+          </div>
+        )}
 
         {/* Cote + Mise */}
         <div style={{display:"flex",gap:10}} className="form-group">
@@ -798,29 +917,19 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
           </div>
         </div>
 
-        {/* Ligue + Tipster */}
-        <div style={{display:"flex",gap:10}} className="form-group">
-          <div style={{flex:1}}>
-            <label className="form-label">Ligue</label>
-            <select className="form-select" value={form.game}
-              onChange={e=>f("game",e.target.value)}>
-              <option value="">Auto</option>
-              {LEAGUES.map(l=><option key={l}>{l}</option>)}
+        {/* Tipster */}
+        <div className="form-group">
+          <label className="form-label">Tipster</label>
+          {tipsters.length>0?(
+            <select className="form-select" value={form.tipster}
+              onChange={e=>f("tipster",e.target.value)}>
+              <option value="">Aucun</option>
+              {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
             </select>
-          </div>
-          <div style={{flex:1}}>
-            <label className="form-label">Tipster</label>
-            {tipsters.length>0?(
-              <select className="form-select" value={form.tipster}
-                onChange={e=>f("tipster",e.target.value)}>
-                <option value="">Aucun</option>
-                {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
-              </select>
-            ):(
-              <input className="form-input" placeholder="Optionnel"
-                value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
-            )}
-          </div>
+          ):(
+            <input className="form-input" placeholder="Optionnel"
+              value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
+          )}
         </div>
 
         {/* Notes */}
@@ -833,8 +942,455 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           {saving?"Enregistrement…":editBet?"✓ Modifier":"⊕ Ajouter le pari"}
         </button>
-        <button className="btn btn-secondary" onClick={onClose}
-          style={{marginTop:8}}>Annuler</button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+// ── FORMULAIRE AJOUT PARI (Joueur + Équipe) ──────────────────────────────────
+function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null}){
+  const[step,setStep]=useState(editBet?"form":"search"); // search → form
+  const[search,setSearch]=useState("");
+  const[selectedType,setSelectedType]=useState(null); // {type:"player"|"team", data}
+  const[clubs,setClubs]=useState([]);
+  const[saving,setSaving]=useState(false);
+  const[form,setForm]=useState(editBet?{
+    player:editBet.player||"",
+    playerObj:null,
+    stat:editBet.description||"Points",
+    ou:editBet.over_under||"Over",
+    line:editBet.line||"",
+    odds:editBet.odds||"",
+    stake:editBet.stake||"",
+    bookmaker:editBet.bookmaker||"",
+    status:editBet.status||"pending",
+    game:editBet.game||"",
+    tipster:editBet.tipster||"",
+    notes:editBet.notes||"",
+    // team fields
+    betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
+    team:editBet.team||"",
+    opponent:editBet.opponent||"",
+  }:{
+    player:"",playerObj:null,stat:"Points",ou:"Over",line:"",
+    odds:"",stake:"",bookmaker:bookmakers[0]||"",
+    status:"pending",game:"",tipster:"",notes:"",
+    betType:"moneyline",team:"",opponent:"",
+  });
+  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  const isTeamBet=editBet?.bet_type==="team"||(selectedType?.type==="team");
+
+  // Recherche joueurs + équipes
+  const searchLow=search.toLowerCase().trim();
+  const playerResults=searchLow.length>=1
+    ?Object.values(players).filter(p=>{
+        const n=p.name.toLowerCase();
+        const words=n.split(" ");
+        const initials=words.map(w=>w[0]||"").join("");
+        return n.includes(searchLow)||initials.includes(searchLow);
+      }).slice(0,6)
+    :[];
+
+  // Chercher dans tous les clubs via players (teams uniques)
+  const allTeams=searchLow.length>=1
+    ?[...new Set(Object.values(players).map(p=>p.team).filter(Boolean))]
+        .filter(t=>t.toLowerCase().includes(searchLow))
+        .slice(0,4)
+    :[];
+
+  // Charger clubs si équipe sélectionnée
+  useEffect(()=>{
+    if(!form.game||!isTeamBet)return;
+    fetch(SUPA_URL+"/rest/v1/clubs?league=eq."+encodeURIComponent(form.game)+"&order=name.asc",{headers:H})
+      .then(r=>r.json()).then(cs=>setClubs(Array.isArray(cs)?cs:[])).catch(()=>{});
+  },[form.game,isTeamBet]);
+
+  function selectPlayer(p){
+    f("player",p.name);f("playerObj",p);
+    if(p.game)f("game",p.game);
+    setSelectedType({type:"player",data:p});
+    setStep("form");
+  }
+
+  function selectTeam(teamName){
+    // Trouver la ligue de ce club depuis players
+    const playerOfTeam=Object.values(players).find(p=>p.team===teamName);
+    const game=playerOfTeam?.game||"";
+    f("team",teamName);f("game",game);
+    setSelectedType({type:"team",data:{name:teamName,game}});
+    setStep("form");
+  }
+
+  async function submit(){
+    const odds=parseFloat(form.odds);
+    const stake=parseFloat(form.stake);
+    if(!odds||!stake){alert("Cote et mise obligatoires");return;}
+
+    let bet;
+    if(isTeamBet){
+      if(!form.team){alert("Sélectionne une équipe");return;}
+      let desc="";
+      if(form.betType==="moneyline") desc=form.team+" gagne";
+      else if(form.betType==="handicap") desc=form.team+" "+form.line;
+      else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
+      else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line+" pts";
+      else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)";
+      bet={
+        player:form.team,team:form.team,opponent:form.opponent||null,
+        description:desc,over_under:form.ou||null,
+        line:form.line?parseFloat(form.line):null,
+        odds,stake,bookmaker:form.bookmaker||null,
+        status:form.status,profit:calcProfit(form.status,stake,odds),
+        game:form.game||null,tipster:form.tipster||null,
+        notes:form.notes||null,bet_type:"team",
+      };
+    }else{
+      if(!form.player){alert("Sélectionne un joueur");return;}
+      const desc=form.ou&&form.line&&form.stat
+        ?form.ou+" "+form.line+" "+form.stat:form.stat||"";
+      bet={
+        player:form.player,team:form.playerObj?.team||null,
+        description:desc,over_under:form.ou||null,
+        line:form.line?parseFloat(form.line):null,
+        odds,stake,bookmaker:form.bookmaker||null,
+        status:form.status,profit:calcProfit(form.status,stake,odds),
+        game:form.game||form.playerObj?.game||null,
+        tipster:form.tipster||null,notes:form.notes||null,bet_type:"player",
+      };
+    }
+    setSaving(true);
+    try{
+      if(editBet)await updateBet(editBet.id,bet);
+      else await insertBet({...bet,id:uuid()});
+      onSave();onClose();
+    }catch(e){alert("Erreur: "+e.message);}
+    setSaving(false);
+  }
+
+  const tc=getTeamColor(isTeamBet?form.team:(form.playerObj?.team||""));
+  const pc=tc?.p||"#7C3AED";
+
+  // ── ÉTAPE 1 : Recherche ───────────────────────────────────────
+  if(step==="search")return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div className="modal-title">Nouveau pari</div>
+
+        {/* Barre de recherche */}
+        <div style={{position:"relative",marginBottom:12}}>
+          <span style={{position:"absolute",left:12,top:"50%",
+            transform:"translateY(-50%)",fontSize:16,color:"#6B7280",
+            pointerEvents:"none"}}>🔍</span>
+          <input className="form-input" autoFocus
+            placeholder="Joueur ou équipe… (ex: lj, BOS, Lakers)"
+            value={search} onChange={e=>setSearch(e.target.value)}
+            style={{paddingLeft:38}}/>
+          {search&&<button onClick={()=>setSearch("")}
+            style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+              background:"transparent",border:"none",color:"#6B7280",
+              cursor:"pointer",fontSize:18}}>×</button>}
+        </div>
+
+        {/* Résultats équipes */}
+        {allTeams.length>0&&(
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,fontWeight:800,color:"#F59E0B",
+              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>🏀 Équipes</div>
+            {allTeams.map(team=>{
+              const tc2=getTeamColor(team);
+              const pc2=tc2?.p||"#1F2937";
+              const sc2=tc2?.s||"#374151";
+              const playerOfTeam=Object.values(players).find(p=>p.team===team);
+              return(
+                <div key={team} onClick={()=>selectTeam(team)}
+                  style={{display:"flex",alignItems:"center",gap:12,
+                    padding:"10px 12px",background:"#0F1629",
+                    border:"1px solid rgba(245,158,11,.2)",
+                    borderRadius:12,marginBottom:6,cursor:"pointer"}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
+                    background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    border:`2px solid ${pc2}44`,fontSize:18}}>🏀</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB"}}>{team}</div>
+                    {playerOfTeam?.game&&<div style={{fontSize:11,color:"#6B7280"}}>{playerOfTeam.game}</div>}
+                  </div>
+                  <span style={{fontSize:10,fontWeight:800,color:"#F59E0B",
+                    background:"rgba(245,158,11,.12)",border:"1px solid rgba(245,158,11,.25)",
+                    borderRadius:5,padding:"2px 7px"}}>ÉQUIPE</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Résultats joueurs */}
+        {playerResults.length>0&&(
+          <div>
+            <div style={{fontSize:10,fontWeight:800,color:"#A78BFA",
+              letterSpacing:1.5,textTransform:"uppercase",padding:"4px 0 6px"}}>👤 Joueurs</div>
+            {playerResults.map(p=>{
+              const tc2=getTeamColor(p.team);
+              const pc2=tc2?.p||"#1F2937";
+              const sc2=tc2?.s||"#374151";
+              const photo=p.photo_url||p.avatar_url;
+              return(
+                <div key={p.name} onClick={()=>selectPlayer(p)}
+                  style={{display:"flex",alignItems:"center",gap:12,
+                    padding:"10px 12px",background:"#0F1629",
+                    border:"1px solid rgba(255,255,255,.06)",
+                    borderRadius:12,marginBottom:6,cursor:"pointer"}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
+                    background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    border:`2px solid ${pc2}44`,overflow:"hidden"}}>
+                    {photo
+                      ?<img src={photo} loading="lazy"
+                          style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
+                      :<span style={{fontSize:18}}>👤</span>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
+                      whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                      {p.name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ")}
+                    </div>
+                    <div style={{fontSize:11,color:"#6B7280"}}>
+                      {[p.role,p.team].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {search.length>=1&&playerResults.length===0&&allTeams.length===0&&(
+          <div className="empty">
+            <div className="empty-icon">🔍</div>
+            <div className="empty-text">Aucun résultat</div>
+            <div className="empty-sub">Essaie "lj", "BOS", "Lakers"…</div>
+          </div>
+        )}
+
+        {search.length===0&&(
+          <div style={{textAlign:"center",padding:"24px 0",color:"#4B5563",fontSize:13}}>
+            Tape le nom d'un joueur ou d'une équipe
+          </div>
+        )}
+
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:16}}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── ÉTAPE 2 : Formulaire ──────────────────────────────────────
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+
+        {/* Header avec retour */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+          {!editBet&&<button onClick={()=>setStep("search")}
+            style={{background:"transparent",border:"none",color:"#A78BFA",
+              cursor:"pointer",fontSize:22,padding:0,lineHeight:1}}>‹</button>}
+          <div style={{width:48,height:48,borderRadius:"50%",flexShrink:0,
+            background:`linear-gradient(135deg,${pc}CC,${tc?.s||"#374151"}88)`,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            border:`2px solid ${pc}44`,overflow:"hidden"}}>
+            {isTeamBet?<span style={{fontSize:22}}>🏀</span>:(()=>{
+              const photo=form.playerObj?.photo_url||form.playerObj?.avatar_url;
+              return photo
+                ?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
+                :<span style={{fontSize:22}}>👤</span>;
+            })()}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:16,fontWeight:800,color:"#E5E7EB",
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {isTeamBet?form.team:form.player}
+            </div>
+            <div style={{fontSize:11,color:"#6B7280"}}>
+              {isTeamBet
+                ?<span style={{color:"#F59E0B",fontWeight:700}}>Pari équipe</span>
+                :<span>{form.playerObj?.team||form.game}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* ── PARI ÉQUIPE ── */}
+        {isTeamBet&&(
+          <>
+            {/* Type */}
+            <div className="form-group">
+              <label className="form-label">Type</label>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                {[
+                  {key:"moneyline",label:"🏆 Moneyline"},
+                  {key:"handicap", label:"➕ Handicap"},
+                  {key:"total",    label:"🎯 Total match"},
+                  {key:"team_total",label:"📊 Total équipe"},
+                  {key:"half",    label:"⏱ Mi-temps"},
+                ].map(t=>(
+                  <button key={t.key} onClick={()=>f("betType",t.key)}
+                    style={{padding:"9px 10px",borderRadius:10,cursor:"pointer",
+                      border:"1px solid "+(form.betType===t.key?pc:"#1F2937"),
+                      background:form.betType===t.key?`${pc}18`:"rgba(255,255,255,.02)",
+                      color:form.betType===t.key?"#E5E7EB":"#9CA3AF",
+                      fontSize:12,fontWeight:700,textAlign:"center"}}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Adversaire */}
+            <div className="form-group">
+              <label className="form-label">vs Adversaire (optionnel)</label>
+              <input className="form-input" placeholder="Nom de l'adversaire"
+                value={form.opponent} onChange={e=>f("opponent",e.target.value)}/>
+            </div>
+
+            {/* Over/Under + Ligne */}
+            {["handicap","total","team_total","half"].includes(form.betType)&&(
+              <div className="form-group">
+                <label className="form-label">
+                  {form.betType==="handicap"?"Handicap":"Ligne"}
+                </label>
+                <div style={{display:"flex",gap:10}}>
+                  {["total","team_total","half"].includes(form.betType)&&(
+                    <div className="segment" style={{flex:"0 0 auto",minWidth:120}}>
+                      {["Over","Under"].map(o=>(
+                        <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
+                          onClick={()=>f("ou",o)}>{o}</button>
+                      ))}
+                    </div>
+                  )}
+                  <input className="form-input" type="number" step="0.5"
+                    placeholder={form.betType==="handicap"?"-5.5":"220.5"}
+                    value={form.line} onChange={e=>f("line",e.target.value)}
+                    style={{flex:1}}/>
+                </div>
+              </div>
+            )}
+
+            {/* Résumé du pari */}
+            <div style={{background:`${pc}12`,border:`1px solid ${pc}30`,
+              borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+              <div style={{fontSize:12,fontWeight:700,color:pc,marginBottom:3}}>Pari</div>
+              <div style={{fontSize:14,fontWeight:600,color:"#E5E7EB"}}>
+                {form.betType==="moneyline"&&form.team+" gagne"}
+                {form.betType==="handicap"&&form.team+" "+form.line}
+                {form.betType==="total"&&(form.ou||"Over")+" "+form.line+" pts (match)"}
+                {form.betType==="team_total"&&form.team+" "+(form.ou||"Over")+" "+form.line+" pts"}
+                {form.betType==="half"&&(form.ou||"Over")+" "+form.line+" (mi-temps)"}
+              </div>
+              {form.opponent&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>vs {form.opponent}</div>}
+            </div>
+          </>
+        )}
+
+        {/* ── PARI JOUEUR ── */}
+        {!isTeamBet&&(
+          <>
+            <div className="form-group">
+              <label className="form-label">Pari</label>
+              <div className="segment" style={{marginBottom:10}}>
+                {["Over","Under"].map(o=>(
+                  <button key={o} className={"seg-btn"+(form.ou===o?" active":"")}
+                    onClick={()=>f("ou",o)}>{o}</button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <input className="form-input" type="number" step="0.5"
+                  placeholder="Ligne (ex: 24.5)" value={form.line}
+                  onChange={e=>f("line",e.target.value)} style={{flex:1}}/>
+                <select className="form-select" value={form.stat}
+                  onChange={e=>f("stat",e.target.value)} style={{flex:1}}>
+                  {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+                    "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
+                    "Turnovers","Fantasy Score","Minutes"].map(s=>(
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── COMMUN : Cote + Mise ── */}
+        <div style={{display:"flex",gap:10}} className="form-group">
+          <div style={{flex:1}}>
+            <label className="form-label">Cote</label>
+            <input className="form-input" type="number" step="0.01" placeholder="1.85"
+              value={form.odds} onChange={e=>f("odds",e.target.value)}/>
+          </div>
+          <div style={{flex:1}}>
+            <label className="form-label">Mise ($)</label>
+            <input className="form-input" type="number" placeholder="100"
+              value={form.stake} onChange={e=>f("stake",e.target.value)}/>
+          </div>
+        </div>
+
+        {/* Bookmaker */}
+        <div className="form-group">
+          <label className="form-label">Bookmaker</label>
+          <select className="form-select" value={form.bookmaker}
+            onChange={e=>f("bookmaker",e.target.value)}>
+            <option value="">Aucun</option>
+            {bookmakers.map(b=><option key={b}>{b}</option>)}
+          </select>
+        </div>
+
+        {/* Statut */}
+        <div className="form-group">
+          <label className="form-label">Statut</label>
+          <div className="status-row">
+            {["pending","won","lost","void"].map(s=>(
+              <button key={s} className={"status-btn "+s+(form.status===s?" active":"")}
+                onClick={()=>f("status",s)}>
+                {s==="pending"?"En cours":s==="won"?"Gagné":s==="lost"?"Perdu":"Void"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tipster */}
+        <div className="form-group">
+          <label className="form-label">Tipster</label>
+          {tipsters.length>0?(
+            <select className="form-select" value={form.tipster}
+              onChange={e=>f("tipster",e.target.value)}>
+              <option value="">Aucun</option>
+              {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
+            </select>
+          ):(
+            <input className="form-input" placeholder="Optionnel"
+              value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="form-group">
+          <label className="form-label">Notes</label>
+          <input className="form-input" placeholder="Optionnel"
+            value={form.notes} onChange={e=>f("notes",e.target.value)}/>
+        </div>
+
+        <button className="btn btn-primary" onClick={submit} disabled={saving}>
+          {saving?"Enregistrement…":editBet?"✓ Modifier":"⊕ Ajouter le pari"}
+        </button>
+        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>
+          Annuler
+        </button>
       </div>
     </div>
   );
@@ -1115,7 +1671,13 @@ function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
                   :<span style={{fontSize:18}}>👤</span>}
               </div>
               <div className="bet-info">
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <div className="bet-player">{b.player}</div>
+                {b.bet_type==="team"&&<span style={{fontSize:9,fontWeight:800,
+                  color:"#F59E0B",background:"rgba(245,158,11,.12)",
+                  border:"1px solid rgba(245,158,11,.25)",
+                  borderRadius:4,padding:"1px 5px",letterSpacing:.5}}>ÉQUIPE</span>}
+              </div>
                 <div className="bet-desc">
                   <span className={"badge badge-"+b.status} style={{fontSize:10,padding:"2px 7px"}}>
                     {b.status==="pending"?"En cours":b.status==="won"?"✓ Gagné":b.status==="lost"?"✗ Perdu":"Void"}
@@ -1626,6 +2188,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
   const[tab,setTab]=useState("bookmakers");
   const[showAdd,setShowAdd]=useState(false);
+  const[showTeamAdd,setShowTeamAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
   const[showAddTip,setShowAddTip]=useState(false);
 
@@ -1865,6 +2428,7 @@ export default function App(){
   const[view,setView]=useState("home");
   const[loading,setLoading]=useState(true);
   const[showAdd,setShowAdd]=useState(false);
+  const[showTeamAdd,setShowTeamAdd]=useState(false);
   const[selectedBet,setSelectedBet]=useState(null);
   const[editBet,setEditBet]=useState(null);
   const[syncing,setSyncing]=useState(false);
@@ -2004,7 +2568,7 @@ export default function App(){
           />
         )}
 
-        {selectedBet&&(
+{selectedBet&&(
           <BetDetailModal
             bet={selectedBet}
             players={players}
