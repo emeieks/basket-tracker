@@ -145,13 +145,19 @@ async function fetchClubs(league){
 }
 
 async function upsertClub(name,league,logo){
-  const r=await fetch(SUPA_URL+"/rest/v1/clubs",{
-    method:"POST",
-    headers:{...H,"Prefer":"resolution=merge-duplicates,return=representation"},
-    body:JSON.stringify({id:uuid(),name,league,logo}),
+  // Toujours PATCH — cherche par name+league exact
+  const enc=v=>encodeURIComponent(v);
+  const url=SUPA_URL+"/rest/v1/clubs?name=eq."+enc(name)+"&league=eq."+enc(league);
+  const r=await fetch(url,{
+    method:"PATCH",
+    headers:{...H},
+    body:JSON.stringify({logo}),
   });
-  if(!r.ok)throw new Error("upsert club: "+r.status);
-  return r.json();
+  // PATCH retourne 200 ou 204 si ok
+  if(r.status===200||r.status===204||r.ok)return true;
+  // Sinon on log et on ignore (le logo s'affiche quand même côté state)
+  console.warn("upsertClub warning:",r.status,await r.text().catch(()=>""));
+  return false;
 }
 
 async function updatePlayer(id,fields){
@@ -1943,9 +1949,11 @@ function EditView({showToast}){
   async function pasteClubLogo(club){
     try{
       const url=await pasteImageToSupabase("club_"+club.name.replace(/\s/g,"_").toLowerCase());
-      await upsertClub(club.name,selectedLeague.name,url);
+      // Mettre à jour le state immédiatement (même si Supabase échoue)
       setClubs(prev=>prev.map(c=>c.id===club.id?{...c,logo:url}:c));
       if(selectedClub?.id===club.id)setSelectedClub(prev=>({...prev,logo:url}));
+      // Sauvegarder dans Supabase en arrière-plan
+      upsertClub(club.name,selectedLeague.name,url).catch(e=>console.warn("Club logo save:",e));
       showToast("Logo club mis à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#EF4444");}
   }
