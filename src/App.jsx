@@ -513,7 +513,7 @@ function getTeamColor(team){
 }
 
 // Composant carte joueur pro (format vertical avec couleur équipe)
-const PlayerCard=memo(function PlayerCard({player,size=56,onClick,onPhotoClick,uploading=false}){
+const PlayerCard=memo(function PlayerCard({player,size=72,onClick,onPhotoClick,uploading=false}){
   const photo=player.photo_url||player.avatar_url;
   const tc=getTeamColor(player.team);
   const primaryColor=tc?.p||"#1F2937";
@@ -1160,14 +1160,15 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
                     padding:"10px 12px",background:"#0F1629",
                     border:"1px solid rgba(255,255,255,.06)",
                     borderRadius:12,marginBottom:6,cursor:"pointer"}}>
-                  <div style={{width:40,height:40,borderRadius:"50%",flexShrink:0,
+                  <div style={{width:56,height:56,borderRadius:"50%",flexShrink:0,
                     background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
                     display:"flex",alignItems:"center",justifyContent:"center",
                     border:`2px solid ${pc2}44`,overflow:"hidden"}}>
                     {photo
-                      ?<img src={photo} loading="lazy"
-                          style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%"}}/>
-                      :<span style={{fontSize:18}}>👤</span>}
+                      ?<img src={photo} loading="lazy" decoding="async"
+                          style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 8%",
+                            WebkitBackfaceVisibility:"hidden",transform:"translateZ(0)"}}/>
+                      :<span style={{fontSize:24}}>👤</span>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:14,fontWeight:700,color:"#E5E7EB",
@@ -1445,10 +1446,10 @@ function BetDetailModal({bet,players,onClose,onUpdate,onDelete}){
             const pc2=tc2?.p||"#1F2937";
             const sc2=tc2?.s||"#374151";
             return(
-              <div style={{width:64,height:64,borderRadius:"50%",flexShrink:0,
+              <div style={{width:80,height:80,borderRadius:"50%",flexShrink:0,
                 background:`linear-gradient(135deg,${pc2}CC,${sc2}88)`,
                 display:"flex",alignItems:"center",justifyContent:"center",
-                border:`2px solid ${pc2}66`,boxShadow:`0 4px 16px ${pc2}55`,
+                border:`2px solid ${pc2}66`,boxShadow:`0 4px 20px ${pc2}55`,
                 overflow:"hidden"}}>
                 {photo
                   ?<img src={photo} loading="lazy" decoding="async"
@@ -1670,10 +1671,10 @@ function BetsView({bets,players,bookmakers=[],onSelectBet,onEdit}){
           const sc2=tc?.s||"#374151";
           return(
               <div key={b.id} className="bet-row" onClick={()=>onSelectBet(b)}
-                style={{position:"relative",overflow:"hidden"}}>
+                style={{position:"relative",overflow:"hidden",padding:"12px 14px"}}>
               <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
                 background:`linear-gradient(180deg,${pc},${sc2})`}}/>
-              <div style={{width:44,height:44,borderRadius:"50%",flexShrink:0,
+              <div style={{width:56,height:56,borderRadius:"50%",flexShrink:0,
                 background:`linear-gradient(135deg,${pc}BB,${sc2}66)`,
                 display:"flex",alignItems:"center",justifyContent:"center",
                 border:`2px solid ${pc}44`,boxShadow:`0 2px 8px ${pc}44`,
@@ -2083,7 +2084,7 @@ function EditView({showToast}){
             letterSpacing:1.5,textTransform:"uppercase",
             padding:"8px 4px 4px",marginBottom:2}}>{pos}</div>
           {pList.map(p=>(
-            <PlayerCard key={p.id} player={p} size={56}
+            <PlayerCard key={p.id} player={p} size={72}
               onClick={()=>setEditingPlayer(p)}
               onPhotoClick={()=>pastePlayerPhoto(p)}
               uploading={uploadingId===p.id}/>
@@ -2130,7 +2131,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
         {/* Photo + nom */}
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
           <div style={{position:"relative"}}>
-            <PlayerPhoto url={player.photo_url||player.avatar_url} size={72}/>
+            <PlayerPhoto url={player.photo_url||player.avatar_url} size={88}/>
             <div style={{position:"absolute",bottom:0,right:0,width:24,height:24,
               borderRadius:"50%",background:"#7C3AED",border:"2px solid #0F1629",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
