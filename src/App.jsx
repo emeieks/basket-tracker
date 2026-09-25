@@ -35,6 +35,27 @@ function eur(v,dec=2){
   return Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec})+"\u00a0€";
 }
 
+const STAT_FR={
+  "Points":"Points","Rebonds":"Rebonds","Assists":"Passes",
+  "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Passes",
+  "Points+Rebonds+Assists":"Points + Rebonds + Passes","3 Points Made":"Tirs à 3 pts",
+  "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
+  "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Minutes":"Minutes",
+};
+const STAT_ABBR={
+  "Points":"Pts","Rebonds":"Reb","Assists":"Pas","Points+Rebonds":"P+R","Points+Assists":"P+P",
+  "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
+  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Minutes":"Min",
+};
+const statFR=s=>STAT_FR[s]||s;
+// "Over 26.5 Points+Rebonds+Assists" → { ou, line, stat }
+function parseDesc(desc){
+  const m=(desc||"").match(/^(Over|Under)\s+([\d.,]+)\s+(.+)$/);
+  return m?{ou:m[1],line:m[2],stat:m[3]}:null;
+}
+function descFR(desc){const p=parseDesc(desc);return p?p.ou+" "+p.line+" "+statFR(p.stat):(desc||"");}
+function descShort(desc){const p=parseDesc(desc);return p?(p.ou==="Over"?"O":"U")+" "+p.line+" "+(STAT_ABBR[p.stat]||statFR(p.stat)):(desc||"");}
+
 function formatName(name){
   if(!name)return"";
   return name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
@@ -1181,7 +1202,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             <select className="sent-sel grow" aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}>
               {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s}>{s}</option>)}
+                "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s}>{statFR(s)}</option>)}
             </select>
           </div>
         )}
@@ -1521,9 +1542,40 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
         {/* ── Corps ── */}
         <div style={{overflowY:"auto",padding:"16px 20px 0",flex:1}}>
-          <div style={{background:C.inner,border:"1px solid "+C.line,borderRadius:14,padding:"12px 14px",fontSize:16,fontWeight:600}}>
-            {localBet.description||"—"}
-          </div>
+          {(()=>{
+            const pd=!isTeamBet?parseDesc(localBet.description):null;
+            if(!pd)return(
+              <div style={{background:C.inner,border:"1px solid "+C.line,borderRadius:14,padding:"12px 14px",fontSize:16,fontWeight:600}}>
+                {descFR(localBet.description)||"—"}
+              </div>
+            );
+            const lines=Array.from({length:45},(_,i)=>(i+0.5).toFixed(1));
+            const cur=parseFloat(String(pd.line).replace(",",".")).toFixed(1);
+            if(!lines.includes(cur))lines.push(cur);
+            const stats=Object.keys(STAT_FR);
+            if(!stats.includes(pd.stat))stats.push(pd.stat);
+            const upd=ch=>{
+              const n={ou:pd.ou,line:cur,stat:pd.stat,...ch};
+              setField("description",n.ou+" "+n.line+" "+n.stat);
+              setField("over_under",n.ou);
+              setField("line",parseFloat(n.line));
+            };
+            const changed=dirty.description!==undefined;
+            return(
+              <div className="sentence" style={{borderColor:changed?C.green+"88":undefined}}>
+                <select className="sent-sel" aria-label="Over ou Under" value={pd.ou} onChange={e=>upd({ou:e.target.value})}
+                  style={{color:pd.ou==="Over"?C.green:C.red}}>
+                  <option>Over</option><option>Under</option>
+                </select>
+                <select className="sent-sel" aria-label="Ligne" value={cur} onChange={e=>upd({line:e.target.value})}>
+                  {lines.sort((a,b)=>a-b).map(v=><option key={v} value={v}>{v}</option>)}
+                </select>
+                <select className="sent-sel grow" aria-label="Type de stat" value={pd.stat} onChange={e=>upd({stat:e.target.value})}>
+                  {stats.map(s=><option key={s} value={s}>{statFR(s)}</option>)}
+                </select>
+              </div>
+            );
+          })()}
 
           <div className="pick-head"><span>Statut</span></div>
           <div className="segment">
@@ -1756,9 +1808,15 @@ function BankrollChart({bets}){
         <path d={d} fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
         <circle cx={P[P.length-1][0]} cy={P[P.length-1][1]} r="3.5" fill={col} stroke={C.card} strokeWidth="2"/>
       </svg>
-      <div style={{display:"flex",justifyContent:"space-between",padding:"6px 4px 0",fontSize:11,color:C.dim}}>
-        <span>{fmtM(minT)}</span><span>{fmtM(minT+rangeT/2)}</span><span>{fmtM(maxT)}</span>
-      </div>
+      {(()=>{
+        const idx=[1,Math.round(pts.length/2),pts.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+        const labels=idx.map(i=>fmtM(pts[i].t)).filter((l,i,a)=>a.indexOf(l)===i);
+        return(
+          <div style={{display:"flex",justifyContent:labels.length===1?"center":"space-between",padding:"6px 4px 0",fontSize:11,color:C.dim}}>
+            {labels.map(l=><span key={l}>{l}</span>)}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1901,7 +1959,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}}>
         <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,fontSize:15,fontWeight:600,lineHeight:"20px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {lastName} · {b.description}
+            {lastName} · {b.bet_type==="team"?b.description:descShort(b.description)}
           </span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
@@ -2088,7 +2146,7 @@ function StatsView({bets}){
       <SectionTitle>Ligues</SectionTitle>
       <ListCard rows={toRows(groupBy(bets,b=>b.game),g=>getLeagueLogo(g)||null)}/>
       <SectionTitle>Marchés</SectionTitle>
-      <ListCard rows={toRows(groupBy(bets,b=>(b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,""))).slice(0,8)}/>
+      <ListCard rows={toRows(groupBy(bets,b=>statFR((b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,"")))).slice(0,8)}/>
       <SectionTitle>Tipsters</SectionTitle>
       <ListCard rows={toRows(groupBy(bets,b=>b.tipster||"Sans tipster"))}/>
       <SectionTitle>Par mois</SectionTitle>
