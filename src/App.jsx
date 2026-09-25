@@ -2548,9 +2548,11 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         let streak=0;const kind=sorted[0]?.status;
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         return(
-          <div>
+          <div className="hero-card" style={{marginTop:2,borderRadius:22,padding:"16px 16px 10px",position:"relative",overflow:"hidden",
+            background:`radial-gradient(110% 80% at 0% 0%, ${pp>=0?"rgba(74,222,128,.13)":"rgba(255,138,128,.13)"} 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg,#1F232B 0%,#181B21 100%)`,
+            border:"1px solid rgba(255,255,255,.07)",boxShadow:"0 20px 50px -24px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06)"}}>
 
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:18}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))"}}>
               <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
                 <div style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
               <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
@@ -2559,32 +2561,26 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
                 <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
             </div>
 
-            <div className="hero-card" style={{marginTop:16,borderRadius:20,padding:"16px 12px 10px",position:"relative",
-              background:"linear-gradient(180deg,#1F232B 0%,#181B21 100%)",border:"1px solid rgba(255,255,255,.07)",
-              boxShadow:"0 20px 50px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"}}>
-              <span style={{position:"absolute",right:16,top:10,fontSize:12,color:C.sub,zIndex:1}}>{fmt(pp)}</span>
-              <BankrollChart key={period+pOff} bets={pb} height={160} fmt={fmt}/>
-            </div>
+            <div style={{height:1,background:"rgba(255,255,255,.06)",margin:"14px -16px 10px"}}/>
+            <div style={{margin:"0 -6px"}}><BankrollChart key={period+pOff} bets={pb} height={150} fmt={fmt}/></div>
           </div>
         );
       })()}
 
-      <SectionTitle right={
-        <div style={{display:"flex",alignItems:"center",gap:4}}>
-          {calOpen&&<>
-          <button aria-label="Mois précédent" onClick={()=>shift(-1)} style={navArrow}>‹</button>
-          <span style={{fontSize:13,color:C.sub,textTransform:"capitalize",minWidth:96,textAlign:"center"}}>{monthLabel}</span>
-          <button aria-label="Mois suivant" onClick={()=>shift(1)} style={navArrow}>›</button>
-          </>}
-          <button type="button" aria-expanded={calOpen} aria-label={calOpen?"Fermer le calendrier":"Ouvrir le calendrier"}
-            onClick={()=>setCalOpen(o=>!o)} className="press"
-            style={{width:36,height:36,border:"none",borderRadius:10,background:C.card,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
-              style={{transition:"transform .2s",transform:calOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
-          </button>
-        </div>
-      }>Calendrier</SectionTitle>
-      {calOpen&&<div className="fade-in">
+      <div style={{marginTop:14,background:C.card,border:"1px solid "+C.line,borderRadius:18,overflow:"hidden"}}>
+      <div role="button" tabIndex={0} aria-expanded={calOpen} onClick={()=>setCalOpen(o=>!o)} onKeyDown={e=>e.key==="Enter"&&setCalOpen(o=>!o)}
+        style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px",cursor:"pointer"}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.9" strokeLinecap="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+        <span style={{flex:1,fontSize:16,fontWeight:600}}>Calendrier</span>
+        {calOpen&&<span onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center"}}>
+          <button aria-label="Mois précédent" onClick={()=>shift(-1)} style={{...navArrow,width:28}}>‹</button>
+          <span style={{fontSize:13,color:C.sub,textTransform:"capitalize",minWidth:92,textAlign:"center"}}>{monthLabel}</span>
+          <button aria-label="Mois suivant" onClick={()=>shift(1)} style={{...navArrow,width:28}}>›</button>
+        </span>}
+        <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
+          style={{transition:"transform .2s",transform:calOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
+      </div>
+      {calOpen&&<div className="fade-in" style={{padding:"0 12px 12px"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:5,fontSize:11,color:C.dim,textAlign:"center"}}>
         {["L","M","M","J","V","S","D"].map((d,i)=><span key={i}>{d}</span>)}
       </div>
@@ -2605,9 +2601,13 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         })}
       </div>
       </div>}
+      </div>
 
       {leagueRows.length>0&&<>
-        <SectionTitle right={<button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>}>Ligues</SectionTitle>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"22px 2px 10px"}}>
+          <span style={{fontSize:18,fontWeight:600,letterSpacing:-.3}}>Ligues</span>
+          <button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>
+        </div>
         <ListCard rows={leagueRows}/>
       </>}
     </div>
@@ -2673,9 +2673,6 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
               b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
               <span key="o" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>@{String(b.odds).replace(".",",")}</span>,
               <span key="m" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>{eur(stake,0)}</span>,
-              b._group&&<span key="g" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",color:"#8BB8FF",fontWeight:600}}>
-                {b._group.length} sites
-              </span>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
               (b._group?b._group.some(l=>l.bookmaker):b.bookmaker)&&<span key="bk" style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}}>
                 {(b._group?[...new Set(b._group.map(l=>l.bookmaker).filter(Boolean))]:[b.bookmaker]).map(n=>
@@ -2802,27 +2799,6 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                 Tout voir
               </button>
             )}
-          </div>
-        );
-      })()}
-      {fltCount>0&&(()=>{
-        const legs=mergeGroups(legsF);
-        const p=legs.reduce((s,b)=>s+parseFloat(b.profit||0),0);
-        const w=legs.filter(b=>b.status==="won").length,l=legs.filter(b=>b.status==="lost").length,v=legs.filter(b=>b.status==="void").length;
-        const st=legs.filter(b=>b.status==="won"||b.status==="lost").reduce((s,b)=>s+parseFloat(b.stake||0),0);
-        const roi=st>0?p/st*100:0;
-        return(
-          <div className="fade-in" style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",borderRadius:14,
-            background:"rgba(91,157,255,.08)",border:"1px solid rgba(91,157,255,.25)"}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {fltCount} filtre{fltCount>1?"s":""} actif{fltCount>1?"s":""}
-                <button type="button" onClick={()=>{setFlt({leagues:{},tipsters:{},annonce:{},roles:{},status:{}});setBkSel({});}}
-                  style={{marginLeft:8,border:"none",background:"transparent",color:C.blue,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:0}}>Effacer</button>
-              </div>
-              <div style={{fontSize:12,color:C.sub}}>{legs.length} paris · {w}-{l}-{v} · ROI <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")} %</span></div>
-            </div>
-            <span style={{fontSize:17,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
           </div>
         );
       })()}
