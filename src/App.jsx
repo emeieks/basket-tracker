@@ -2532,6 +2532,7 @@ function EditView({showToast}){
   const[selectedClub,setSelectedClub]=useState(null);
   const[players,setPlayers]=useState([]);
   const[editingPlayer,setEditingPlayer]=useState(null);
+  const[creatingPlayer,setCreatingPlayer]=useState(false);
   const[loading,setLoading]=useState(false);
   const[uploadingId,setUploadingId]=useState(null);
   const[globalSearch,setGlobalSearch]=useState("");
@@ -2552,11 +2553,14 @@ function EditView({showToast}){
     if(!selectedLeague)return;
     setLoading(true);setSelectedClub(null);setPlayers([]);
     fetchClubs(selectedLeague.name).then(async cs=>{
-      // Récupérer le count de joueurs par club en une seule requête
+      // 1. Appliquer logos depuis le cache global (résout le pb cross-ligue)
+      cs=cs.map(c=>({...c,logo:CLUB_LOGOS_MAP[c.name]||c.logo||null}));
+      // 2. Count de joueurs par club — le champ ligue s'appelle "game" dans la table players
       try{
-        const teamNames=cs.map(c=>c.name);
-        if(teamNames.length>0){
-          const q=SUPA_URL+"/rest/v1/players?league=eq."+encodeURIComponent(selectedLeague.name)+"&select=team";
+        if(cs.length>0){
+          // Récupérer par team name (couvre les clubs présents dans plusieurs ligues)
+          const names=cs.map(c=>c.name);
+          const q=SUPA_URL+"/rest/v1/players?team=in.("+names.map(n=>encodeURIComponent(n)).join(",")+")"+"&select=team&limit=2000";
           const r=await fetch(q,{headers:H});
           if(r.ok){
             const rows=await r.json();
@@ -2620,6 +2624,22 @@ function EditView({showToast}){
       showToast("Photo mise à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#F87171");}
     setUploadingId(null);
+  }
+
+  async function createPlayer(fields){
+    // fields: {name, role, team, game, team_logo_url, photo_url?}
+    try{
+      const r=await fetch(SUPA_URL+"/rest/v1/players",{
+        method:"POST",
+        headers:{...H,"Prefer":"return=representation"},
+        body:JSON.stringify(fields),
+      });
+      if(!r.ok)throw new Error("create player: "+r.status);
+      const[newP]=await r.json();
+      setPlayers(prev=>[...prev,newP].sort((a,b)=>a.name.localeCompare(b.name)));
+      setCreatingPlayer(false);
+      showToast(fields.name+" ajouté ✓");
+    }catch(e){showToast("Erreur: "+e.message,"#F87171");}
   }
 
   async function savePlayer(p,fields){
@@ -2780,6 +2800,7 @@ function EditView({showToast}){
 
   return(
     <div style={{padding:"0"}}>
+      {/* Header club */}
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
         <button onClick={()=>{setSelectedClub(null);setPlayerSearch("");}}
           style={{background:"transparent",border:"none",color:"rgba(255,255,255,.6)",cursor:"pointer",fontSize:24,padding:0,lineHeight:1}}>‹</button>
@@ -2789,8 +2810,9 @@ function EditView({showToast}){
         }
         <div style={{flex:1}}>
           <div style={{fontSize:16,fontWeight:800,color:"#F2F2F7"}}>{selectedClub.name}</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{players.length} joueurs</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{players.length} joueur{players.length!==1?"s":""}</div>
         </div>
+        {/* Coller logo */}
         <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}
           style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2798,23 +2820,41 @@ function EditView({showToast}){
             <rect x="8" y="2" width="12" height="14" rx="2"/>
           </svg>
         </button>
+        {/* Ajouter joueur */}
+        <button onClick={()=>setCreatingPlayer(true)}
+          style={{width:34,height:34,borderRadius:"50%",border:"none",
+            background:"#6366F1",color:"#fff",fontSize:22,lineHeight:1,
+            display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>+</button>
       </div>
-      <div style={{position:"relative",marginBottom:14}}>
-        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(255,255,255,.28)",pointerEvents:"none"}}>⌕</span>
-        <input className="form-input" placeholder="Rechercher…"
-          value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
-          style={{paddingLeft:38}}/>
-        {playerSearch&&(
-          <button onClick={()=>setPlayerSearch("")}
-            style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
-              background:"transparent",border:"none",color:"rgba(255,255,255,.28)",cursor:"pointer",fontSize:18}}>×</button>
-        )}
+
+      {/* Barre recherche + bouton créer joueur */}
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
+        <div style={{position:"relative",flex:1}}>
+          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(255,255,255,.28)",pointerEvents:"none"}}>⌕</span>
+          <input className="form-input" placeholder="Rechercher un joueur…"
+            value={playerSearch} onChange={e=>setPlayerSearch(e.target.value)}
+            style={{paddingLeft:38}}/>
+          {playerSearch&&(
+            <button onClick={()=>setPlayerSearch("")}
+              style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+                background:"transparent",border:"none",color:"rgba(255,255,255,.28)",cursor:"pointer",fontSize:18}}>×</button>
+          )}
+        </div>
       </div>
+
       {loading&&<div style={{textAlign:"center",color:"rgba(255,255,255,.28)",padding:32}}>Chargement…</div>}
-      {!loading&&filteredPlayers.length===0&&(
+      {!loading&&filteredPlayers.length===0&&!playerSearch&&(
+        <button onClick={()=>setCreatingPlayer(true)}
+          style={{width:"100%",padding:"20px 0",border:"1px dashed rgba(99,102,241,.3)",borderRadius:12,
+            background:"rgba(99,102,241,.04)",color:"rgba(99,102,241,.7)",fontSize:13,fontWeight:600,
+            cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <span style={{fontSize:20,lineHeight:1}}>+</span> Ajouter le premier joueur
+        </button>
+      )}
+      {!loading&&filteredPlayers.length===0&&playerSearch&&(
         <div className="empty">
           <div className="empty-icon" style={{fontSize:32,color:"#374151"}}>○</div>
-          <div className="empty-text">{playerSearch?"Aucun résultat":"Aucun joueur"}</div>
+          <div className="empty-text">Aucun résultat pour "{playerSearch}"</div>
         </div>
       )}
       {Object.entries(groups).map(([pos,pList])=>(
@@ -2830,6 +2870,8 @@ function EditView({showToast}){
           ))}
         </div>
       ))}
+
+      {/* Modal édition joueur existant */}
       {editingPlayer&&(
         <PlayerEditModal
           player={editingPlayer}
@@ -2841,6 +2883,149 @@ function EditView({showToast}){
           uploadingId={uploadingId}
         />
       )}
+
+      {/* Modal création joueur */}
+      {creatingPlayer&&(
+        <PlayerCreateModal
+          club={selectedClub}
+          league={selectedLeague}
+          onClose={()=>setCreatingPlayer(false)}
+          onCreate={createPlayer}
+          pasteImage={pasteImageToSupabase}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── MODAL CRÉATION JOUEUR ─────────────────────────────────────────────────────
+function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
+  const[name,setName]=useState("");
+  const[role,setRole]=useState("");
+  const[photoUrl,setPhotoUrl]=useState(null);
+  const[uploading,setUploading]=useState(false);
+  const[saving,setSaving]=useState(false);
+  const ROLES=["PG","SG","SF","PF","C","Guard","Wing","Forward","Big","G","F"];
+  const clubLogo=club?.logo||CLUB_LOGOS_MAP[club?.name]||null;
+
+  const nameFormatted=name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+
+  async function pastePhoto(){
+    if(!name.trim()){showToast("Entre d'abord le nom","#F87171");return;}
+    setUploading(true);
+    try{
+      const url=await pasteImage("player_"+name.trim().replace(/\s/g,"_").toLowerCase());
+      setPhotoUrl(url);
+    }catch(e){showToast("Erreur photo: "+e.message,"#F87171");}
+    setUploading(false);
+  }
+
+  async function save(){
+    if(!name.trim()){showToast("Le nom est requis","#F87171");return;}
+    setSaving(true);
+    await onCreate({
+      name:nameFormatted,
+      role,
+      team:club.name,
+      game:league.name,
+      league:league.name,
+      team_logo_url:clubLogo||null,
+      photo_url:photoUrl||null,
+      avatar_url:photoUrl||null,
+    });
+    setSaving(false);
+  }
+
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-sheet" style={{padding:0,overflow:"hidden",borderRadius:"24px 24px 0 0"}}>
+        <div className="modal-handle" style={{margin:"12px auto 0"}}/>
+
+        {/* Mini header club */}
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"16px 16px 0"}}>
+          {clubLogo
+            ?<img src={clubLogo} alt="" style={{width:28,height:28,objectFit:"contain",borderRadius:6,background:"#2A2A2E",padding:3}}/>
+            :<div style={{width:28,height:28,borderRadius:6,background:"#2A2A2E",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>◫</div>
+          }
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:"#F2F2F7"}}>{club.name}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>{league.name}</div>
+          </div>
+          <button onClick={onClose}
+            style={{marginLeft:"auto",background:"transparent",border:"none",color:"rgba(255,255,255,.4)",
+              fontSize:22,cursor:"pointer",lineHeight:1,padding:4}}>×</button>
+        </div>
+
+        <div style={{padding:"16px 16px 32px",display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* Zone photo + nom */}
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            {/* Photo */}
+            <div style={{position:"relative",flexShrink:0}}>
+              {photoUrl?(
+                <img src={photoUrl} alt="" style={{
+                  width:80,height:92,objectFit:"cover",objectPosition:"top center",
+                  borderRadius:12,border:"2px solid rgba(255,255,255,.1)"
+                }}/>
+              ):(
+                <div style={{width:80,height:92,borderRadius:12,
+                  background:"rgba(255,255,255,.05)",border:"1.5px dashed rgba(255,255,255,.12)",
+                  display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+                  <span style={{fontSize:24,color:"rgba(255,255,255,.15)"}}>◎</span>
+                </div>
+              )}
+              <button onClick={pastePhoto} disabled={uploading}
+                style={{position:"absolute",bottom:-6,right:-6,
+                  width:26,height:26,borderRadius:"50%",
+                  background:"#6366F1",border:"2px solid #111",
+                  display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                {uploading
+                  ?<span style={{fontSize:9,color:"#fff"}}>…</span>
+                  :<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+                    <rect x="8" y="2" width="12" height="14" rx="2"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            {/* Nom */}
+            <div style={{flex:1}}>
+              <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Nom du joueur</div>
+              <input className="form-input"
+                placeholder="Prénom Nom"
+                value={name}
+                onChange={e=>setName(e.target.value)}
+                style={{fontSize:16,fontWeight:700}}
+                autoFocus
+              />
+              {name.trim()&&<div style={{fontSize:11,color:"rgba(255,255,255,.3)",marginTop:4}}>→ {nameFormatted}</div>}
+            </div>
+          </div>
+
+          {/* Position — chips */}
+          <div>
+            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+              letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Position</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+              {ROLES.map(r=>(
+                <button key={r} onClick={()=>setRole(r===role?"":r)}
+                  style={{padding:"8px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
+                    background:role===r?"#6366F1":"rgba(255,255,255,.07)",
+                    color:role===r?"#fff":"rgba(255,255,255,.5)",transition:"all .15s"}}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn btn-primary" onClick={save} disabled={saving||!name.trim()}>
+            {saving?"Création…":"Créer le joueur"}
+          </button>
+          <button className="btn btn-secondary" onClick={onClose}>Annuler</button>
+        </div>
+      </div>
     </div>
   );
 }
