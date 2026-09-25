@@ -1089,108 +1089,104 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               borderRadius:18,
               overflow:"hidden",
               position:"relative",
-              height:isDesktop?200:170,
+              height:isDesktop?210:180,
               background:pc?`linear-gradient(135deg,${pc}CC 0%,${pc}55 60%,#111318 100%)`:"#1C1C22",
               boxShadow:`0 8px 40px ${pc}44`,
-              marginBottom:0,
             }}>
-              {/* Fond dégradé overlay sombre */}
+              {/* Overlay sombre gauche pour lisibilité texte */}
               <div style={{position:"absolute",inset:0,
-                background:"linear-gradient(to right,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.0) 100%)",
-                zIndex:1}}/>
+                background:"linear-gradient(to right,rgba(0,0,0,.6) 0%,rgba(0,0,0,.3) 50%,rgba(0,0,0,.0) 100%)",
+                zIndex:1,pointerEvents:"none"}}/>
 
-              {/* Logo équipe en arrière-plan — grand, centré à droite */}
+              {/* Logo équipe en arrière-plan — zone droite seulement, derrière la photo */}
               {teamLogoHeader&&(
-                <img src={teamLogoHeader} alt=""
-                  style={{position:"absolute",right:playerPhoto?(isDesktop?"8%":"5%"):"10%",
-                    top:"50%",transform:"translateY(-50%)",
-                    width:isDesktop?220:170,height:isDesktop?220:170,objectFit:"contain",
-                    opacity:.35,pointerEvents:"none",zIndex:1,
-                    filter:"drop-shadow(0 0 30px rgba(255,255,255,.08)) blur(0.5px)"}}/>
+                <div style={{position:"absolute",right:0,top:0,bottom:0,
+                  width:"60%",zIndex:2,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  pointerEvents:"none"}}>
+                  <img src={teamLogoHeader} alt=""
+                    style={{width:isDesktop?190:150,height:isDesktop?190:150,
+                      objectFit:"contain",opacity:.28,
+                      filter:"blur(0.3px)"}}/>
+                </div>
               )}
 
-              {/* Photo joueur — droite, plus lumineuse */}
+              {/* Photo joueur — par-dessus le logo, zIndex:3 */}
               {playerPhoto&&(
                 <img src={playerPhoto} alt={form.player}
                   style={{position:"absolute",right:0,bottom:0,
                     height:"115%",width:"auto",maxWidth:"52%",
-                    objectFit:"cover",objectPosition:"50% 10%",zIndex:2,
-                    filter:"brightness(1.15) contrast(1.05)",
-                    maskImage:"linear-gradient(to left,black 45%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
+                    objectFit:"cover",objectPosition:"50% 10%",zIndex:3,
+                    filter:"brightness(1.2) contrast(1.05)",
+                    maskImage:"linear-gradient(to left,black 40%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
                     maskComposite:"intersect",
-                    WebkitMaskImage:"linear-gradient(to left,black 45%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
+                    WebkitMaskImage:"linear-gradient(to left,black 40%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
                     WebkitMaskComposite:"source-in"}}/>
               )}
 
-              {/* Texte — gauche */}
-              <div style={{position:"absolute",left:0,top:0,bottom:0,zIndex:3,
-                padding:isDesktop?"18px 24px":"14px 16px",
-                display:"flex",flexDirection:"column",justifyContent:"flex-start"}}>
+              {/* Texte — gauche, zIndex:4 */}
+              <div style={{position:"absolute",left:0,top:0,bottom:0,zIndex:4,
+                width:"58%",
+                padding:isDesktop?"16px 20px":"13px 15px",
+                display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
 
-                {/* Nom joueur — tout en haut */}
-                <div style={{marginBottom:"auto"}}>
-                  {displayFirst&&(
-                    <div style={{fontSize:isDesktop?15:13,fontWeight:500,
-                      color:"rgba(255,255,255,.6)",letterSpacing:.1,lineHeight:1.2}}>
+                {/* Nom + club — haut */}
+                <div>
+                  {!isTeamBet&&displayFirst&&(
+                    <div style={{fontSize:isDesktop?14:12,fontWeight:500,
+                      color:"rgba(255,255,255,.55)",lineHeight:1.2,marginBottom:1}}>
                       {displayFirst}
                     </div>
                   )}
-                  <div style={{fontSize:isDesktop?40:30,fontWeight:900,color:"#fff",
-                    letterSpacing:-.8,lineHeight:1,marginBottom:8}}>
+                  {/* Nom sur UNE seule ligne — taille auto */}
+                  <div style={{fontSize:isDesktop?36:26,fontWeight:900,color:"#fff",
+                    letterSpacing:-.6,lineHeight:1,marginBottom:6,
+                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {displayName}
                   </div>
-
-                  {/* Club */}
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{display:"flex",alignItems:"center",gap:5}}>
                     {teamLogoHeader&&(
                       <img src={teamLogoHeader} alt=""
-                        style={{width:18,height:18,objectFit:"contain",opacity:.9}}/>
+                        style={{width:16,height:16,objectFit:"contain",opacity:.85,flexShrink:0}}/>
                     )}
                     {(playerTeam||form.team)&&(
-                      <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.65)"}}>
+                      <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.6)",
+                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                         {playerTeam||form.team}
                       </span>
                     )}
                   </div>
-
-                  {/* Profit */}
-                  {profitStr&&(
-                    <div style={{marginTop:8,fontSize:isDesktop?26:20,fontWeight:900,
-                      color:profitColor,letterSpacing:-1,
-                      textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1}}>
-                      {profitStr}
-                    </div>
-                  )}
                 </div>
 
-                {/* Infos pari — ligne/cote/mise/tipster */}
-                <div style={{display:"flex",flexDirection:"column",gap:3,marginTop:10}}>
+                {/* Infos pari — bas */}
+                <div style={{display:"flex",flexDirection:"column",gap:2}}>
                   {betLine&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Pari</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F2F2F7"}}>{betLine}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Pari</span>
+                      <span style={{fontSize:11,fontWeight:700,color:"#F2F2F7",
+                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{betLine}</span>
                     </div>
                   )}
                   {form.odds&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Cote</span>
-                      <span style={{fontSize:13,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Cote</span>
+                      <span style={{fontSize:12,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
                     </div>
                   )}
                   {form.stake&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Mise</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)"}}>{form.stake}€</span>
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Mise</span>
+                      <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.7)"}}>{form.stake}€</span>
                     </div>
                   )}
                   {form.tipster&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
-                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Tips</span>
-                      <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{form.tipster}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Tips</span>
+                      <span style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{form.tipster}</span>
                     </div>
                   )}
                 </div>
