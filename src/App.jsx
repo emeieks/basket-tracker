@@ -1684,13 +1684,24 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
           {/* Texte à gauche */}
           <div style={{position:"absolute",left:16,top:16,right:"50%",zIndex:4,display:"flex",flexDirection:"column",gap:0}}>
-            {/* Statut badge */}
-            <div style={{display:"inline-flex",alignItems:"center",gap:5,
-              padding:"3px 10px",borderRadius:20,marginBottom:8,alignSelf:"flex-start",
-              background:`${statusColor}20`,border:`1px solid ${statusColor}50`}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:statusColor}}/>
-              <span style={{fontSize:10,fontWeight:700,color:statusColor,letterSpacing:.5}}>
-                {localBet.status==="pending"?"EN COURS":localBet.status==="won"?"GAGNÉ":localBet.status==="lost"?"PERDU":"VOID"}
+            {/* Statut badge + profit sur la même ligne */}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:5,
+                padding:"3px 10px",borderRadius:20,flexShrink:0,
+                background:`${statusColor}20`,border:`1px solid ${statusColor}50`}}>
+                <div style={{width:6,height:6,borderRadius:"50%",background:statusColor}}/>
+                <span style={{fontSize:10,fontWeight:700,color:statusColor,letterSpacing:.5}}>
+                  {localBet.status==="pending"?"EN COURS":localBet.status==="won"?"GAGNÉ":localBet.status==="lost"?"PERDU":"VOID"}
+                </span>
+              </div>
+              {/* Profit à côté du badge */}
+              <span style={{
+                fontFamily:"'Barlow Condensed',inherit",
+                fontSize:20,fontWeight:900,letterSpacing:-.3,
+                color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.4)",
+                textShadow:`0 0 18px ${profitNum>0?"rgba(0,230,118,.5)":profitNum<0?"rgba(248,113,113,.5)":"transparent"}`,
+              }}>
+                {profitNum>0?"+":""}{localBet.status==="pending"?"—":profitNum.toFixed(2)+"$"}
               </span>
             </div>
             {/* Nom */}
@@ -1723,17 +1734,6 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             </div>
           </div>
 
-          {/* Profit — bas droite pour ne pas couvrir la tête du joueur */}
-          <div style={{position:"absolute",bottom:14,right:14,zIndex:5,textAlign:"right"}}>
-            <div style={{
-              fontFamily:"'Barlow Condensed',inherit",
-              fontSize:26,fontWeight:900,letterSpacing:-.5,
-              color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.4)",
-              textShadow:`0 0 24px ${profitNum>0?"rgba(0,230,118,.5)":profitNum<0?"rgba(248,113,113,.5)":"transparent"}`,
-            }}>
-              {profitNum>0?"+":""}{localBet.status==="pending"?"—":profitNum.toFixed(2)+"$"}
-            </div>
-          </div>
         </div>
 
         {/* ── CORPS ── */}
@@ -2313,60 +2313,65 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                   )}
                 </div>
 
-                {/* Infos */}
+                {/* Infos — 2 lignes strictes */}
                 <div style={{flex:1,minWidth:0}}>
-                  {/* Ligne 1 : nom · logo ligue · description · badge Map */}
-                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:6,flexWrap:"wrap"}}>
-                    <span style={{fontSize:15,fontWeight:800,color:"#F2F2F7",letterSpacing:-.3}}>
+                  {/* Ligne 1 : nom · logo ligue · description */}
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5,
+                    overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+                    <span style={{fontSize:15,fontWeight:800,color:"#F2F2F7",letterSpacing:-.3,flexShrink:0}}>
                       {isTeamBet?(b.team||formatName(b.player)):formatName(b.player)}
                     </span>
                     {b.game&&getLeagueLogo(b.game)&&(
                       <img src={getLeagueLogo(b.game)} alt={b.game}
-                        style={{width:15,height:15,objectFit:"contain",opacity:.7,flexShrink:0}}/>
+                        style={{width:14,height:14,objectFit:"contain",opacity:.7,flexShrink:0}}/>
                     )}
                     {descClean&&(
-                      <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
+                      <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500,
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         · {descClean}
                       </span>
                     )}
                     {mapBadge&&(
-                      <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
+                      <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",
+                        background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",
+                        borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
                     )}
                   </div>
-                  {/* Ligne 2 : @odds · mise · bookmaker · tipster · profit */}
-                  <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
-                    <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>@{b.odds}</span>
-                    <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
-                    <span style={{fontSize:13,color:"rgba(255,255,255,.45)"}}>{b.stake}$</span>
-                    {bkLogo&&(
-                      <>
-                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
-                        <img src={bkLogo} alt={b.bookmaker}
-                          style={{width:17,height:17,objectFit:"contain",borderRadius:3,opacity:.85}}/>
-                      </>
-                    )}
-                    {!bkLogo&&b.bookmaker&&(
-                      <>
-                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
-                        <span style={{fontSize:13,color:"rgba(255,255,255,.35)"}}>{b.bookmaker}</span>
-                      </>
-                    )}
-                    {b.tipster&&(
-                      <>
-                        <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
-                        <span style={{fontSize:13,color:"rgba(255,255,255,.6)",fontWeight:700}}>{b.tipster}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Profit — à droite comme avant */}
-                <div style={{flexShrink:0,textAlign:"right",marginLeft:8}}>
-                  <div style={{
-                    fontSize:15,fontWeight:900,letterSpacing:-.5,
-                    color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
-                  }}>
-                    {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
+                  {/* Ligne 2 : @odds · mise · book · tipster  +  profit tout à droite */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:0,overflow:"hidden",minWidth:0}}>
+                      <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.65)",flexShrink:0}}>@{b.odds}</span>
+                      <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                      <span style={{fontSize:12,color:"rgba(255,255,255,.4)",flexShrink:0}}>{b.stake}$</span>
+                      {bkLogo&&(
+                        <>
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <img src={bkLogo} alt={b.bookmaker}
+                            style={{width:15,height:15,objectFit:"contain",borderRadius:3,opacity:.8,flexShrink:0}}/>
+                        </>
+                      )}
+                      {!bkLogo&&b.bookmaker&&(
+                        <>
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,.32)",flexShrink:0}}>{b.bookmaker}</span>
+                        </>
+                      )}
+                      {b.tipster&&(
+                        <>
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,.55)",fontWeight:700,flexShrink:0,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.tipster}</span>
+                        </>
+                      )}
+                    </div>
+                    {/* Profit — extrême droite de la ligne 2 */}
+                    <span style={{
+                      flexShrink:0,marginLeft:10,
+                      fontSize:14,fontWeight:900,letterSpacing:-.4,
+                      color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.28)",
+                    }}>
+                      {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
+                    </span>
                   </div>
                 </div>
               </div>
