@@ -356,9 +356,11 @@ img{image-rendering:auto;}
 .pick-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:20px;
   border:1px solid #252A34;background:#1C1F26;color:#C4C9D4;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s;}
 .pick-chip:hover{border-color:#3A404C;}
+.pick-chip:focus{outline:none;}.pick-chip:focus-visible{outline:2px solid #5B9DFF;outline-offset:2px;}
 .pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;}
 .pick-chip.logo.on{border-width:2px;}
 .pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
+.sentence input::-webkit-outer-spin-button,.sentence input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .sentence{display:flex;align-items:center;height:56px;background:#1C1F26;border:1px solid #252A34;border-radius:16px;overflow:hidden;}
 .sent-sel{height:100%;border:none;background:transparent;color:#F2F3F5;font-size:17px;font-weight:600;font-family:inherit;
   padding:0 26px 0 14px;appearance:none;-webkit-appearance:none;outline:none;cursor:pointer;
@@ -376,6 +378,8 @@ article:active{transform:scale(.985);}
 .fade-in{animation:fadeIn .22s ease both;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
+.row-select::-webkit-outer-spin-button,.row-select::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.row-select[type=number]{-moz-appearance:textfield;}
 .row-select option{background:#1C1F26;color:#F2F3F5;}
 
 /* ── CARDS — carrées, minimalistes ── */
@@ -1044,8 +1048,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             border:"1px solid "+C.line,background:`linear-gradient(135deg,${pc}40 0%,${C.card} 70%)`,
             padding:0,color:C.text,textAlign:"left",cursor:"pointer",display:"block"}}>
           {teamLogoHeader&&(
-            <img src={teamLogoHeader} alt="" style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",
-              width:170,height:170,objectFit:"contain",opacity:.14,pointerEvents:"none"}}/>
+            <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:10,top:"50%",transform:"translateY(-50%)",
+              width:isTeamBet?150:170,height:isTeamBet?150:170,objectFit:"contain",opacity:isTeamBet?1:.14,pointerEvents:"none",
+              filter:isTeamBet?"drop-shadow(0 8px 24px rgba(0,0,0,.45))":"none"}}/>
           )}
           {playerPhoto&&(
             <img src={playerPhoto} alt={form.player} style={{position:"absolute",right:0,bottom:0,height:"100%",
@@ -1060,12 +1065,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               {firstLine&&<>{firstLine}<br/></>}{secondLine}
             </span>
             <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
+              {isTeamBet&&(
+                <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>Équipe</span>
+              )}
               {!isTeamBet&&form.playerObj?.role&&(
                 <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>
                   {form.playerObj.role}
                 </span>
               )}
-              {teamName&&<MiniLogo src={teamLogoHeader} label={teamName} size={18}/>}
+              {teamName&&!isTeamBet&&<MiniLogo src={teamLogoHeader} label={teamName} size={18}/>}
               {!isTeamBet&&<span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>}
               {form.game&&<MiniLogo src={leagueLogo} label={form.game} size={18} round={false}/>}
             </span>
@@ -1078,75 +1086,88 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
         <div style={{marginTop:16}}>
         {/* ── PARI ÉQUIPE ── */}
-        {isTeamBet&&(
-          <>
-            <div className="form-group">
-              <label className="form-label">Type</label>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                {[
-                  {key:"moneyline",label:"Moneyline"},
-                  {key:"handicap", label:"Handicap"},
-                  {key:"total",    label:"Total match"},
-                  {key:"team_total",label:"Total équipe"},
-                  {key:"half",    label:"Mi-temps"},
-                ].map(t=>(
-                  <button key={t.key} onClick={()=>f("betType",t.key)}
-                    style={{padding:"9px 10px",borderRadius:10,cursor:"pointer",
-                      border:"1px solid "+(form.betType===t.key?`${pc}80`:"rgba(255,255,255,.07)"),
-                      background:form.betType===t.key?`${pc}22`:"rgba(255,255,255,.03)",
-                      color:form.betType===t.key?"#fff":"rgba(255,255,255,.3)",
-                      fontSize:12,fontWeight:700,textAlign:"center"}}>
-                    {t.label}
-                  </button>
+        {isTeamBet&&(()=>{
+          const types=[
+            {key:"moneyline",label:"Vainqueur"},
+            {key:"handicap",label:"Handicap"},
+            {key:"total",label:"Total match"},
+            {key:"team_total",label:"Total équipe"},
+            {key:"half",label:"1re mi-temps"},
+          ];
+          const needsOU=["total","team_total","half"].includes(form.betType);
+          const needsLine=form.betType!=="moneyline";
+          const leagueTeams=[...new Set(players.filter(p=>p.team&&p.team!==form.team&&(!form.game||p.game===form.game)).map(p=>p.team))].sort();
+          const oppLogo=form.opponent?getTeamLogo(form.opponent,players.find(p=>p.team===form.opponent)?.team_logo_url||null):null;
+          const lineTxt=form.line||"…";
+          const preview=form.betType==="moneyline"?form.team+" gagne"
+            :form.betType==="handicap"?form.team+" "+(String(form.line).startsWith("-")||!form.line?"":"+")+lineTxt
+            :form.betType==="total"?(form.ou||"Over")+" "+lineTxt+" pts (match)"
+            :form.betType==="team_total"?form.team+" "+(form.ou||"Over")+" "+lineTxt+" pts"
+            :(form.ou||"Over")+" "+lineTxt+" pts (1re mi-temps)";
+          const teamBadge=(logo,name,size=40)=>(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,flex:1,minWidth:0}}>
+              <div style={{width:size+16,height:size+16,borderRadius:16,background:C.chip,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {logo?<img src={logo} alt="" style={{width:size,height:size,objectFit:"contain"}}/>
+                  :<span style={{color:C.sub,fontSize:13,fontWeight:700}}>{(name||"?").slice(0,3).toUpperCase()}</span>}
+              </div>
+              <span style={{fontSize:13,fontWeight:600,color:name?C.text:C.dim,textAlign:"center",maxWidth:"100%",
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name||"Adversaire"}</span>
+            </div>
+          );
+          return(
+            <>
+              {/* Affiche du match */}
+              <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:18,padding:"16px 14px",display:"flex",alignItems:"center",gap:8}}>
+                {teamBadge(teamLogoHeader,form.team)}
+                <span style={{fontSize:13,fontWeight:700,color:C.dim,letterSpacing:1}}>VS</span>
+                {teamBadge(oppLogo,form.opponent||null)}
+              </div>
+              <select className="fld" aria-label="Adversaire (optionnel)" value={form.opponent} onChange={e=>f("opponent",e.target.value)}
+                style={{marginTop:8,color:form.opponent?C.text:C.sub,fontWeight:500}}>
+                <option value="">Choisir l'adversaire (optionnel)</option>
+                {leagueTeams.map(tn=><option key={tn} value={tn}>{tn}</option>)}
+              </select>
+
+              <div className="pick-head"><span>Type de pari</span></div>
+              <div className="chip-row">
+                {types.map(ty=>(
+                  <button key={ty.key} type="button" className={"pick-chip"+(form.betType===ty.key?" on":"")}
+                    onClick={()=>f("betType",ty.key)}>{ty.label}</button>
                 ))}
               </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">vs Adversaire (optionnel)</label>
-              <input className="form-input" placeholder="Nom de l'adversaire"
-                value={form.opponent} onChange={e=>f("opponent",e.target.value)}
-                style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
-            </div>
-            {["handicap","total","team_total","half"].includes(form.betType)&&(
-              <div className="form-group">
-                <label className="form-label">{form.betType==="handicap"?"Handicap":"Ligne"}</label>
-                <div style={{display:"flex",gap:10}}>
-                  {["total","team_total","half"].includes(form.betType)&&(
-                    <div className="segment" style={{flex:"0 0 auto",minWidth:120,
-                      background:`${pc}18`}}>
-                      {["Over","Under"].map(o=>(
-                        <button key={o}
-                          onClick={()=>f("ou",o)}
-                          style={{flex:1,padding:9,border:"none",borderRadius:6,cursor:"pointer",
-                            background:form.ou===o?pc:"transparent",
-                            color:form.ou===o?"#fff":"rgba(255,255,255,.35)",
-                            fontSize:13,fontWeight:600,fontFamily:"inherit",transition:"all .12s"}}>
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <input className="form-input" type="number" step="0.5"
-                    placeholder={form.betType==="handicap"?"-5.5":"220.5"}
-                    value={form.line} onChange={e=>f("line",e.target.value)}
-                    style={{flex:1,background:`${pc}14`,borderColor:`${pc}40`}}/>
+
+              {needsLine&&(
+                <>
+                  <div className="pick-head"><span>{form.betType==="handicap"?"Handicap":"Ligne"}</span></div>
+                  <div className="sentence">
+                    {needsOU&&(
+                      <select className="sent-sel" aria-label="Over ou Under" value={form.ou||"Over"} onChange={e=>f("ou",e.target.value)}
+                        style={{color:(form.ou||"Over")==="Over"?C.green:C.red}}>
+                        <option>Over</option><option>Under</option>
+                      </select>
+                    )}
+                    <input type="number" step="0.5" inputMode="decimal" aria-label="Ligne"
+                      placeholder={form.betType==="handicap"?"-5.5":form.betType==="team_total"?"112.5":"220.5"}
+                      value={form.line} onChange={e=>f("line",e.target.value)}
+                      style={{flex:1,minWidth:0,height:"100%",border:"none",borderLeft:needsOU?"1px solid "+C.line:"none",background:"transparent",
+                        color:C.text,fontSize:17,fontWeight:600,padding:"0 14px",outline:"none",fontFamily:"inherit"}}/>
+                    <span style={{padding:"0 14px",color:C.sub,fontSize:15}}>{form.betType==="handicap"?"pts":"points"}</span>
+                  </div>
+                </>
+              )}
+
+              {/* Aperçu du pari */}
+              <div style={{marginTop:14,display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:14,
+                background:pc+"1F",border:"1px solid "+pc+"55"}}>
+                {teamLogoHeader&&<img src={teamLogoHeader} alt="" style={{width:28,height:28,objectFit:"contain",flexShrink:0}}/>}
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:16,fontWeight:600}}>{preview}</div>
+                  {form.opponent&&<div style={{fontSize:13,color:C.sub,marginTop:1}}>vs {form.opponent}</div>}
                 </div>
               </div>
-            )}
-            <div style={{background:`${pc}14`,border:`1px solid ${pc}35`,
-              borderRadius:12,padding:"10px 14px",marginBottom:14}}>
-              <div style={{fontSize:12,fontWeight:700,color:pc,marginBottom:3}}>Pari</div>
-              <div style={{fontSize:14,fontWeight:600,color:"#F2F2F7"}}>
-                {form.betType==="moneyline"&&form.team+" gagne"}
-                {form.betType==="handicap"&&form.team+" "+form.line}
-                {form.betType==="total"&&(form.ou||"Over")+" "+form.line+" pts (match)"}
-                {form.betType==="team_total"&&form.team+" "+(form.ou||"Over")+" "+form.line+" pts"}
-                {form.betType==="half"&&(form.ou||"Over")+" "+form.line+" (mi-temps)"}
-              </div>
-              {form.opponent&&<div style={{fontSize:11,color:"rgba(255,255,255,.28)",marginTop:2}}>vs {form.opponent}</div>}
-            </div>
-          </>
-        )}
+            </>
+          );
+        })()}
         {/* ── PARI JOUEUR : Over/Under · Ligne · Stat ── */}
         {!isTeamBet&&(
           <div className="sentence">
@@ -1432,214 +1453,155 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
     onClose();
   }
 
-  const statusColor=localBet.status==="won"?"#4ADE80":localBet.status==="lost"?"#FF8A80":localBet.status==="void"?"rgba(255,255,255,.3)":"rgba(255,255,255,.5)";
-  const bkLogo=bkPhotos[localBet.bookmaker];
+  const st=localBet.status;
+  const statusColor=st==="won"?C.green:st==="lost"?C.red:st==="void"?C.sub:C.blue;
+  const statusLabel=st==="pending"?"En cours":st==="won"?"Gagné":st==="lost"?"Perdu":"Void";
+  const lum=h=>{const n=parseInt((h||"#000").slice(1),16);const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+  const accent=!tc?C.blue:(lum(tc.p)<.03&&tc.s?tc.s:tc.p);
+  const accentFg=lum(accent)>.35?"#0C1424":"#FFFFFF";
+  const stakeN=parseFloat(localBet.stake)||0,oddsN=parseFloat(localBet.odds)||0;
+  const bigValue=st==="pending"?"→ "+eur(stakeN*oddsN):st==="void"?eur(stakeN):money(profitNum);
+  const bigLabel=st==="pending"?"Gain potentiel":st==="void"?"Remboursé":"Résultat";
+  const bigColor=st==="pending"?C.blue:st==="void"?C.sub:pColor(profitNum);
+  const role=!isTeamBet?pData?.role:null;
+  const teamName=localBet.team||pData?.team||"";
+  const d=localBet.created_at?new Date(localBet.created_at):null;
+  const pad=n=>String(n).padStart(2,"0");
+  const localDT=d?d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()):"";
+  const row={display:"flex",alignItems:"center",gap:10,minHeight:52,padding:"0 16px",borderBottom:"1px solid "+C.line};
+  const lab={fontSize:15,color:C.sub,width:92,flexShrink:0};
+  const numInput=(k)=>(
+    <input type="number" inputMode="decimal" className="row-select" defaultValue={localBet[k]??""} key={k+String(localBet[k])}
+      onBlur={e=>{
+        let v=e.target.value.trim();
+        if(k==="odds"){const n=parseFloat(v.replace(",","."));if(!isNaN(n))v=(n>=100?n/100:n).toFixed(2);}
+        if(v!==String(localBet[k]??""))setField(k,v);
+      }}
+      onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}}
+      style={{fontWeight:600,color:dirty[k]!==undefined?C.green:C.text}}/>
+  );
 
   return(
-    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget){setDropdown(null);onClose();}}}>
-      <div className="modal-sheet" style={{padding:0,overflow:"hidden",borderRadius:"24px 24px 0 0"}}
-        onClick={()=>dropdown&&setDropdown(null)}>
-        <div className="modal-handle" style={{margin:"12px auto 0"}}/>
-
-        {/* ── HERO HEADER ── */}
-        <div style={{
-          position:"relative",height:200,overflow:"hidden",flexShrink:0,
-          background:pc?`linear-gradient(135deg,${pc}DD 0%,${pc}55 50%,#0D0D12 100%)`:"#1C1C22",
-        }}>
-          {/* Logo club en fond — watermark discret */}
-          {resolvedTeamLogo&&(
-            <img src={resolvedTeamLogo} alt="" style={{
-              position:"absolute",right:-30,top:"50%",transform:"translateY(-50%)",
-              width:220,height:220,objectFit:"contain",
-              opacity:.06,filter:"blur(2px) saturate(0)",
-              pointerEvents:"none",zIndex:1,
-            }}/>
-          )}
-          {/* Overlay gauche */}
-          <div style={{position:"absolute",inset:0,zIndex:2,
-            background:"linear-gradient(to right,rgba(0,0,0,.75) 0%,rgba(0,0,0,.15) 52%,transparent 100%)"}}/>
-          {/* Photo joueur — masque à gauche pour libérer le texte */}
-          {photo&&(
-            <img src={photo} alt={rawName} style={{
-              position:"absolute",right:0,bottom:0,
-              height:"125%",width:"auto",maxWidth:"48%",
-              objectFit:"cover",objectPosition:"50% 8%",zIndex:3,
-              filter:"brightness(1.1) contrast(1.05)",
-              maskImage:"linear-gradient(to left,black 50%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 82%,transparent 100%)",
-              maskComposite:"intersect",
-              WebkitMaskImage:"linear-gradient(to left,black 50%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 82%,transparent 100%)",
-              WebkitMaskComposite:"source-in",
-            }}/>
-          )}
-
-          {/* Texte à gauche */}
-          <div style={{position:"absolute",left:16,top:16,right:"50%",zIndex:4,display:"flex",flexDirection:"column",gap:0}}>
-            {/* Statut badge + profit sur la même ligne */}
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,
-                padding:"3px 10px",borderRadius:20,flexShrink:0,
-                background:`${statusColor}20`,border:`1px solid ${statusColor}50`}}>
-                <div style={{width:6,height:6,borderRadius:"50%",background:statusColor}}/>
-                <span style={{fontSize:10,fontWeight:700,color:statusColor,letterSpacing:.5}}>
-                  {localBet.status==="pending"?"EN COURS":localBet.status==="won"?"GAGNÉ":localBet.status==="lost"?"PERDU":"VOID"}
-                </span>
-              </div>
-              {/* Profit à côté du badge */}
-              <span style={{
-                
-                fontSize:20,fontWeight:900,letterSpacing:-.3,
-                color:profitNum>0?"#4ADE80":profitNum<0?"#FF8A80":"rgba(255,255,255,.4)",
-                textShadow:`0 0 18px ${profitNum>0?"rgba(74,222,128,.5)":profitNum<0?"rgba(248,113,113,.5)":"transparent"}`,
-              }}>
-                {profitNum>0?"+":""}{localBet.status==="pending"?"—":eur(profitNum)}
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet" style={{padding:0,borderRadius:"24px 24px 0 0",maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+        {/* ── En-tête joueur ── */}
+        <div style={{position:"relative",height:210,flexShrink:0,overflow:"hidden",borderRadius:"24px 24px 0 0",
+          background:`linear-gradient(135deg,${pc}66 0%,${C.card} 72%)`}}>
+          {resolvedTeamLogo&&<img src={resolvedTeamLogo} alt="" style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",
+            width:180,height:180,objectFit:"contain",opacity:.12,pointerEvents:"none"}}/>}
+          {photo&&<img src={photo} alt={rawName} style={{position:"absolute",right:0,bottom:0,height:"94%",maxWidth:"52%",
+            objectFit:"contain",objectPosition:"50% 100%"}}/>}
+          <div className="modal-handle" style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",margin:0}}/>
+          <button type="button" aria-label="Fermer" onClick={onClose} className="press"
+            style={{position:"absolute",top:14,right:14,width:34,height:34,borderRadius:17,border:"none",zIndex:3,
+              background:"rgba(0,0,0,.35)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+          <div style={{position:"absolute",left:18,top:26,bottom:18,right:"46%",display:"flex",flexDirection:"column",gap:6,zIndex:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"3px 10px",borderRadius:12,
+                background:statusColor+"22",color:statusColor,fontSize:12,fontWeight:600}}>
+                <span style={{width:6,height:6,borderRadius:3,background:statusColor}}/>{statusLabel}
               </span>
+              {d&&<span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</span>}
             </div>
-            {/* Nom */}
-            <div style={{fontSize:26,fontWeight:900,
-              color:"#FFF",letterSpacing:-.3,lineHeight:1.1,textTransform:"uppercase",
-              textShadow:"0 2px 10px rgba(0,0,0,.7)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {nameFormatted}
+            <div style={{fontSize:26,fontWeight:700,letterSpacing:-.6,lineHeight:1.08,marginTop:2}}>{nameFormatted}</div>
+            <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
+              {role&&<span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700}}>{role}</span>}
+              {teamName&&!isTeamBet&&<MiniLogo src={resolvedTeamLogo} label={teamName} size={16}/>}
+              {!isTeamBet&&<span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>}
+              {localBet.game&&<MiniLogo src={getLeagueLogo(localBet.game)} label={localBet.game} size={16} round={false}/>}
             </div>
-            {/* Description */}
-            <div style={{fontSize:12,color:"rgba(255,255,255,.6)",marginTop:5,fontWeight:500,lineHeight:1.3}}>
-              {localBet.description||"—"}
-            </div>
-            {/* Ligue */}
-            {localBet.game&&(
-              <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6}}>
-                {getLeagueLogo(localBet.game)&&<img src={getLeagueLogo(localBet.game)} alt=""
-                  style={{width:14,height:14,objectFit:"contain",opacity:.9}}/>}
-                <span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:600,letterSpacing:.3}}>{localBet.game}</span>
-              </div>
-            )}
-            {/* Infos compactes dans le header */}
-            <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,flexWrap:"wrap"}}>
-              <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,.9)"}}>@{localBet.odds}</span>
-              <span style={{color:"rgba(255,255,255,.25)"}}>·</span>
-              <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{eur(localBet.stake)}</span>
-              {bkLogo&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
-                <img src={bkLogo} alt="" style={{height:14,objectFit:"contain",opacity:.85}}/></>}
-              {localBet.tipster&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
-                <span style={{fontSize:12,color:"rgba(255,255,255,.6)",fontWeight:600}}>{localBet.tipster}</span></>}
+            <div style={{marginTop:"auto"}}>
+              <div style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{bigLabel}</div>
+              <div style={{fontSize:26,fontWeight:700,letterSpacing:-.5,color:bigColor}}>{bigValue}</div>
             </div>
           </div>
-
         </div>
 
-        {/* ── CORPS ── */}
-        <div style={{overflowY:"auto",maxHeight:"calc(90vh - 200px)"}}
-          onClick={e=>e.stopPropagation()}>
-
-          {/* 5 colonnes éditables */}
-          <div style={{display:"flex",gap:1,background:"rgba(255,255,255,.04)",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-            <EditCell fieldKey="odds"      label="COTE"    value={localBet.odds}      type="number"
-              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
-              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
-            <EditCell fieldKey="stake"     label="MISE"    value={localBet.stake}     suffix="€" type="number"
-              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
-              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
-            <EditCell fieldKey="bookmaker" label="BOOK"    value={localBet.bookmaker}
-              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
-              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
-            <EditCell fieldKey="tipster"   label="TIPSTER" value={localBet.tipster}
-              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
-              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
-            <EditCell fieldKey="game"      label="LIGUE"   value={localBet.game}
-              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
-              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
+        {/* ── Corps ── */}
+        <div style={{overflowY:"auto",padding:"16px 20px 0",flex:1}}>
+          <div style={{background:C.inner,border:"1px solid "+C.line,borderRadius:14,padding:"12px 14px",fontSize:16,fontWeight:600}}>
+            {localBet.description||"—"}
           </div>
 
-          <div style={{padding:"14px 14px 24px"}}>
-            {/* Bouton Sauvegarder — visible seulement si modif */}
-            {hasDirty&&(
-              <button onClick={saveAll} disabled={saving}
-                style={{
-                  width:"100%",padding:"14px",borderRadius:12,border:"none",
-                  background:"linear-gradient(180deg,#4ADE80 0%,#3CC46E 100%)",
-                  color:"#001A0A",fontSize:15,fontWeight:800,
-                  letterSpacing:.3,
-                  cursor:"pointer",marginBottom:12,
-                  boxShadow:"0 4px 20px rgba(74,222,128,.35)",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-                }}>
-                {saving?"Enregistrement…":"💾  Sauvegarder les modifications"}
-              </button>
-            )}
-            {saveAnim&&!hasDirty&&(
-              <div style={{textAlign:"center",color:"#4ADE80",fontSize:13,fontWeight:700,marginBottom:12}}>
-                ✓ Sauvegardé
-              </div>
-            )}
+          <div className="pick-head"><span>Statut</span></div>
+          <div className="segment">
+            {[{k:"pending",l:"En cours"},{k:"won",l:"Gagné"},{k:"lost",l:"Perdu"},{k:"void",l:"Void"}].map(({k,l})=>{
+              const on=st===k;
+              const col=k==="won"?C.green:k==="lost"?C.red:C.text;
+              return(
+                <button key={k} type="button" className={"seg-btn"+(on?" active":"")} disabled={saving}
+                  onClick={()=>!on&&changeStatus(k)} style={on?{color:col}:undefined}>{l}</button>
+              );
+            })}
+          </div>
 
-            {/* Changer statut */}
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.28)",
-                letterSpacing:.8,marginBottom:8,textTransform:"uppercase"}}>Changer le statut</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-                {[{k:"pending",l:"En cours"},{k:"won",l:"Gagné"},{k:"lost",l:"Perdu"},{k:"void",l:"Void"}].map(({k,l})=>{
-                  const active=localBet.status===k;
-                  const col=k==="won"?"#4ADE80":k==="lost"?"#FF8A80":k==="pending"?"rgba(255,255,255,.6)":"rgba(255,255,255,.3)";
-                  return(
-                    <button key={k} onClick={()=>!active&&changeStatus(k)} disabled={saving||active}
-                      style={{padding:"10px 4px",borderRadius:10,fontSize:12,fontWeight:700,
-                        border:`1px solid ${active?col+"88":"rgba(255,255,255,.08)"}`,
-                        background:active?`${col}18`:"transparent",color:active?col:"rgba(255,255,255,.35)",
-                        cursor:active?"default":"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                      {l}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="pick-head"><span>Détails</span>{dirty&&hasDirty&&<span style={{fontSize:12,color:C.green}}>Modifié</span>}</div>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+            <div style={row}><span style={lab}>Cote</span>{numInput("odds")}</div>
+            <div style={row}><span style={lab}>Mise (€)</span>{numInput("stake")}</div>
+            <div style={row}>
+              <span style={lab}>Bookmaker</span>
+              {localBet.bookmaker&&<MiniLogo src={bkPhotos[localBet.bookmaker]} label={localBet.bookmaker} size={20} round={false}/>}
+              <select className="row-select" value={localBet.bookmaker||""} onChange={e=>setField("bookmaker",e.target.value)}
+                style={{color:dirty.bookmaker!==undefined?C.green:C.text}}>
+                <option value="">Aucun</option>
+                {bookmakerList.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}
+              </select>
             </div>
-
-            {/* Date éditable */}
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.28)",
-                letterSpacing:.8,marginBottom:8,textTransform:"uppercase"}}>Date du pari</div>
-              <input
-                type="datetime-local"
-                value={localBet.created_at?localBet.created_at.slice(0,16):""}
-                onChange={e=>{
-                  const iso=e.target.value?new Date(e.target.value).toISOString():"";
-                  setField("created_at",iso);
-                }}
-                style={{
-                  width:"100%",padding:"11px 14px",borderRadius:12,
-                  border:`1px solid ${dirty.created_at?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
-                  background:"#1C1C22",color:"#F2F2F7",fontSize:13,fontWeight:500,
-                  fontFamily:"inherit",outline:"none",
-                  colorScheme:"dark",
-                }}
-              />
+            <div style={row}>
+              <span style={lab}>Tipster</span>
+              <select className="row-select" value={localBet.tipster||""} onChange={e=>setField("tipster",e.target.value)}
+                style={{color:dirty.tipster!==undefined?C.green:C.text}}>
+                <option value="">Aucun</option>
+                {tipsterList.map(tp=><option key={tp.id||tp.name} value={tp.name}>{tp.name}</option>)}
+              </select>
             </div>
+            <div style={row}>
+              <span style={lab}>Ligue</span>
+              {localBet.game&&<MiniLogo src={getLeagueLogo(localBet.game)} label={localBet.game} size={20} round={false}/>}
+              <select className="row-select" value={localBet.game||""} onChange={e=>setField("game",e.target.value)}
+                style={{color:dirty.game!==undefined?C.green:C.text}}>
+                <option value="">—</option>
+                {leagueList.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}
+              </select>
+            </div>
+            <div style={{...row,borderBottom:"none"}}>
+              <span style={lab}>Date</span>
+              <input type="datetime-local" className="row-select" value={localDT} style={{colorScheme:"dark",color:dirty.created_at!==undefined?C.green:C.text}}
+                onChange={e=>setField("created_at",e.target.value?new Date(e.target.value).toISOString():"")}/>
+            </div>
+          </div>
 
-            {/* Actions */}
-            {/* Dupliquer */}
-            <button onClick={async()=>{
-              const{id,...copy}=localBet;
-              copy.status="pending";
-              copy.profit=0;
-              copy.created_at=new Date().toISOString();
-              await insertBet(copy);
-              onUpdate();
-              onClose();
-            }} style={{
-              width:"100%",marginBottom:8,padding:"13px 16px",borderRadius:12,
-              border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",
-              color:"rgba(255,255,255,.75)",fontSize:14,fontWeight:600,
-              cursor:"pointer",fontFamily:"inherit",
-              display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-            }}>
-              {/* Icône dupliquer — deux pages avec coin plié */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
-                <rect x="8" y="2" width="12" height="14" rx="2"/>
-                <path d="M16 2v4h4"/>
-              </svg>
-              Dupliquer ce pari
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:16}}>
+            <button type="button" className="btn btn-secondary press" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
+              onClick={async()=>{
+                const{id,...copy}=localBet;
+                await insertBet({...copy,id:uuid(),status:"pending",profit:0,created_at:new Date().toISOString()});
+                onUpdate();onClose();
+              }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+              Dupliquer
             </button>
-            <button className="btn btn-danger" onClick={remove} style={{marginBottom:8}}>Supprimer</button>
-            <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
+            <button type="button" className="btn btn-danger press" onClick={remove} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+              Supprimer
+            </button>
+          </div>
+
+          {/* Enregistrer : collé en bas, visible seulement s'il y a des modifications */}
+          <div style={{position:"sticky",bottom:0,margin:"0 -20px",padding:"14px 20px calc(16px + env(safe-area-inset-bottom))",
+            background:"linear-gradient(to top,#1A1D23 70%,rgba(26,29,35,0))"}}>
+            {hasDirty?(
+              <button type="button" onClick={saveAll} disabled={saving} className="press"
+                style={{width:"100%",height:54,borderRadius:16,border:"none",cursor:"pointer",background:accent,color:accentFg,
+                  fontSize:17,fontWeight:600,boxShadow:"0 6px 24px "+accent+"40"}}>
+                {saving?"Enregistrement…":"Enregistrer les modifications"}
+              </button>
+            ):saveAnim?(
+              <div style={{height:54,display:"flex",alignItems:"center",justifyContent:"center",color:C.green,fontSize:15,fontWeight:600}}>✓ Enregistré</div>
+            ):null}
           </div>
         </div>
       </div>
