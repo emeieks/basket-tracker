@@ -1226,7 +1226,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             return(
               <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
                 onClick={()=>f("bookmaker",on?"":bk)}>
-                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
+                <LogoTile src={bkPhotos[bk]} label={bk} size={30} fill/>
               </button>
             );
           })}
@@ -1634,6 +1634,21 @@ function MiniLogo({src,label,size=16,round=true}){
   );
 }
 
+// Tuile logo uniforme (bookmaker : icône pleine ; ligue : logo centré)
+function LogoTile({src,label,size=22,fill=false}){
+  const[err,setErr]=useState(false);
+  return(
+    <span title={label} style={{width:size,height:size,borderRadius:Math.round(size*.28),overflow:"hidden",flexShrink:0,
+      display:"inline-flex",alignItems:"center",justifyContent:"center",background:"#262B35",
+      boxShadow:"inset 0 0 0 1px rgba(255,255,255,.09)"}}>
+      {src&&!err
+        ?<img src={src} alt={label||""} onError={()=>setErr(true)}
+            style={fill?{width:"100%",height:"100%",objectFit:"cover"}:{width:"72%",height:"72%",objectFit:"contain"}}/>
+        :<span style={{fontSize:Math.round(size*.36),fontWeight:700,color:"#C4C9D4"}}>{(label||"?").slice(0,2).toUpperCase()}</span>}
+    </span>
+  );
+}
+
 // Photo ronde du joueur : buste entier, fond couleur du club (plus doux qu'un gros plan)
 function PlayerFace({src,name,size=46,team=null}){
   const[err,setErr]=useState(false);
@@ -1878,18 +1893,18 @@ function BetSlip({b,players,bkPhotos,onClick}){
         )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,height:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,fontSize:15,fontWeight:600,lineHeight:"20px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {lastName} · {b.description}
           </span>
           <span style={{flexShrink:0,fontSize:15,fontWeight:600,lineHeight:"20px",color:resultCol}}>{result}</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10,height:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:7,fontSize:13,lineHeight:"20px",color:C.sub,overflow:"hidden"}}>
             {[
-              b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={18} round={false}/>,
+              b.bookmaker&&<LogoTile key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={22} fill/>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
-              b.game&&<MiniLogo key="l" src={leagueLogo} label={b.game} size={18} round={false}/>,
+              b.game&&<LogoTile key="l" src={leagueLogo} label={b.game} size={22}/>,
             ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{width:3,height:3,borderRadius:2,background:"#8B92A0",flexShrink:0}}/>{el}</React.Fragment>))}
           </span>
           <span style={{flexShrink:0,fontSize:13,lineHeight:"18px",color:C.sub}}>@{String(b.odds).replace(".",",")} · {eur(stake,0)}</span>
