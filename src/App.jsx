@@ -1156,20 +1156,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                       </span>
                     )}
                     {/* Logo ligue après le nom du club */}
-                    {form.league&&(
-                      <img
-                        src={`https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/${
-                          form.league==="NBA"?"nba":
-                          form.league==="NFL"?"nfl":
-                          form.league==="MLB"?"mlb":
-                          form.league==="NHL"?"nhl":
-                          form.league.toLowerCase()
-                        }.png&w=40&h=40&transparent=true`}
-                        alt={form.league}
-                        style={{width:16,height:16,objectFit:"contain",opacity:.7,flexShrink:0,
-                          filter:"brightness(10)"}}
-                        onError={e=>e.target.style.display="none"}
-                      />
+                    {form.game&&getLeagueLogo(form.game)&&(
+                      <img src={getLeagueLogo(form.game)} alt={form.game}
+                        style={{width:16,height:16,objectFit:"contain",opacity:.85,flexShrink:0}}/>
+                    )}
+                    {form.game&&!getLeagueLogo(form.game)&&(
+                      <span style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.45)"}}>{form.game}</span>
                     )}
                   </div>
                 </div>
@@ -1331,7 +1323,16 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div style={{flex:1}}>
             <label className="form-label">Cote</label>
             <input className="form-input" type="number" step="0.01" placeholder="1.85"
-              value={form.odds} onChange={e=>f("odds",e.target.value)}
+              value={form.odds}
+              onChange={e=>f("odds",e.target.value)}
+              onBlur={e=>{
+                const raw=e.target.value.replace(",",".");
+                const n=parseFloat(raw);
+                if(!isNaN(n)&&n>=100){
+                  // 185 → 1.85, 200 → 2.00, etc.
+                  f("odds",(n/100).toFixed(2));
+                }
+              }}
               style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
           </div>
           <div style={{flex:1}}>
