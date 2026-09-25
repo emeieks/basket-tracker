@@ -1071,7 +1071,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const secondLine=isTeamBet?form.team:nameParts.slice(1).join(" ")||nameParts[0]||"";
   const stakeN=parseFloat(String(form.stake).replace(",","."))||0;
   const oddsN=parseFloat(String(form.odds).replace(",","."))||0;
-  const potential=stakeN&&oddsN?(stakeN*oddsN).toFixed(2)+"$":"—";
+  const potential=stakeN&&oddsN?(stakeN*oddsN).toFixed(2)+"€":"—";
   const lockBtn=(on,toggle,label)=>(
     <button type="button" onClick={toggle} aria-label={label} title={on?"Verrouillé":"Verrouiller"}
       style={{width:44,height:44,border:"none",background:"transparent",cursor:"pointer",
@@ -1222,7 +1222,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 if(!isNaN(n)&&n>=100)f("odds",(n/100).toFixed(2));
               }}/>
           </label>
-          <label className="fld-box">Mise ($)
+          <label className="fld-box">Mise (€)
             <input type="number" inputMode="decimal" placeholder="100" value={form.stake}
               onChange={e=>f("stake",e.target.value)}/>
           </label>
@@ -1235,7 +1235,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 style={{height:40,borderRadius:10,border:"none",cursor:"pointer",
                   background:active?C.blue:C.card,color:active?"#0C1424":C.sub,
                   fontSize:12,fontWeight:600,lineHeight:1.2}}>
-                {pct}<br/><span style={{fontSize:11,opacity:.8}}>{val}$</span>
+                {pct}<br/><span style={{fontSize:11,opacity:.8}}>{val}€</span>
               </button>
             );
           })}
@@ -1531,7 +1531,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 color:profitNum>0?"#4ADE80":profitNum<0?"#FF8A80":"rgba(255,255,255,.4)",
                 textShadow:`0 0 18px ${profitNum>0?"rgba(74,222,128,.5)":profitNum<0?"rgba(248,113,113,.5)":"transparent"}`,
               }}>
-                {profitNum>0?"+":""}{localBet.status==="pending"?"—":profitNum.toFixed(2)+"$"}
+                {profitNum>0?"+":""}{localBet.status==="pending"?"—":profitNum.toFixed(2)+"€"}
               </span>
             </div>
             {/* Nom */}
@@ -1556,7 +1556,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,flexWrap:"wrap"}}>
               <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,.9)"}}>@{localBet.odds}</span>
               <span style={{color:"rgba(255,255,255,.25)"}}>·</span>
-              <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{localBet.stake}$</span>
+              <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{localBet.stake}€</span>
               {bkLogo&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
                 <img src={bkLogo} alt="" style={{height:14,objectFit:"contain",opacity:.85}}/></>}
               {localBet.tipster&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
@@ -1575,7 +1575,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <EditCell fieldKey="odds"      label="COTE"    value={localBet.odds}      type="number"
               dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
               bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
-            <EditCell fieldKey="stake"     label="MISE"    value={localBet.stake}     suffix="$" type="number"
+            <EditCell fieldKey="stake"     label="MISE"    value={localBet.stake}     suffix="€" type="number"
               dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
               bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
             <EditCell fieldKey="bookmaker" label="BOOK"    value={localBet.bookmaker}
@@ -1694,7 +1694,7 @@ const C={
   text:"#F2F3F5",sub:"#8B92A0",dim:"#6B7280",blue:"#5B9DFF",
   green:"#4ADE80",red:"#FF8A80",greenBorder:"#2F8F5B",redBorder:"#A8474D",
 };
-const money=(v,dec=2)=>(v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(dec)+"$";
+const money=(v,dec=2)=>(v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(dec)+"€";
 const pColor=v=>v>0?C.green:v<0?C.red:C.sub;
 
 // Petit logo (club / ligue / bookmaker) avec repli sur initiales
@@ -1786,11 +1786,18 @@ function BankrollChart({bets}){
   const minV=Math.min(0,...pts.map(p=>p.v)),maxV=Math.max(0,...pts.map(p=>p.v));
   const rangeV=maxV-minV||1;
   const minT=pts[0].t,maxT=pts[pts.length-1].t,rangeT=maxT-minT||1;
-  const sx=t=>PAD.left+((t-minT)/rangeT)*inner.w;
   const sy=v=>PAD.top+inner.h-((v-minV)/rangeV)*inner.h;
-  // Courbe en escalier
-  let d="M"+sx(pts[0].t).toFixed(1)+","+sy(pts[0].v).toFixed(1);
-  for(let i=1;i<pts.length;i++)d+=" H"+sx(pts[i].t).toFixed(1)+" V"+sy(pts[i].v).toFixed(1);
+  // Courbe lissée (points espacés régulièrement, un par pari réglé)
+  const P=pts.map((p,i)=>[PAD.left+(i/(pts.length-1))*inner.w,sy(p.v)]);
+  let d="M"+P[0][0].toFixed(1)+","+P[0][1].toFixed(1);
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||p2;
+    const lo=Math.min(p1[1],p2[1]),hi=Math.max(p1[1],p2[1]),cl=y=>Math.max(lo,Math.min(hi,y));
+    const c1=[p1[0]+(p2[0]-p0[0])/6,cl(p1[1]+(p2[1]-p0[1])/6)];
+    const c2=[p2[0]-(p3[0]-p1[0])/6,cl(p2[1]-(p3[1]-p1[1])/6)];
+    d+=` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  const area=d+` L${P[P.length-1][0].toFixed(1)},${PAD.top+inner.h} L${P[0][0].toFixed(1)},${PAD.top+inner.h} Z`;
   const last=pts[pts.length-1];
   const col=last.v>=0?C.green:C.red;
   const fmtM=t=>new Date(t).toLocaleDateString("fr-FR",rangeT<60*86400000?{day:"numeric",month:"short"}:{month:"short",year:"2-digit"}).replace(".","");
@@ -1802,7 +1809,12 @@ function BankrollChart({bets}){
             stroke="#22262F" strokeWidth="1"/>
         ))}
         {minV<0&&maxV>0&&<line x1={PAD.left} x2={W-PAD.right} y1={sy(0)} y2={sy(0)} stroke="#3A404C" strokeDasharray="2 4"/>}
-        <path d={d} fill="none" stroke={col} strokeWidth="2" strokeLinejoin="round"/>
+        <defs><linearGradient id="bkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={col} stopOpacity=".22"/><stop offset="100%" stopColor={col} stopOpacity="0"/>
+        </linearGradient></defs>
+        <path d={area} fill="url(#bkFill)"/>
+        <path d={d} fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx={P[P.length-1][0]} cy={P[P.length-1][1]} r="3.5" fill={col} stroke={C.card} strokeWidth="2"/>
       </svg>
       <div style={{display:"flex",justifyContent:"space-between",padding:"6px 4px 0",fontSize:11,color:C.dim}}>
         <span>{fmtM(minT)}</span><span>{fmtM(minT+rangeT/2)}</span><span>{fmtM(maxT)}</span>
@@ -1881,7 +1893,7 @@ function HomeView({bets,players,onNavigate}){
             <div key={day} style={{height:44,borderRadius:8,background:bg,display:"flex",flexDirection:"column",
               alignItems:"center",justifyContent:"center",gap:1}}>
               <span style={{fontSize:10,color:has?fg:"#4B5260",opacity:has?.7:1}}>{day}</span>
-              {has&&<span style={{fontSize:11,fontWeight:600,color:fg}}>{v===0?"–":Math.abs(v).toFixed(0)}</span>}
+              {has&&<span style={{fontSize:11,fontWeight:600,color:fg}}>{v===0?"–":(v>0?"+":"−")+Math.abs(v).toFixed(0)+"€"}</span>}
             </div>
           );
         })}
@@ -1911,39 +1923,31 @@ function BetSlip({b,players,bkPhotos,onClick}){
   const dateStr=d?d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):"";
   const border=b.status==="won"?C.greenBorder:b.status==="lost"?C.redBorder:C.line;
   let result,resultCol,outLabel,out;
-  if(b.status==="won"){result=money(profit);resultCol=C.green;outLabel="Retour";out=(stake+profit).toFixed(2)+"$";}
-  else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out="0.00$";}
-  else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=stake.toFixed(2)+"$";}
-  else{result="En cours";resultCol=C.sub;outLabel="Gain potentiel";out=(stake*odds).toFixed(2)+"$";}
+  if(b.status==="won"){result=money(profit);resultCol=C.green;outLabel="Retour";out=(stake+profit).toFixed(2)+"€";}
+  else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out="0.00€";}
+  else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=stake.toFixed(2)+"€";}
+  else{result="En cours";resultCol=C.sub;outLabel="Gain potentiel";out=(stake*odds).toFixed(2)+"€";}
   const name=isTeam?(b.team||b.player):formatName(b.player);
   const lastName=isTeam?name:(name.split(" ").slice(-1)[0]||name);
   return(
-    <article onClick={onClick} style={{background:C.card,border:"1.5px solid "+border,borderRadius:16,padding:14,
-      display:"flex",flexDirection:"column",gap:10,cursor:"pointer"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <MiniLogo src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={20} round={false}/>
-        <span style={{flex:1,fontSize:13,color:C.sub,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {[b.bookmaker,b.tipster,dateStr].filter(Boolean).join(" · ")}
+    <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
+      padding:"10px 12px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+      <PlayerFace src={photo} name={name} size={42}/>
+      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
+        <span style={{fontSize:14,fontWeight:600,lineHeight:1.25}}>
+          {lastName} · {b.description}
         </span>
-        <span style={{fontSize:15,fontWeight:600,color:resultCol}}>{result}</span>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:12,padding:10,borderRadius:12,background:C.inner}}>
-        <PlayerFace src={photo} name={name}/>
-        <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}}>
-          <span style={{fontSize:14,fontWeight:600,lineHeight:1.3}}>
-            {lastName} · {b.description}
+        <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:C.sub,minWidth:0}}>
+          {teamName&&<MiniLogo src={clubLogo} label={teamName} size={14}/>}
+          {b.game&&<MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>}
+          <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {[b.bookmaker,dateStr].filter(Boolean).join(" · ")}
           </span>
-          <span style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.sub,minWidth:0}}>
-            {teamName&&<MiniLogo src={clubLogo} label={teamName}/>}
-            <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>
-            {b.game&&<span style={{marginLeft:2,display:"inline-flex"}}><MiniLogo src={leagueLogo} label={b.game} round={false}/></span>}
-          </span>
-        </div>
-        <span style={{fontSize:14,color:"#C4C9D4"}}>{b.odds}</span>
+        </span>
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:C.sub,padding:"0 2px"}}>
-        <span>Mise <span style={{color:C.text}}>{stake.toFixed(2)}$</span></span>
-        <span>{outLabel} <span style={{color:C.text}}>{out}</span></span>
+      <div style={{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",gap:3}}>
+        <span style={{fontSize:14,fontWeight:600,color:resultCol}}>{result}</span>
+        <span style={{fontSize:12,color:C.sub}}>@{b.odds} · {stake.toFixed(0)}€</span>
       </div>
     </article>
   );
@@ -2006,21 +2010,21 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         const pend=m.bets.filter(x=>x.status==="pending").length;
         return(
           <div key={m.key}>
-            <div style={{marginTop:22,background:C.card,border:"1px solid "+C.line,borderRadius:18,padding:18}}>
+            <div style={{marginTop:18,background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:"14px 16px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                 <div>
-                  <div style={{fontSize:24,fontWeight:700,letterSpacing:-.5}}>{m.label}</div>
+                  <div style={{fontSize:19,fontWeight:700,letterSpacing:-.4}}>{m.label}</div>
                   <div style={{fontSize:13,color:C.sub,marginTop:2}}>{m.bets.length} paris{pend?" · "+pend+" en cours":""}</div>
                 </div>
-                <span style={{fontSize:24,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
+                <span style={{fontSize:19,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:14,paddingTop:12,borderTop:"1px solid #2A2F3A"}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:10,paddingTop:10,borderTop:"1px solid #2A2F3A"}}>
                 <div><div style={{fontSize:12,color:C.sub}}>Bilan</div><div style={{fontSize:15,fontWeight:600}}>{w}-{l}-{v}</div></div>
                 <div><div style={{fontSize:12,color:C.sub}}>ROI</div><div style={{fontSize:15,fontWeight:600,color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</div></div>
-                <div><div style={{fontSize:12,color:C.sub}}>Misé</div><div style={{fontSize:15,fontWeight:600}}>{allSt.toFixed(0)}$</div></div>
+                <div><div style={{fontSize:12,color:C.sub}}>Misé</div><div style={{fontSize:15,fontWeight:600}}>{allSt.toFixed(0)}€</div></div>
               </div>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:12}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:10}}>
               {m.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>onSelectBet(b)}/>)}
             </div>
           </div>
