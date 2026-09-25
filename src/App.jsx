@@ -739,11 +739,13 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 }
 
 // ── FORMULAIRE AJOUT/EDIT PARI ────────────────────────────────────────────────
-function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null}){
+function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null}){
   const[step,setStep]=useState(editBet?"form":"search");
   const[search,setSearch]=useState("");
   const[selectedType,setSelectedType]=useState(null);
   const[saving,setSaving]=useState(false);
+  const[lockedBK,setLockedBK]=useState(false);
+  const[lockedTip,setLockedTip]=useState(false);
   const[form,setForm]=useState(editBet?{
     player:editBet.player||"",
     playerObj:null,
@@ -805,6 +807,8 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
     const odds=parseFloat(form.odds);
     const stake=parseFloat(form.stake);
     if(!odds||!stake){alert("Cote et mise obligatoires");return;}
+    const savedBK=lockedBK?form.bookmaker:null;
+    const savedTip=lockedTip?form.tipster:null;
     let bet;
     if(isTeamBet){
       if(!form.team){alert("Sélectionne une équipe");return;}
@@ -821,7 +825,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         odds,stake,bookmaker:form.bookmaker||null,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||null,tipster:form.tipster||null,
-        notes:form.notes||null,bet_type:"team",
+        notes:null,bet_type:"team",
       };
     }else{
       if(!form.player){alert("Sélectionne un joueur");return;}
@@ -834,14 +838,28 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
         odds,stake,bookmaker:form.bookmaker||null,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||form.playerObj?.game||null,
-        tipster:form.tipster||null,notes:form.notes||null,bet_type:"player",
+        tipster:form.tipster||null,notes:null,bet_type:"player",
       };
     }
     setSaving(true);
     try{
       if(editBet)await updateBet(editBet.id,bet);
       else await insertBet({...bet,id:uuid()});
-      onSave();onClose();
+      await onSave();
+      if(lockedBK||lockedTip){
+        // Garder locked fields, reset le reste, retour à la recherche
+        setStep("search");
+        setForm({
+          player:"",playerObj:null,stat:"Points",ou:"Over",line:"",
+          odds:"",stake:"",
+          bookmaker:savedBK||bookmakers[0]||"",
+          status:"pending",game:"",
+          tipster:savedTip||"",
+          notes:"",betType:"moneyline",team:"",opponent:"",
+        });
+      }else{
+        onClose();
+      }
     }catch(e){alert("Erreur: "+e.message);}
     setSaving(false);
   }
@@ -1025,57 +1043,59 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
 
       {/* ══ HERO HEADER ESPN-style ══ */}
       <div style={{position:"relative",flexShrink:0,overflow:"hidden",
-        background:pc?`linear-gradient(135deg,${pc}55 0%,#08090E 70%)`:"#0D0D12",
-        minHeight:160}}>
+        background:pc?`linear-gradient(150deg,${pc}70 0%,#08090E 65%)`:"#0D0D12"}}>
 
-        {/* Logo équipe en fond — grand, flou */}
+        {/* Logo équipe en fond — GRAND et visible */}
         {teamLogoHeader&&(
           <img src={teamLogoHeader} alt=""
-            style={{position:"absolute",right:-20,top:"50%",transform:"translateY(-50%)",
-              width:170,height:170,objectFit:"contain",
-              opacity:.12,filter:"blur(2px) saturate(0.4)",pointerEvents:"none",zIndex:0}}/>
+            style={{position:"absolute",right:-10,top:"50%",transform:"translateY(-46%)",
+              width:200,height:200,objectFit:"contain",
+              opacity:.22,filter:"saturate(0.5) blur(0px)",pointerEvents:"none",zIndex:0}}/>
         )}
+        {/* Dégradé noir sur la droite pour fondre le logo */}
+        <div style={{position:"absolute",inset:0,
+          background:"linear-gradient(to right, transparent 40%, #08090E 85%)",
+          pointerEvents:"none",zIndex:1}}/>
 
         {/* Bouton retour — flottant haut gauche */}
         <button onClick={editBet?onClose:()=>setStep("search")}
           style={{position:"absolute",top:16,left:16,zIndex:10,
             width:34,height:34,borderRadius:10,
-            background:"rgba(0,0,0,.45)",border:"1px solid rgba(255,255,255,.12)",
+            background:"rgba(0,0,0,.55)",border:"1px solid rgba(255,255,255,.1)",
             color:"#F2F2F7",fontSize:18,cursor:"pointer",backdropFilter:"blur(8px)",
             display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>‹</button>
 
         {/* Contenu hero : photo + infos */}
         <div style={{display:"flex",alignItems:"flex-end",gap:0,
-          padding:"52px 0 0 0",position:"relative",zIndex:1}}>
+          padding:"50px 0 0 0",position:"relative",zIndex:2}}>
 
           {/* Photo joueur — grande, alignée bas */}
-          <div style={{width:130,height:140,flexShrink:0,position:"relative",
-            overflow:"hidden",alignSelf:"flex-end"}}>
+          <div style={{width:128,height:148,flexShrink:0,
+            overflow:"hidden",alignSelf:"flex-end",position:"relative"}}>
+            {/* Dégradé sur les côtés de la photo */}
+            <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
+              background:"linear-gradient(to right, transparent 70%, #08090E 100%), linear-gradient(to top, #08090E 0%, transparent 18%)"}}/>
             {playerPhoto
-              ?(
-                <img src={playerPhoto} alt={form.player}
+              ?<img src={playerPhoto} alt={form.player}
                   style={{width:"100%",height:"100%",objectFit:"cover",
                     objectPosition:"50% 8%",display:"block"}}/>
-              )
-              :isTeamBet&&teamLogoHeader?(
-                <div style={{width:"100%",height:"100%",display:"flex",
+              :isTeamBet&&teamLogoHeader
+              ?<div style={{width:"100%",height:"100%",display:"flex",
                   alignItems:"center",justifyContent:"center"}}>
                   <img src={teamLogoHeader} alt={form.team}
-                    style={{width:80,height:80,objectFit:"contain",opacity:.7}}/>
+                    style={{width:88,height:88,objectFit:"contain",opacity:.85}}/>
                 </div>
-              ):(
-                <div style={{width:"100%",height:"100%",display:"flex",
+              :<div style={{width:"100%",height:"100%",display:"flex",
                   alignItems:"center",justifyContent:"center",
-                  fontSize:52,color:"rgba(255,255,255,.1)"}}>○</div>
-              )
+                  fontSize:52,color:"rgba(255,255,255,.08)"}}>○</div>
             }
           </div>
 
           {/* Infos textuelles à droite */}
-          <div style={{flex:1,padding:"0 16px 16px 14px",minWidth:0}}>
-            {/* Nom */}
+          <div style={{flex:1,padding:"0 14px 14px 12px",minWidth:0}}>
+            {/* Nom prénom / nom famille */}
             {isTeamBet?(
-              <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:-.5,lineHeight:1.1}}>
+              <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:-.5,lineHeight:1.1,marginBottom:4}}>
                 {form.team}
               </div>
             ):(()=>{
@@ -1084,61 +1104,84 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               const last=parts.slice(1).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
               return(
                 <div style={{lineHeight:1.05,marginBottom:4}}>
-                  <div style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,.6)",letterSpacing:.2}}>{first}</div>
-                  <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-.5}}>{last||first}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.55)",letterSpacing:.1}}>{first}</div>
+                  <div style={{fontSize:23,fontWeight:900,color:"#fff",letterSpacing:-.5}}>{last||first}</div>
                 </div>
               );
             })()}
 
-            {/* Club + position */}
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+            {/* Logo équipe petit + nom club + position */}
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:11,flexWrap:"wrap"}}>
               {teamLogoHeader&&(
-                <img src={teamLogoHeader} alt="" style={{width:16,height:16,objectFit:"contain",opacity:.8}}/>
+                <img src={teamLogoHeader} alt=""
+                  style={{width:18,height:18,objectFit:"contain",opacity:.9,flexShrink:0}}/>
               )}
               {playerTeam&&(
-                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)"}}>
+                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)"}}>
                   {playerTeam}
                 </span>
               )}
               {playerPosition&&(
                 <>
-                  <span style={{color:"rgba(255,255,255,.2)",fontSize:11}}>·</span>
-                  <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.35)"}}>
+                  <span style={{color:"rgba(255,255,255,.2)",fontSize:12,lineHeight:1}}>·</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.32)"}}>
                     {playerPosition}
                   </span>
                 </>
               )}
             </div>
 
-            {/* Stats du pari — apparaissent au fur et à mesure */}
-            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            {/* Rows infos pari — dynamiques */}
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
               {betLine&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Pari</span>
-                  <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7"}}>{betLine}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.22)",
+                    textTransform:"uppercase",letterSpacing:.8,minWidth:32}}>Pari</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7",letterSpacing:-.1}}>{betLine}</span>
                 </div>
               )}
-              {form.odds&&(
+              {/* Logo bookmaker + cote sur la même ligne */}
+              {(form.bookmaker||form.odds)&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Cote</span>
-                  <span style={{fontSize:13,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
+                  {form.bookmaker&&bkPhotos[form.bookmaker]&&(
+                    <img src={bkPhotos[form.bookmaker]} alt={form.bookmaker}
+                      style={{width:16,height:16,objectFit:"contain",borderRadius:4,flexShrink:0,
+                        background:"rgba(255,255,255,.06)",padding:1}}/>
+                  )}
+                  {form.odds&&(
+                    <span style={{fontSize:13,fontWeight:800,color:"#818CF8",letterSpacing:-.1}}>
+                      @{form.odds}
+                    </span>
+                  )}
+                  {form.bookmaker&&!bkPhotos[form.bookmaker]&&(
+                    <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:600}}>
+                      {form.bookmaker}
+                    </span>
+                  )}
                 </div>
               )}
               {form.stake&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Mise</span>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.22)",
+                    textTransform:"uppercase",letterSpacing:.8,minWidth:32}}>Mise</span>
                   <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
-                    {form.stake}$
-                    {form.odds&&form.stake&&(
-                      <span style={{color:"rgba(255,255,255,.3)",fontWeight:500}}>
-                        {" → "}<span style={{
-                          color:(parseFloat(form.odds)*parseFloat(form.stake)-parseFloat(form.stake))>0?"#22C55E":"rgba(255,255,255,.3)",
-                          fontWeight:700}}>
-                          +{((parseFloat(form.odds)||1)*parseFloat(form.stake)-parseFloat(form.stake)).toFixed(2)}$
-                        </span>
+                    {form.stake}€
+                    {form.odds&&form.status!=="lost"&&(
+                      <span style={{color:"rgba(255,255,255,.25)",fontWeight:400}}>{" → "}</span>
+                    )}
+                    {form.odds&&form.status==="won"&&(
+                      <span style={{color:"#22C55E",fontWeight:800}}>
+                        +{((parseFloat(form.odds)||1)*parseFloat(form.stake)-parseFloat(form.stake)).toFixed(2)}€
+                      </span>
+                    )}
+                    {form.odds&&form.status==="lost"&&(
+                      <span style={{color:"#F87171",fontWeight:800,fontSize:15}}>
+                        {" → "}-{parseFloat(form.stake).toFixed(2)}€
+                      </span>
+                    )}
+                    {form.odds&&form.status==="pending"&&(
+                      <span style={{color:"#22C55E",fontWeight:800}}>
+                        +{((parseFloat(form.odds)||1)*parseFloat(form.stake)-parseFloat(form.stake)).toFixed(2)}€
                       </span>
                     )}
                   </span>
@@ -1146,9 +1189,9 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               )}
               {form.tipster&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Tips</span>
-                  <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.55)"}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.22)",
+                    textTransform:"uppercase",letterSpacing:.8,minWidth:32}}>Tips</span>
+                  <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.5)"}}>
                     {form.tipster}
                   </span>
                 </div>
@@ -1233,9 +1276,13 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               ))}
             </div>
             <div style={{display:"flex",gap:10}}>
-              <input className="form-input" type="number" step="0.5"
-                placeholder="Ligne (ex: 24.5)" value={form.line}
-                onChange={e=>f("line",e.target.value)} style={{flex:1}}/>
+              <select className="form-select" value={form.line}
+                onChange={e=>f("line",e.target.value)} style={{flex:1}}>
+                <option value="">Ligne</option>
+                {Array.from({length:88},(_,i)=>((i+1)*0.5).toFixed(1)).map(v=>(
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
               <select className="form-select" value={form.stat}
                 onChange={e=>f("stat",e.target.value)} style={{flex:1}}>
                 {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
@@ -1256,18 +1303,51 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               value={form.odds} onChange={e=>f("odds",e.target.value)}/>
           </div>
           <div style={{flex:1}}>
-            <label className="form-label">Mise ($)</label>
+            <label className="form-label">Mise (€)</label>
             <input className="form-input" type="number" placeholder="100"
               value={form.stake} onChange={e=>f("stake",e.target.value)}/>
           </div>
         </div>
+        {/* Quick bets — % de bankroll */}
+        <div style={{display:"flex",gap:5,marginTop:-8,marginBottom:16}}>
+          {[{pct:"0.5%",val:50},{pct:"0.75%",val:75},{pct:"1%",val:100},{pct:"1.25%",val:125},{pct:"1.5%",val:150}].map(({pct,val})=>(
+            <button key={val} onClick={()=>f("stake",String(val))}
+              style={{flex:1,padding:"7px 2px",borderRadius:8,cursor:"pointer",
+                border:"1px solid "+(form.stake===String(val)?"rgba(99,102,241,.5)":"#2A2A2E"),
+                background:form.stake===String(val)?"rgba(99,102,241,.12)":"#111114",
+                color:form.stake===String(val)?"#818CF8":"rgba(255,255,255,.35)",
+                fontSize:10,fontWeight:700,textAlign:"center",lineHeight:1.3}}>
+              <div>{pct}</div>
+              <div style={{fontSize:11,color:form.stake===String(val)?"#818CF8":"rgba(255,255,255,.22)"}}>{val}€</div>
+            </button>
+          ))}
+        </div>
         <div className="form-group">
-          <label className="form-label">Bookmaker</label>
-          <select className="form-select" value={form.bookmaker}
-            onChange={e=>f("bookmaker",e.target.value)}>
-            <option value="">Aucun</option>
-            {bookmakers.map(b=><option key={b}>{b}</option>)}
-          </select>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <label className="form-label" style={{marginBottom:0}}>Bookmaker</label>
+            <button onClick={()=>setLockedBK(p=>!p)}
+              style={{background:lockedBK?"rgba(99,102,241,.15)":"transparent",
+                border:"1px solid "+(lockedBK?"rgba(99,102,241,.4)":"#2A2A2E"),
+                borderRadius:7,padding:"3px 9px",cursor:"pointer",
+                fontSize:11,fontWeight:700,color:lockedBK?"#818CF8":"rgba(255,255,255,.3)",
+                display:"flex",alignItems:"center",gap:4}}>
+              {lockedBK?"🔒":"🔓"} {lockedBK?"Verrouillé":"Verrouiller"}
+            </button>
+          </div>
+          {/* Select custom avec logo */}
+          <div style={{position:"relative"}}>
+            {form.bookmaker&&bkPhotos[form.bookmaker]&&(
+              <img src={bkPhotos[form.bookmaker]} alt=""
+                style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",
+                  width:20,height:20,objectFit:"contain",borderRadius:4,zIndex:1,pointerEvents:"none"}}/>
+            )}
+            <select className="form-select" value={form.bookmaker}
+              onChange={e=>f("bookmaker",e.target.value)}
+              style={{paddingLeft:form.bookmaker&&bkPhotos[form.bookmaker]?42:14}}>
+              <option value="">Aucun</option>
+              {bookmakers.map(b=><option key={b}>{b}</option>)}
+            </select>
+          </div>
         </div>
         <div className="form-group">
           <label className="form-label">Résultat du pari</label>
@@ -1286,7 +1366,17 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
           </div>
         </div>
         <div className="form-group">
-          <label className="form-label">Tipster</label>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <label className="form-label" style={{marginBottom:0}}>Tipster</label>
+            <button onClick={()=>setLockedTip(p=>!p)}
+              style={{background:lockedTip?"rgba(99,102,241,.15)":"transparent",
+                border:"1px solid "+(lockedTip?"rgba(99,102,241,.4)":"#2A2A2E"),
+                borderRadius:7,padding:"3px 9px",cursor:"pointer",
+                fontSize:11,fontWeight:700,color:lockedTip?"#818CF8":"rgba(255,255,255,.3)",
+                display:"flex",alignItems:"center",gap:4}}>
+              {lockedTip?"🔒":"🔓"} {lockedTip?"Verrouillé":"Verrouiller"}
+            </button>
+          </div>
           {tipsters.length>0?(
             <select className="form-select" value={form.tipster}
               onChange={e=>f("tipster",e.target.value)}>
@@ -1298,11 +1388,7 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
               value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
           )}
         </div>
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <input className="form-input" placeholder="Optionnel"
-            value={form.notes} onChange={e=>f("notes",e.target.value)}/>
-        </div>
+
         <button className="btn btn-primary" onClick={submit} disabled={saving}
           style={{marginBottom:8,marginTop:8,padding:"16px 20px",fontSize:16,
             fontWeight:800,letterSpacing:-.2,borderRadius:12,
@@ -2729,6 +2815,7 @@ export default function App(){
           <AddBetModal
             players={players}
             bookmakers={bookmakers.length>0?bookmakers.map(b=>b.name):DEFAULT_BOOKMAKERS}
+            bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters}
             editBet={editBet}
             onClose={()=>{setShowAdd(false);setEditBet(null);}}
