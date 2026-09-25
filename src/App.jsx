@@ -1049,13 +1049,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           background:pc?`linear-gradient(145deg,${pc}99 0%,${pc}33 50%,#08090E 100%)`:"#0D0D12",
           zIndex:0}}/>
 
-        {/* ── Logo équipe — grand, centré-droite, intégré ── */}
+        {/* ── Logo équipe — grand, bien visible droite ── */}
         {teamLogoHeader&&(
           <img src={teamLogoHeader} alt=""
-            style={{position:"absolute",right:-10,top:"50%",transform:"translateY(-50%)",
-              width:220,height:220,objectFit:"contain",
-              opacity:.18,pointerEvents:"none",zIndex:1,
-              filter:"blur(1px) saturate(0.6)"}}/>
+            style={{position:"absolute",right:10,top:"50%",transform:"translateY(-55%)",
+              width:200,height:200,objectFit:"contain",
+              opacity:.7,pointerEvents:"none",zIndex:4,
+              filter:"drop-shadow(0 4px 24px rgba(0,0,0,.6))"}}/>
         )}
 
         {/* ── Dégradé bas pour merger avec le contenu ── */}
