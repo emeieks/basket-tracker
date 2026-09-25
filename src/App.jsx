@@ -1155,6 +1155,22 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                         {playerTeam||form.team}
                       </span>
                     )}
+                    {/* Logo ligue après le nom du club */}
+                    {form.league&&(
+                      <img
+                        src={`https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/${
+                          form.league==="NBA"?"nba":
+                          form.league==="NFL"?"nfl":
+                          form.league==="MLB"?"mlb":
+                          form.league==="NHL"?"nhl":
+                          form.league.toLowerCase()
+                        }.png&w=40&h=40&transparent=true`}
+                        alt={form.league}
+                        style={{width:16,height:16,objectFit:"contain",opacity:.7,flexShrink:0,
+                          filter:"brightness(10)"}}
+                        onError={e=>e.target.style.display="none"}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -1162,31 +1178,31 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
                   {betLine&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.4)",
                         textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Pari</span>
-                      <span style={{fontSize:11,fontWeight:700,color:"#F2F2F7",
+                      <span style={{fontSize:11,fontWeight:700,color:"#fff",
                         whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{betLine}</span>
                     </div>
                   )}
                   {form.odds&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.4)",
                         textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Cote</span>
-                      <span style={{fontSize:12,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
+                      <span style={{fontSize:11,fontWeight:800,color:"#fff"}}>@{form.odds}</span>
                     </div>
                   )}
                   {form.stake&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.4)",
                         textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Mise</span>
-                      <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.7)"}}>{form.stake}€</span>
+                      <span style={{fontSize:11,fontWeight:700,color:"#fff"}}>{form.stake}€</span>
                     </div>
                   )}
                   {form.tipster&&(
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
+                      <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.4)",
                         textTransform:"uppercase",letterSpacing:.8,minWidth:28,flexShrink:0}}>Tips</span>
-                      <span style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{form.tipster}</span>
+                      <span style={{fontSize:11,fontWeight:600,color:"#fff"}}>{form.tipster}</span>
                     </div>
                   )}
                 </div>
