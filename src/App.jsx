@@ -156,6 +156,22 @@ async function fetchLeagues(){
   return r.json();
 }
 
+async function insertLeague(name){
+  const r=await fetch(SUPA_URL+"/rest/v1/leagues",{method:"POST",headers:{...H,"Prefer":"return=representation"},body:JSON.stringify({name})});
+  if(!r.ok)throw new Error("création ligue: "+r.status+" "+(await r.text().catch(()=>"")));
+  return r.json();
+}
+async function insertClubs(rows){
+  const r=await fetch(SUPA_URL+"/rest/v1/clubs",{method:"POST",headers:{...H,"Prefer":"return=representation"},body:JSON.stringify(rows)});
+  if(!r.ok)throw new Error("création club: "+r.status+" "+(await r.text().catch(()=>"")));
+  return r.json();
+}
+// Ligues prêtes à importer (clubs de la saison 2026-27)
+const LEAGUE_PRESETS={
+  "NBL":["Adelaide 36ers","Brisbane Bullets","Cairns Taipans","Illawarra Hawks","Melbourne United",
+    "New Zealand Breakers","Perth Wildcats","S.E. Melbourne Phoenix","Sydney Kings","Tasmania JackJumpers"],
+};
+
 async function updateLeague(id,fields){
   const r=await fetch(SUPA_URL+"/rest/v1/leagues?id=eq."+id,{
     method:"PATCH",
@@ -562,9 +578,31 @@ function getLeagueLogo(game,leagueLogos={}){
 // Chargé au démarrage depuis la table clubs (ce que tu uploades dans Édition).
 // PRIORITÉ : logo du club (Édition) > team_logo_url du joueur
 let CLUB_LOGOS_MAP={};
+// "Bayern München" = "Bayern Munchen" = "BAYERN-MUNCHEN"
+function normTeam(s){
+  return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss").replace(/ı/g,"i")
+    .toLowerCase().replace(/[^a-z0-9]/g,"");
+}
+// même club ? nom identique après normalisation, ou même premier mot significatif (≥5 lettres)
+function sameTeam(a,b){
+  const na=normTeam(a),nb=normTeam(b);
+  if(!na||!nb)return false;
+  if(na===nb)return true;
+  const w=s=>(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5)[0]||"";
+  const wa=w(a),wb=w(b);
+  return !!wa&&wa===wb;
+}
+function lookupByTeam(map,name){
+  if(!name)return null;
+  if(map[name])return map[name];
+  const n=normTeam(name);
+  const k=Object.keys(map).find(k=>normTeam(k)===n);
+  return k?map[k]:null;
+}
 function getTeamLogo(teamName,playerTeamLogoUrl=null){
   // Priorité 1 : logo du club depuis Édition (table clubs) — toujours le plus à jour
-  if(teamName&&CLUB_LOGOS_MAP[teamName])return CLUB_LOGOS_MAP[teamName];
+  const fromMap=lookupByTeam(CLUB_LOGOS_MAP,teamName);
+  if(fromMap)return fromMap;
   // Priorité 2 : team_logo_url propagé sur le joueur (fallback si club pas encore dans map)
   if(playerTeamLogoUrl)return playerTeamLogoUrl;
   return null;
@@ -622,11 +660,22 @@ const TEAM_COLORS={
   "Valencia Basket":{p:"#000000",s:"#FF6600"},
   "Dubai Basketball":{p:"#004F9F",s:"#C9A84C"},
   "Crvena Zvezda Meridianbet Belgrade":{p:"#CC0000",s:"#FFFFFF"},
+  // NBL (Australie)
+  "Adelaide 36ers":{p:"#D50032",s:"#1A2B4C"},
+  "Brisbane Bullets":{p:"#003DA5",s:"#FFFFFF"},
+  "Cairns Taipans":{p:"#F47920",s:"#1D2A4D"},
+  "Illawarra Hawks":{p:"#C8102E",s:"#FFFFFF"},
+  "Melbourne United":{p:"#0A2240",s:"#6CACE4"},
+  "New Zealand Breakers":{p:"#111111",s:"#E4D5B7"},
+  "Perth Wildcats":{p:"#E31837",s:"#FFFFFF"},
+  "S.E. Melbourne Phoenix":{p:"#D91E26",s:"#111111"},
+  "Sydney Kings":{p:"#522D80",s:"#FDB927"},
+  "Tasmania JackJumpers":{p:"#006747",s:"#FFD100"},
 };
 
 function getTeamColor(team){
   if(!team)return null;
-  return TEAM_COLORS[team]||null;
+  return lookupByTeam(TEAM_COLORS,team);
 }
 
 // ── COMPOSANT UNIVERSEL : Avatar joueur avec logo équipe en watermark ─────────
@@ -1434,6 +1483,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const[dirty,setDirty]=useState({}); // champs modifiés non sauvegardés
   const[dropdown,setDropdown]=useState(null); // "bookmaker"|"tipster"|"game"
   const[saveAnim,setSaveAnim]=useState(false);
+  const[other,setOther]=useState(null); // {bookmaker,odds,stake}
+  const[otherSaving,setOtherSaving]=useState(false);
 
   const pData=players.find(p=>p.name===localBet.player);
   const isTeamBet=localBet.bet_type==="team";
@@ -1644,6 +1695,61 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             </div>
           </div>
 
+          {/* ── Même pari sur un autre site ── */}
+          {!other?(
+            <button type="button" className="press" onClick={()=>setOther({bookmaker:"",odds:String(localBet.odds||""),stake:String(localBet.stake||"")})}
+              style={{width:"100%",marginTop:16,height:50,borderRadius:14,border:"1px dashed #3A404C",background:"transparent",
+                color:C.blue,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Même pari sur un autre site
+            </button>
+          ):(
+            <div className="fade-in" style={{marginTop:16,padding:14,borderRadius:16,background:C.card,border:"1px solid rgba(91,157,255,.35)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:15,fontWeight:600}}>Même pari sur un autre site</span>
+                <button type="button" aria-label="Annuler" onClick={()=>setOther(null)}
+                  style={{border:"none",background:"transparent",color:C.sub,fontSize:20,cursor:"pointer",width:32,height:32}}>×</button>
+              </div>
+              <div style={{fontSize:13,color:C.sub,margin:"2px 0 10px"}}>{descFR(localBet.description)} · même statut et même date</div>
+              <div className="chip-row" style={{margin:"0 -14px",padding:"0 14px 2px"}}>
+                {bookmakerList.filter(bk=>bk.name!==localBet.bookmaker).map(bk=>{
+                  const on=other.bookmaker===bk.name;
+                  return(
+                    <button key={bk.name} type="button" className={"pick-chip"+(on?" on":"")}
+                      onClick={()=>setOther(o=>({...o,bookmaker:on?"":bk.name}))}>
+                      {bk.logo&&<MiniLogo src={bk.logo} label={bk.name} size={18} round={false}/>}{bk.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,marginTop:10}}>
+                <label className="fld-box">Cote sur ce site
+                  <input type="number" inputMode="decimal" value={other.odds} onChange={e=>setOther(o=>({...o,odds:e.target.value}))}/>
+                </label>
+                <label className="fld-box">Mise (€)
+                  <input type="number" inputMode="decimal" value={other.stake} onChange={e=>setOther(o=>({...o,stake:e.target.value}))}/>
+                </label>
+              </div>
+              <button type="button" className="press" disabled={!other.bookmaker||otherSaving}
+                onClick={async()=>{
+                  const odds=parseFloat(String(other.odds).replace(",","."));
+                  const stake=parseFloat(String(other.stake).replace(",","."));
+                  if(!odds||!stake){alert("Cote et mise obligatoires");return;}
+                  setOtherSaving(true);
+                  try{
+                    const{id,...copy}=localBet;
+                    await insertBet({...copy,id:uuid(),bookmaker:other.bookmaker,odds,stake,
+                      profit:calcProfit(localBet.status,stake,odds),created_at:localBet.created_at||new Date().toISOString()});
+                    onUpdate();onClose();
+                  }catch(e){alert("Erreur: "+e.message);setOtherSaving(false);}
+                }}
+                style={{width:"100%",marginTop:12,height:48,borderRadius:14,border:"none",fontSize:15,fontWeight:600,fontFamily:"inherit",
+                  cursor:other.bookmaker?"pointer":"default",background:other.bookmaker?C.blue:"#262B35",color:other.bookmaker?"#0C1424":C.dim}}>
+                {otherSaving?"Ajout…":other.bookmaker?"Ajouter sur "+other.bookmaker:"Choisis un bookmaker"}
+              </button>
+            </div>
+          )}
+
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:16}}>
             <button type="button" className="btn btn-secondary press" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
               onClick={async()=>{
@@ -1780,7 +1886,7 @@ function groupBy(bets,keyFn){
 }
 
 // ── GRAPHIQUE BANKROLL (général, depuis le début) ────────────────────────────
-function BankrollChart({bets,height=170}){
+function BankrollChart({bets,height=170,fmt=money}){
   const[hover,setHover]=useState(null);
   const ref=useRef(null);
   const W=340,H=height,PAD={top:14,right:6,bottom:6,left:6};
@@ -1834,7 +1940,7 @@ function BankrollChart({bets,height=170}){
         <div style={{position:"absolute",top:-6,left:tipLeft+"%",transform:`translateX(${tipLeft>60?"-100%":tipLeft<40?"0":"-50%"})`,
           zIndex:2,pointerEvents:"none",background:"rgba(14,16,20,.92)",border:"1px solid "+C.line,borderRadius:10,
           padding:"7px 10px",whiteSpace:"nowrap",boxShadow:"0 8px 24px rgba(0,0,0,.4)",backdropFilter:"blur(8px)"}}>
-          <div style={{fontSize:15,fontWeight:700,color:pColor(h.v)}}>{money(h.v)}</div>
+          <div style={{fontSize:15,fontWeight:700,color:pColor(h.v)}}>{fmt(h.v)}</div>
           <div style={{fontSize:11,color:C.sub,marginTop:1}}>
             {fmtD(h.t)}{hb?" · "+formatName(hb.player).split(" ").slice(-1)[0]+" "+(hb.status==="won"?"✓":"✗"):""}
           </div>
@@ -1980,6 +2086,9 @@ function HomeView({bets,players,onNavigate,onAdd}){
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
   const[calOpen,setCalOpen]=useState(false);
+  const[period,setPeriod]=useState("all");
+  const[pOff,setPOff]=useState(0);
+  const[units,setUnits]=useState(false);
   const won=bets.filter(b=>b.status==="won").length;
   const lost=bets.filter(b=>b.status==="lost").length;
   const voids=bets.filter(b=>b.status==="void").length;
@@ -2018,43 +2127,79 @@ function HomeView({bets,players,onNavigate,onAdd}){
     <div style={{padding:"0 20px 8px"}}>
 
       {(()=>{
-        const pos=profit>=0;
-        const tint=pos?"74,222,128":"255,138,128";
-        // série en cours
+        // ── période
+        const nowD=new Date();
+        let start=null,end=null,title="Depuis le début";
+        if(period==="week"){
+          const d=new Date(nowD.getFullYear(),nowD.getMonth(),nowD.getDate());
+          d.setDate(d.getDate()-((d.getDay()+6)%7)+pOff*7);
+          start=d;end=new Date(d);end.setDate(end.getDate()+7);
+          const last=new Date(end);last.setDate(last.getDate()-1);
+          const f=x=>x.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");
+          title=f(start)+" – "+f(last);
+        }else if(period==="month"){
+          start=new Date(nowD.getFullYear(),nowD.getMonth()+pOff,1);end=new Date(start.getFullYear(),start.getMonth()+1,1);
+          const l=start.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});title=l.charAt(0).toUpperCase()+l.slice(1);
+        }else if(period==="year"){
+          start=new Date(nowD.getFullYear()+pOff,0,1);end=new Date(start.getFullYear()+1,0,1);title=String(start.getFullYear());
+        }
+        const inP=b=>!start||(b.created_at&&new Date(b.created_at)>=start&&new Date(b.created_at)<end);
+        const pb=bets.filter(inP);
+        const ps=pb.filter(b=>b.status==="won"||b.status==="lost");
+        const pw=ps.filter(b=>b.status==="won").length,pl=ps.length-pw,pv=pb.filter(b=>b.status==="void").length;
+        const pp=pb.reduce((s,b)=>s+parseFloat(b.profit||0),0);
+        const pst=ps.reduce((s,b)=>s+parseFloat(b.stake||0),0);
+        const proi=pst>0?pp/pst*100:0;
+        const UNIT=START_BANKROLL/100;
+        const fmt=v=>units?(v>0?"+":v<0?"−":"")+(Math.abs(v)/UNIT).toFixed(2).replace(".",",")+"u":money(v);
         const sorted=[...settled].sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
         let streak=0;const kind=sorted[0]?.status;
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         return(
-          <div className="hero-card" style={{marginTop:4,borderRadius:22,padding:"18px 16px 12px",position:"relative",overflow:"hidden",
-            background:`radial-gradient(120% 90% at 0% 0%, rgba(${tint},.16) 0%, rgba(${tint},0) 55%), linear-gradient(180deg,#1F232B 0%,#181B21 100%)`,
-            border:"1px solid rgba(255,255,255,.07)",boxShadow:"0 20px 50px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 4px"}}>
-              <span style={{fontSize:13,fontWeight:500,color:C.sub}}>Solde</span>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div className="segment" style={{flex:1}}>
+                {[["week","Semaine"],["month","Mois"],["year","Année"],["all","Tout"]].map(([k,l])=>(
+                  <button key={k} className={"seg-btn"+(period===k?" active":"")} onClick={()=>{setPeriod(k);setPOff(0);}}>{l}</button>
+                ))}
+              </div>
+              <button type="button" onClick={()=>setUnits(u=>!u)} className="press"
+                style={{border:"none",background:"transparent",color:C.blue,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:"8px 2px"}}>
+                {units?"Unités":"Euros"}
+              </button>
+            </div>
+
+            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:18}}>
+              {period!=="all"&&<button type="button" aria-label="Période précédente" onClick={()=>setPOff(o=>o-1)} style={navArrow}>‹</button>}
+              <h2 style={{margin:0,flex:1,fontSize:30,fontWeight:700,letterSpacing:-.6}}>{title}</h2>
+              {period!=="all"&&<button type="button" aria-label="Période suivante" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))}
+                style={{...navArrow,opacity:pOff>=0?.3:1}}>›</button>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4,fontSize:13,color:C.sub}}>
+              <span>Solde {eur(START_BANKROLL+profit)}</span>
               {streak>=3&&(
-                <span className="fade-in" style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:12,fontSize:12,fontWeight:600,
+                <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:10,fontSize:12,fontWeight:600,
                   background:kind==="won"?"rgba(251,146,60,.14)":"rgba(255,138,128,.12)",color:kind==="won"?"#FDBA74":C.red}}>
-                  {kind==="won"
-                    ?<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5.5 1-8.5z"/></svg>
-                    :<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>}
                   {streak} {kind==="won"?"gagnés":"perdus"} d'affilée
                 </span>
               )}
             </div>
-            <div style={{fontSize:40,fontWeight:700,letterSpacing:-1.5,color:C.text,padding:"2px 4px 0",lineHeight:1.1}}>
-              <CountUp value={START_BANKROLL+profit} format={v=>eur(v)}/>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:18}}>
+              <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
+                <div style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
+              <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
+                <div style={{fontSize:19,fontWeight:600,color:pColor(proi),marginTop:3}}>{(proi>0?"+":"")+proi.toFixed(2).replace(".",",")+" %"}</div></div>
+              <div style={{textAlign:"right"}}><div style={{fontSize:13,color:C.sub}}>Bilan</div>
+                <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
             </div>
-            <div style={{padding:"4px 4px 0",fontSize:15,fontWeight:600,color:pColor(profit)}}>
-              <CountUp value={profit} format={v=>money(v)}/>
-              <span style={{marginLeft:8,padding:"2px 8px",borderRadius:8,fontSize:13,background:(profit>=0?"rgba(74,222,128,.14)":"rgba(255,138,128,.14)")}}>
-                {(profit>=0?"+":"")+(profit/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}
-              </span>
-              <span style={{marginLeft:8,fontSize:13,fontWeight:400,color:C.sub}}>depuis {eur(START_BANKROLL,0)}</span>
+
+            <div className="hero-card" style={{marginTop:16,borderRadius:20,padding:"16px 12px 10px",position:"relative",
+              background:"linear-gradient(180deg,#1F232B 0%,#181B21 100%)",border:"1px solid rgba(255,255,255,.07)",
+              boxShadow:"0 20px 50px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"}}>
+              <span style={{position:"absolute",right:16,top:10,fontSize:12,color:C.sub,zIndex:1}}>{fmt(pp)}</span>
+              <BankrollChart key={period+pOff} bets={pb} height={160} fmt={fmt}/>
             </div>
-            <div style={{display:"flex",gap:18,padding:"8px 4px 14px",fontSize:14}}>
-              <span style={{color:C.sub}}>ROI <b style={{color:pColor(roi),fontWeight:600}}><CountUp value={roi} format={v=>(v>0?"+":"")+v.toFixed(1).replace(".",",")+" %"}/></b></span>
-              <span style={{color:C.sub}}>Bilan <b style={{color:C.text,fontWeight:600}}>{won}-{lost}-{voids}</b></span>
-            </div>
-            <BankrollChart bets={bets} height={160}/>
           </div>
         );
       })()}
@@ -2706,7 +2851,7 @@ function EditView({showToast}){
 
   useEffect(()=>{
     fetchLeagues().then(rows=>{
-      const ORDER=['NBA','EuroLeague','EuroCup','BCL','ACB','Betclic Elite','Lega A','BBL'];
+      const ORDER=['NBA','EuroLeague','EuroCup','BCL','ACB','Betclic Elite','Lega A','BBL','NBL'];
       rows.sort((a,b)=>{
         const ia=ORDER.indexOf(a.name),ib=ORDER.indexOf(b.name);
         return (ia===-1?99:ia)-(ib===-1?99:ib);
@@ -2725,14 +2870,14 @@ function EditView({showToast}){
       try{
         if(cs.length>0){
           // Récupérer par team name (couvre les clubs présents dans plusieurs ligues)
-          const names=cs.map(c=>c.name);
-          const q=SUPA_URL+"/rest/v1/players?team=in.("+names.map(n=>encodeURIComponent(n)).join(",")+")"+"&select=team&limit=2000";
-          const r=await fetch(q,{headers:H});
+          const r=await fetch(SUPA_URL+"/rest/v1/players?select=team&limit=10000",{headers:H});
           if(r.ok){
             const rows=await r.json();
-            const countMap={};
-            rows.forEach(p=>{if(p.team)countMap[p.team]=(countMap[p.team]||0)+1;});
-            cs=cs.map(c=>({...c,player_count:countMap[c.name]||0}));
+            cs=cs.map(c=>{
+              const mine=rows.filter(p=>p.team&&sameTeam(p.team,c.name));
+              const variants=[...new Set(mine.map(p=>p.team).filter(n=>n!==c.name))];
+              return{...c,player_count:mine.length,name_variants:variants};
+            });
           }
         }
       }catch(_){}
@@ -2743,8 +2888,10 @@ function EditView({showToast}){
   useEffect(()=>{
     if(!selectedClub)return;
     setLoading(true);setPlayers([]);setPlayerSearch("");
-    fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(selectedClub.name)+"&select=*&order=name.asc",{headers:H})
-      .then(r=>r.json()).then(rows=>setPlayers(Array.isArray(rows)?rows:[])).catch(()=>{}).finally(()=>setLoading(false));
+    fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H})
+      .then(r=>r.json())
+      .then(rows=>setPlayers(Array.isArray(rows)?rows.filter(p=>p.team&&sameTeam(p.team,selectedClub.name)):[]))
+      .catch(()=>{}).finally(()=>setLoading(false));
   },[selectedClub]);
 
   const POS_ORDER=["PG","SG","SF","PF","C","G","F","Guard","Wing","Forward","Big",""];
@@ -2867,7 +3014,30 @@ function EditView({showToast}){
       :leagues;
     return(
       <div>
-        <SHeader title="Ligues" sub="Choisis une ligue pour gérer ses clubs et joueurs"/>
+        <SHeader title="Ligues" sub="Choisis une ligue pour gérer ses clubs et joueurs"
+          action={{label:"Ligue",onClick:async()=>{
+            const name=(window.prompt("Nom de la nouvelle ligue :")||"").trim();
+            if(!name)return;
+            if(leagues.some(l=>normTeam(l.name)===normTeam(name))){showToast(name+" existe déjà","rgba(255,255,255,.6)");return;}
+            try{const[lg]=await insertLeague(name);setLeagues(prev=>[...prev,lg||{id:name,name}]);showToast(name+" ajoutée ✓");}
+            catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
+          }}}/>
+        {Object.entries(LEAGUE_PRESETS).filter(([n])=>!leagues.some(l=>normTeam(l.name)===normTeam(n))).map(([n,clubsList])=>(
+          <div key={n} className="fade-in" style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:14,borderRadius:14,
+            background:"rgba(91,157,255,.10)",border:"1px solid rgba(91,157,255,.3)"}}>
+            <div style={{flex:1,fontSize:13,color:"#C4C9D4",lineHeight:1.4}}>
+              <b style={{color:C.text}}>{n}</b> · saison 2026-27<br/><span style={{color:C.sub}}>{clubsList.length} clubs prêts à importer</span>
+            </div>
+            <button type="button" className="s-add" onClick={async()=>{
+              try{
+                const[lg]=await insertLeague(n);
+                await insertClubs(clubsList.map(c=>({name:c,league:n})));
+                setLeagues(prev=>[...prev,lg||{id:n,name:n}]);
+                showToast(n+" et ses "+clubsList.length+" clubs ajoutés ✓");
+              }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
+            }}>Importer</button>
+          </div>
+        ))}
         <SSearch value={globalSearch} onChange={setGlobalSearch} placeholder="Rechercher une ligue…"/>
         {leagueMatches.length===0?<SEmpty title="Aucune ligue trouvée"/>:(
           <SGroup>
@@ -2891,6 +3061,13 @@ function EditView({showToast}){
     return(
       <div>
         <SHeader title={selectedLeague.name} sub={clubs.length+" clubs"}
+          action={{label:"Club",onClick:async()=>{
+            const name=(window.prompt("Nom du nouveau club ("+selectedLeague.name+") :")||"").trim();
+            if(!name)return;
+            if(clubs.some(c=>normTeam(c.name)===normTeam(name))){showToast(name+" existe déjà","rgba(255,255,255,.6)");return;}
+            try{const[c]=await insertClubs([{name,league:selectedLeague.name}]);setClubs(prev=>[...prev,{...(c||{id:name,name}),player_count:0}].sort((a,b)=>a.name.localeCompare(b.name)));showToast(name+" ajouté ✓");}
+            catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
+          }}}
           onBack={()=>{setSelectedLeague(null);setPlayerSearch("");}}
           right={<IconBtn icon={Ico.paste} label="Coller le logo de la ligue" onClick={()=>pasteLeagueLogo(selectedLeague)}/>}/>
         <SSearch value={playerSearch} onChange={setPlayerSearch} placeholder="Rechercher un club…"/>
@@ -2946,6 +3123,31 @@ function EditView({showToast}){
           <IconBtn icon={Ico.upload} label="Choisir le logo depuis un fichier" onClick={()=>pickClubLogoFile(selectedClub)}/>
         </div>}
         action={{label:"Joueur",onClick:()=>setCreatingPlayer(true)}}/>
+      {(()=>{
+        const variants=[...new Set(players.map(p=>p.team).filter(n=>n&&n!==selectedClub.name))];
+        if(!variants.length)return null;
+        const n=players.filter(p=>p.team!==selectedClub.name).length;
+        return(
+          <div className="fade-in" style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:14,borderRadius:14,
+            background:"rgba(91,157,255,.10)",border:"1px solid rgba(91,157,255,.3)"}}>
+            <div style={{flex:1,fontSize:13,color:"#C4C9D4",lineHeight:1.4}}>
+              {n} joueur{n>1?"s":""} enregistré{n>1?"s":""} sous « {variants.join(" », « ")} ».
+              <br/><span style={{color:C.sub}}>Harmoniser pour tout ranger sous « {selectedClub.name} ».</span>
+            </div>
+            <button type="button" className="s-add" onClick={async()=>{
+              try{
+                for(const v of variants){
+                  await fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(v),{method:"PATCH",headers:{...H},
+                    body:JSON.stringify({team:selectedClub.name,...(selectedClub.logo?{team_logo_url:selectedClub.logo}:{})})});
+                }
+                setPlayers(prev=>prev.map(p=>({...p,team:selectedClub.name,...(selectedClub.logo?{team_logo_url:selectedClub.logo}:{})})));
+                setClubs(prev=>prev.map(c=>c.name===selectedClub.name?{...c,name_variants:[]}:c));
+                showToast("Club harmonisé ✓");
+              }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
+            }}>Harmoniser</button>
+          </div>
+        );
+      })()}
       <SSearch value={playerSearch} onChange={setPlayerSearch} placeholder="Rechercher un joueur…"/>
 
       {loading&&<div style={{textAlign:"center",color:C.sub,padding:32}}>Chargement…</div>}
@@ -3669,7 +3871,7 @@ export default function App(){
           </div>
         )}
         <div className="header">
-          <div className="header-title">
+          <div className="header-title" style={view==="home"?{fontSize:15,fontWeight:600,color:"#8B92A0",letterSpacing:0}:undefined}>
             {view==="home"?"Bankroll":view==="bets"?"Mes paris":view==="stats"?"Analyse":"Réglages"}
           </div>
           {syncing&&<span style={{fontSize:13,color:"#8B92A0"}}>Actualisation…</span>}
