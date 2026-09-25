@@ -1883,8 +1883,13 @@ function BetSlip({b,players,bkPhotos,onClick}){
   return(
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
-      {b.game&&<MiniLogo src={leagueLogo} label={b.game} size={22} round={false}/>}
       <div style={{position:"relative",flexShrink:0}}>
+        {b.game&&(
+          <span style={{position:"absolute",left:-3,bottom:-3,width:22,height:22,borderRadius:11,background:C.card,zIndex:1,
+            border:"1.5px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={leagueLogo} label={b.game} size={16} round={false}/>
+          </span>
+        )}
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={54}/>
         {teamName&&!isTeam&&(
           <span style={{position:"absolute",right:-3,bottom:-3,width:22,height:22,borderRadius:11,background:C.card,
@@ -1898,7 +1903,6 @@ function BetSlip({b,players,bkPhotos,onClick}){
           <span style={{flex:1,minWidth:0,fontSize:15,fontWeight:600,lineHeight:"20px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {lastName} · {b.description}
           </span>
-          <span style={{flexShrink:0,fontSize:15,fontWeight:600,lineHeight:"20px",color:resultCol}}>{result}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:7,fontSize:13,lineHeight:"20px",color:C.sub,overflow:"hidden"}}>
@@ -1910,6 +1914,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
           </span>
         </div>
       </div>
+      <span style={{flexShrink:0,alignSelf:"center",fontSize:16,fontWeight:700,color:resultCol,whiteSpace:"nowrap"}}>{result}</span>
     </article>
   );
 }
