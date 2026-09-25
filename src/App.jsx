@@ -3021,6 +3021,7 @@ export default function App(){
   const[bets,setBets]=useState([]);
   const[bookmakers,setBookmakers]=useState([]);
   const[tipsters,setTipsters]=useState([]);
+  const[leagues,setLeagues]=useState([]);
   const[players,setPlayers]=useState([]);
   const[view,setView]=useState("home");
   const[loading,setLoading]=useState(true);
@@ -3048,6 +3049,7 @@ export default function App(){
       const map={};
       rows.forEach(l=>{if(l.logo)map[l.name]=l.logo;});
       LEAGUE_LOGOS_DYNAMIC=map;
+      setLeagues(rows);
     }).catch(()=>{});
     // Logos clubs → fallback pour team_logo_url non encore propagé sur joueurs
     fetchAllClubs().then(rows=>{
