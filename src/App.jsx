@@ -1766,8 +1766,10 @@ function groupBy(bets,keyFn){
   const g={};
   bets.forEach(b=>{
     const k=keyFn(b)||"Autre";
-    if(!g[k])g[k]={won:0,lost:0,void:0,count:0,profit:0};
+    if(!g[k])g[k]={won:0,lost:0,void:0,count:0,profit:0,staked:0,oddsSum:0};
     g[k].profit+=parseFloat(b.profit||0);g[k].count++;
+    g[k].oddsSum+=parseFloat(b.odds||0);
+    if(b.status==="won"||b.status==="lost")g[k].staked+=parseFloat(b.stake||0);
     if(b.status==="won")g[k].won++;
     if(b.status==="lost")g[k].lost++;
     if(b.status==="void")g[k].void++;
@@ -2219,11 +2221,11 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onA
 }
 
 // ── VUE ANALYSE ───────────────────────────────────────────────────────────────
-function StatsView({bets}){
+function StatsView({bets,players=[]}){
+  const[tab,setTab]=useState("overview");
   if(bets.length===0)return(
-    <div className="empty" style={{marginTop:40}}>
-      <div className="empty-text">Pas encore de données</div>
-      <div className="empty-sub">Ajoute des paris pour voir tes stats</div>
+    <div style={{padding:"0 20px"}}>
+      <EmptyState title="Pas encore de statistiques" sub="Ajoute des paris : tes meilleurs tipsters, postes et marchés apparaîtront ici."/>
     </div>
   );
   const settled=bets.filter(b=>b.status==="won"||b.status==="lost");
@@ -2233,39 +2235,152 @@ function StatsView({bets}){
   const roi=staked>0?profit/staked*100:0;
   const wr=settled.length?won/settled.length*100:0;
   const avgOdds=bets.length?bets.reduce((s,b)=>s+parseFloat(b.odds||0),0)/bets.length:0;
+
+  const pct=v=>(v>0?"+":"")+v.toFixed(1).replace(".",",")+" %";
+  const stat=s=>{
+    const dec=s.won+s.lost;
+    return{wr:dec?s.won/dec*100:null,roi:s.staked>0?s.profit/s.staked*100:null,avg:s.count?s.oddsSum/s.count:0};
+  };
+  const meta=s=>{
+    const x=stat(s);
+    return [`${s.won}-${s.lost}-${s.void}`,x.wr!=null?Math.round(x.wr)+" % réussite":null,x.roi!=null?"ROI "+pct(x.roi):null]
+      .filter(Boolean).join(" · ");
+  };
   const toRows=(g,logoFn)=>Object.entries(g).sort((a,b)=>b[1].profit-a[1].profit).map(([k,s])=>({
-    key:k,name:k,logo:logoFn?logoFn(k):undefined,
-    meta:`${s.won}-${s.lost}-${s.void} · ${s.count} paris`,profit:s.profit,
+    key:k,name:k,logo:logoFn?logoFn(k):undefined,meta:meta(s),profit:s.profit,s,
   }));
+
+  // regroupements
+  const pOf=b=>players.find(p=>p.name===b.player);
+  const playerBets=bets.filter(b=>b.bet_type!=="team");
+  const POS_LABEL={PG:"Meneur (PG)",SG:"Arrière (SG)",SF:"Ailier (SF)",PF:"Ailier fort (PF)",C:"Pivot (C)",G:"Arrière (G)",F:"Ailier (F)"};
+  const byPos=groupBy(playerBets,b=>{const r=(pOf(b)?.role||"").split(",")[0].trim();return r?(POS_LABEL[r]||r):"Poste inconnu";});
+  const byTip=groupBy(bets,b=>b.tipster||"Sans tipster");
+  const byMarket=groupBy(playerBets,b=>statFR((b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,"")));
+  const byOU=groupBy(playerBets.filter(b=>/^(Over|Under)/.test(b.description||"")),b=>(b.description||"").startsWith("Over")?"Over":"Under");
+  const byLeague=groupBy(bets,b=>b.game);
+  const byBook=groupBy(bets,b=>b.bookmaker||"Sans bookmaker");
+  const byPlayer=groupBy(playerBets,b=>formatName(b.player));
+  const byOdds=groupBy(bets,b=>{const o=parseFloat(b.odds||0);return o<1.6?"Moins de 1,60":o<1.9?"1,60 – 1,89":o<2.2?"1,90 – 2,19":"2,20 et plus";});
+  const oddsOrder=["Moins de 1,60","1,60 – 1,89","1,90 – 2,19","2,20 et plus"];
   const monthRows=Object.entries(groupBy(bets.filter(b=>b.created_at),b=>b.created_at.slice(0,7)))
     .sort((a,b)=>b[0].localeCompare(a[0])).map(([k,s])=>{
       const[y,mo]=k.split("-");
       const lbl=new Date(+y,+mo-1,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-      return{key:k,name:lbl.charAt(0).toUpperCase()+lbl.slice(1),meta:`${s.won}-${s.lost}-${s.void} · ${s.count} paris`,profit:s.profit};
+      return{key:k,name:lbl.charAt(0).toUpperCase()+lbl.slice(1),meta:meta(s),profit:s.profit};
     });
+
+  // meilleurs (min. 1 pari réglé)
+  const best=g=>{
+    const e=Object.entries(g).filter(([k,s])=>s.won+s.lost>0&&!/^(Sans|Autre|Poste inconnu)/.test(k)).sort((a,b)=>b[1].profit-a[1].profit)[0];
+    return e?{name:e[0],s:e[1]}:null;
+  };
+  const highlights=[
+    {label:"Meilleur tipster",v:best(byTip),icon:"M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"},
+    {label:"Meilleur poste",v:best(byPos),icon:"M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"},
+    {label:"Meilleur marché",v:best(byMarket),icon:"M4 19V9M10 19V5M16 19v-7M22 19H2"},
+    {label:"Meilleur joueur",v:best(byPlayer),icon:"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"},
+  ].filter(h=>h.v);
+
+  // barre de comparaison (tipsters / postes)
+  const BarList=({rows})=>{
+    const max=Math.max(1,...rows.map(r=>Math.abs(r.profit)));
+    return(
+      <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:"6px 14px"}}>
+        {rows.map((r,i)=>{
+          const x=stat(r.s);
+          return(
+            <div key={r.key} style={{padding:"12px 0",borderBottom:i<rows.length-1?"1px solid "+C.line:"none"}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+                <span style={{flex:1,minWidth:0,fontSize:16,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</span>
+                <span style={{fontSize:16,fontWeight:600,color:pColor(r.profit)}}>{money(r.profit)}</span>
+              </div>
+              <div style={{height:6,borderRadius:3,background:"#262B35",margin:"8px 0 8px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:Math.max(3,Math.abs(r.profit)/max*100)+"%",borderRadius:3,
+                  background:r.profit>=0?C.green:C.red,transition:"width .6s ease"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",fontSize:12,color:C.sub}}>
+                <span>Bilan<br/><b style={{fontSize:14,color:C.text,fontWeight:600}}>{r.s.won}-{r.s.lost}-{r.s.void}</b></span>
+                <span>Réussite<br/><b style={{fontSize:14,color:C.text,fontWeight:600}}>{x.wr!=null?Math.round(x.wr)+" %":"–"}</b></span>
+                <span>ROI<br/><b style={{fontSize:14,color:x.roi!=null?pColor(x.roi):C.sub,fontWeight:600}}>{x.roi!=null?pct(x.roi):"–"}</b></span>
+                <span>Cote moy.<br/><b style={{fontSize:14,color:C.text,fontWeight:600}}>{x.avg.toFixed(2).replace(".",",")}</b></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const kpi=(label,val,col)=>(
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:14,padding:14}}>
       <div style={{fontSize:13,color:C.sub}}>{label}</div>
       <div style={{fontSize:22,fontWeight:600,color:col||C.text,marginTop:4}}>{val}</div>
     </div>
   );
+
   return(
     <div style={{padding:"0 20px 8px"}}>
-      <div style={{fontSize:15,color:C.sub,marginTop:-4}}>{bets.length} paris</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:18}}>
-        {kpi("Profit",money(profit),pColor(profit))}
-        {kpi("ROI",(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%",pColor(roi))}
-        {kpi("Win rate",wr.toFixed(1)+" %")}
-        {kpi("Cote moyenne",avgOdds.toFixed(2))}
+      <div className="segment" style={{marginBottom:6}}>
+        {[["overview","Résumé"],["tipsters","Tipsters"],["positions","Postes"],["markets","Marchés"]].map(([k,l])=>(
+          <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)}>{l}</button>
+        ))}
       </div>
-      <SectionTitle>Ligues</SectionTitle>
-      <ListCard rows={toRows(groupBy(bets,b=>b.game),g=>getLeagueLogo(g)||null)}/>
-      <SectionTitle>Marchés</SectionTitle>
-      <ListCard rows={toRows(groupBy(bets,b=>statFR((b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,"")))).slice(0,8)}/>
-      <SectionTitle>Tipsters</SectionTitle>
-      <ListCard rows={toRows(groupBy(bets,b=>b.tipster||"Sans tipster"))}/>
-      <SectionTitle>Par mois</SectionTitle>
-      <ListCard rows={monthRows}/>
+
+      <div key={tab} className="fade-in">
+      {tab==="overview"&&<>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:14}}>
+          {kpi("Profit",money(profit),pColor(profit))}
+          {kpi("ROI",pct(roi),pColor(roi))}
+          {kpi("Réussite",wr.toFixed(1).replace(".",",")+" %")}
+          {kpi("Cote moyenne",avgOdds.toFixed(2).replace(".",","))}
+        </div>
+        {highlights.length>0&&<>
+          <SectionTitle>Points forts</SectionTitle>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}>
+            {highlights.map(h=>(
+              <div key={h.label} style={{borderRadius:16,padding:14,border:"1px solid rgba(74,222,128,.18)",
+                background:"radial-gradient(90% 80% at 0% 0%, rgba(74,222,128,.12) 0%, rgba(74,222,128,0) 70%), #1C1F26"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.sub}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={h.icon}/></svg>
+                  {h.label}
+                </div>
+                <div style={{fontSize:16,fontWeight:600,marginTop:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.v.name}</div>
+                <div style={{fontSize:14,fontWeight:600,color:pColor(h.v.s.profit),marginTop:2}}>{money(h.v.s.profit)}</div>
+                <div style={{fontSize:12,color:C.sub,marginTop:2}}>{h.v.s.won}-{h.v.s.lost}-{h.v.s.void}</div>
+              </div>
+            ))}
+          </div>
+        </>}
+        <SectionTitle>Over / Under</SectionTitle>
+        <ListCard rows={toRows(byOU)}/>
+        <SectionTitle>Par cote</SectionTitle>
+        <ListCard rows={toRows(byOdds).sort((a,b)=>oddsOrder.indexOf(a.key)-oddsOrder.indexOf(b.key))}/>
+        <SectionTitle>Ligues</SectionTitle>
+        <ListCard rows={toRows(byLeague,g=>getLeagueLogo(g)||null)}/>
+        <SectionTitle>Bookmakers</SectionTitle>
+        <ListCard rows={toRows(byBook)}/>
+        <SectionTitle>Par mois</SectionTitle>
+        <ListCard rows={monthRows}/>
+      </>}
+
+      {tab==="tipsters"&&<>
+        <SectionTitle>Bilan par tipster</SectionTitle>
+        <BarList rows={toRows(byTip)}/>
+      </>}
+
+      {tab==="positions"&&<>
+        <SectionTitle>Bilan par poste</SectionTitle>
+        <BarList rows={toRows(byPos)}/>
+        <SectionTitle>Meilleurs joueurs</SectionTitle>
+        <ListCard rows={toRows(byPlayer).slice(0,10)}/>
+      </>}
+
+      {tab==="markets"&&<>
+        <SectionTitle>Bilan par marché</SectionTitle>
+        <BarList rows={toRows(byMarket)}/>
+      </>}
+      </div>
     </div>
   );
 }
@@ -3356,7 +3471,7 @@ export default function App(){
           {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>setShowAdd(true)}/>}
-          {view==="stats"&&<StatsView bets={bets}/>}
+          {view==="stats"&&<StatsView bets={bets} players={players}/>}
           {view==="settings"&&<SettingsView
             bookmakers={bookmakers}
             onUpdateBK={()=>fetchBookmakers().then(setBookmakers).catch(()=>{})}
