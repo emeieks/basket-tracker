@@ -345,6 +345,14 @@ img{image-rendering:auto;}
 .fld-box input::-webkit-outer-spin-button,.fld-box input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .fld-box input[type=number]{-moz-appearance:textfield;}
 .fld-box input{border:none;background:transparent;color:#F2F3F5;font-size:18px;font-weight:600;outline:none;padding:0;width:100%;}
+.pick-head{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 6px;height:32px;font-size:13px;font-weight:500;color:#8B92A0;}
+.pick-head button{width:32px!important;height:32px!important;}
+.chip-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 2px;}
+.chip-row::-webkit-scrollbar{display:none;}
+.pick-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:20px;
+  border:1px solid #252A34;background:#1C1F26;color:#C4C9D4;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s;}
+.pick-chip:hover{border-color:#3A404C;}
+.pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
 .row-select option{background:#1C1F26;color:#F2F3F5;}
@@ -876,7 +884,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
       else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line+" pts";
       else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)";
-      const dateIso=form.created_at?new Date(form.created_at).toISOString():undefined;
+      const dateIso=form.created_at?new Date(form.created_at).toISOString():(editBet?undefined:new Date().toISOString());
       bet={
         player:form.team,team:form.team,opponent:form.opponent||null,
         description:desc,over_under:form.ou||null,
@@ -891,7 +899,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       if(!form.player){alert("Sélectionne un joueur");return;}
       const desc=form.ou&&form.line&&form.stat
         ?form.ou+" "+form.line+" "+form.stat:form.stat||"";
-      const dateIso=form.created_at?new Date(form.created_at).toISOString():undefined;
+      const dateIso=form.created_at?new Date(form.created_at).toISOString():(editBet?undefined:new Date().toISOString());
       bet={
         player:form.player,team:form.playerObj?.team||null,
         description:desc,over_under:form.ou||null,
@@ -990,7 +998,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 {playerResults.map(p=>(
                   <div key={p.name} style={{borderTop:"1px solid "+C.line}}>
                     <SRow onClick={()=>selectPlayer(p)}
-                      logo={<PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} size={44}/>}
+                      logo={<PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} team={p.team} size={44}/>}
                       title={formatName(p.name)} sub={[p.role,p.team].filter(Boolean).join(" · ")} chevron/>
                   </div>
                 ))}
@@ -1154,47 +1162,51 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           })}
         </div>
 
-        {/* ── Bookmaker · Tipster · Date · Statut ── */}
-        <div style={{marginTop:16,background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
-          <div style={{...rowStyle,borderBottom:"1px solid "+C.line}}>
-            <span style={{fontSize:15,color:C.sub,width:88,flexShrink:0}}>Bookmaker</span>
-            {form.bookmaker&&bkPhotos[form.bookmaker]&&<MiniLogo src={bkPhotos[form.bookmaker]} size={20} round={false}/>}
-            <select className="row-select" value={form.bookmaker} onChange={e=>f("bookmaker",e.target.value)}>
-              <option value="">Aucun</option>
-              {bookmakers.map(b=><option key={b}>{b}</option>)}
-            </select>
-            {lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
+        {/* ── Bookmaker ── */}
+        <div className="pick-head">
+          <span>Bookmaker</span>{lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
+        </div>
+        <div className="chip-row">
+          {bookmakers.map(bk=>{
+            const on=form.bookmaker===bk;
+            return(
+              <button key={bk} type="button" className={"pick-chip"+(on?" on":"")} onClick={()=>f("bookmaker",on?"":bk)}>
+                {bkPhotos[bk]&&<MiniLogo src={bkPhotos[bk]} label={bk} size={18} round={false}/>}{bk}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Tipster ── */}
+        <div className="pick-head">
+          <span>Tipster</span>{lockBtn(lockedTip,()=>setLockedTip(p=>!p),"Verrouiller le tipster")}
+        </div>
+        {tipsters.length>0?(
+          <div className="chip-row">
+            {tipsters.map(tp=>{
+              const on=form.tipster===tp.name;
+              return(
+                <button key={tp.id} type="button" className={"pick-chip"+(on?" on":"")} onClick={()=>f("tipster",on?"":tp.name)}>
+                  {tp.name}
+                </button>
+              );
+            })}
           </div>
-          <div style={{...rowStyle,borderBottom:"1px solid "+C.line}}>
-            <span style={{fontSize:15,color:C.sub,width:88,flexShrink:0}}>Tipster</span>
-            {tipsters.length>0?(
-              <select className="row-select" value={form.tipster} onChange={e=>f("tipster",e.target.value)}>
-                <option value="">Aucun</option>
-                {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
-              </select>
-            ):(
-              <input className="row-select" placeholder="Optionnel" value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
-            )}
-            {lockBtn(lockedTip,()=>setLockedTip(p=>!p),"Verrouiller le tipster")}
-          </div>
-          <div style={{...rowStyle,borderBottom:"1px solid "+C.line,paddingRight:16}}>
-            <span style={{fontSize:15,color:C.sub,width:88,flexShrink:0}}>Date</span>
-            <input type="datetime-local" className="row-select" value={form.created_at||""}
-              onChange={e=>f("created_at",e.target.value)} style={{colorScheme:"dark"}}/>
-          </div>
-          <div style={{padding:"10px 12px 12px"}}>
-            <div style={{fontSize:15,color:C.sub,margin:"2px 4px 8px"}}>Statut</div>
-            <div className="segment">
-              {[{key:"pending",label:"En cours"},{key:"won",label:"Gagné"},{key:"lost",label:"Perdu"},{key:"void",label:"Void"}].map(({key,label})=>{
-                const on=form.status===key;
-                const col=key==="won"?C.green:key==="lost"?C.red:C.text;
-                return(
-                  <button key={key} type="button" className={"seg-btn"+(on?" active":"")}
-                    onClick={()=>f("status",key)} style={on?{color:col}:undefined}>{label}</button>
-                );
-              })}
-            </div>
-          </div>
+        ):(
+          <input className="form-input" placeholder="Nom du tipster (optionnel)" value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
+        )}
+
+        {/* ── Statut ── */}
+        <div className="pick-head"><span>Statut</span></div>
+        <div className="segment">
+          {[{key:"pending",label:"En cours"},{key:"won",label:"Gagné"},{key:"lost",label:"Perdu"},{key:"void",label:"Void"}].map(({key,label})=>{
+            const on=form.status===key;
+            const col=key==="won"?C.green:key==="lost"?C.red:C.text;
+            return(
+              <button key={key} type="button" className={"seg-btn"+(on?" active":"")}
+                onClick={()=>f("status",key)} style={on?{color:col}:undefined}>{label}</button>
+            );
+          })}
         </div>
 
         {/* ── Gain potentiel ── */}
@@ -1625,16 +1637,19 @@ function MiniLogo({src,label,size=16,round=true}){
   );
 }
 
-// Photo ronde du joueur
-function PlayerFace({src,name,size=46}){
+// Photo ronde du joueur : buste entier, fond couleur du club (plus doux qu'un gros plan)
+function PlayerFace({src,name,size=46,team=null}){
   const[err,setErr]=useState(false);
   const ini=(name||"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+  const tc=getTeamColor(team);
+  const bg=tc?`radial-gradient(circle at 50% 35%, ${tc.p}55 0%, ${tc.p}22 60%, #262B35 100%)`:"radial-gradient(circle at 50% 35%, #353B48 0%, #262B35 70%)";
   return(
-    <div style={{width:size,height:size,borderRadius:size/2,background:C.chip,overflow:"hidden",flexShrink:0,
-      display:"flex",alignItems:"center",justifyContent:"center",color:"#C4C9D4",fontSize:Math.round(size*.3),fontWeight:600}}>
+    <div style={{width:size,height:size,borderRadius:size/2,background:bg,overflow:"hidden",flexShrink:0,position:"relative",
+      display:"flex",alignItems:"center",justifyContent:"center",color:"#C4C9D4",fontSize:Math.round(size*.3),fontWeight:600,
+      boxShadow:"inset 0 0 0 1px rgba(255,255,255,.06)"}}>
       {src&&!err
         ?<img src={src} alt={name||""} loading="lazy" onError={()=>setErr(true)}
-            style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%"}}/>
+            style={{position:"absolute",left:"50%",bottom:0,transform:"translateX(-50%)",height:"96%",width:"auto",maxWidth:"none"}}/>
         :ini}
     </div>
   );
@@ -1846,7 +1861,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
       <div style={{position:"relative",flexShrink:0}}>
-        <PlayerFace src={photo} name={name} size={54}/>
+        <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={54}/>
         {teamName&&!isTeam&&(
           <span style={{position:"absolute",right:-3,bottom:-3,width:22,height:22,borderRadius:11,background:C.card,
             border:"1.5px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -2428,7 +2443,7 @@ function EditView({showToast}){
                     <button type="button" aria-label={"Coller la photo de "+formatName(p.name)}
                       onClick={e=>{e.stopPropagation();pastePlayerPhoto(p);}}
                       style={{border:"none",padding:0,background:"transparent",cursor:"pointer",position:"relative",opacity:uploadingId===p.id?.5:1}}>
-                      <PlayerFace src={photo} name={formatName(p.name)} size={44}/>
+                      <PlayerFace src={photo} name={formatName(p.name)} team={p.team} size={44}/>
                     </button>
                   }
                   title={formatName(p.name)}
