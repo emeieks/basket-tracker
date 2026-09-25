@@ -1931,31 +1931,32 @@ function BetSlip({b,players,bkPhotos,onClick}){
   const lastName=isTeam?name:(name.split(" ").slice(-1)[0]||name);
   return(
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
-      padding:"10px 12px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+      padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
       <div style={{position:"relative",flexShrink:0}}>
-        <PlayerFace src={photo} name={name} size={42}/>
+        <PlayerFace src={photo} name={name} size={58}/>
         {teamName&&!isTeam&&(
-          <span style={{position:"absolute",right:-3,bottom:-3,width:20,height:20,borderRadius:10,background:C.card,
+          <span style={{position:"absolute",right:-3,bottom:-3,width:24,height:24,borderRadius:12,background:C.card,
             border:"1.5px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <MiniLogo src={clubLogo} label={teamName} size={15}/>
+            <MiniLogo src={clubLogo} label={teamName} size={18}/>
           </span>
         )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
-        <span style={{fontSize:14,fontWeight:600,lineHeight:1.25}}>
+        <span style={{fontSize:15,fontWeight:600,lineHeight:1.25}}>
           {lastName} · {b.description}
           {b.game&&<span style={{display:"inline-flex",verticalAlign:"-2px",marginLeft:6}}><MiniLogo src={leagueLogo} label={b.game} size={15} round={false}/></span>}
         </span>
-        <span style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.sub,minWidth:0}}>
+        <span style={{display:"flex",flexWrap:"wrap",alignItems:"center",columnGap:7,rowGap:3,fontSize:13,color:C.sub,minWidth:0}}>
           {[
+            <span key="o" style={{color:"#C4C9D4",fontWeight:500,flexShrink:0}}>@{b.odds}</span>,
+            <span key="m" style={{color:"#C4C9D4",fontWeight:500,flexShrink:0}}>{stake.toFixed(0)}€</span>,
             b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={15} round={false}/>,
-            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4",fontWeight:500}}>{b.tipster}</span>,
-          ].filter(Boolean).flatMap((el,i)=>i===0?[el]:[<span key={"s"+i} style={{width:4,height:4,borderRadius:2,background:"#6B7280",flexShrink:0}}/>,el])}
+            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",color:"#C4C9D4",fontWeight:500}}>{b.tipster}</span>,
+          ].filter(Boolean).map((el,i)=>i===0?el:(<span key={"g"+i} style={{display:"inline-flex",alignItems:"center",gap:7}}><span style={{width:5,height:5,borderRadius:3,background:"#8B92A0",flexShrink:0}}/>{el}</span>))}
         </span>
       </div>
       <div style={{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",gap:3}}>
-        <span style={{fontSize:14,fontWeight:600,color:resultCol}}>{result}</span>
-        <span style={{fontSize:12,color:C.sub}}>@{b.odds} · {stake.toFixed(0)}€</span>
+        <span style={{fontSize:15,fontWeight:600,color:resultCol}}>{result}</span>
       </div>
     </article>
   );
