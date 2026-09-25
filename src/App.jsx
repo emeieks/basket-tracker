@@ -167,6 +167,14 @@ async function upsertClub(name,league,logo){
   console.warn("upsertClub warning:",r.status,await r.text().catch(()=>""));
   return false;
 }
+// Sync logo sur TOUS les clubs du même nom (toutes ligues confondues)
+async function syncClubLogoAllLeagues(name,logo){
+  const enc=v=>encodeURIComponent(v);
+  const r=await fetch(SUPA_URL+"/rest/v1/clubs?name=eq."+enc(name),{
+    method:"PATCH",headers:{...H},body:JSON.stringify({logo}),
+  });
+  if(!r.ok)console.warn("syncClubLogoAllLeagues:",r.status);
+}
 
 async function updatePlayer(id,fields){
   const r=await fetch(SUPA_URL+"/rest/v1/players?id=eq."+id,{
@@ -2543,7 +2551,23 @@ function EditView({showToast}){
   useEffect(()=>{
     if(!selectedLeague)return;
     setLoading(true);setSelectedClub(null);setPlayers([]);
-    fetchClubs(selectedLeague.name).then(cs=>setClubs(cs)).catch(()=>{}).finally(()=>setLoading(false));
+    fetchClubs(selectedLeague.name).then(async cs=>{
+      // Récupérer le count de joueurs par club en une seule requête
+      try{
+        const teamNames=cs.map(c=>c.name);
+        if(teamNames.length>0){
+          const q=SUPA_URL+"/rest/v1/players?league=eq."+encodeURIComponent(selectedLeague.name)+"&select=team";
+          const r=await fetch(q,{headers:H});
+          if(r.ok){
+            const rows=await r.json();
+            const countMap={};
+            rows.forEach(p=>{if(p.team)countMap[p.team]=(countMap[p.team]||0)+1;});
+            cs=cs.map(c=>({...c,player_count:countMap[c.name]||0}));
+          }
+        }
+      }catch(_){}
+      setClubs(cs);
+    }).catch(()=>{}).finally(()=>setLoading(false));
   },[selectedLeague]);
 
   useEffect(()=>{
@@ -2570,16 +2594,19 @@ function EditView({showToast}){
   async function pasteClubLogo(club){
     try{
       const url=await pasteImageToSupabase("club_"+club.name.replace(/\s/g,"_").toLowerCase());
-      setClubs(prev=>prev.map(c=>c.id===club.id?{...c,logo:url}:c));
-      if(selectedClub?.id===club.id)setSelectedClub(prev=>({...prev,logo:url}));
+      // Mettre à jour tous les clubs du même nom en local (toutes ligues)
+      setClubs(prev=>prev.map(c=>c.name===club.name?{...c,logo:url}:c));
+      if(selectedClub?.name===club.name)setSelectedClub(prev=>({...prev,logo:url}));
       setPlayers(prev=>prev.map(p=>p.team===club.name?{...p,team_logo_url:url}:p));
-      // Mettre à jour le map global immédiatement → watermark visible partout sans reload
+      // Map global → toutes les vues (BetDetailModal, Mes Paris, etc.)
       CLUB_LOGOS_MAP[club.name]=url;
-      upsertClub(club.name,selectedLeague.name,url).catch(e=>console.warn("Club logo:",e));
+      // Sync DB : tous les clubs du même nom, toutes ligues
+      syncClubLogoAllLeagues(club.name,url).catch(e=>console.warn("Club logo sync:",e));
+      // Sync tous les joueurs du même club
       fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(club.name),{
         method:"PATCH",headers:{...H},body:JSON.stringify({team_logo_url:url}),
       }).catch(e=>console.warn("Players team_logo_url:",e));
-      showToast("Logo "+club.name+" mis à jour ✓");
+      showToast("Logo "+club.name+" synchronisé sur toutes les ligues ✓");
     }catch(e){showToast("Erreur: "+e.message,"#F87171");}
   }
 
@@ -2597,8 +2624,24 @@ function EditView({showToast}){
 
   async function savePlayer(p,fields){
     try{
-      await updatePlayer(p.id,fields);
-      setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,...fields}:pl));
+      // Si le club change, récupérer le logo du club destination (toutes ligues)
+      let extraFields={};
+      if(fields.team&&fields.team!==p.team){
+        // Chercher le logo dans le map global d'abord
+        const existingLogo=CLUB_LOGOS_MAP[fields.team];
+        if(existingLogo){
+          extraFields.team_logo_url=existingLogo;
+        } else {
+          // Sinon requête DB — prendre n'importe quelle entrée du club par nom
+          try{
+            const r=await fetch(SUPA_URL+"/rest/v1/clubs?name=eq."+encodeURIComponent(fields.team)+"&select=logo&limit=1",{headers:H});
+            if(r.ok){const[row]=await r.json();if(row?.logo)extraFields.team_logo_url=row.logo;}
+          }catch(_){}
+        }
+      }
+      const merged={...fields,...extraFields};
+      await updatePlayer(p.id,merged);
+      setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,...merged}:pl));
       setEditingPlayer(null);
       showToast("Joueur mis à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#F87171");}
@@ -2666,7 +2709,13 @@ function EditView({showToast}){
             <div style={{fontSize:16,fontWeight:800,color:"#F2F2F7"}}>{selectedLeague.name}</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{clubs.length} clubs</div>
           </div>
-          <button className="icon-btn" onClick={()=>pasteLeagueLogo(selectedLeague)}>⊕</button>
+          <button className="icon-btn" onClick={()=>pasteLeagueLogo(selectedLeague)}
+            style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+              <rect x="8" y="2" width="12" height="14" rx="2"/>
+            </svg>
+          </button>
         </div>
         <div style={{position:"relative",marginBottom:14}}>
           <input className="form-input" placeholder="Rechercher un club…"
@@ -2687,10 +2736,17 @@ function EditView({showToast}){
             }
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14,fontWeight:700,color:"#F2F2F7",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{club.name}</div>
+              {club.player_count>0&&<div style={{fontSize:11,color:"rgba(255,255,255,.28)",marginTop:2}}>{club.player_count} joueur{club.player_count>1?"s":""}</div>}
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <button className="icon-btn" title="Changer logo"
-                onClick={e=>{e.stopPropagation();pasteClubLogo(club);}}>⊕</button>
+                onClick={e=>{e.stopPropagation();pasteClubLogo(club);}}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+                  <rect x="8" y="2" width="12" height="14" rx="2"/>
+                </svg>
+              </button>
               <span style={{color:"#4B5563",fontSize:20}}>›</span>
             </div>
           </div>
@@ -2735,7 +2791,13 @@ function EditView({showToast}){
           <div style={{fontSize:16,fontWeight:800,color:"#F2F2F7"}}>{selectedClub.name}</div>
           <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{players.length} joueurs</div>
         </div>
-        <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}>⊕</button>
+        <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}
+          style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+            <rect x="8" y="2" width="12" height="14" rx="2"/>
+          </svg>
+        </button>
       </div>
       <div style={{position:"relative",marginBottom:14}}>
         <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(255,255,255,.28)",pointerEvents:"none"}}>⌕</span>
@@ -2789,10 +2851,20 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
   const[team,setTeam]=useState(player.team||"");
   const[game,setGame]=useState(player.game||"");
   const[saving,setSaving]=useState(false);
+  const[openPicker,setOpenPicker]=useState(null); // "league"|"club"|"position"
   const ROLES=["PG","SG","SF","PF","C","Guard","Wing","Forward","Big","G","F"];
   const photo=player.photo_url||player.avatar_url;
-  // Résolution logo avec fallback CLUB_LOGOS_MAP
-  const resolvedTeamLogoForEdit=getTeamLogo(team||player.team, player.team_logo_url||null);
+  const resolvedTeamLogo=getTeamLogo(team||player.team, player.team_logo_url||null);
+  const tc=getTeamColor(team||player.team);
+  const pc=tc?.p||"#1C1C22";
+
+  // Formatage Prénom Nom
+  const nameFormatted=(player.name||"").trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+
+  // Ligue associée au club sélectionné
+  const currentLeagueObj=leagues.find(l=>l.name===game);
+  const filteredClubs=clubs.filter(c=>c.league===game).sort((a,b)=>a.name.localeCompare(b.name));
+  const currentClubObj=filteredClubs.find(c=>c.name===team)||clubs.find(c=>c.name===team);
 
   async function save(){
     if(saving)return;
@@ -2803,68 +2875,164 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal-sheet">
-        <div className="modal-handle"/>
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
-          {/* Photo joueur avec logo dans l'éditeur */}
-          <div style={{position:"relative"}}>
-            <PlayerAvatar
-              w={120} h={88}
-              photoUrl={photo}
-              teamLogoUrl={resolvedTeamLogoForEdit}
-              teamName={team}
-              round={false}
-              logoSize={0.72}
-            />
-            <div style={{position:"absolute",bottom:0,right:0,width:24,height:24,
-              borderRadius:"50%",background:"#EBEBEB",border:"2px solid #111111",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
-              {uploadingId===player.id?"...":"⊕"}
-            </div>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:17,fontWeight:800,color:"#F2F2F7",marginBottom:8}}>
-              {player.name}
-            </div>
-            <button className="btn btn-secondary"
-              style={{padding:"7px 14px",fontSize:12,width:"auto"}}
-              onClick={onPastePhoto}
-              disabled={uploadingId===player.id}>
-              {uploadingId===player.id?"Upload…":"Coller une photo"}
-            </button>
-          </div>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Ligue</label>
-          <select className="form-select" value={game} onChange={e=>setGame(e.target.value)}>
-            <option value="">Sélectionner…</option>
-            {leagues.map(l=><option key={l.id} value={l.name}>{l.name}</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Club</label>
-          {clubs.filter(c=>c.league===game).length>0?(
-            <select className="form-select" value={team} onChange={e=>setTeam(e.target.value)}>
-              <option value="">Sélectionner…</option>
-              {clubs.filter(c=>c.league===game).sort((a,b)=>a.name.localeCompare(b.name))
-                .map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
-            </select>
-          ):(
-            <input className="form-input" placeholder="Nom du club"
-              value={team} onChange={e=>setTeam(e.target.value)}/>
+      <div className="modal-sheet" style={{padding:0,overflow:"hidden",borderRadius:"24px 24px 0 0"}}>
+        <div className="modal-handle" style={{margin:"12px auto 0"}}/>
+
+        {/* ── HERO HEADER ── */}
+        <div style={{
+          position:"relative",height:180,overflow:"hidden",flexShrink:0,
+          background:pc?`linear-gradient(135deg,${pc}CC 0%,${pc}44 50%,#0D0D12 100%)`:"#1C1C22",
+        }}>
+          {/* Logo club en fond */}
+          {resolvedTeamLogo&&(
+            <img src={resolvedTeamLogo} alt="" style={{
+              position:"absolute",right:-20,top:"50%",transform:"translateY(-50%)",
+              width:160,height:160,objectFit:"contain",opacity:.08,filter:"blur(1px)",pointerEvents:"none",
+            }}/>
           )}
+          {/* Photo joueur */}
+          <div style={{position:"absolute",bottom:0,left:20,display:"flex",alignItems:"flex-end",gap:16}}>
+            <div style={{position:"relative"}}>
+              {photo?(
+                <img src={photo} alt={nameFormatted} style={{
+                  width:130,height:150,objectFit:"cover",objectPosition:"top center",
+                  borderRadius:"14px 14px 0 0",
+                  maskImage:"linear-gradient(to bottom,black 60%,transparent 100%)",
+                  WebkitMaskImage:"linear-gradient(to bottom,black 60%,transparent 100%)",
+                }}/>
+              ):(
+                <div style={{width:130,height:150,borderRadius:"14px 14px 0 0",
+                  background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",
+                  justifyContent:"center",fontSize:48,color:"rgba(255,255,255,.15)"}}>◎</div>
+              )}
+              {/* Bouton coller photo */}
+              <button onClick={onPastePhoto} disabled={uploadingId===player.id}
+                style={{position:"absolute",bottom:8,right:8,
+                  width:30,height:30,borderRadius:"50%",
+                  background:"rgba(0,0,0,.7)",border:"1.5px solid rgba(255,255,255,.2)",
+                  display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                {uploadingId===player.id
+                  ?<span style={{fontSize:9,color:"#fff"}}>…</span>
+                  :<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+                    <rect x="8" y="2" width="12" height="14" rx="2"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            {/* Infos joueur */}
+            <div style={{paddingBottom:14,flex:1}}>
+              <div style={{
+                fontFamily:"'Barlow Condensed',inherit",fontSize:26,fontWeight:900,
+                color:"#F2F2F7",lineHeight:1.05,letterSpacing:-.3,
+                textShadow:"0 2px 12px rgba(0,0,0,.6)",
+              }}>{nameFormatted}</div>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginTop:5}}>
+                {currentLeagueObj?.logo&&(
+                  <img src={currentLeagueObj.logo} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>
+                )}
+                <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>
+                  {game||"—"}
+                </span>
+                {role&&<>
+                  <span style={{fontSize:10,color:"rgba(255,255,255,.2)"}}>·</span>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>{role}</span>
+                </>}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="form-group">
-          <label className="form-label">Position</label>
-          <select className="form-select" value={role} onChange={e=>setRole(e.target.value)}>
-            <option value="">Sélectionner…</option>
-            {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
-          </select>
+
+        {/* ── CHAMPS ÉDITABLES ── */}
+        <div style={{padding:"20px 16px 32px",display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* Ligue */}
+          <div>
+            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
+              textTransform:"uppercase",marginBottom:6}}>Ligue</div>
+            <button onClick={()=>setOpenPicker(openPicker==="league"?null:"league")}
+              style={{width:"100%",background:"#1C1C22",border:`1px solid ${openPicker==="league"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+              {currentLeagueObj?.logo&&<img src={currentLeagueObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
+              <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:game?"#F2F2F7":"rgba(255,255,255,.3)"}}>
+                {game||"Sélectionner une ligue…"}
+              </span>
+              <span style={{fontSize:10,color:"rgba(255,255,255,.25)"}}>▾</span>
+            </button>
+            {openPicker==="league"&&(
+              <div style={{background:"#1C1C22",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,
+                marginTop:4,overflow:"hidden",maxHeight:200,overflowY:"auto"}}>
+                {leagues.map(l=>(
+                  <div key={l.id} onClick={()=>{setGame(l.name);setTeam("");setOpenPicker(null);}}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
+                      background:game===l.name?"rgba(99,102,241,.1)":"transparent",
+                      borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                    {l.logo&&<img src={l.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
+                    <span style={{fontSize:13,fontWeight:600,color:game===l.name?"#818CF8":"#F2F2F7"}}>{l.name}</span>
+                    {game===l.name&&<span style={{marginLeft:"auto",fontSize:11,color:"#818CF8"}}>✓</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Club */}
+          <div>
+            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
+              textTransform:"uppercase",marginBottom:6}}>Club</div>
+            <button onClick={()=>setOpenPicker(openPicker==="club"?null:"club")}
+              style={{width:"100%",background:"#1C1C22",border:`1px solid ${openPicker==="club"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+              {currentClubObj?.logo&&<img src={currentClubObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
+              <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:team?"#F2F2F7":"rgba(255,255,255,.3)"}}>
+                {team||"Sélectionner un club…"}
+              </span>
+              <span style={{fontSize:10,color:"rgba(255,255,255,.25)"}}>▾</span>
+            </button>
+            {openPicker==="club"&&(
+              <div style={{background:"#1C1C22",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,
+                marginTop:4,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
+                {filteredClubs.length===0&&(
+                  <div style={{padding:"12px 14px",fontSize:12,color:"rgba(255,255,255,.3)"}}>
+                    {game?"Aucun club":"Sélectionnez d'abord une ligue"}
+                  </div>
+                )}
+                {filteredClubs.map(c=>(
+                  <div key={c.id} onClick={()=>{setTeam(c.name);setOpenPicker(null);}}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
+                      background:team===c.name?"rgba(99,102,241,.1)":"transparent",
+                      borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                    {c.logo&&<img src={c.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4,background:"#2A2A2E",padding:2}}/>}
+                    <span style={{fontSize:13,fontWeight:600,color:team===c.name?"#818CF8":"#F2F2F7"}}>{c.name}</span>
+                    {team===c.name&&<span style={{marginLeft:"auto",fontSize:11,color:"#818CF8"}}>✓</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Position */}
+          <div>
+            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
+              textTransform:"uppercase",marginBottom:6}}>Position</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+              {ROLES.map(r=>(
+                <button key={r} onClick={()=>setRole(r===role?"":r)}
+                  style={{padding:"8px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
+                    background:role===r?"#6366F1":"rgba(255,255,255,.07)",
+                    color:role===r?"#fff":"rgba(255,255,255,.5)",
+                    transition:"all .15s",
+                  }}>{r}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Bouton sauvegarder */}
+          <button className="btn btn-primary" onClick={save} disabled={saving} style={{marginTop:6}}>
+            {saving?"Sauvegarde…":"Sauvegarder"}
+          </button>
+          <button className="btn btn-secondary" onClick={onClose}>Annuler</button>
         </div>
-        <button className="btn btn-primary" onClick={save} disabled={saving}>
-          {saving?"Sauvegarde…":"Sauvegarder"}
-        </button>
-        <button className="btn btn-secondary" onClick={onClose} style={{marginTop:8}}>Annuler</button>
       </div>
     </div>
   );
