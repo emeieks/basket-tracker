@@ -33,7 +33,7 @@ function nowDT(){
 
 function formatName(name){
   if(!name)return"";
-  return name.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+  return name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 }
 
 // ── API SUPABASE ──────────────────────────────────────────────────────────────
@@ -311,21 +311,22 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .badge-void{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2);}
 
 /* ── FORMS ── */
-.form-group{margin-bottom:14px;}
-.form-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px;display:block;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;}
 .form-input{
-  width:100%;background:#1C1C1F;border:1px solid #2A2A2E;
+  width:100%;background:#111114;border:1px solid #2A2A2E;
   border-radius:10px;padding:13px 14px;color:#F2F2F7;
   font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;
 }
-.form-input:focus{border-color:rgba(255,255,255,.3);}
+.form-input:focus{border-color:rgba(99,102,241,.5);}
+.form-input::placeholder{color:rgba(255,255,255,.18);}
 .form-select{
-  width:100%;background:#1C1C1F;border:1px solid #2A2A2E;
+  width:100%;background:#111114;border:1px solid #2A2A2E;
   border-radius:10px;padding:13px 14px;color:#F2F2F7;
   font-size:15px;font-family:inherit;outline:none;
   appearance:none;-webkit-appearance:none;cursor:pointer;
 }
-.form-select:focus{border-color:rgba(255,255,255,.3);}
+.form-select:focus{border-color:rgba(99,102,241,.5);}
 
 /* ── BUTTONS ── */
 .btn{border:none;border-radius:10px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .12s;width:100%;font-family:inherit;}
@@ -357,18 +358,18 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .bet-desc{font-size:12px;color:rgba(255,255,255,.3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bet-right{text-align:right;flex-shrink:0;}
 .bet-profit{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.bet-profit.pos{color:#fff;}
-.bet-profit.neg{color:rgba(255,255,255,.35);}
-.bet-profit.neu{color:rgba(255,255,255,.2);}
+.bet-profit.pos{color:#22C55E;}
+.bet-profit.neg{color:#F87171;}
+.bet-profit.neu{color:rgba(255,255,255,.3);}
 .bet-odds{font-size:11px;color:rgba(255,255,255,.2);margin-top:2px;}
 
 /* ── STATUS BUTTONS ── */
-.status-row{display:flex;gap:6px;margin-top:14px;}
-.status-btn{flex:1;padding:10px;border-radius:8px;border:1px solid #2A2A2E;font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;background:transparent;color:rgba(255,255,255,.25);font-family:inherit;}
-.status-btn.won.active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;}
-.status-btn.lost.active{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.6);}
-.status-btn.pending.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.8);}
-.status-btn.void.active{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+.status-row{display:flex;gap:6px;margin-top:0;}
+.status-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid #2A2A2E;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:#111114;color:rgba(255,255,255,.22);font-family:inherit;letter-spacing:.2px;}
+.status-btn.won.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#22C55E;}
+.status-btn.lost.active{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:#F87171;}
+.status-btn.pending.active{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.35);color:#818CF8;}
+.status-btn.void.active{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.45);}
 
 /* ── STATS GRID ── */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
@@ -407,7 +408,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 
 /* ── PROFIT BIG ── */
 .profit-big{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;}
-.profit-big.pos,.profit-big.neg,.profit-big.neu{color:#fff;}
+.profit-big.pos{color:#22C55E;}.profit-big.neg{color:#F87171;}.profit-big.neu{color:#fff;}
 
 /* ── EMPTY STATE ── */
 .empty{text-align:center;padding:60px 20px;}
@@ -999,71 +1000,165 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
   const avatarPlayerObj=isTeamBet?null:form.playerObj;
   const avatarTeamLogoUrl=avatarPlayerObj?.team_logo_url||null;
 
+  // ── helpers header ESPN ──
+  const playerPhoto = !isTeamBet && (form.playerObj?.photo_url||form.playerObj?.avatar_url);
+  const teamLogoHeader = isTeamBet
+    ? getTeamLogo(form.team, players.find(p=>p.team===form.team)?.team_logo_url||null)
+    : getTeamLogo(form.playerObj?.team, avatarTeamLogoUrl);
+  const playerPosition = form.playerObj?.position||"";
+  const playerTeam = form.playerObj?.team||form.game||"";
+
+  // Résumé du pari (rempli au fur et à mesure)
+  const betSummaryParts=[];
+  if(!isTeamBet&&form.ou&&form.line&&form.stat)
+    betSummaryParts.push(`${form.ou} ${form.line} ${form.stat}`);
+  if(isTeamBet&&form.betType){
+    if(form.betType==="moneyline") betSummaryParts.push(`${form.team} gagne`);
+    else if(form.betType==="handicap"&&form.line) betSummaryParts.push(`Handicap ${form.line}`);
+    else if(form.betType==="total"&&form.line) betSummaryParts.push(`Total ${form.ou||"Over"} ${form.line}`);
+  }
+  const betLine = betSummaryParts.join(" · ");
+
   return(
     <div style={{position:"fixed",inset:0,background:"#08090E",zIndex:200,
       display:"flex",flexDirection:"column",overflowY:"auto"}}>
-      {/* Header pleine page */}
-      <div style={{display:"flex",alignItems:"center",gap:12,
-        padding:"16px 16px 14px",borderBottom:"1px solid rgba(255,255,255,.06)",
-        flexShrink:0}}>
-        <button onClick={editBet?onClose:()=>setStep("search")}
-          style={{width:36,height:36,borderRadius:"50%",
-            background:"rgba(255,255,255,.08)",border:"none",
-            color:"#F2F2F7",fontSize:20,cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
-      <div style={{display:"flex",alignItems:"center",gap:12,flex:1}}>
 
-          {/* Avatar header formulaire */}
-          <div style={{
-            width:52,height:52,borderRadius:"50%",flexShrink:0,
-            background:`linear-gradient(135deg,${pc}CC,${tc?.s||"#374151"}88)`,
-            border:`2px solid ${pc}44`,overflow:"hidden",
-            position:"relative",display:"flex",alignItems:"flex-end",justifyContent:"center",
-          }}>
-            {/* Logo équipe watermark dans le header — résolution via CLUB_LOGOS_MAP */}
-            {(()=>{
-              const tl=isTeamBet
-                ?getTeamLogo(form.team,players.find(p=>p.team===form.team)?.team_logo_url||null)
-                :getTeamLogo(form.playerObj?.team,avatarTeamLogoUrl);
-              return tl?(
-              <img
-                src={tl}
-                alt=""
-                style={{position:"absolute",width:"140%",height:"140%",
-                  objectFit:"contain",opacity:.45,
-                  top:"50%",left:"50%",transform:"translate(-50%,-42%)",
-                  filter:"saturate(0.7)",
-                  pointerEvents:"none",zIndex:0}}/>
-              ):null;
-            })()}
-            {isTeamBet
-              ?<span style={{fontSize:24,color:"#374151",position:"relative",zIndex:1}}>◉</span>
-              :(()=>{
-                const photo=form.playerObj?.photo_url||form.playerObj?.avatar_url;
-                return photo
-                  ?<img src={photo} style={{width:"100%",height:"100%",
-                      objectFit:"cover",objectPosition:"50% 8%",
-                      position:"relative",zIndex:1}}/>
-                  :<span style={{fontSize:22,position:"relative",zIndex:1}}>○</span>;
-              })()
+      {/* ══ HERO HEADER ESPN-style ══ */}
+      <div style={{position:"relative",flexShrink:0,overflow:"hidden",
+        background:pc?`linear-gradient(135deg,${pc}55 0%,#08090E 70%)`:"#0D0D12",
+        minHeight:160}}>
+
+        {/* Logo équipe en fond — grand, flou */}
+        {teamLogoHeader&&(
+          <img src={teamLogoHeader} alt=""
+            style={{position:"absolute",right:-20,top:"50%",transform:"translateY(-50%)",
+              width:170,height:170,objectFit:"contain",
+              opacity:.12,filter:"blur(2px) saturate(0.4)",pointerEvents:"none",zIndex:0}}/>
+        )}
+
+        {/* Bouton retour — flottant haut gauche */}
+        <button onClick={editBet?onClose:()=>setStep("search")}
+          style={{position:"absolute",top:16,left:16,zIndex:10,
+            width:34,height:34,borderRadius:10,
+            background:"rgba(0,0,0,.45)",border:"1px solid rgba(255,255,255,.12)",
+            color:"#F2F2F7",fontSize:18,cursor:"pointer",backdropFilter:"blur(8px)",
+            display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>‹</button>
+
+        {/* Contenu hero : photo + infos */}
+        <div style={{display:"flex",alignItems:"flex-end",gap:0,
+          padding:"52px 0 0 0",position:"relative",zIndex:1}}>
+
+          {/* Photo joueur — grande, alignée bas */}
+          <div style={{width:130,height:140,flexShrink:0,position:"relative",
+            overflow:"hidden",alignSelf:"flex-end"}}>
+            {playerPhoto
+              ?(
+                <img src={playerPhoto} alt={form.player}
+                  style={{width:"100%",height:"100%",objectFit:"cover",
+                    objectPosition:"50% 8%",display:"block"}}/>
+              )
+              :isTeamBet&&teamLogoHeader?(
+                <div style={{width:"100%",height:"100%",display:"flex",
+                  alignItems:"center",justifyContent:"center"}}>
+                  <img src={teamLogoHeader} alt={form.team}
+                    style={{width:80,height:80,objectFit:"contain",opacity:.7}}/>
+                </div>
+              ):(
+                <div style={{width:"100%",height:"100%",display:"flex",
+                  alignItems:"center",justifyContent:"center",
+                  fontSize:52,color:"rgba(255,255,255,.1)"}}>○</div>
+              )
             }
           </div>
 
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:16,fontWeight:800,color:"#F2F2F7",
-              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {isTeamBet?form.team:form.player}
+          {/* Infos textuelles à droite */}
+          <div style={{flex:1,padding:"0 16px 16px 14px",minWidth:0}}>
+            {/* Nom */}
+            {isTeamBet?(
+              <div style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:-.5,lineHeight:1.1}}>
+                {form.team}
+              </div>
+            ):(()=>{
+              const parts=(form.player||"").trim().split(/\s+/);
+              const first=parts[0]?parts[0].charAt(0).toUpperCase()+parts[0].slice(1).toLowerCase():"";
+              const last=parts.slice(1).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+              return(
+                <div style={{lineHeight:1.05,marginBottom:4}}>
+                  <div style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,.6)",letterSpacing:.2}}>{first}</div>
+                  <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-.5}}>{last||first}</div>
+                </div>
+              );
+            })()}
+
+            {/* Club + position */}
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+              {teamLogoHeader&&(
+                <img src={teamLogoHeader} alt="" style={{width:16,height:16,objectFit:"contain",opacity:.8}}/>
+              )}
+              {playerTeam&&(
+                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)"}}>
+                  {playerTeam}
+                </span>
+              )}
+              {playerPosition&&(
+                <>
+                  <span style={{color:"rgba(255,255,255,.2)",fontSize:11}}>·</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.35)"}}>
+                    {playerPosition}
+                  </span>
+                </>
+              )}
             </div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>
-              {isTeamBet
-                ?<span style={{color:"rgba(255,255,255,.6)",fontWeight:700}}>Pari équipe</span>
-                :<span>{form.playerObj?.team||form.game}</span>}
+
+            {/* Stats du pari — apparaissent au fur et à mesure */}
+            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+              {betLine&&(
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
+                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Pari</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7"}}>{betLine}</span>
+                </div>
+              )}
+              {form.odds&&(
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
+                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Cote</span>
+                  <span style={{fontSize:13,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
+                </div>
+              )}
+              {form.stake&&(
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
+                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Mise</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
+                    {form.stake}$
+                    {form.odds&&form.stake&&(
+                      <span style={{color:"rgba(255,255,255,.3)",fontWeight:500}}>
+                        {" → "}<span style={{
+                          color:(parseFloat(form.odds)*parseFloat(form.stake)-parseFloat(form.stake))>0?"#22C55E":"rgba(255,255,255,.3)",
+                          fontWeight:700}}>
+                          +{((parseFloat(form.odds)||1)*parseFloat(form.stake)-parseFloat(form.stake)).toFixed(2)}$
+                        </span>
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+              {form.tipster&&(
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
+                    textTransform:"uppercase",letterSpacing:.8,width:34}}>Tips</span>
+                  <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.55)"}}>
+                    {form.tipster}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-          </div>{/* fin flex header inner */}
-      </div>{/* fin header */}
+        </div>
+      </div>{/* fin hero */}
 
-      <div style={{padding:"14px 14px 0",flex:1}}>
+      <div style={{padding:"18px 16px 0",flex:1}}>
         {/* ── PARI ÉQUIPE ── */}
         {isTeamBet&&(
           <>
@@ -1175,12 +1270,17 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">Statut</label>
+          <label className="form-label">Résultat du pari</label>
           <div className="status-row">
-            {["pending","won","lost","void"].map(s=>(
-              <button key={s} className={"status-btn "+s+(form.status===s?" active":"")}
-                onClick={()=>f("status",s)}>
-                {s==="pending"?"En cours":s==="won"?"Gagné":s==="lost"?"Perdu":"Void"}
+            {[
+              {key:"pending",label:"En cours"},
+              {key:"won",   label:"✓ Gagné"},
+              {key:"lost",  label:"✗ Perdu"},
+              {key:"void",  label:"Void"},
+            ].map(({key,label})=>(
+              <button key={key} className={"status-btn "+key+(form.status===key?" active":"")}
+                onClick={()=>f("status",key)}>
+                {label}
               </button>
             ))}
           </div>
@@ -1204,8 +1304,10 @@ function AddBetModal({players,bookmakers,tipsters=[],onSave,onClose,editBet=null
             value={form.notes} onChange={e=>f("notes",e.target.value)}/>
         </div>
         <button className="btn btn-primary" onClick={submit} disabled={saving}
-          style={{marginBottom:8}}>
-          {saving?"Enregistrement…":editBet?"Modifier":"+ Ajouter le pari"}
+          style={{marginBottom:8,marginTop:8,padding:"16px 20px",fontSize:16,
+            fontWeight:800,letterSpacing:-.2,borderRadius:12,
+            opacity:saving?.6:1,boxShadow:"0 4px 24px rgba(99,102,241,.35)"}}>
+          {saving?"Enregistrement…":editBet?"✓ Modifier le pari":"+ Ajouter le pari"}
         </button>
       </div>
     </div>
@@ -1455,7 +1557,7 @@ function HomeView({bets,players,onNavigate}){
           paddingLeft:54,paddingRight:12,marginBottom:8}}>
           <div>
             <div style={{fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:600,letterSpacing:.8}}>BANKROLL SAISON</div>
-            <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-1,marginTop:1}}>
+            <div style={{fontSize:24,fontWeight:900,color:isPos?"#22C55E":"#F87171",letterSpacing:-1,marginTop:1}}>
               {isPos?"+":""}{profit.toFixed(2)}$
             </div>
           </div>
@@ -1906,7 +2008,7 @@ function StatsView({bets}){
               <div key={g} style={{marginBottom:10,paddingBottom:10,borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7"}}>{g}</span>
-                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {s.profit>0?"+":""}{s.profit.toFixed(2)}$
                   </span>
                 </div>
@@ -1927,7 +2029,7 @@ function StatsView({bets}){
                   <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{stat}</div>
                   <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>{s.won+s.lost} paris · WR {wr.toFixed(0)}%</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -1942,7 +2044,7 @@ function StatsView({bets}){
             <div key={m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
               <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{m}</div>
               <div style={{textAlign:"right"}}>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#6366F1":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
                 <span style={{fontSize:11,color:"rgba(255,255,255,.28)",marginLeft:8}}>{s.count} paris</span>
