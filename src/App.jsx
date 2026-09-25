@@ -1099,23 +1099,25 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 background:"linear-gradient(to right,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.0) 100%)",
                 zIndex:1}}/>
 
-              {/* Photo joueur — droite */}
+              {/* Logo équipe en arrière-plan — toujours visible */}
+              {teamLogoHeader&&(
+                <img src={teamLogoHeader} alt=""
+                  style={{position:"absolute",right:isDesktop?130:80,top:"50%",transform:"translateY(-50%)",
+                    width:isDesktop?160:120,height:isDesktop?160:120,objectFit:"contain",
+                    opacity:.18,pointerEvents:"none",zIndex:1}}/>
+              )}
+
+              {/* Photo joueur — droite, plus lumineuse */}
               {playerPhoto&&(
                 <img src={playerPhoto} alt={form.player}
                   style={{position:"absolute",right:0,bottom:0,
-                    height:"110%",width:"auto",maxWidth:"55%",
+                    height:"115%",width:"auto",maxWidth:"52%",
                     objectFit:"cover",objectPosition:"50% 10%",zIndex:2,
-                    maskImage:"linear-gradient(to left,black 30%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+                    filter:"brightness(1.15) contrast(1.05)",
+                    maskImage:"linear-gradient(to left,black 45%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
                     maskComposite:"intersect",
-                    WebkitMaskImage:"linear-gradient(to left,black 30%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+                    WebkitMaskImage:"linear-gradient(to left,black 45%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 8%,black 75%,transparent 100%)",
                     WebkitMaskComposite:"source-in"}}/>
-              )}
-              {/* Logo équipe si pas de photo */}
-              {!playerPhoto&&teamLogoHeader&&(
-                <img src={teamLogoHeader} alt=""
-                  style={{position:"absolute",right:20,top:"50%",transform:"translateY(-50%)",
-                    width:isDesktop?120:90,height:isDesktop?120:90,objectFit:"contain",
-                    opacity:.25,pointerEvents:"none",zIndex:1}}/>
               )}
 
               {/* Texte — gauche */}
@@ -1164,6 +1166,38 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* Infos pari — ligne/cote/mise/tipster */}
+                <div style={{display:"flex",flexDirection:"column",gap:3,marginTop:10}}>
+                  {betLine&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Pari</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F2F2F7"}}>{betLine}</span>
+                    </div>
+                  )}
+                  {form.odds&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Cote</span>
+                      <span style={{fontSize:13,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
+                    </div>
+                  )}
+                  {form.stake&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Mise</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)"}}>{form.stake}€</span>
+                    </div>
+                  )}
+                  {form.tipster&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
+                        textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Tips</span>
+                      <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{form.tipster}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
