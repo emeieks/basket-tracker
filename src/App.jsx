@@ -1677,13 +1677,14 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
           position:"relative",height:200,overflow:"hidden",flexShrink:0,
           background:pc?`linear-gradient(135deg,${pc}DD 0%,${pc}55 50%,#0D0D12 100%)`:"#1C1C22",
         }}>
-          {/* Logo club en fond */}
+          {/* Logo club en fond — watermark discret */}
           {resolvedTeamLogo&&(
-            <div style={{position:"absolute",right:-10,top:-10,bottom:-10,width:"65%",
-              display:"flex",alignItems:"center",justifyContent:"center",zIndex:1,pointerEvents:"none"}}>
-              <img src={resolvedTeamLogo} alt=""
-                style={{width:200,height:200,objectFit:"contain",opacity:.2,filter:"blur(0.5px)"}}/>
-            </div>
+            <img src={resolvedTeamLogo} alt="" style={{
+              position:"absolute",right:-30,top:"50%",transform:"translateY(-50%)",
+              width:220,height:220,objectFit:"contain",
+              opacity:.06,filter:"blur(2px) saturate(0)",
+              pointerEvents:"none",zIndex:1,
+            }}/>
           )}
           {/* Overlay gauche */}
           <div style={{position:"absolute",inset:0,zIndex:2,
