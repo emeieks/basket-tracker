@@ -1475,14 +1475,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 }
 
 // ── EditCell — hors du modal pour éviter remount à chaque render ──────────────
-const EditCell=React.memo(function EditCell({fieldKey,label,value,suffix="",type="text",
+const EditCell=memo(function EditCell({fieldKey,label,value,suffix="",type="text",
   dirty,dropdown,setDropdown,setField,bkPhotos,bookmakerList,tipsterList,leagueList}){
   const isDropdown=["bookmaker","tipster","game"].includes(fieldKey);
   const isOpen=dropdown===fieldKey;
   const[localVal,setLocalVal]=useState(String(value||""));
 
   // Sync si value change de l'extérieur
-  const prevValue=React.useRef(value);
+  const prevValue=useRef(value);
   if(prevValue.current!==value){prevValue.current=value;setLocalVal(String(value||""));}
 
   const opts=fieldKey==="bookmaker"
@@ -1604,7 +1604,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
   const hasDirty=Object.keys(dirty).length>0;
 
-  const setField=React.useCallback((field,value)=>{
+  const setField=useCallback((field,value)=>{
     setLocalBet(prev=>({...prev,[field]:value}));
     setDirty(prev=>({...prev,[field]:value}));
     setDropdown(null);
