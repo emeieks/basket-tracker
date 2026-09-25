@@ -176,10 +176,13 @@ async function insertClubs(rows){
   return r.json();
 }
 // Ligues prêtes à importer (clubs de la saison 2026-27)
-const LEAGUE_PRESETS={
-  "NBL":["Adelaide 36ers","Brisbane Bullets","Cairns Taipans","Illawarra Hawks","Melbourne United",
-    "New Zealand Breakers","Perth Wildcats","S.E. Melbourne Phoenix","Sydney Kings","Tasmania JackJumpers"],
+const LEAGUE_PRESETS={};
+// Coupes nationales : affichées à part, en bas de la liste des ligues
+const CUPS={
+  "NBA Cup":"États-Unis","Leaders Cup":"France","Coupe de France":"France",
+  "Coppa Italia":"Italie","Copa del Rey":"Espagne","BBL-Pokal":"Allemagne",
 };
+const isCup=name=>Object.keys(CUPS).some(c=>normTeam(c)===normTeam(name));
 
 async function updateLeague(id,fields){
   const r=await fetch(SUPA_URL+"/rest/v1/leagues?id=eq."+id,{
@@ -960,6 +963,20 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     betType:"moneyline",team:"",opponent:"",
   });
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+  // Compétitions du club (championnats + coupes) pour changer la ligue du pari
+  const[clubLeagues,setClubLeagues]=useState([]);
+  const[leagueMenu,setLeagueMenu]=useState(false);
+  const betTeam=(editBet?.bet_type==="team"||selectedType?.type==="team")?form.team:(form.playerObj?.team||editBet?.team||"");
+  useEffect(()=>{
+    if(!betTeam){setClubLeagues([]);return;}
+    fetch(SUPA_URL+"/rest/v1/clubs?select=name,league&limit=5000",{headers:H})
+      .then(r=>r.json())
+      .then(rows=>{
+        const ls=[...new Set((Array.isArray(rows)?rows:[]).filter(c=>c.league&&sameTeam(c.name,betTeam)).map(c=>c.league))];
+        ls.sort((a,b)=>(isCup(a)?1:0)-(isCup(b)?1:0)||a.localeCompare(b));
+        setClubLeagues(ls);
+      }).catch(()=>setClubLeagues([]));
+  },[betTeam]);
 
   const isTeamBet=editBet?.bet_type==="team"||(selectedType?.type==="team");
 
@@ -1207,7 +1224,17 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               )}
               {teamName&&!isTeamBet&&<MiniLogo src={teamLogoHeader} label={teamName} size={18}/>}
               {!isTeamBet&&<span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>}
-              {form.game&&<MiniLogo src={leagueLogo} label={form.game} size={18} round={false}/>}
+              {form.game&&(
+                <span role="button" tabIndex={0} aria-label={"Ligue : "+form.game+". Changer de compétition"}
+                  onClick={e=>{e.stopPropagation();e.preventDefault();setLeagueMenu(m=>!m);}}
+                  onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();e.preventDefault();setLeagueMenu(m=>!m);}}}
+                  style={{display:"inline-flex",alignItems:"center",gap:3,padding:"3px 5px",margin:"-3px -2px",borderRadius:8,cursor:"pointer",
+                    background:leagueMenu?"rgba(255,255,255,.18)":"rgba(255,255,255,.08)",flexShrink:0}}>
+                  <MiniLogo src={leagueLogo} label={form.game} size={18} round={false}/>
+                  <svg width="9" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                    style={{transform:leagueMenu?"rotate(180deg)":"none",transition:"transform .2s"}}><path d="M1 1l4 4 4-4"/></svg>
+                </span>
+              )}
             </span>
             <span style={{marginTop:"auto",alignSelf:"flex-start",height:32,padding:"0 14px",borderRadius:16,
               background:"rgba(255,255,255,.14)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center"}}>
@@ -1217,6 +1244,27 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </button>}
 
         <div style={{marginTop:16}}>
+        {step!=="search"&&leagueMenu&&(()=>{
+          const opts=[...new Set([form.game,...clubLeagues].filter(Boolean))];
+          return(
+            <div className="fade-in" style={{marginTop:10,padding:"12px 14px",borderRadius:16,background:C.card,border:"1px solid "+C.line}}>
+              <div style={{fontSize:13,color:C.sub,marginBottom:8}}>Compétition du pari</div>
+              <div className="chip-row" style={{margin:"0 -14px",padding:"0 14px 2px",flexWrap:"wrap",overflow:"visible"}}>
+                {opts.map(lg=>{
+                  const on=form.game===lg;
+                  return(
+                    <button key={lg} type="button" className={"pick-chip"+(on?" on":"")} onClick={()=>{f("game",lg);setLeagueMenu(false);}}>
+                      <MiniLogo src={getLeagueLogo(lg)} label={lg} size={18} round={false}/>{lg}
+                      {isCup(lg)&&<span style={{fontSize:11,color:C.sub}}>coupe</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              {opts.length<=1&&<div style={{fontSize:12,color:C.dim,marginTop:8}}>Ce club n'est inscrit que dans une compétition. Ajoute-le à une autre ligue ou coupe dans Réglages → Joueurs.</div>}
+            </div>
+          );
+        })()}
+
         {/* ── PARI ÉQUIPE ── */}
         {isTeamBet&&(()=>{
           const types=[
@@ -2329,6 +2377,62 @@ function mergeGroups(list){
   });
 }
 
+function CupClubPicker({cup,existing,onClose,onAdd}){
+  const[all,setAll]=useState(null);
+  const[q,setQ]=useState("");
+  const[sel,setSel]=useState({});
+  const[busy,setBusy]=useState(false);
+  useEffect(()=>{
+    fetch(SUPA_URL+"/rest/v1/clubs?select=name,league,logo&order=name.asc&limit=5000",{headers:H})
+      .then(r=>r.json()).then(rows=>setAll(Array.isArray(rows)?rows:[])).catch(()=>setAll([]));
+  },[]);
+  const taken=new Set(existing.map(normTeam));
+  const list=(all||[]).filter(c=>c.league!==cup&&!isCup(c.league||"")&&!taken.has(normTeam(c.name))&&
+    (!q||normTeam(c.name).includes(normTeam(q))));
+  const byLeague={};
+  list.forEach(c=>{const k=c.league||"Autre";(byLeague[k]=byLeague[k]||[]);if(!byLeague[k].some(x=>normTeam(x.name)===normTeam(c.name)))byLeague[k].push(c);});
+  const chosen=Object.values(sel).filter(Boolean);
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet" style={{display:"flex",flexDirection:"column",maxHeight:"88vh",paddingBottom:"calc(16px + env(safe-area-inset-bottom))"}}>
+        <div className="modal-handle"/>
+        <div className="modal-title" style={{marginBottom:4}}>Clubs de la {cup}</div>
+        <div style={{fontSize:14,color:C.sub,marginBottom:12}}>Coche les clubs participants.</div>
+        <SSearch value={q} onChange={setQ} placeholder="Rechercher un club…"/>
+        <div style={{overflowY:"auto",flex:1,margin:"0 -4px",padding:"0 4px"}}>
+          {all===null?<div style={{textAlign:"center",color:C.sub,padding:24}}>Chargement…</div>
+          :Object.keys(byLeague).length===0?<div style={{textAlign:"center",color:C.sub,padding:24}}>Aucun club trouvé</div>
+          :Object.entries(byLeague).map(([lg,cs])=>(
+            <div key={lg} style={{marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"0 4px 6px"}}>{lg}</div>
+              <SGroup>
+                {cs.map(c=>{
+                  const k=normTeam(c.name);const on=!!sel[k];
+                  return(
+                    <SRow key={k} onClick={()=>setSel(s=>({...s,[k]:on?null:c}))}
+                      logo={<SLogo src={c.logo} name={c.name} size={36}/>}
+                      title={c.name}
+                      right={<span style={{width:24,height:24,borderRadius:12,marginRight:8,display:"flex",alignItems:"center",justifyContent:"center",
+                        border:on?"none":"2px solid #4B5260",background:on?C.blue:"transparent"}}>
+                        {on&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0C1424" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
+                      </span>}/>
+                  );
+                })}
+              </SGroup>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="press" disabled={!chosen.length||busy}
+          onClick={async()=>{setBusy(true);await onAdd(chosen);setBusy(false);}}
+          style={{width:"100%",marginTop:12,height:52,borderRadius:16,border:"none",fontSize:16,fontWeight:600,fontFamily:"inherit",
+            cursor:chosen.length?"pointer":"default",background:chosen.length?C.blue:"#262B35",color:chosen.length?"#0C1424":C.dim}}>
+          {busy?"Ajout…":chosen.length?"Ajouter "+chosen.length+" club"+(chosen.length>1?"s":""):"Choisis des clubs"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({title,sub,action}){
   return(
     <div className="fade-in" style={{marginTop:24,padding:"36px 24px",textAlign:"center",borderRadius:22,
@@ -2595,11 +2699,12 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
   const exitSelect=()=>{setSelectMode(false);setSel({});};
   const slipClick=b=>selectMode?toggleSel(b.id):onSelectBet(b);
   const[filter,setFilter]=useState("all");
+  const[bkSel,setBkSel]=useState({});
   const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
-  const filtered=mergeGroups(bets).filter(b=>{
-    if(filter==="pending"&&b.status!=="pending")return false;
-    if(filter==="settled"&&b.status==="pending")return false;
+  const bkActive=Object.keys(bkSel).filter(k=>bkSel[k]);
+  // filtre au niveau de chaque site, puis regroupement : seuls les montants des bookmakers choisis comptent
+  const filtered=mergeGroups(bkActive.length?bets.filter(b=>bkActive.includes(b.bookmaker)):bets).filter(b=>{
     if(search){
       const q=search.toLowerCase();
       if(!(b.player||"").toLowerCase().includes(q)&&!(b.description||"").toLowerCase().includes(q)&&
@@ -2651,11 +2756,49 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
           </button>
         </div>
       )}
-      <div className="segment" style={{marginTop:12}}>
-        {[["pending","En cours"+(pendingCount?" · "+pendingCount:"")],["settled","Réglés"],["all","Tous"]].map(([k,l])=>(
-          <button key={k} className={"seg-btn"+(filter===k?" active":"")} onClick={()=>setFilter(k)}>{l}</button>
-        ))}
-      </div>
+      {(()=>{
+        const visible=bookmakers.filter(bk=>!bk.hidden&&bets.some(b=>b.bookmaker===bk.name));
+        if(!visible.length)return null;
+        return(
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:12}}>
+            <div className="chip-row" style={{flex:1,margin:0,padding:"2px 0"}}>
+              {visible.map(bk=>{
+                const on=!!bkSel[bk.name];
+                return(
+                  <button key={bk.name} type="button" aria-pressed={on} aria-label={bk.name} title={bk.name}
+                    className={"pick-chip logo"+(on?" on":"")} onClick={()=>setBkSel(s=>({...s,[bk.name]:!on}))}
+                    style={{width:52,height:44,opacity:bkActive.length&&!on?.45:1}}>
+                    <MiniLogo src={bk.logo} label={bk.name} size={24} round={false}/>
+                  </button>
+                );
+              })}
+            </div>
+            {bkActive.length>0&&(
+              <button type="button" onClick={()=>setBkSel({})}
+                style={{border:"none",background:"transparent",color:C.blue,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+                Tout voir
+              </button>
+            )}
+          </div>
+        );
+      })()}
+      {bkActive.length>0&&(()=>{
+        const legs=bets.filter(b=>bkActive.includes(b.bookmaker));
+        const p=legs.reduce((s,b)=>s+parseFloat(b.profit||0),0);
+        const w=legs.filter(b=>b.status==="won").length,l=legs.filter(b=>b.status==="lost").length,v=legs.filter(b=>b.status==="void").length;
+        const st=legs.filter(b=>b.status==="won"||b.status==="lost").reduce((s,b)=>s+parseFloat(b.stake||0),0);
+        const roi=st>0?p/st*100:0;
+        return(
+          <div className="fade-in" style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",borderRadius:14,
+            background:"rgba(91,157,255,.08)",border:"1px solid rgba(91,157,255,.25)"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{bkActive.join(" + ")}</div>
+              <div style={{fontSize:12,color:C.sub}}>{legs.length} paris · {w}-{l}-{v} · ROI <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")} %</span></div>
+            </div>
+            <span style={{fontSize:17,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
+          </div>
+        );
+      })()}
 
       {filtered.length===0?(
         <EmptyState
@@ -3091,6 +3234,8 @@ const Ico={
   paste:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="8" y="2" width="12" height="14" rx="2"/></svg>,
   upload:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>,
   chevron:<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#565D6B" strokeWidth="2" strokeLinecap="round"><path d="M1 1l6 6-6 6"/></svg>,
+  eye:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>,
+  eyeOff:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>,
   back:<svg width="11" height="18" viewBox="0 0 11 18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 2L2 9l7 7"/></svg>,
   search:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>,
   plus:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
@@ -3192,6 +3337,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   const[uploadingId,setUploadingId]=useState(null);
   const[globalSearch,setGlobalSearch]=useState("");
   const[playerSearch,setPlayerSearch]=useState("");
+  const[pickClubs,setPickClubs]=useState(false);
 
   useEffect(()=>{
     fetchLeagues().then(rows=>{
@@ -3386,18 +3532,26 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
           </div>
         ))}
         <SSearch value={globalSearch} onChange={setGlobalSearch} placeholder="Rechercher une ligue…"/>
-        {leagueMatches.length===0?<SEmpty title="Aucune ligue trouvée"/>:(
-          <SGroup>
-            {leagueMatches.map(lg=>(
-              <SRow key={lg.id}
-                logo={<SLogo src={lg.logo} name={lg.name} size={42}/>}
-                title={lg.name}
-                onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}
-                right={<IconBtn icon={Ico.paste} label={"Coller le logo de "+lg.name} onClick={()=>pasteLeagueLogo(lg)}/>}
-                chevron/>
-            ))}
-          </SGroup>
-        )}
+        {leagueMatches.length===0?<SEmpty title="Aucune ligue trouvée"/>:(()=>{
+          const row=lg=>(
+            <SRow key={lg.id}
+              logo={<SLogo src={lg.logo} name={lg.name} size={42}/>}
+              title={lg.name}
+              sub={isCup(lg.name)?"Coupe · "+(CUPS[Object.keys(CUPS).find(c=>normTeam(c)===normTeam(lg.name))]||""):null}
+              onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}
+              right={<IconBtn icon={Ico.paste} label={"Coller le logo de "+lg.name} onClick={()=>pasteLeagueLogo(lg)}/>}
+              chevron/>
+          );
+          const champ=leagueMatches.filter(l=>!isCup(l.name));
+          const cups=leagueMatches.filter(l=>isCup(l.name));
+          return(<>
+            {champ.length>0&&<SGroup>{champ.map(row)}</SGroup>}
+            {cups.length>0&&<>
+              <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"24px 4px 8px"}}>Coupes</div>
+              <SGroup>{cups.map(row)}</SGroup>
+            </>}
+          </>);
+        })()}
       </div>
     );
   }
@@ -3405,6 +3559,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   // Niveau 2 : Clubs
   if(!selectedClub){
     const shownClubs=clubs.filter(c=>!playerSearch||c.name.toLowerCase().includes(playerSearch.toLowerCase()));
+    const cup=isCup(selectedLeague.name);
     return(
       <div>
         <SHeader title={selectedLeague.name} sub={clubs.length+" clubs"}
@@ -3419,7 +3574,10 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
           right={<IconBtn icon={Ico.paste} label="Coller le logo de la ligue" onClick={()=>pasteLeagueLogo(selectedLeague)}/>}/>
         <SSearch value={playerSearch} onChange={setPlayerSearch} placeholder="Rechercher un club…"/>
         {loading?<div style={{textAlign:"center",color:C.sub,padding:32}}>Chargement…</div>
-        :shownClubs.length===0?<SEmpty title="Aucun club"/>:(
+        :shownClubs.length===0?(isCup(selectedLeague.name)
+          ?<EmptyState title="Aucun club dans cette coupe" sub="Ajoute les clubs participants depuis tes championnats : logos et joueurs suivent automatiquement."
+              action={{label:"Ajouter des clubs",onClick:()=>setPickClubs(true)}}/>
+          :<SEmpty title="Aucun club"/>):(
           <SGroup>
             {shownClubs.map(club=>(
               <SRow key={club.id}
@@ -3435,6 +3593,22 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
             ))}
           </SGroup>
         )}
+        {cup&&shownClubs.length>0&&(
+          <button type="button" className="press" onClick={()=>setPickClubs(true)}
+            style={{width:"100%",marginTop:12,height:48,borderRadius:14,border:"1px dashed #3A404C",background:"transparent",
+              color:C.blue,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>+ Ajouter des clubs depuis un championnat</button>
+        )}
+        {pickClubs&&<CupClubPicker cup={selectedLeague.name} existing={clubs.map(c=>c.name)}
+          onClose={()=>setPickClubs(false)}
+          onAdd={async rows=>{
+            try{
+              const created=await insertClubs(rows.map(r=>({name:r.name,league:selectedLeague.name,...(r.logo?{logo:r.logo}:{})})));
+              setClubs(prev=>[...prev,...(created||rows).map(c=>({...c,player_count:undefined}))].sort((a,b)=>a.name.localeCompare(b.name)));
+              setPickClubs(false);
+              showToast(rows.length+" club"+(rows.length>1?"s":"")+" ajouté"+(rows.length>1?"s":"")+" ✓");
+              setSelectedLeague(l=>({...l}));
+            }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
+          }}/>}
       </div>
     );
   }
@@ -3939,7 +4113,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
 function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPlayersChanged}){
-  const[tab,setTab]=useState("bookmakers");
+  const[tab,setTab]=useState("edit");
   const[showAdd,setShowAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
   const[newTip,setNewTip]=useState("");
@@ -3978,7 +4152,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
   return(
     <div style={{padding:"0 20px 16px"}}>
       <div className="segment" style={{marginBottom:20}}>
-        {[["bookmakers","Bookmakers"],["tipsters","Tipsters"],["edit","Joueurs"]].map(([k,l])=>(
+        {[["edit","Joueurs"],["bookmakers","Bookmakers"],["tipsters","Tipsters"]].map(([k,l])=>(
           <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -3992,15 +4166,21 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
           ):(
             <SGroup>
               {bookmakers.map(bk=>(
-                <SRow key={bk.id}
+                <div key={bk.id} style={{opacity:bk.hidden?.5:1}}>
+                <SRow
                   logo={<SLogo src={bk.logo} name={bk.name}/>}
                   title={bk.name}
-                  sub={bk.url||null}
+                  sub={bk.hidden?"Masqué · visible seulement ici et dans Analyse":(bk.url||null)}
                   onClick={()=>{setEditBK(bk);setShowAdd(true);}}
                   right={<div style={{display:"flex",gap:2}}>
+                    <IconBtn icon={bk.hidden?Ico.eyeOff:Ico.eye} label={bk.hidden?"Afficher "+bk.name:"Masquer "+bk.name} onClick={async()=>{
+                      try{await updateBookmaker(bk.id,{hidden:!bk.hidden});onUpdateBK();showToast(bk.name+(bk.hidden?" visible":" masqué"));}
+                      catch(e){showToast("Erreur: "+e.message+" — as-tu ajouté la colonne hidden ?","#FF8A80");}
+                    }}/>
                     <IconBtn icon={Ico.edit} label={"Modifier "+bk.name} onClick={()=>{setEditBK(bk);setShowAdd(true);}}/>
                     <IconBtn icon={Ico.trash} label={"Supprimer "+bk.name} danger onClick={()=>deleteBK(bk)}/>
                   </div>}/>
+                </div>
               ))}
             </SGroup>
           )}
@@ -4264,7 +4444,7 @@ export default function App(){
         {(showAdd||editBet)&&(
           <AddBetModal
             players={players}
-            bookmakers={bookmakers.length>0?bookmakers.map(b=>b.name):DEFAULT_BOOKMAKERS}
+            bookmakers={bookmakers.length>0?bookmakers.filter(b=>!b.hidden||b.name===editBet?.bookmaker).map(b=>b.name):DEFAULT_BOOKMAKERS}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters}
             editBet={editBet}
