@@ -70,13 +70,22 @@ async function fetchBets(){
   return r.json();
 }
 
+// Message d'erreur Supabase lisible (ex. colonne manquante)
+async function supaError(prefix,r){
+  let msg="";
+  try{const j=await r.json();msg=j.message||j.hint||JSON.stringify(j);}catch(_){}
+  const col=(msg.match(/'([a-z_]+)' column/)||msg.match(/column "?([a-z_]+)"? .*does not exist/)||[])[1];
+  if(col)return new Error("La colonne « "+col+" » n'existe pas encore dans ta table bets.\nAjoute-la dans Supabase (SQL Editor) :\nalter table bets add column if not exists "+col+" "+(col==="closing_odds"?"numeric":col==="annonce"?"boolean default false":"text")+";");
+  return new Error(prefix+" "+r.status+(msg?" — "+msg:""));
+}
+
 async function insertBet(bet){
   const r=await fetch(SUPA_URL+"/rest/v1/bets",{
     method:"POST",
     headers:{...H,"Prefer":"return=representation"},
     body:JSON.stringify(bet),
   });
-  if(!r.ok)throw new Error("insert: "+r.status);
+  if(!r.ok)throw await supaError("Ajout refusé :",r);
   return r.json();
 }
 
@@ -86,7 +95,7 @@ async function updateBet(id,fields){
     headers:{...H,"Prefer":"return=representation"},
     body:JSON.stringify({...fields,updated_at:new Date().toISOString()}),
   });
-  if(!r.ok)throw new Error("update: "+r.status);
+  if(!r.ok)throw await supaError("Modification refusée :",r);
   return r.json();
 }
 
@@ -2435,32 +2444,9 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         return(
           <div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div className="segment" style={{flex:1}}>
-                {[["week","Semaine"],["month","Mois"],["year","Année"],["all","Tout"]].map(([k,l])=>(
-                  <button key={k} className={"seg-btn"+(period===k?" active":"")} onClick={()=>{setPeriod(k);setPOff(0);}}>{l}</button>
-                ))}
-              </div>
-              <button type="button" onClick={()=>setUnits(u=>!u)} className="press"
-                style={{border:"none",background:"transparent",color:C.blue,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:"8px 2px"}}>
-                {units?"Unités":"Euros"}
-              </button>
-            </div>
-
-            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:18}}>
-              {period!=="all"&&<button type="button" aria-label="Période précédente" onClick={()=>setPOff(o=>o-1)} style={navArrow}>‹</button>}
-              <h2 style={{margin:0,flex:1,fontSize:30,fontWeight:700,letterSpacing:-.6}}>{title}</h2>
-              {period!=="all"&&<button type="button" aria-label="Période suivante" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))}
-                style={{...navArrow,opacity:pOff>=0?.3:1}}>›</button>}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4,fontSize:13,color:C.sub}}>
-              <span>Solde {eur(START_BANKROLL+profit)}</span>
-              {streak>=3&&(
-                <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:10,fontSize:12,fontWeight:600,
-                  background:kind==="won"?"rgba(251,146,60,.14)":"rgba(255,138,128,.12)",color:kind==="won"?"#FDBA74":C.red}}>
-                  {streak} {kind==="won"?"gagnés":"perdus"} d'affilée
-                </span>
-              )}
+            <div style={{fontSize:13,color:C.sub,marginTop:2}}>Solde</div>
+            <div style={{fontSize:42,fontWeight:700,letterSpacing:-1.5,lineHeight:1.1}}>
+              <CountUp value={START_BANKROLL+profit} format={v=>eur(v)}/>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:18}}>
@@ -4234,7 +4220,7 @@ export default function App(){
           </div>
         )}
         <div className="header">
-          <div className="header-title" style={view==="home"?{fontSize:15,fontWeight:600,color:"#8B92A0",letterSpacing:0}:undefined}>
+          <div className="header-title">
             {view==="home"?"Bankroll":view==="bets"?"Mes paris":view==="stats"?"Analyse":"Réglages"}
           </div>
           {syncing&&<span style={{fontSize:13,color:"#8B92A0"}}>Actualisation…</span>}
