@@ -31,6 +31,10 @@ function nowDT(){
     String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
 
+function eur(v,dec=2){
+  return Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec})+"\u00a0€";
+}
+
 function formatName(name){
   if(!name)return"";
   return name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
@@ -355,6 +359,21 @@ img{image-rendering:auto;}
 .pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;}
 .pick-chip.logo.on{border-width:2px;}
 .pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
+.sentence{display:flex;align-items:center;height:56px;background:#1C1F26;border:1px solid #252A34;border-radius:16px;overflow:hidden;}
+.sent-sel{height:100%;border:none;background:transparent;color:#F2F3F5;font-size:17px;font-weight:600;font-family:inherit;
+  padding:0 26px 0 14px;appearance:none;-webkit-appearance:none;outline:none;cursor:pointer;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%238B92A0' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center;}
+.sent-sel+.sent-sel{border-left:1px solid #252A34;}
+.sent-sel.grow{flex:1;min-width:0;}
+.sent-sel:focus-visible{background-color:rgba(91,157,255,.1);}
+.sent-sel option{background:#1C1F26;color:#F2F3F5;}
+.fld-box input::placeholder{color:transparent;}
+/* animations */
+article,.pick-chip,.seg-btn,.nav-btn,.nav-add,.press,.s-add{transition:transform .12s ease,background .15s,border-color .15s,color .15s;}
+article:active{transform:scale(.985);}
+.pick-chip:active,.seg-btn:active,.press:active,.s-add:active,.nav-btn:active{transform:scale(.95);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fadeIn .22s ease both;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
 .row-select option{background:#1C1F26;color:#F2F3F5;}
@@ -951,7 +970,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const secondLine=isTeamBet?form.team:nameParts.slice(1).join(" ")||nameParts[0]||"";
   const stakeN=parseFloat(String(form.stake).replace(",","."))||0;
   const oddsN=parseFloat(String(form.odds).replace(",","."))||0;
-  const potential=stakeN&&oddsN?(stakeN*oddsN).toFixed(2)+"€":"—";
+  const potential=stakeN&&oddsN?eur(stakeN*oddsN):null;
   const lockBtn=(on,toggle,label)=>(
     <button type="button" onClick={toggle} aria-label={label} title={on?"Verrouillé":"Verrouiller"}
       style={{width:44,height:44,border:"none",background:"transparent",cursor:"pointer",
@@ -965,7 +984,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,zIndex:200,overflowY:"auto"}}>
-      <div style={{maxWidth:430,margin:"0 auto",padding:"8px 20px calc(24px + env(safe-area-inset-bottom))"}}>
+      <div style={{maxWidth:430,margin:"0 auto",padding:"8px 20px 0"}}>
         <div style={{display:"grid",gridTemplateColumns:"80px 1fr 80px",alignItems:"center"}}>
           <button onClick={onClose} style={{...linkBtn,textAlign:"left",padding:"12px 0",fontSize:16}}>Annuler</button>
           <span style={{fontSize:16,fontWeight:600,textAlign:"center"}}>{editBet?"Modifier le pari":"Nouveau pari"}</span>
@@ -1121,15 +1140,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         )}
         {/* ── PARI JOUEUR : Over/Under · Ligne · Stat ── */}
         {!isTeamBet&&(
-          <div style={{display:"grid",gridTemplateColumns:"104px 92px minmax(0,1fr)",gap:8}}>
-            <select className="fld" aria-label="Over ou Under" value={form.ou} onChange={e=>f("ou",e.target.value)}>
+          <div className="sentence">
+            <select className="sent-sel" style={{color:form.ou==="Over"?C.green:C.red}} aria-label="Over ou Under" value={form.ou} onChange={e=>f("ou",e.target.value)}>
               <option>Over</option><option>Under</option>
             </select>
-            <select className="fld" aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}>
+            <select className="sent-sel" aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}>
               <option value="">Ligne</option>
               {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v}>{v}</option>)}
             </select>
-            <select className="fld" aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}>
+            <select className="sent-sel grow" aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}>
               {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
                 "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s}>{s}</option>)}
@@ -1141,7 +1160,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Cote + Mise ── */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,marginTop:12}}>
           <label className="fld-box">Cote
-            <input type="number" step="0.01" inputMode="decimal" placeholder="1.85" value={form.odds}
+            <input type="number" step="0.01" inputMode="decimal" placeholder="" value={form.odds}
               onChange={e=>f("odds",e.target.value)}
               onBlur={e=>{
                 const n=parseFloat(e.target.value.replace(",","."));
@@ -1149,7 +1168,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               }}/>
           </label>
           <label className="fld-box">Mise (€)
-            <input type="number" inputMode="decimal" placeholder="100" value={form.stake}
+            <input type="number" inputMode="decimal" placeholder="" value={form.stake}
               onChange={e=>f("stake",e.target.value)}/>
           </label>
         </div>
@@ -1158,10 +1177,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             const active=String(form.stake)===String(val);
             return(
               <button key={val} type="button" onClick={()=>f("stake",String(val))}
-                style={{height:40,borderRadius:10,border:"none",cursor:"pointer",
+                style={{height:34,borderRadius:17,border:"none",cursor:"pointer",
                   background:active?C.blue:C.card,color:active?"#0C1424":C.sub,
                   fontSize:12,fontWeight:600,lineHeight:1.2}}>
-                {pct}<br/><span style={{fontSize:11,opacity:.8}}>{val}€</span>
+                {pct}
               </button>
             );
           })}
@@ -1215,17 +1234,18 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           })}
         </div>
 
-        {/* ── Gain potentiel ── */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"16px 4px 0"}}>
-          <span style={{fontSize:15,color:C.sub}}>Gain potentiel</span>
-          <span style={{fontSize:22,fontWeight:700,color:C.green}}>{potential}</span>
+        {/* ── Bouton collé en bas avec le gain ── */}
+        <div style={{position:"sticky",bottom:0,margin:"20px -20px 0",padding:"14px 20px calc(14px + env(safe-area-inset-bottom))",
+          background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
+          <button onClick={submit} disabled={saving} className="press"
+            style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:"pointer",background:C.blue,color:"#0C1424",
+              fontSize:17,fontWeight:600,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            {saving?"Enregistrement…":<>
+              {editBet?"Modifier le pari":"Ajouter"}
+              {potential&&<span style={{fontWeight:500,opacity:.75}}>· gain {potential}</span>}
+            </>}
+          </button>
         </div>
-
-        <button onClick={submit} disabled={saving}
-          style={{width:"100%",marginTop:16,height:54,borderRadius:14,border:"none",cursor:"pointer",
-            background:C.blue,color:"#0C1424",fontSize:17,fontWeight:600,opacity:saving?.6:1}}>
-          {saving?"Enregistrement…":editBet?"Modifier le pari":"Ajouter le pari"}
-        </button>
       </div>
     </div>
   );
@@ -1462,7 +1482,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 color:profitNum>0?"#4ADE80":profitNum<0?"#FF8A80":"rgba(255,255,255,.4)",
                 textShadow:`0 0 18px ${profitNum>0?"rgba(74,222,128,.5)":profitNum<0?"rgba(248,113,113,.5)":"transparent"}`,
               }}>
-                {profitNum>0?"+":""}{localBet.status==="pending"?"—":profitNum.toFixed(2)+"€"}
+                {profitNum>0?"+":""}{localBet.status==="pending"?"—":eur(profitNum)}
               </span>
             </div>
             {/* Nom */}
@@ -1487,7 +1507,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,flexWrap:"wrap"}}>
               <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,.9)"}}>@{localBet.odds}</span>
               <span style={{color:"rgba(255,255,255,.25)"}}>·</span>
-              <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{localBet.stake}€</span>
+              <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{eur(localBet.stake)}</span>
               {bkLogo&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
                 <img src={bkLogo} alt="" style={{height:14,objectFit:"contain",opacity:.85}}/></>}
               {localBet.tipster&&<><span style={{color:"rgba(255,255,255,.25)"}}>·</span>
@@ -1625,7 +1645,7 @@ const C={
   text:"#F2F3F5",sub:"#8B92A0",dim:"#6B7280",blue:"#5B9DFF",
   green:"#4ADE80",red:"#FF8A80",greenBorder:"#2F8F5B",redBorder:"#A8474D",
 };
-const money=(v,dec=2)=>(v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(dec)+"€";
+const money=(v,dec=2)=>(v>0?"+":v<0?"−":"")+eur(Math.abs(v),dec);
 const pColor=v=>v>0?C.green:v<0?C.red:C.sub;
 
 // Petit logo (club / ligue / bookmaker) avec repli sur initiales
@@ -1796,7 +1816,7 @@ function HomeView({bets,players,onNavigate}){
         <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
           <div style={{fontSize:19,fontWeight:600,color:pColor(profit),marginTop:3}}>{money(profit)}</div></div>
         <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
-          <div style={{fontSize:19,fontWeight:600,color:pColor(roi),marginTop:3}}>{(roi>0?"+":"")+roi.toFixed(1)} %</div></div>
+          <div style={{fontSize:19,fontWeight:600,color:pColor(roi),marginTop:3}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%"}</div></div>
         <div style={{textAlign:"right"}}><div style={{fontSize:13,color:C.sub}}>Bilan</div>
           <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{won}-{lost}-{voids}</div></div>
       </div>
@@ -1827,7 +1847,7 @@ function HomeView({bets,players,onNavigate}){
             <div key={day} style={{height:44,borderRadius:8,background:bg,display:"flex",flexDirection:"column",
               alignItems:"center",justifyContent:"center",gap:1}}>
               <span style={{fontSize:10,color:has?fg:"#4B5260",opacity:has?.7:1}}>{day}</span>
-              {has&&<span style={{fontSize:11,fontWeight:600,color:fg}}>{v===0?"–":(v>0?"+":"−")+Math.abs(v).toFixed(0)+"€"}</span>}
+              {has&&<span style={{fontSize:11,fontWeight:600,color:fg}}>{v===0?"–":(v>0?"+":"−")+Math.abs(v).toFixed(0)+"\u00a0€"}</span>}
             </div>
           );
         })}
@@ -1857,10 +1877,10 @@ function BetSlip({b,players,bkPhotos,onClick}){
   const dateStr=d?d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):"";
   const border=b.status==="won"?C.greenBorder:b.status==="lost"?C.redBorder:C.line;
   let result,resultCol,outLabel,out;
-  if(b.status==="won"){result=money(profit);resultCol=C.green;outLabel="Retour";out=(stake+profit).toFixed(2)+"€";}
-  else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out="0.00€";}
-  else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=stake.toFixed(2)+"€";}
-  else{result="→ "+(stake*odds).toFixed(2)+"€";resultCol=C.blue;outLabel="Gain potentiel";out=(stake*odds).toFixed(2)+"€";}
+  if(b.status==="won"){result=money(profit);resultCol=C.green;outLabel="Retour";out=eur(stake+profit);}
+  else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out=eur(0);}
+  else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=eur(stake);}
+  else{result="→ "+eur(stake*odds);resultCol=C.blue;outLabel="Gain potentiel";out=eur(stake*odds);}
   const name=isTeam?(b.team||b.player):formatName(b.player);
   const lastName=isTeam?name:(name.split(" ").slice(-1)[0]||name);
   return(
@@ -1882,15 +1902,15 @@ function BetSlip({b,players,bkPhotos,onClick}){
           </span>
           <span style={{flexShrink:0,fontSize:15,fontWeight:600,lineHeight:"20px",color:resultCol}}>{result}</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10,height:18}}>
-          <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:6,fontSize:13,lineHeight:"18px",color:C.sub,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,height:20}}>
+          <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:7,fontSize:13,lineHeight:"20px",color:C.sub,overflow:"hidden"}}>
             {[
-              b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={16} round={false}/>,
+              b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={18} round={false}/>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
-              b.game&&<MiniLogo key="l" src={leagueLogo} label={b.game} size={16} round={false}/>,
+              b.game&&<MiniLogo key="l" src={leagueLogo} label={b.game} size={18} round={false}/>,
             ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{width:3,height:3,borderRadius:2,background:"#8B92A0",flexShrink:0}}/>{el}</React.Fragment>))}
           </span>
-          <span style={{flexShrink:0,fontSize:13,lineHeight:"18px",color:C.sub}}>@{b.odds} · {stake.toFixed(0)}€</span>
+          <span style={{flexShrink:0,fontSize:13,lineHeight:"18px",color:C.sub}}>@{String(b.odds).replace(".",",")} · {eur(stake,0)}</span>
         </div>
       </div>
     </article>
@@ -1954,7 +1974,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
               <span style={{width:7,height:7,borderRadius:4,background:C.blue}}/>En cours · {pendingList.length}
             </span>
             <span style={{fontSize:14,fontWeight:600,color:C.blue}}>
-              → {pendingList.reduce((s,x)=>s+parseFloat(x.stake||0)*parseFloat(x.odds||0),0).toFixed(2)}€
+              → {eur(pendingList.reduce((s,x)=>s+parseFloat(x.stake||0)*parseFloat(x.odds||0),0))}
             </span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -1979,7 +1999,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:17,fontWeight:700,letterSpacing:-.3}}>{m.label}</div>
                 <div style={{fontSize:13,color:C.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {m.bets.length} paris · {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</span> · {allSt.toFixed(0)}€
+                  {m.bets.length} paris · {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%"}</span> · {eur(allSt,0)}
                 </div>
               </div>
               <span style={{fontSize:17,fontWeight:700,color:pColor(p),flexShrink:0}}>{money(p)}</span>
@@ -2003,10 +2023,10 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                 const dp=d.bets.reduce((s,x)=>s+parseFloat(x.profit||0),0);
                 const settledDay=d.bets.some(x=>x.status==="won"||x.status==="lost");
                 return(
-                  <div key={d.k}>
+                  <div key={d.k} className="fade-in">
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"18px 4px 8px"}}>
                       <span style={{fontSize:14,fontWeight:600,color:"#C4C9D4"}}>{d.label}</span>
-                      {settledDay&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
+                      {settledDay&&days.length>1&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>onSelectBet(b)}/>)}
@@ -2059,7 +2079,7 @@ function StatsView({bets}){
       <div style={{fontSize:15,color:C.sub,marginTop:-4}}>{bets.length} paris</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:18}}>
         {kpi("Profit",money(profit),pColor(profit))}
-        {kpi("ROI",(roi>0?"+":"")+roi.toFixed(1)+" %",pColor(roi))}
+        {kpi("ROI",(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%",pColor(roi))}
         {kpi("Win rate",wr.toFixed(1)+" %")}
         {kpi("Cote moyenne",avgOdds.toFixed(2))}
       </div>
@@ -3104,6 +3124,19 @@ export default function App(){
     return()=>{clearInterval(pollRef.current);document.removeEventListener("visibilitychange",onVisible);};
   },[loadBets]);
 
+  // Tirer vers le bas (en haut de page) pour rafraîchir
+  const[pull,setPull]=useState(0);
+  useEffect(()=>{
+    let startY=null,dist=0;
+    const start=e=>{startY=window.scrollY<=0?e.touches[0].clientY:null;dist=0;};
+    const move=e=>{if(startY===null)return;dist=Math.max(0,e.touches[0].clientY-startY);setPull(Math.min(dist,90));};
+    const end=()=>{if(startY!==null&&dist>70)loadBets(true);startY=null;dist=0;setPull(0);};
+    window.addEventListener("touchstart",start,{passive:true});
+    window.addEventListener("touchmove",move,{passive:true});
+    window.addEventListener("touchend",end);
+    return()=>{window.removeEventListener("touchstart",start);window.removeEventListener("touchmove",move);window.removeEventListener("touchend",end);};
+  },[loadBets]);
+
   function openEdit(bet){setSelectedBet(null);setEditBet(bet);}
 
   if(loading)return(
@@ -3120,17 +3153,17 @@ export default function App(){
     <>
       <style>{CSS}</style>
       <div className="app">
+        {pull>0&&(
+          <div style={{height:pull*.6,display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,
+            color:pull>70?"#5B9DFF":"#6B7280",fontSize:13,transition:"color .15s"}}>
+            {pull>70?"Relâche pour actualiser":"Tire pour actualiser"}
+          </div>
+        )}
         <div className="header">
           <div className="header-title">
             {view==="home"?"Bankroll":view==="bets"?"Mes paris":view==="stats"?"Analyse":"Réglages"}
           </div>
-          <button onClick={()=>loadBets(true)} aria-label="Rafraîchir"
-            style={{width:44,height:44,background:"transparent",border:"none",cursor:"pointer",
-              color:syncing?"#5B9DFF":"#6B7280",display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>
-            </svg>
-          </button>
+          {syncing&&<span style={{fontSize:13,color:"#8B92A0"}}>Actualisation…</span>}
         </div>
 
         <div style={{paddingTop:4}}>
