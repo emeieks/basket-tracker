@@ -1937,12 +1937,13 @@ function BetSlip({b,players,bkPhotos,onClick}){
         <span style={{fontSize:14,fontWeight:600,lineHeight:1.25}}>
           {lastName} · {b.description}
         </span>
-        <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:C.sub,minWidth:0}}>
-          {teamName&&<MiniLogo src={clubLogo} label={teamName} size={14}/>}
-          {b.game&&<MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>}
-          <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {[b.bookmaker,dateStr].filter(Boolean).join(" · ")}
-          </span>
+        <span style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.sub,minWidth:0}}>
+          {[
+            teamName&&<MiniLogo key="c" src={clubLogo} label={teamName} size={15}/>,
+            b.game&&<MiniLogo key="l" src={leagueLogo} label={b.game} size={15} round={false}/>,
+            b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={15} round={false}/>,
+            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4",fontWeight:500}}>{b.tipster}</span>,
+          ].filter(Boolean).flatMap((el,i)=>i===0?[el]:[<span key={"s"+i} style={{width:4,height:4,borderRadius:2,background:"#6B7280",flexShrink:0}}/>,el])}
         </span>
       </div>
       <div style={{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",gap:3}}>
