@@ -1933,7 +1933,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
       <div style={{position:"relative",flexShrink:0}}>
-        <PlayerFace src={photo} name={name} size={58}/>
+        <PlayerFace src={photo} name={name} size={62}/>
         {teamName&&!isTeam&&(
           <span style={{position:"absolute",right:-3,bottom:-3,width:24,height:24,borderRadius:12,background:C.card,
             border:"1.5px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1941,22 +1941,23 @@ function BetSlip({b,players,bkPhotos,onClick}){
           </span>
         )}
       </div>
-      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
-        <span style={{fontSize:15,fontWeight:600,lineHeight:1.25}}>
-          {lastName} · {b.description}
-          {b.game&&<span style={{display:"inline-flex",verticalAlign:"-2px",marginLeft:6}}><MiniLogo src={leagueLogo} label={b.game} size={15} round={false}/></span>}
+      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
+        <span style={{fontSize:17,fontWeight:600,lineHeight:1.25,letterSpacing:-.2}}>
+          {lastName}
+          {b.game&&<span style={{display:"inline-flex",verticalAlign:"-3px",margin:"0 6px"}}><MiniLogo src={leagueLogo} label={b.game} size={18} round={false}/></span>}
+          {!b.game&&" · "}{b.description}
         </span>
-        <span style={{display:"flex",flexWrap:"wrap",alignItems:"center",columnGap:7,rowGap:3,fontSize:13,color:C.sub,minWidth:0}}>
+        <span style={{display:"flex",flexWrap:"wrap",alignItems:"center",columnGap:8,rowGap:3,fontSize:15,color:C.sub,minWidth:0}}>
           {[
             <span key="o" style={{color:"#C4C9D4",fontWeight:500,flexShrink:0}}>@{b.odds}</span>,
             <span key="m" style={{color:"#C4C9D4",fontWeight:500,flexShrink:0}}>{stake.toFixed(0)}€</span>,
-            b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={15} round={false}/>,
+            b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={18} round={false}/>,
             b.tipster&&<span key="t" style={{whiteSpace:"nowrap",color:"#C4C9D4",fontWeight:500}}>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<span key={"g"+i} style={{display:"inline-flex",alignItems:"center",gap:7}}><span style={{width:5,height:5,borderRadius:3,background:"#8B92A0",flexShrink:0}}/>{el}</span>))}
         </span>
       </div>
       <div style={{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",gap:3}}>
-        <span style={{fontSize:15,fontWeight:600,color:resultCol}}>{result}</span>
+        <span style={{fontSize:18,fontWeight:600,color:resultCol}}>{result}</span>
       </div>
     </article>
   );
