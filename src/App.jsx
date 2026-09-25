@@ -58,6 +58,16 @@ function parseDesc(desc){
 function descFR(desc){const p=parseDesc(desc);return p?p.ou+" "+p.line+" "+statFR(p.stat):(desc||"");}
 function descShort(desc){const p=parseDesc(desc);return p?(p.ou==="Over"?"O":"U")+" "+p.line+" "+(STAT_ABBR[p.stat]||statFR(p.stat)):(desc||"");}
 
+// "Point Guard" → "PG", "Center" → "C"… (1er poste du joueur)
+const ROLE_CODES={"point guard":"PG","meneur":"PG","shooting guard":"SG","arriere":"SG","small forward":"SF","ailier":"SF",
+  "power forward":"PF","ailier fort":"PF","center":"C","centre":"C","pivot":"C","guard":"G","forward":"F"};
+function roleCode(role){
+  const r=(role||"").split(",")[0].trim();
+  if(!r)return"";
+  const k=r.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  return ROLE_CODES[k]||r.toUpperCase();
+}
+
 function formatName(name){
   if(!name)return"";
   return name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
@@ -2131,18 +2141,19 @@ function PlayerFace({src,name,size=46,team=null}){
 }
 
 // Carte liste (Ligues, Marchés…) avec chevron
-function ListCard({rows}){
+function ListCard({rows,chevron=false,onRow}){
   return(
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
       {rows.map((r,i)=>(
-        <div key={r.key} style={{display:"flex",alignItems:"center",gap:12,minHeight:62,padding:"8px 14px",
-          borderBottom:i<rows.length-1?"1px solid "+C.line:"none"}}>
+        <div key={r.key} onClick={onRow?()=>onRow(r):undefined} style={{display:"flex",alignItems:"center",gap:12,minHeight:62,padding:"8px 14px",
+          borderBottom:i<rows.length-1?"1px solid "+C.line:"none",cursor:onRow?"pointer":"default"}}>
           {r.logo!==undefined&&<MiniLogo src={r.logo} label={r.name} size={32} round={false}/>}
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:16,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</div>
             <div style={{fontSize:13,color:C.sub,marginTop:1}}>{r.meta}</div>
           </div>
           <span style={{fontSize:16,fontWeight:500,color:pColor(r.profit)}}>{money(r.profit)}</span>
+          {chevron&&<span style={{display:"flex",marginLeft:2}}>{Ico.chevron}</span>}
         </div>
       ))}
     </div>
@@ -2548,11 +2559,8 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         let streak=0;const kind=sorted[0]?.status;
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         return(
-          <div className="hero-card" style={{marginTop:2,borderRadius:22,padding:"16px 16px 10px",position:"relative",overflow:"hidden",
-            background:`radial-gradient(110% 80% at 0% 0%, ${pp>=0?"rgba(74,222,128,.13)":"rgba(255,138,128,.13)"} 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg,#1F232B 0%,#181B21 100%)`,
-            border:"1px solid rgba(255,255,255,.07)",boxShadow:"0 20px 50px -24px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06)"}}>
-
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))"}}>
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:2}}>
               <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
                 <div style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
               <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
@@ -2561,8 +2569,10 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
                 <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
             </div>
 
-            <div style={{height:1,background:"rgba(255,255,255,.06)",margin:"14px -16px 10px"}}/>
-            <div style={{margin:"0 -6px"}}><BankrollChart key={period+pOff} bets={pb} height={150} fmt={fmt}/></div>
+            <div style={{marginTop:14,borderRadius:16,padding:"14px 10px 8px",background:"#181B21",border:"1px solid "+C.line,position:"relative"}}>
+              <span style={{position:"absolute",right:14,top:10,fontSize:12,color:C.sub,zIndex:1}}>{fmt(pp)}</span>
+              <BankrollChart key={period+pOff} bets={pb} height={160} fmt={fmt}/>
+            </div>
           </div>
         );
       })()}
@@ -2608,7 +2618,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
           <span style={{fontSize:18,fontWeight:600,letterSpacing:-.3}}>Ligues</span>
           <button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>
         </div>
-        <ListCard rows={leagueRows}/>
+        <ListCard rows={leagueRows} chevron onRow={()=>onNavigate("stats")}/>
       </>}
     </div>
   );
@@ -2704,7 +2714,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
   const[flt,setFlt]=useState({leagues:{},tipsters:{},annonce:{},roles:{},status:{}});
   const[fltOpen,setFltOpen]=useState(false);
   const on=o=>Object.keys(o).filter(k=>o[k]);
-  const roleOf=b=>{const p=players.find(x=>x.name===b.player);return((p?.role||"").split(",")[0].trim())||"?";};
+  const roleOf=b=>{const p=players.find(x=>x.name===b.player);return roleCode(p?.role)||"?";};
   const fltCount=on(flt.leagues).length+on(flt.tipsters).length+on(flt.annonce).length+on(flt.roles).length+on(flt.status).length+bkActive.length;
   const legOk=b=>{
     if(bkActive.length&&!bkActive.includes(b.bookmaker))return false;
@@ -3009,7 +3019,7 @@ function StatsView({bets:rawBets,players=[],bkPhotos={}}){
   const pOf=b=>players.find(p=>p.name===b.player);
   const playerBets=bets.filter(b=>b.bet_type!=="team");
   const POS_LABEL={PG:"Meneur (PG)",SG:"Arrière (SG)",SF:"Ailier (SF)",PF:"Ailier fort (PF)",C:"Pivot (C)",G:"Arrière (G)",F:"Ailier (F)"};
-  const byPos=groupBy(playerBets,b=>{const r=(pOf(b)?.role||"").split(",")[0].trim();return r?(POS_LABEL[r]||r):"Poste inconnu";});
+  const byPos=groupBy(playerBets,b=>{const r=roleCode(pOf(b)?.role);return r?(POS_LABEL[r]||r):"Poste inconnu";});
   const byTip=groupBy(bets,b=>b.tipster||"Sans tipster");
   const byMarket=groupBy(playerBets,b=>statFR((b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,"")));
   const byOU=groupBy(playerBets.filter(b=>/^(Over|Under)/.test(b.description||"")),b=>(b.description||"").startsWith("Over")?"Over":"Under");
@@ -3088,7 +3098,7 @@ function StatsView({bets:rawBets,players=[],bkPhotos={}}){
   const SIDE={teammate:"Coéquipier out",opponent:"Adversaire out"};
   const STAT_A={out:"Out confirmé",doubt:"Incertain (anticipé)"};
   const ROLE={star:"Star absente",starter:"Titulaire absent",bench:"Joueur de rotation absent"};
-  const posShort=r=>{const x=(r||"").split(",")[0].trim();return({PG:"Meneur",SG:"Arrière",SF:"Ailier",PF:"Ailier fort",C:"Pivot",G:"Arrière",F:"Ailier"})[x]||x||"?";};
+  const posShort=r=>{const x=roleCode(r);return({PG:"Meneur",SG:"Arrière",SF:"Ailier",PF:"Ailier fort",C:"Pivot",G:"Arrière",F:"Ailier"})[x]||x||"?";};
   const Reliability=({n})=>{
     const lvl=n>=50?["Fiable","#4ADE80","rgba(74,222,128,.12)"]:n>=20?["Indicatif","#FBBF24","rgba(245,158,11,.12)"]:["Échantillon faible","#FF8A80","rgba(255,138,128,.12)"];
     return(
