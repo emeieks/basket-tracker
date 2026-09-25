@@ -392,6 +392,22 @@ img{image-rendering:auto;}
 .sent-sel option{background:#1C1F26;color:#F2F3F5;}
 .fld-box input::placeholder{color:transparent;}
 /* animations */
+@keyframes drawLine{from{stroke-dasharray:1;stroke-dashoffset:1;}to{stroke-dasharray:1;stroke-dashoffset:0;}}
+.draw-line{animation:drawLine 1.1s cubic-bezier(.3,.7,.2,1) both;}
+@keyframes fadeUp{from{opacity:0;}to{opacity:1;}}
+.draw-fade{animation:fadeUp 1.2s ease .3s both;}
+@keyframes pulse{0%{r:4;opacity:1;}70%{r:4;opacity:1;}100%{r:4;opacity:1;}}
+.pulse-dot{filter:drop-shadow(0 0 6px currentColor);}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.view-in{animation:viewIn .28s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.4;}to{transform:none;opacity:1;}}
+.modal-sheet{animation:sheetUp .32s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+.modal-overlay{animation:overlayIn .2s ease both;}
+@keyframes shimmer{0%{background-position:-200px 0;}100%{background-position:calc(200px + 100%) 0;}}
+.skel{background:#232730 linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,.06) 50%,rgba(255,255,255,0) 100%) no-repeat;
+  background-size:200px 100%;animation:shimmer 1.3s linear infinite;}
+@media (prefers-reduced-motion:reduce){.draw-line,.draw-fade,.view-in,.modal-sheet,.modal-overlay,.fade-in,.skel{animation:none!important;}}
 article,.pick-chip,.seg-btn,.nav-btn,.nav-add,.press,.s-add{transition:transform .12s ease,background .15s,border-color .15s,color .15s;}
 article:active{transform:scale(.985);}
 .pick-chip:active,.seg-btn:active,.press:active,.s-add:active,.nav-btn:active{transform:scale(.95);}
@@ -1760,26 +1776,26 @@ function groupBy(bets,keyFn){
 }
 
 // ── GRAPHIQUE BANKROLL (général, depuis le début) ────────────────────────────
-function BankrollChart({bets}){
-  const W=340,H=170,PAD={top:14,right:6,bottom:6,left:6};
+function BankrollChart({bets,height=170}){
+  const[hover,setHover]=useState(null);
+  const ref=useRef(null);
+  const W=340,H=height,PAD={top:14,right:6,bottom:6,left:6};
   const inner={w:W-PAD.left-PAD.right,h:H-PAD.top-PAD.bottom};
   const settled=[...bets]
     .filter(b=>(b.status==="won"||b.status==="lost")&&b.created_at)
     .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   if(settled.length<2)return(
     <div style={{height:H,display:"flex",alignItems:"center",justifyContent:"center",color:C.sub,fontSize:13}}>
-      Pas assez de données
+      La courbe apparaîtra après 2 paris réglés
     </div>
   );
   let cum=0;
-  const pts=[{t:new Date(settled[0].created_at).getTime()-1,v:0},...settled.map(b=>{
-    cum+=parseFloat(b.profit||0);return{t:new Date(b.created_at).getTime(),v:cum};
+  const pts=[{t:new Date(settled[0].created_at).getTime()-1,v:0,bet:null},...settled.map(b=>{
+    cum+=parseFloat(b.profit||0);return{t:new Date(b.created_at).getTime(),v:cum,bet:b};
   })];
   const minV=Math.min(0,...pts.map(p=>p.v)),maxV=Math.max(0,...pts.map(p=>p.v));
   const rangeV=maxV-minV||1;
-  const minT=pts[0].t,maxT=pts[pts.length-1].t,rangeT=maxT-minT||1;
   const sy=v=>PAD.top+inner.h-((v-minV)/rangeV)*inner.h;
-  // Courbe lissée (points espacés régulièrement, un par pari réglé)
   const P=pts.map((p,i)=>[PAD.left+(i/(pts.length-1))*inner.w,sy(p.v)]);
   let d="M"+P[0][0].toFixed(1)+","+P[0][1].toFixed(1);
   for(let i=0;i<P.length-1;i++){
@@ -1790,39 +1806,107 @@ function BankrollChart({bets}){
     d+=` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
   }
   const area=d+` L${P[P.length-1][0].toFixed(1)},${PAD.top+inner.h} L${P[0][0].toFixed(1)},${PAD.top+inner.h} Z`;
-  const last=pts[pts.length-1];
-  const col=last.v>=0?C.green:C.red;
-  const fmtM=t=>new Date(t).toLocaleDateString("fr-FR",rangeT<60*86400000?{day:"numeric",month:"short"}:{month:"short",year:"2-digit"}).replace(".","");
+  const col=pts[pts.length-1].v>=0?C.green:C.red;
+  const fmtD=t=>new Date(t).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");
+
+  function onMove(e){
+    const r=ref.current.getBoundingClientRect();
+    const x=((e.touches?e.touches[0].clientX:e.clientX)-r.left)/r.width*W;
+    let i=Math.round((x-PAD.left)/inner.w*(pts.length-1));
+    i=Math.max(1,Math.min(pts.length-1,i));
+    setHover(i);
+  }
+  const h=hover!=null?pts[hover]:null;
+  const hp=hover!=null?P[hover]:null;
+  const hb=h?.bet;
+  const tipLeft=hp?Math.max(0,Math.min(100,(hp[0]/W)*100)):0;
+
+  const idx=[1,Math.round(pts.length/2),pts.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+  const labels=idx.map(i=>fmtD(pts[i].t)).filter((l,i,a)=>a.indexOf(l)===i);
+
   return(
-    <div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible"}}>
-        {[0,.5,1].map(f=>(
-          <line key={f} x1={PAD.left} x2={W-PAD.right} y1={PAD.top+inner.h*f} y2={PAD.top+inner.h*f}
-            stroke="#22262F" strokeWidth="1"/>
-        ))}
-        {minV<0&&maxV>0&&<line x1={PAD.left} x2={W-PAD.right} y1={sy(0)} y2={sy(0)} stroke="#3A404C" strokeDasharray="2 4"/>}
-        <defs><linearGradient id="bkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={col} stopOpacity=".22"/><stop offset="100%" stopColor={col} stopOpacity="0"/>
-        </linearGradient></defs>
-        <path d={area} fill="url(#bkFill)"/>
-        <path d={d} fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx={P[P.length-1][0]} cy={P[P.length-1][1]} r="3.5" fill={col} stroke={C.card} strokeWidth="2"/>
-      </svg>
-      {(()=>{
-        const idx=[1,Math.round(pts.length/2),pts.length-1].filter((v,i,a)=>a.indexOf(v)===i);
-        const labels=idx.map(i=>fmtM(pts[i].t)).filter((l,i,a)=>a.indexOf(l)===i);
-        return(
-          <div style={{display:"flex",justifyContent:labels.length===1?"center":"space-between",padding:"6px 4px 0",fontSize:11,color:C.dim}}>
-            {labels.map(l=><span key={l}>{l}</span>)}
+    <div style={{position:"relative",touchAction:"pan-y"}}>
+      {h&&(
+        <div style={{position:"absolute",top:-6,left:tipLeft+"%",transform:`translateX(${tipLeft>60?"-100%":tipLeft<40?"0":"-50%"})`,
+          zIndex:2,pointerEvents:"none",background:"rgba(14,16,20,.92)",border:"1px solid "+C.line,borderRadius:10,
+          padding:"7px 10px",whiteSpace:"nowrap",boxShadow:"0 8px 24px rgba(0,0,0,.4)",backdropFilter:"blur(8px)"}}>
+          <div style={{fontSize:15,fontWeight:700,color:pColor(h.v)}}>{money(h.v)}</div>
+          <div style={{fontSize:11,color:C.sub,marginTop:1}}>
+            {fmtD(h.t)}{hb?" · "+formatName(hb.player).split(" ").slice(-1)[0]+" "+(hb.status==="won"?"✓":"✗"):""}
           </div>
-        );
-      })()}
+        </div>
+      )}
+      <svg ref={ref} width="100%" viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible",cursor:"crosshair"}}
+        onMouseMove={onMove} onMouseLeave={()=>setHover(null)} onTouchStart={onMove} onTouchMove={onMove} onTouchEnd={()=>setHover(null)}>
+        <defs>
+          <linearGradient id="bkFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={col} stopOpacity=".28"/><stop offset="100%" stopColor={col} stopOpacity="0"/>
+          </linearGradient>
+          <filter id="bkGlow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+        </defs>
+        {[0,.5,1].map(f=>(
+          <line key={f} x1={PAD.left} x2={W-PAD.right} y1={PAD.top+inner.h*f} y2={PAD.top+inner.h*f} stroke="rgba(255,255,255,.05)"/>
+        ))}
+        {minV<0&&maxV>0&&<line x1={PAD.left} x2={W-PAD.right} y1={sy(0)} y2={sy(0)} stroke="rgba(255,255,255,.18)" strokeDasharray="2 4"/>}
+        <path d={area} fill="url(#bkFill)" className="draw-fade"/>
+        <path d={d} fill="none" stroke={col} strokeWidth="5" opacity=".35" filter="url(#bkGlow)"/>
+        <path d={d} fill="none" stroke={col} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" pathLength="1" className="draw-line"/>
+        {hp?(
+          <>
+            <line x1={hp[0]} x2={hp[0]} y1={PAD.top} y2={PAD.top+inner.h} stroke="rgba(255,255,255,.25)" strokeDasharray="3 3"/>
+            <circle cx={hp[0]} cy={hp[1]} r="5" fill={col} stroke="#fff" strokeWidth="2"/>
+          </>
+        ):(
+          <circle cx={P[P.length-1][0]} cy={P[P.length-1][1]} r="4" fill={col} stroke={C.card} strokeWidth="2" className="pulse-dot"/>
+        )}
+      </svg>
+      <div style={{display:"flex",justifyContent:labels.length===1?"center":"space-between",padding:"6px 4px 0",fontSize:11,color:C.dim}}>
+        {labels.map(l=><span key={l}>{l}</span>)}
+      </div>
     </div>
   );
 }
 
+function EmptyState({title,sub,action}){
+  return(
+    <div className="fade-in" style={{marginTop:24,padding:"36px 24px",textAlign:"center",borderRadius:22,
+      background:"radial-gradient(80% 60% at 50% 0%, rgba(91,157,255,.12) 0%, rgba(91,157,255,0) 70%), #1A1D23",
+      border:"1px solid rgba(255,255,255,.06)"}}>
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style={{marginBottom:14}}>
+        <rect x="14" y="8" width="36" height="48" rx="8" fill="#262B35" stroke="#3A404C"/>
+        <path d="M22 22h20M22 30h14M22 38h18" stroke="#5B9DFF" strokeWidth="3" strokeLinecap="round" opacity=".8"/>
+        <circle cx="48" cy="48" r="11" fill="#5B9DFF"/><path d="M48 43v10M43 48h10" stroke="#0C1424" strokeWidth="2.6" strokeLinecap="round"/>
+      </svg>
+      <div style={{fontSize:18,fontWeight:600,color:C.text}}>{title}</div>
+      <div style={{fontSize:14,color:C.sub,marginTop:6,lineHeight:1.45}}>{sub}</div>
+      {action&&<button type="button" className="press" onClick={action.onClick}
+        style={{marginTop:18,height:46,padding:"0 22px",borderRadius:14,border:"none",background:C.blue,color:"#0C1424",
+          fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{action.label}</button>}
+    </div>
+  );
+}
+
+// Nombre qui "compte" jusqu'à sa valeur
+function CountUp({value,format,duration=900}){
+  const[v,setV]=useState(0);
+  useEffect(()=>{
+    let raf,start=null;
+    const from=0,to=value;
+    const step=ts=>{
+      if(start===null)start=ts;
+      const k=Math.min(1,(ts-start)/duration);
+      const e=1-Math.pow(1-k,3);
+      setV(from+(to-from)*e);
+      if(k<1)raf=requestAnimationFrame(step);
+    };
+    raf=requestAnimationFrame(step);
+    return()=>cancelAnimationFrame(raf);
+  },[value,duration]);
+  return <>{format(v)}</>;
+}
+
 // ── VUE ACCUEIL (Bankroll) ────────────────────────────────────────────────────
-function HomeView({bets,players,onNavigate}){
+function HomeView({bets,players,onNavigate,onAdd}){
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
   const[calOpen,setCalOpen]=useState(true);
@@ -1853,22 +1937,51 @@ function HomeView({bets,players,onNavigate}){
     key:g,name:g,logo:getLeagueLogo(g)||null,meta:`${s.won}-${s.lost}-${s.void}`,profit:s.profit,
   }));
 
+  if(bets.length===0)return(
+    <div style={{padding:"0 20px 8px"}}>
+      <EmptyState title="Bienvenue" sub="Ajoute ton premier pari : ta courbe de bankroll, ton calendrier et tes stats apparaîtront ici."
+        action={onAdd?{label:"Ajouter mon premier pari",onClick:onAdd}:null}/>
+    </div>
+  );
+
   return(
     <div style={{padding:"0 20px 8px"}}>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:6}}>
-        <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
-          <div style={{fontSize:19,fontWeight:600,color:pColor(profit),marginTop:3}}>{money(profit)}</div></div>
-        <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
-          <div style={{fontSize:19,fontWeight:600,color:pColor(roi),marginTop:3}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%"}</div></div>
-        <div style={{textAlign:"right"}}><div style={{fontSize:13,color:C.sub}}>Bilan</div>
-          <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{won}-{lost}-{voids}</div></div>
-      </div>
-
-      <div style={{marginTop:18,background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:"14px 12px 10px",position:"relative"}}>
-        <span style={{position:"absolute",right:16,top:10,fontSize:12,color:C.sub}}>{money(profit)}</span>
-        <BankrollChart bets={bets}/>
-      </div>
+      {(()=>{
+        const pos=profit>=0;
+        const tint=pos?"74,222,128":"255,138,128";
+        // série en cours
+        const sorted=[...settled].sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
+        let streak=0;const kind=sorted[0]?.status;
+        for(const s of sorted){if(s.status===kind)streak++;else break;}
+        return(
+          <div className="hero-card" style={{marginTop:4,borderRadius:22,padding:"18px 16px 12px",position:"relative",overflow:"hidden",
+            background:`radial-gradient(120% 90% at 0% 0%, rgba(${tint},.16) 0%, rgba(${tint},0) 55%), linear-gradient(180deg,#1F232B 0%,#181B21 100%)`,
+            border:"1px solid rgba(255,255,255,.07)",boxShadow:"0 20px 50px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 4px"}}>
+              <span style={{fontSize:13,fontWeight:500,color:C.sub}}>Profit total</span>
+              {streak>=3&&(
+                <span className="fade-in" style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:12,fontSize:12,fontWeight:600,
+                  background:kind==="won"?"rgba(251,146,60,.14)":"rgba(255,138,128,.12)",color:kind==="won"?"#FDBA74":C.red}}>
+                  {kind==="won"
+                    ?<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5.5 1-8.5z"/></svg>
+                    :<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>}
+                  {streak} {kind==="won"?"gagnés":"perdus"} d'affilée
+                </span>
+              )}
+            </div>
+            <div style={{fontSize:42,fontWeight:700,letterSpacing:-1.5,color:pColor(profit),padding:"2px 4px 0",lineHeight:1.1}}>
+              <CountUp value={profit} format={v=>money(v)}/>
+            </div>
+            <div style={{display:"flex",gap:18,padding:"8px 4px 14px",fontSize:14}}>
+              <span style={{color:C.sub}}>ROI <b style={{color:pColor(roi),fontWeight:600}}><CountUp value={roi} format={v=>(v>0?"+":"")+v.toFixed(1).replace(".",",")+" %"}/></b></span>
+              <span style={{color:C.sub}}>Bilan <b style={{color:C.text,fontWeight:600}}>{won}-{lost}-{voids}</b></span>
+              <span style={{color:C.sub}}>Misé <b style={{color:C.text,fontWeight:600}}>{eur(staked,0)}</b></span>
+            </div>
+            <BankrollChart bets={bets} height={160}/>
+          </div>
+        );
+      })()}
 
       <SectionTitle right={
         <div style={{display:"flex",alignItems:"center",gap:4}}>
@@ -1939,7 +2052,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
   const parts=name.split(" ").filter(Boolean);
   const lastName=isTeam||parts.length<2?name:parts[0][0]+"."+parts.slice(1).join(" ");
   return(
-    <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
+    <article onClick={onClick} style={{background:"linear-gradient(180deg,#1F232B 0%,#1B1E25 100%)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.04)",border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
       <div style={{position:"relative",flexShrink:0}}>
         {b.game&&(
@@ -1978,7 +2091,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
 }
 
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
-function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
+function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onAdd}){
   const[filter,setFilter]=useState("all");
   const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
@@ -2024,8 +2137,10 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
       </div>
 
       {filtered.length===0?(
-        <div className="empty"><div className="empty-text">Aucun pari{search?" trouvé":""}</div>
-          <div className="empty-sub">{search?"Essaie un autre terme":"Ajoute ton premier pari avec +"}</div></div>
+        <EmptyState
+          title={search?"Aucun résultat":"Aucun pari pour l'instant"}
+          sub={search?"Essaie un autre nom ou un autre tipster":"Ajoute ton premier pari pour suivre ta bankroll"}
+          action={!search&&onAdd?{label:"Ajouter un pari",onClick:onAdd}:null}/>
       ):<>
       {pendingList.length>0&&(
         <div>
@@ -3200,13 +3315,23 @@ export default function App(){
   function openEdit(bet){setSelectedBet(null);setEditBet(bet);}
 
   if(loading)return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",
-      justifyContent:"center",height:"100vh",gap:16}}>
-      <div style={{width:48,height:48,borderRadius:10,
-        background:"#252A34",
-        display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>◉</div>
-      <div style={{color:"rgba(255,255,255,.28)",fontSize:14}}>Chargement…</div>
-    </div>
+    <>
+      <style>{CSS}</style>
+      <div className="app" style={{padding:"calc(18px + env(safe-area-inset-top)) 20px 0"}}>
+        <div className="skel" style={{width:170,height:34,borderRadius:10,marginBottom:18}}/>
+        <div className="skel" style={{height:300,borderRadius:22,marginBottom:22}}/>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"14px",marginBottom:8,borderRadius:14,background:"#1C1F26"}}>
+            <div className="skel" style={{width:54,height:54,borderRadius:27}}/>
+            <div style={{flex:1}}>
+              <div className="skel" style={{height:14,width:"70%",borderRadius:7,marginBottom:8}}/>
+              <div className="skel" style={{height:11,width:"45%",borderRadius:6}}/>
+            </div>
+            <div className="skel" style={{width:64,height:16,borderRadius:8}}/>
+          </div>
+        ))}
+      </div>
+    </>
   );
 
   return(
@@ -3226,11 +3351,11 @@ export default function App(){
           {syncing&&<span style={{fontSize:13,color:"#8B92A0"}}>Actualisation…</span>}
         </div>
 
-        <div style={{paddingTop:4}}>
-          {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView}/>}
+        <div key={view} className="view-in" style={{paddingTop:4}}>
+          {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>setShowAdd(true)}/>}
           {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
-            onSelectBet={setSelectedBet} onEdit={openEdit}/>}
+            onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>setShowAdd(true)}/>}
           {view==="stats"&&<StatsView bets={bets}/>}
           {view==="settings"&&<SettingsView
             bookmakers={bookmakers}
