@@ -247,14 +247,14 @@ async function pasteImageToSupabase(name){
 
 // ── STYLES CSS ────────────────────────────────────────────────────────────────
 const CSS=`
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 body{
   background:#18181B;
   color:#F2F2F7;
-  font-family:'DM Sans',system-ui,sans-serif;
+  font-family:'Inter',system-ui,sans-serif;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -1042,7 +1042,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       display:"flex",flexDirection:"column",overflowY:"auto"}}>
 
       {/* ══ HERO — photo plein fond + overlay ══ */}
-      <div style={{position:"relative",flexShrink:0,overflow:"hidden",height:220}}>
+      <div style={{position:"relative",flexShrink:0,height:220}}>
 
         {/* ── Fond couleur équipe ── */}
         <div style={{position:"absolute",inset:0,
@@ -1058,8 +1058,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         )}
 
         {/* ── Dégradé bas pour merger avec le contenu ── */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:80,
-          background:"linear-gradient(to top,#08090E 0%,transparent 100%)",
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:100,
+          background:"linear-gradient(to top,#08090E 0%,#08090E 15%,transparent 100%)",
           pointerEvents:"none",zIndex:3}}/>
 
         {/* ── Photo joueur — pleine hauteur à gauche, intégrée ── */}
@@ -1093,6 +1093,34 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             background:"rgba(0,0,0,.5)",border:"1px solid rgba(255,255,255,.1)",
             color:"#F2F2F7",fontSize:18,cursor:"pointer",backdropFilter:"blur(8px)",
             display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>‹</button>
+
+        {/* ── Profit/Perte en grand — haut droite ── */}
+        {form.stake&&form.odds&&(()=>{
+          const stake=parseFloat(form.stake)||0;
+          const odds=parseFloat(form.odds)||1;
+          let profitStr="";
+          let profitColor="#fff";
+          if(form.status==="won"){
+            const gain=((odds-1)*stake);
+            profitStr="+"+gain.toFixed(0)+"€";
+            profitColor="#22C55E";
+          }else if(form.status==="lost"){
+            profitStr="-"+stake.toFixed(0)+"€";
+            profitColor="#F87171";
+          }else{
+            const potential=(odds-1)*stake;
+            profitStr="+"+potential.toFixed(0)+"€";
+            profitColor="rgba(255,255,255,.45)";
+          }
+          return(
+            <div style={{position:"absolute",top:12,right:14,zIndex:10,textAlign:"right"}}>
+              <div style={{fontSize:26,fontWeight:900,color:profitColor,letterSpacing:-1,
+                textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1}}>
+                {profitStr}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Infos texte — overlay bas droite ── */}
         <div style={{position:"absolute",bottom:16,right:0,left:"42%",
@@ -1164,17 +1192,6 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                   textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Mise</span>
                 <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
                   {form.stake}€
-                  {form.odds&&form.status==="lost"&&(
-                    <span style={{color:"#F87171",fontWeight:800}}>{" → "}-{parseFloat(form.stake).toFixed(0)}€</span>
-                  )}
-                  {form.odds&&form.status!=="lost"&&(
-                    <span style={{color:"rgba(255,255,255,.25)",fontWeight:400}}>{" → "}</span>
-                  )}
-                  {form.odds&&form.status!=="lost"&&(
-                    <span style={{color:"#22C55E",fontWeight:800}}>
-                      +{((parseFloat(form.odds)||1)*parseFloat(form.stake)-parseFloat(form.stake)).toFixed(0)}€
-                    </span>
-                  )}
                 </span>
               </div>
             )}
@@ -1288,7 +1305,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 onChange={e=>f("line",e.target.value)}
                 style={{flex:1,background:`${pc}0D`,borderColor:`${pc}25`}}>
                 <option value="">Ligne</option>
-                {Array.from({length:88},(_,i)=>((i+1)*0.5).toFixed(1)).map(v=>(
+                {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=>(
                   <option key={v} value={v}>{v}</option>
                 ))}
               </select>
