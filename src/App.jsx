@@ -1840,8 +1840,16 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
   const[filter,setFilter]=useState("all");
   const[search,setSearch]=useState("");
 
+  const statusFilters=["pending","won","lost","void"];
   const filtered=bets.filter(b=>{
-    if(filter!=="all"&&b.status!==filter)return false;
+    if(filter!=="all"){
+      if(statusFilters.includes(filter)){
+        if(b.status!==filter)return false;
+      } else {
+        // filtre par ligue (b.game)
+        if(b.game!==filter)return false;
+      }
+    }
     if(search&&!b.player.toLowerCase().includes(search.toLowerCase())&&
        !(b.description||"").toLowerCase().includes(search.toLowerCase()))return false;
     return true;
@@ -1883,23 +1891,46 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         </div>
       </div>
 
-      {/* Filtres */}
+      {/* Filtres — logos de ligues uniquement */}
       <div style={{display:"flex",gap:6,padding:"10px 12px",overflowX:"auto",
-        scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+        scrollbarWidth:"none",WebkitOverflowScrolling:"touch",alignItems:"center"}}>
+        {/* Bouton "Tous" remplacé par icône */}
+        <button onClick={()=>setFilter("all")} style={{
+          flexShrink:0,padding:"5px 12px",borderRadius:20,fontSize:11,fontWeight:700,
+          border:"1px solid "+(filter==="all"?"rgba(124,58,237,.5)":"rgba(255,255,255,.07)"),
+          background:filter==="all"?"rgba(124,58,237,.15)":"transparent",
+          color:filter==="all"?"#A78BFA":"rgba(255,255,255,.35)",cursor:"pointer",
+          fontFamily:"inherit",
+        }}>Tout</button>
+        {/* Logos des ligues présentes dans les paris */}
+        {[...new Set(bets.map(b=>b.game).filter(Boolean))].map(game=>{
+          const logo=getLeagueLogo(game);
+          if(!logo)return null;
+          const active=filter===game;
+          return(
+            <button key={game} onClick={()=>setFilter(active?"all":game)} style={{
+              flexShrink:0,padding:"5px 8px",borderRadius:20,
+              border:"1px solid "+(active?"rgba(124,58,237,.5)":"rgba(255,255,255,.07)"),
+              background:active?"rgba(124,58,237,.15)":"transparent",
+              cursor:"pointer",display:"flex",alignItems:"center",gap:5,
+            }}>
+              <img src={logo} alt={game} style={{width:18,height:18,objectFit:"contain",opacity:active?1:.6}}/>
+            </button>
+          );
+        })}
+        {/* Statuts */}
         {[
-          {k:"all",label:"Tous",count:bets.length},
-          {k:"pending",label:"En cours",count:bets.filter(b=>b.status==="pending").length},
-          {k:"won",label:"Gagnés",count:bets.filter(b=>b.status==="won").length},
-          {k:"lost",label:"Perdus",count:bets.filter(b=>b.status==="lost").length},
-          {k:"void",label:"Void",count:bets.filter(b=>b.status==="void").length},
-        ].map(({k,label,count})=>(
-          <button key={k} onClick={()=>setFilter(k)} style={{
-            flexShrink:0,padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,
+          {k:"pending",label:"En cours"},
+          {k:"won",label:"✓"},
+          {k:"lost",label:"✕"},
+        ].map(({k,label})=>(
+          <button key={k} onClick={()=>setFilter(filter===k?"all":k)} style={{
+            flexShrink:0,padding:"5px 12px",borderRadius:20,fontSize:11,fontWeight:700,
             border:"1px solid "+(filter===k?"rgba(124,58,237,.5)":"rgba(255,255,255,.07)"),
             background:filter===k?"rgba(124,58,237,.15)":"transparent",
             color:filter===k?"#A78BFA":"rgba(255,255,255,.35)",cursor:"pointer",
-            whiteSpace:"nowrap",fontFamily:"inherit",
-          }}>{label} {count>0&&<span style={{opacity:.6}}>·{count}</span>}</button>
+            fontFamily:"inherit",
+          }}>{label}</button>
         ))}
       </div>
 
@@ -1963,7 +1994,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                   </div>
                   <div style={{
                     fontSize:22,fontWeight:900,
-                    color:"#F2F2F7",
+                    color:isPos?"#00E676":"#F87171",
                     letterSpacing:-1,
                   }}>{isPos?"+":""}{s.profit.toFixed(0)}$</div>
                 </div>
@@ -1977,9 +2008,9 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                 display:"flex",justifyContent:"space-between",alignItems:"center",
                 padding:"14px 16px 6px",
               }}>
-                <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.5)"}}>{s.label}</span>
+                <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.5)",textDecoration:"underline",textUnderlineOffset:3}}>{s.label}</span>
                 <span style={{fontSize:13,fontWeight:800,
-                  color:isPos?"#00E676":"#F87171"}}>
+                  color:isPos?"#00E676":"#F87171",textDecoration:"underline",textUnderlineOffset:3}}>
                   {isPos?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -2075,7 +2106,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                       <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
                     )}
                   </div>
-                  {/* Ligne 2 : @odds · mise · bookmaker · tipster */}
+                  {/* Ligne 2 : @odds · mise · bookmaker · tipster · profit */}
                   <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
                     <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.7)"}}>@{b.odds}</span>
                     <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
@@ -2099,18 +2130,15 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                         <span style={{fontSize:13,color:"rgba(255,255,255,.6)",fontWeight:700}}>{b.tipster}</span>
                       </>
                     )}
+                    {/* Profit sur la ligne 2 */}
+                    <span style={{fontSize:16,color:"rgba(255,255,255,.25)",margin:"0 6px",lineHeight:1}}>·</span>
+                    <span style={{
+                      fontSize:14,fontWeight:900,letterSpacing:-.3,
+                      color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
+                    }}>
+                      {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
+                    </span>
                   </div>
-                </div>
-
-                {/* Profit */}
-                <div style={{flexShrink:0,textAlign:"right"}}>
-                  <div style={{
-                    fontSize:16,fontWeight:900,letterSpacing:-.5,
-                    color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
-                  }}>
-                    {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
-                  </div>
-
                 </div>
               </div>
             </div>
