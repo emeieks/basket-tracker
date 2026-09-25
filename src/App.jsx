@@ -385,13 +385,13 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .bet-row:active{background:rgba(255,255,255,.02);}
 .bet-info{flex:1;min-width:0;}
 .bet-player{font-size:14px;font-weight:700;color:#F2F2F7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.bet-desc{font-size:12px;color:rgba(255,255,255,.3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bet-desc{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bet-right{text-align:right;flex-shrink:0;}
 .bet-profit{font-size:16px;font-weight:800;letter-spacing:-.3px;}
 .bet-profit.pos{color:#00E676;}
 .bet-profit.neg{color:#F87171;}
 .bet-profit.neu{color:rgba(255,255,255,.3);}
-.bet-odds{font-size:11px;color:rgba(255,255,255,.2);margin-top:2px;}
+.bet-odds{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
 
 /* ── STATUS BUTTONS ── */
 .status-row{display:flex;gap:6px;margin-top:0;}
@@ -792,13 +792,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     game:editBet.game||"",
     tipster:editBet.tipster||"",
     notes:editBet.notes||"",
+    created_at:editBet.created_at?editBet.created_at.slice(0,16):"",
     betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
     team:editBet.team||"",
     opponent:editBet.opponent||"",
   }:{
     player:"",playerObj:null,stat:"Points",ou:"Over",line:"",
     odds:"",stake:"",bookmaker:bookmakers[0]||"",
-    status:"pending",game:"",tipster:"",notes:"",
+    status:"pending",game:"",tipster:"",notes:"",created_at:"",
     betType:"moneyline",team:"",opponent:"",
   });
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
@@ -851,6 +852,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
       else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line+" pts";
       else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)";
+      const dateIso=form.created_at?new Date(form.created_at).toISOString():undefined;
       bet={
         player:form.team,team:form.team,opponent:form.opponent||null,
         description:desc,over_under:form.ou||null,
@@ -859,11 +861,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||null,tipster:form.tipster||null,
         notes:null,bet_type:"team",
+        ...(dateIso?{created_at:dateIso}:{}),
       };
     }else{
       if(!form.player){alert("Sélectionne un joueur");return;}
       const desc=form.ou&&form.line&&form.stat
         ?form.ou+" "+form.line+" "+form.stat:form.stat||"";
+      const dateIso=form.created_at?new Date(form.created_at).toISOString():undefined;
       bet={
         player:form.player,team:form.playerObj?.team||null,
         description:desc,over_under:form.ou||null,
@@ -872,6 +876,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||form.playerObj?.game||null,
         tipster:form.tipster||null,notes:null,bet_type:"player",
+        ...(dateIso?{created_at:dateIso}:{}),
       };
     }
     setSaving(true);
@@ -1445,6 +1450,18 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           </div>
         </div>
 
+        {/* ── Date du pari ── */}
+        <div className="form-group">
+          <label className="form-label">Date du pari</label>
+          <input
+            type="datetime-local"
+            className="form-input"
+            value={form.created_at||""}
+            onChange={e=>f("created_at",e.target.value)}
+            style={{background:`${pc}14`,borderColor:`${pc}40`,colorScheme:"dark"}}
+          />
+        </div>
+
         {/* ── Tipster + lock ── */}
         <div className="form-group">
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -1823,12 +1840,26 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               </div>
             </div>
 
-            {/* Date */}
-            {bet.created_at&&(
-              <div style={{fontSize:11,color:"rgba(255,255,255,.2)",marginBottom:14,textAlign:"center"}}>
-                {new Date(bet.created_at).toLocaleString("fr-CA")}
-              </div>
-            )}
+            {/* Date éditable */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.28)",
+                letterSpacing:.8,marginBottom:8,textTransform:"uppercase"}}>Date du pari</div>
+              <input
+                type="datetime-local"
+                value={localBet.created_at?localBet.created_at.slice(0,16):""}
+                onChange={e=>{
+                  const iso=e.target.value?new Date(e.target.value).toISOString():"";
+                  setField("created_at",iso);
+                }}
+                style={{
+                  width:"100%",padding:"11px 14px",borderRadius:12,
+                  border:`1px solid ${dirty.created_at?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                  background:"#1C1C22",color:"#F2F2F7",fontSize:13,fontWeight:500,
+                  fontFamily:"inherit",outline:"none",
+                  colorScheme:"dark",
+                }}
+              />
+            </div>
 
             {/* Actions */}
             {/* Dupliquer */}
@@ -2099,14 +2130,14 @@ function HomeView({bets,players,onNavigate}){
                     whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {formatName(b.player)}
                   </div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{b.description}</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>{b.description}</div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontSize:14,fontWeight:800,
                     color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {profitNum>0?"+":""}{profitNum.toFixed(0)}$
                   </div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>@{b.odds}</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>@{b.odds}</div>
                 </div>
               </div>
             );
@@ -2378,10 +2409,10 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                     </span>
                     {b.game&&getLeagueLogo(b.game)&&(
                       <img src={getLeagueLogo(b.game)} alt={b.game}
-                        style={{width:14,height:14,objectFit:"contain",opacity:.7,flexShrink:0}}/>
+                        style={{width:14,height:14,objectFit:"contain",opacity:1,flexShrink:0}}/>
                     )}
                     {descClean&&(
-                      <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500,
+                      <span style={{fontSize:13,color:"rgba(255,255,255,.75)",fontWeight:500,
                         overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         · {descClean}
                       </span>
@@ -2395,26 +2426,26 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                   {/* Ligne 2 : @odds · mise · book · tipster  +  profit tout à droite */}
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:0}}>
                     <div style={{display:"flex",alignItems:"center",gap:0,overflow:"hidden",minWidth:0}}>
-                      <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.65)",flexShrink:0}}>@{b.odds}</span>
-                      <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
-                      <span style={{fontSize:12,color:"rgba(255,255,255,.4)",flexShrink:0}}>{b.stake}$</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.8)",flexShrink:0}}>@{b.odds}</span>
+                      <span style={{fontSize:14,color:"rgba(255,255,255,.35)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                      <span style={{fontSize:12,color:"rgba(255,255,255,.7)",flexShrink:0}}>{b.stake}$</span>
                       {bkLogo&&(
                         <>
-                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.35)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
                           <img src={bkLogo} alt={b.bookmaker}
-                            style={{width:15,height:15,objectFit:"contain",borderRadius:3,opacity:.8,flexShrink:0}}/>
+                            style={{width:15,height:15,objectFit:"contain",borderRadius:3,opacity:.9,flexShrink:0}}/>
                         </>
                       )}
                       {!bkLogo&&b.bookmaker&&(
                         <>
-                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
-                          <span style={{fontSize:12,color:"rgba(255,255,255,.32)",flexShrink:0}}>{b.bookmaker}</span>
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.35)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,.7)",flexShrink:0}}>{b.bookmaker}</span>
                         </>
                       )}
                       {b.tipster&&(
                         <>
-                          <span style={{fontSize:14,color:"rgba(255,255,255,.22)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
-                          <span style={{fontSize:12,color:"rgba(255,255,255,.55)",fontWeight:700,flexShrink:0,
+                          <span style={{fontSize:14,color:"rgba(255,255,255,.35)",margin:"0 5px",lineHeight:1,flexShrink:0}}>·</span>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,.7)",fontWeight:700,flexShrink:0,
                             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.tipster}</span>
                         </>
                       )}
