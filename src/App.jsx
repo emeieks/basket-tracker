@@ -312,21 +312,34 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 
 /* ── FORMS ── */
 .form-group{margin-bottom:16px;}
-.form-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;}
+.form-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;}
 .form-input{
-  width:100%;background:#111114;border:1px solid #2A2A2E;
-  border-radius:10px;padding:13px 14px;color:#F2F2F7;
+  width:100%;
+  background:linear-gradient(180deg,#1A1A1F 0%,#111114 100%);
+  border:1px solid rgba(255,255,255,.09);
+  border-top-color:rgba(255,255,255,.05);
+  border-bottom-color:rgba(0,0,0,.4);
+  border-radius:10px;padding:13px 14px;
+  color:#E8E8F0;
   font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
 }
-.form-input:focus{border-color:rgba(99,102,241,.5);}
-.form-input::placeholder{color:rgba(255,255,255,.18);}
+.form-input:focus{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.12),0 2px 6px rgba(0,0,0,.35);}
+.form-input::placeholder{color:rgba(255,255,255,.22);}
 .form-select{
-  width:100%;background:#111114;border:1px solid #2A2A2E;
-  border-radius:10px;padding:13px 14px;color:#F2F2F7;
+  width:100%;
+  background:linear-gradient(180deg,#1A1A1F 0%,#111114 100%);
+  border:1px solid rgba(255,255,255,.09);
+  border-top-color:rgba(255,255,255,.05);
+  border-bottom-color:rgba(0,0,0,.4);
+  border-radius:10px;padding:13px 14px;
+  color:#E8E8F0;
   font-size:15px;font-family:inherit;outline:none;
   appearance:none;-webkit-appearance:none;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
 }
-.form-select:focus{border-color:rgba(99,102,241,.5);}
+.form-select:focus{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.12),0 2px 6px rgba(0,0,0,.35);}
+.form-select option{background:#1A1A1F;color:#E8E8F0;}
 
 /* ── BUTTONS ── */
 .btn{border:none;border-radius:10px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .12s;width:100%;font-family:inherit;}
@@ -365,7 +378,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 
 /* ── STATUS BUTTONS ── */
 .status-row{display:flex;gap:6px;margin-top:0;}
-.status-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid #2A2A2E;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:#111114;color:rgba(255,255,255,.22);font-family:inherit;letter-spacing:.2px;}
+.status-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.08);border-bottom-color:rgba(0,0,0,.4);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:linear-gradient(180deg,#1A1A1F 0%,#111114 100%);color:rgba(255,255,255,.3);font-family:inherit;letter-spacing:.2px;box-shadow:0 2px 6px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04);}
 .status-btn.won.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#22C55E;}
 .status-btn.lost.active{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:#F87171;}
 .status-btn.pending.active{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.35);color:#818CF8;}
@@ -746,6 +759,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const[saving,setSaving]=useState(false);
   const[lockedBK,setLockedBK]=useState(false);
   const[lockedTip,setLockedTip]=useState(false);
+  const[winW,setWinW]=useState(window.innerWidth);
+  useEffect(()=>{const h=()=>setWinW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  const isDesktop=winW>=768;
   const[form,setForm]=useState(editBet?{
     player:editBet.player||"",
     playerObj:null,
@@ -1041,174 +1057,123 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     <div style={{position:"fixed",inset:0,background:"#08090E",zIndex:200,
       display:"flex",flexDirection:"column",overflowY:"auto"}}>
 
-      {/* ══ HERO — photo plein fond + overlay ══ */}
-      <div style={{position:"relative",flexShrink:0,height:260}}>
+      {/* ══ HERO — card style image ref ══ */}
+      {(()=>{
+        /* calcul profit */
+        const stake=parseFloat(form.stake)||0;
+        const odds=parseFloat(form.odds)||1;
+        let profitStr="",profitColor="#fff";
+        if(form.stake&&form.odds){
+          if(form.status==="won"){profitStr="+"+(((odds-1)*stake).toFixed(0))+"€";profitColor="#22C55E";}
+          else if(form.status==="lost"){profitStr="-"+stake.toFixed(0)+"€";profitColor="#F87171";}
+          else{profitStr="+"+(((odds-1)*stake).toFixed(0))+"€";profitColor="rgba(255,255,255,.4)";}
+        }
 
-        {/* ── Fond couleur équipe ── */}
-        <div style={{position:"absolute",inset:0,
-          background:pc?`linear-gradient(145deg,${pc}99 0%,${pc}33 50%,#08090E 100%)`:"#0D0D12",
-          zIndex:0}}/>
+        const parts=(form.player||"").trim().split(/\s+/);
+        const firstName=parts[0]?parts[0].charAt(0).toUpperCase()+parts[0].slice(1).toLowerCase():"";
+        const lastName=parts.slice(1).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+        const displayName=isTeamBet?form.team:(lastName||firstName);
+        const displayFirst=isTeamBet?null:firstName;
 
-        {/* ── Logo équipe — bas droite, bien visible, ne chevauche pas le profit ── */}
-        {teamLogoHeader&&(
-          <img src={teamLogoHeader} alt=""
-            style={{position:"absolute",right:16,bottom:28,
-              width:130,height:130,objectFit:"contain",
-              opacity:.75,pointerEvents:"none",zIndex:4,
-              filter:"drop-shadow(0 4px 20px rgba(0,0,0,.7))"}}/>
-        )}
+        const leagueName=form.league||"NBA";
 
-        {/* ── Dégradé bas — fondu propre vers le formulaire ── */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:130,
-          background:`linear-gradient(to top,#08090E 0%,#08090E 25%,transparent 100%)`,
-          pointerEvents:"none",zIndex:3}}/>
+        return(
+          <div style={{padding:"10px 16px 0",flexShrink:0}}>
+            {/* Bouton retour */}
+            <button onClick={editBet?onClose:()=>setStep("search")}
+              style={{background:"none",border:"none",color:"rgba(255,255,255,.5)",
+                fontSize:22,cursor:"pointer",padding:"4px 0 10px",display:"block",lineHeight:1}}>‹</button>
 
-        {/* ── Photo joueur — décalée pour voir visage + corps ── */}
-        {playerPhoto&&(
-          <img src={playerPhoto} alt={form.player}
-            style={{position:"absolute",left:-5,bottom:-10,
-              height:"115%",width:"auto",maxWidth:"58%",
-              objectFit:"cover",objectPosition:"50% 15%",
-              zIndex:2,
-              maskImage:"linear-gradient(to right,black 0%,black 42%,transparent 85%),linear-gradient(to bottom,transparent 0%,black 10%,black 65%,transparent 100%)",
-              maskComposite:"intersect",
-              WebkitMaskImage:"linear-gradient(to right,black 0%,black 42%,transparent 85%),linear-gradient(to bottom,transparent 0%,black 10%,black 65%,transparent 100%)",
-              WebkitMaskComposite:"source-in"}}/>
-        )}
-        {/* Cas équipe sans photo — logo centré */}
-        {!playerPhoto&&isTeamBet&&teamLogoHeader&&(
-          <div style={{position:"absolute",left:20,bottom:20,zIndex:2,
-            width:80,height:80,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <img src={teamLogoHeader} alt={form.team}
-              style={{width:72,height:72,objectFit:"contain",opacity:.9}}/>
-          </div>
-        )}
+            {/* Card hero */}
+            <div style={{
+              borderRadius:18,
+              overflow:"hidden",
+              position:"relative",
+              height:isDesktop?200:170,
+              background:pc?`linear-gradient(135deg,${pc}CC 0%,${pc}55 60%,#111318 100%)`:"#1C1C22",
+              boxShadow:`0 8px 40px ${pc}44`,
+              marginBottom:0,
+            }}>
+              {/* Fond dégradé overlay sombre */}
+              <div style={{position:"absolute",inset:0,
+                background:"linear-gradient(to right,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.0) 100%)",
+                zIndex:1}}/>
 
-        {/* ── Bouton retour — haut gauche ── */}
-        <button onClick={editBet?onClose:()=>setStep("search")}
-          style={{position:"absolute",top:14,left:14,zIndex:10,
-            width:34,height:34,borderRadius:10,
-            background:"rgba(0,0,0,.5)",border:"1px solid rgba(255,255,255,.1)",
-            color:"#F2F2F7",fontSize:18,cursor:"pointer",backdropFilter:"blur(8px)",
-            display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>‹</button>
+              {/* Photo joueur — droite */}
+              {playerPhoto&&(
+                <img src={playerPhoto} alt={form.player}
+                  style={{position:"absolute",right:0,bottom:0,
+                    height:"110%",width:"auto",maxWidth:"55%",
+                    objectFit:"cover",objectPosition:"50% 10%",zIndex:2,
+                    maskImage:"linear-gradient(to left,black 30%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+                    maskComposite:"intersect",
+                    WebkitMaskImage:"linear-gradient(to left,black 30%,transparent 100%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+                    WebkitMaskComposite:"source-in"}}/>
+              )}
+              {/* Logo équipe si pas de photo */}
+              {!playerPhoto&&teamLogoHeader&&(
+                <img src={teamLogoHeader} alt=""
+                  style={{position:"absolute",right:20,top:"50%",transform:"translateY(-50%)",
+                    width:isDesktop?120:90,height:isDesktop?120:90,objectFit:"contain",
+                    opacity:.25,pointerEvents:"none",zIndex:1}}/>
+              )}
 
-        {/* ── Profit/Perte en grand — haut droite ── */}
-        {form.stake&&form.odds&&(()=>{
-          const stake=parseFloat(form.stake)||0;
-          const odds=parseFloat(form.odds)||1;
-          let profitStr="";
-          let profitColor="#fff";
-          if(form.status==="won"){
-            const gain=((odds-1)*stake);
-            profitStr="+"+gain.toFixed(0)+"€";
-            profitColor="#22C55E";
-          }else if(form.status==="lost"){
-            profitStr="-"+stake.toFixed(0)+"€";
-            profitColor="#F87171";
-          }else{
-            const potential=(odds-1)*stake;
-            profitStr="+"+potential.toFixed(0)+"€";
-            profitColor="rgba(255,255,255,.45)";
-          }
-          return(
-            <div style={{position:"absolute",top:14,right:16,zIndex:10,textAlign:"right"}}>
-              <div style={{fontSize:28,fontWeight:900,color:profitColor,letterSpacing:-1.5,
-                textShadow:"0 2px 16px rgba(0,0,0,.95)",lineHeight:1}}>
-                {profitStr}
+              {/* Texte — gauche */}
+              <div style={{position:"absolute",left:0,top:0,bottom:0,zIndex:3,
+                padding:isDesktop?"22px 24px":"18px 18px",
+                display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+
+                {/* Badge sport + profit */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:11,background:"rgba(255,255,255,.12)",
+                      borderRadius:6,padding:"3px 8px",fontWeight:700,
+                      color:"rgba(255,255,255,.7)",letterSpacing:.4}}>🏀 {leagueName}</span>
+                  </div>
+                  {profitStr&&(
+                    <div style={{fontSize:isDesktop?28:22,fontWeight:900,color:profitColor,
+                      letterSpacing:-1,textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1,
+                      marginRight:playerPhoto?"48%":"0"}}>
+                      {profitStr}
+                    </div>
+                  )}
+                </div>
+
+                {/* Nom joueur */}
+                <div>
+                  {displayFirst&&(
+                    <div style={{fontSize:isDesktop?15:13,fontWeight:500,
+                      color:"rgba(255,255,255,.6)",letterSpacing:.1,lineHeight:1.2}}>
+                      {displayFirst}
+                    </div>
+                  )}
+                  <div style={{fontSize:isDesktop?40:32,fontWeight:900,color:"#fff",
+                    letterSpacing:-.8,lineHeight:1,marginBottom:8}}>
+                    {displayName}
+                  </div>
+
+                  {/* Club */}
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    {teamLogoHeader&&(
+                      <img src={teamLogoHeader} alt=""
+                        style={{width:18,height:18,objectFit:"contain",opacity:.9}}/>
+                    )}
+                    {(playerTeam||form.team)&&(
+                      <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.65)"}}>
+                        {playerTeam||form.team}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          );
-        })()}
-
-        {/* ── Infos texte — overlay bas, depuis centre ── */}
-        <div style={{position:"absolute",bottom:18,right:0,left:"44%",
-          padding:"0 160px 0 0",zIndex:5}}>
-
-          {/* Nom */}
-          {isTeamBet?(
-            <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-.5,lineHeight:1.1,marginBottom:4,
-              textShadow:"0 2px 12px rgba(0,0,0,.8)"}}>
-              {form.team}
-            </div>
-          ):(()=>{
-            const parts=(form.player||"").trim().split(/\s+/);
-            const first=parts[0]?parts[0].charAt(0).toUpperCase()+parts[0].slice(1).toLowerCase():"";
-            const last=parts.slice(1).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
-            return(
-              <div style={{lineHeight:1.05,marginBottom:5}}>
-                <div style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,.65)",letterSpacing:.1,
-                  textShadow:"0 1px 8px rgba(0,0,0,.9)"}}>{first}</div>
-                <div style={{fontSize:27,fontWeight:900,color:"#fff",letterSpacing:-.6,
-                  textShadow:"0 2px 12px rgba(0,0,0,.8)"}}>{last||first}</div>
-              </div>
-            );
-          })()}
-
-          {/* Logo club + nom + position */}
-          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-            {teamLogoHeader&&(
-              <img src={teamLogoHeader} alt=""
-                style={{width:20,height:20,objectFit:"contain",opacity:1,flexShrink:0,
-                  filter:"drop-shadow(0 1px 4px rgba(0,0,0,.8))"}}/>
-            )}
-            {playerTeam&&(
-              <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.7)",
-                textShadow:"0 1px 6px rgba(0,0,0,.9)"}}>
-                {playerTeam}
-              </span>
-            )}
-            {playerPosition&&(
-              <>
-                <span style={{color:"rgba(255,255,255,.3)",fontSize:12}}>·</span>
-                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)"}}>
-                  {playerPosition}
-                </span>
-              </>
-            )}
           </div>
+        );
+      })()}
+      {/* fin hero */}
 
-          {/* Infos pari dynamiques */}
-          <div style={{display:"flex",flexDirection:"column",gap:3,marginTop:8}}>
-            {betLine&&(
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                  textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Pari</span>
-                <span style={{fontSize:12,fontWeight:700,color:"#F2F2F7",
-                  textShadow:"0 1px 6px rgba(0,0,0,.9)"}}>{betLine}</span>
-              </div>
-            )}
-            {form.odds&&(
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                  textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Cote</span>
-                <span style={{fontSize:13,fontWeight:800,color:"#818CF8"}}>@{form.odds}</span>
-              </div>
-            )}
-            {form.stake&&(
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                  textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Mise</span>
-                <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)"}}>
-                  {form.stake}€
-                </span>
-              </div>
-            )}
-            {form.tipster&&(
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",
-                  textTransform:"uppercase",letterSpacing:.7,minWidth:30}}>Tips</span>
-                <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)"}}>
-                  {form.tipster}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>{/* fin hero */}
-
-      {/* ── Fond légèrement teinté couleur équipe ── */}
-      <div style={{flex:1,background:`linear-gradient(180deg,${pc}0A 0%,transparent 120px)`,
-        padding:"18px 16px 0"}}>
+      {/* ── Fond formulaire ── */}
+      <div style={{flex:1,background:"#08090E",padding:"16px 16px 0"}}>
 
         {/* ── PARI ÉQUIPE ── */}
         {isTeamBet&&(
@@ -1343,13 +1308,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             return(
               <button key={val} onClick={()=>f("stake",String(val))}
                 style={{flex:1,padding:"7px 2px",borderRadius:8,cursor:"pointer",
-                  border:`1px solid ${active?pc+"80":"rgba(255,255,255,.07)"}`,
-                  background:active?`${pc}28`:`${pc}0A`,
-                  color:active?"#fff":"rgba(255,255,255,.35)",
+                  border:`1px solid ${active?pc+"80":"rgba(255,255,255,.08)"}`,
+                  borderBottom:`1px solid ${active?pc+"80":"rgba(0,0,0,.5)"}`,
+                  background:active?`${pc}28`:"linear-gradient(180deg,#1A1A1F 0%,#111114 100%)",
+                  color:active?"#fff":"rgba(255,255,255,.4)",
                   fontSize:10,fontWeight:700,textAlign:"center",lineHeight:1.3,
+                  boxShadow:active?`0 0 12px ${pc}30`:"0 2px 5px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04)",
                   transition:"all .12s"}}>
                 <div>{pct}</div>
-                <div style={{fontSize:11,color:active?`${pc}EE`:"rgba(255,255,255,.2)"}}>{val}€</div>
+                <div style={{fontSize:11,color:active?`${pc}EE`:"rgba(255,255,255,.28)"}}>{val}€</div>
               </button>
             );
           })}
@@ -1445,15 +1412,17 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           )}
         </div>
 
-        {/* ── Bouton submit — couleur équipe ── */}
+        {/* ── Bouton submit — vert vif ── */}
         <button onClick={submit} disabled={saving}
-          style={{width:"100%",marginBottom:8,marginTop:8,padding:"16px 20px",fontSize:16,
-            fontWeight:800,letterSpacing:-.2,borderRadius:12,border:"none",cursor:"pointer",
-            background:pc||"#6366F1",color:"#fff",
+          style={{width:"100%",marginBottom:8,marginTop:8,padding:"17px 20px",fontSize:16,
+            fontWeight:800,letterSpacing:-.2,borderRadius:14,border:"none",cursor:"pointer",
+            background:"linear-gradient(180deg,#2DD97A 0%,#1DB85E 100%)",color:"#fff",
             opacity:saving?.6:1,
-            boxShadow:`0 4px 28px ${pc}55`,
-            fontFamily:"inherit",transition:"opacity .12s"}}>
-          {saving?"Enregistrement…":editBet?"✓ Modifier le pari":"+ Ajouter le pari"}
+            boxShadow:"0 4px 24px rgba(29,184,94,.45)",
+            fontFamily:"inherit",transition:"opacity .12s",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <span style={{fontSize:18}}>+</span>
+          {saving?"Enregistrement…":editBet?"Modifier le pari":"Ajouter le pari"}
         </button>
       </div>
     </div>
