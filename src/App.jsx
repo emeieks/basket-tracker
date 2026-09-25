@@ -431,6 +431,9 @@ article:active{transform:scale(.985);}
 .pick-chip:active,.seg-btn:active,.press:active,.s-add:active,.nav-btn:active{transform:scale(.95);}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 .fade-in{animation:fadeIn .22s ease backwards;}
+.leg-in{width:100%;height:34px;border-radius:9px;border:1px solid #252A34;background:#181B21;color:#F2F3F5;text-align:center;font-size:14px;font-weight:600;outline:none;font-family:inherit;-moz-appearance:textfield;}
+.leg-in:focus{border-color:#5B9DFF;}
+.leg-in::-webkit-outer-spin-button,.leg-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
 .row-select::-webkit-outer-spin-button,.row-select::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
@@ -934,6 +937,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     status:editBet.status||"pending",
     game:editBet.game||"",
     tipster:editBet.tipster||"",
+    annonce:!!editBet.annonce,annoncePlayer:editBet.annonce_player||"",annonceSide:editBet.annonce_side||"teammate",
+    annonceStatus:editBet.annonce_status||"out",annonceRole:editBet.annonce_role||"starter",annonceSearch:"",
     notes:editBet.notes||"",
     created_at:editBet.created_at?editBet.created_at.slice(0,16):"",
     betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
@@ -942,7 +947,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   }:{
     player:"",playerObj:null,stat:"Points",ou:"Over",line:"",
     odds:"",stake:"",bookmaker:bookmakers[0]||"",
-    status:"pending",game:"",tipster:"",notes:"",created_at:"",
+    status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",
     betType:"moneyline",team:"",opponent:"",
   });
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
@@ -982,10 +987,38 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     setStep("form");
   }
 
+  function annPayload(){
+    if(!form.annonce&&!editBet?.annonce)return{};
+    const on=!!form.annonce;
+    return{
+      annonce:on,
+      annonce_player:on?(form.annoncePlayer||null):null,
+      annonce_note:on&&form.annoncePlayer?formatName(form.annoncePlayer):null,
+      annonce_side:on?form.annonceSide:null,
+      annonce_status:on?form.annonceStatus:null,
+      annonce_role:on?form.annonceRole:null,
+    };
+  }
+  // Ce qui manque pour pouvoir enregistrer
+  function missing(){
+    if(isTeamBet){
+      if(!form.team)return "Choisis une équipe";
+      if(form.betType!=="moneyline"&&!String(form.line).trim())return "Indique la ligne";
+    }else{
+      if(!form.player)return "Choisis un joueur";
+      if(!form.line)return "Choisis la ligne";
+      if(!form.stat)return "Choisis la stat";
+    }
+    if(!parseFloat(String(form.odds).replace(",",".")))return "Indique la cote";
+    if(!parseFloat(String(form.stake).replace(",",".")))return "Indique la mise";
+    return null;
+  }
+
   async function submit(){
-    const odds=parseFloat(form.odds);
-    const stake=parseFloat(form.stake);
-    if(!odds||!stake){alert("Cote et mise obligatoires");return;}
+    const why=missing();
+    if(why){alert(why);return;}
+    const odds=parseFloat(String(form.odds).replace(",","."));
+    const stake=parseFloat(String(form.stake).replace(",","."));
     const savedBK=lockedBK?form.bookmaker:null;
     const savedTip=lockedTip?form.tipster:null;
     let bet;
@@ -1005,6 +1038,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         odds,stake,bookmaker:form.bookmaker||null,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||null,tipster:form.tipster||null,
+        ...annPayload(),
         notes:null,bet_type:"team",
         ...(dateIso?{created_at:dateIso}:{}),
       };
@@ -1021,6 +1055,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         status:form.status,profit:calcProfit(form.status,stake,odds),
         game:form.game||form.playerObj?.game||null,
         tipster:form.tipster||null,notes:null,bet_type:"player",
+        ...annPayload(),
         ...(dateIso?{created_at:dateIso}:{}),
       };
     }
@@ -1038,7 +1073,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           bookmaker:savedBK||bookmakers[0]||"",
           status:"pending",game:"",
           tipster:savedTip||"",
-          notes:"",betType:"moneyline",team:"",opponent:"",
+          notes:"",betType:"moneyline",team:"",opponent:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",
         });
       }else{
         onClose();
@@ -1339,6 +1374,74 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <input className="form-input" placeholder="Nom du tipster (optionnel)" value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
         )}
 
+        {/* ── Annonce (pari pris sur une absence) ── */}
+        <div style={{marginTop:18,padding:"12px 14px",borderRadius:16,background:form.annonce?"rgba(245,158,11,.08)":C.card,
+          border:"1px solid "+(form.annonce?"rgba(245,158,11,.35)":C.line),transition:"all .2s"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:600,color:form.annonce?"#FBBF24":C.text}}>Annonce</div>
+              <div style={{fontSize:12,color:C.sub,marginTop:2}}>Pari pris suite à une absence (joueur out)</div>
+            </div>
+            <Switch on={form.annonce} onChange={v=>f("annonce",v)} label="Pari sur annonce"/>
+          </div>
+          {form.annonce&&(()=>{
+            const myTeam=isTeamBet?form.team:(form.playerObj?.team||"");
+            const q=form.annonceSearch.toLowerCase().trim();
+            const res=q.length>=2?players.filter(p=>p.name!==form.player&&(p.name.toLowerCase().includes(q)||
+              p.name.toLowerCase().split(" ").map(w=>w[0]).join("").includes(q))).slice(0,5):[];
+            const absent=form.annoncePlayer?players.find(p=>p.name===form.annoncePlayer):null;
+            const seg=(k,opts)=>(
+              <div className="segment" style={{marginTop:8}}>
+                {opts.map(([v,l])=>(
+                  <button key={v} type="button" className={"seg-btn"+(form[k]===v?" active":"")} onClick={()=>f(k,v)}
+                    style={form[k]===v?{color:"#FBBF24"}:undefined}>{l}</button>
+                ))}
+              </div>
+            );
+            return(
+              <div className="fade-in" style={{marginTop:12}}>
+                <div style={{fontSize:12,color:C.sub,margin:"0 2px 6px"}}>Joueur absent</div>
+                {form.annoncePlayer?(
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:12,background:C.inner,border:"1px solid "+C.line}}>
+                    <PlayerFace src={absent?.photo_url||absent?.avatar_url} name={formatName(form.annoncePlayer)} team={absent?.team} size={38}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:15,fontWeight:600}}>{formatName(form.annoncePlayer)} <span style={{color:C.red,fontSize:12,fontWeight:700}}>OUT</span></div>
+                      <div style={{fontSize:12,color:C.sub}}>{[absent?.role,absent?.team].filter(Boolean).join(" · ")}</div>
+                    </div>
+                    <button type="button" aria-label="Changer le joueur absent" onClick={()=>{f("annoncePlayer","");f("annonceSearch","");}}
+                      style={{border:"none",background:"transparent",color:C.sub,fontSize:20,cursor:"pointer",width:36,height:36}}>×</button>
+                  </div>
+                ):(
+                  <div style={{position:"relative"}}>
+                    <input className="form-input" placeholder="Rechercher le joueur out…" value={form.annonceSearch}
+                      onChange={e=>f("annonceSearch",e.target.value)} style={{height:44}}/>
+                    {res.length>0&&(
+                      <div style={{marginTop:6,background:C.card,border:"1px solid "+C.line,borderRadius:12,overflow:"hidden"}}>
+                        {res.map((p,i)=>(
+                          <div key={p.name} onClick={()=>{
+                              f("annoncePlayer",p.name);f("annonceSearch","");
+                              f("annonceSide",myTeam&&sameTeam(p.team,myTeam)?"teammate":"opponent");
+                            }}
+                            style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",cursor:"pointer",borderTop:i?"1px solid "+C.line:"none"}}>
+                            <PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} team={p.team} size={34}/>
+                            <div style={{minWidth:0}}>
+                              <div style={{fontSize:14,fontWeight:600}}>{formatName(p.name)}</div>
+                              <div style={{fontSize:12,color:C.sub}}>{[p.role,p.team].filter(Boolean).join(" · ")}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {seg("annonceSide",[["teammate","Coéquipier"],["opponent","Adversaire"]])}
+                {seg("annonceStatus",[["out","Out confirmé"],["doubt","Incertain"]])}
+                {seg("annonceRole",[["star","Star"],["starter","Titulaire"],["bench","Rotation"]])}
+              </div>
+            );
+          })()}
+        </div>
+
         {/* ── Statut ── */}
         <div className="pick-head"><span>Statut</span></div>
         <div className="segment">
@@ -1355,14 +1458,16 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:0,margin:"20px -20px 0",padding:"14px 20px calc(14px + env(safe-area-inset-bottom))",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
-          <button onClick={submit} disabled={saving} className="press"
-            style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:"pointer",background:btnBg,color:btnFg,boxShadow:"0 6px 24px "+btnBg+"40",
+          {(()=>{const why=missing();return(
+          <button onClick={submit} disabled={saving||!!why} className="press"
+            style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:why?"default":"pointer",
+              background:why?"#262B35":btnBg,color:why?C.sub:btnFg,boxShadow:why?"none":"0 6px 24px "+btnBg+"40",
               fontSize:17,fontWeight:600,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            {saving?"Enregistrement…":<>
+            {why?why:saving?"Enregistrement…":<>
               {editBet?"Modifier le pari":"Ajouter"}
               {potential&&<span style={{fontWeight:500,opacity:.75}}>· Gain {potential}</span>}
             </>}
-          </button>
+          </button>);})()}
         </div>
       </div>
     </div>
@@ -1483,6 +1588,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const[dirty,setDirty]=useState({}); // champs modifiés non sauvegardés
   const[dropdown,setDropdown]=useState(null); // "bookmaker"|"tipster"|"game"
   const[saveAnim,setSaveAnim]=useState(false);
+  const legs=bet._group||null;
+  const[legEdits,setLegEdits]=useState({}); // {id:{odds,stake}}
   const[other,setOther]=useState(null); // {bookmaker,odds,stake}
   const[otherSaving,setOtherSaving]=useState(false);
 
@@ -1499,7 +1606,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const rawName=isTeamBet?(localBet.team||localBet.player):localBet.player;
   const nameFormatted=(rawName||"").trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 
-  const hasDirty=Object.keys(dirty).length>0;
+  const hasDirty=Object.keys(dirty).length>0||Object.keys(legEdits).length>0;
 
   const setField=useCallback((field,value)=>{
     setLocalBet(prev=>({...prev,[field]:value}));
@@ -1509,6 +1616,12 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
   async function changeStatus(status){
     setSaving(true);
+    if(legs){
+      await Promise.all(legs.map(l=>updateBet(l.id,{status,profit:calcProfit(status,parseFloat(l.stake),parseFloat(l.odds))})));
+      const profit=legs.reduce((s,l)=>s+calcProfit(status,parseFloat(l.stake),parseFloat(l.odds)),0);
+      setLocalBet(prev=>({...prev,status,profit}));
+      setDirty({});onUpdate();setSaving(false);return;
+    }
     const profit=calcProfit(status,localBet.stake,localBet.odds);
     await updateBet(localBet.id,{status,profit});
     setLocalBet(prev=>({...prev,status,profit}));
@@ -1520,6 +1633,20 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   async function saveAll(){
     if(!hasDirty)return;
     setSaving(true);
+    if(legs){
+      const shared={...dirty};delete shared.odds;delete shared.stake;delete shared.bookmaker;
+      await Promise.all(legs.map(l=>{
+        const e=legEdits[l.id]||{};
+        const up={...shared};
+        if(e.odds!=null)up.odds=e.odds;
+        if(e.stake!=null)up.stake=e.stake;
+        const s=up.status||l.status;
+        if((e.odds!=null||e.stake!=null)&&s!=="pending")up.profit=calcProfit(s,parseFloat(up.stake??l.stake),parseFloat(up.odds??l.odds));
+        return Object.keys(up).length?updateBet(l.id,up):null;
+      }));
+      setDirty({});setLegEdits({});setSaveAnim(true);setTimeout(()=>setSaveAnim(false),1200);
+      onUpdate();setSaving(false);onClose();return;
+    }
     const update={...dirty};
     // Recalc profit si odds/stake changés et statut fixé
     if((update.odds||update.stake)&&localBet.status!=="pending"){
@@ -1537,7 +1664,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   }
 
   async function remove(){
-    if(!window.confirm("Supprimer ce pari ?"))return;
+    if(!window.confirm(legs?"Supprimer ce pari sur les "+legs.length+" sites ?":"Supprimer ce pari ?"))return;
+    if(legs){await Promise.all(legs.map(l=>deleteBet(l.id)));onUpdate();onClose();return;}
     await deleteBet(localBet.id);
     onUpdate();
     onClose();
@@ -1594,6 +1722,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 <span style={{width:6,height:6,borderRadius:3,background:statusColor}}/>{statusLabel}
               </span>
               {d&&<span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</span>}
+              {localBet.annonce&&<AnnonceBadge small note={localBet.annonce_player?formatName(localBet.annonce_player):localBet.annonce_note}/>}
             </div>
             <div style={{fontSize:26,fontWeight:700,letterSpacing:-.6,lineHeight:1.08,marginTop:2}}>{nameFormatted}</div>
             <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
@@ -1660,6 +1789,39 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
           <div className="pick-head"><span>Détails</span>{dirty&&hasDirty&&<span style={{fontSize:12,color:C.green}}>Modifié</span>}</div>
           <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+            {legs?(
+              <div style={{padding:"12px 16px",borderBottom:"1px solid "+C.line}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:C.sub,marginBottom:8}}>
+                  <span>Répartition sur {legs.length} sites</span>
+                  <span>Total {eur(legs.reduce((s,l)=>s+parseFloat(legEdits[l.id]?.stake??l.stake??0),0))}</span>
+                </div>
+                {legs.map((l,i)=>{
+                  const e=legEdits[l.id]||{};
+                  const o=parseFloat(e.odds??l.odds)||0,s=parseFloat(e.stake??l.stake)||0;
+                  const g=st==="pending"?s*o:st==="void"?0:calcProfit(st,s,o);
+                  const setLeg=(k,v)=>{const n=parseFloat(String(v).replace(",","."));setLegEdits(p=>({...p,[l.id]:{...p[l.id],[k]:isNaN(n)?null:n}}));};
+                  return(
+                    <div key={l.id} style={{display:"grid",gridTemplateColumns:"1fr 64px 70px 84px",alignItems:"center",gap:8,
+                      padding:"8px 0",borderTop:i?"1px solid "+C.line:"none"}}>
+                      <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                        <MiniLogo src={bkPhotos[l.bookmaker]} label={l.bookmaker||"?"} size={22} round={false}/>
+                        <span style={{fontSize:14,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.bookmaker||"—"}</span>
+                      </span>
+                      <input type="number" inputMode="decimal" aria-label={"Cote "+l.bookmaker} defaultValue={l.odds}
+                        onChange={ev=>setLeg("odds",ev.target.value)} className="leg-in"/>
+                      <input type="number" inputMode="decimal" aria-label={"Mise "+l.bookmaker} defaultValue={l.stake}
+                        onChange={ev=>setLeg("stake",ev.target.value)} className="leg-in"/>
+                      <span style={{textAlign:"right",fontSize:14,fontWeight:600,color:st==="pending"?C.blue:pColor(g)}}>
+                        {st==="pending"?"→ "+eur(g,0):money(g)}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 64px 70px 84px",gap:8,fontSize:11,color:C.dim,marginTop:2}}>
+                  <span/><span style={{textAlign:"center"}}>cote</span><span style={{textAlign:"center"}}>mise €</span><span style={{textAlign:"right"}}>{st==="pending"?"gain pot.":"résultat"}</span>
+                </div>
+              </div>
+            ):<>
             <div style={row}><span style={lab}>Cote</span>{numInput("odds")}</div>
             <div style={row}><span style={lab}>Mise (€)</span>{numInput("stake")}</div>
             <div style={row}>
@@ -1671,6 +1833,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 {bookmakerList.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}
               </select>
             </div>
+            </>}
             <div style={row}>
               <span style={lab}>Tipster</span>
               <select className="row-select" value={localBet.tipster||""} onChange={e=>setField("tipster",e.target.value)}
@@ -1687,6 +1850,63 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 <option value="">—</option>
                 {leagueList.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}
               </select>
+            </div>
+            <div style={row}>
+              <span style={{...lab,color:localBet.annonce?"#FBBF24":C.sub,flex:1,width:"auto"}}>Pari sur annonce</span>
+              <Switch on={!!localBet.annonce} onChange={v=>{
+                setField("annonce",v);
+                if(!v){["annonce_player","annonce_note","annonce_side","annonce_status","annonce_role"].forEach(k=>setField(k,null));}
+                else{if(!localBet.annonce_side)setField("annonce_side","teammate");if(!localBet.annonce_status)setField("annonce_status","out");if(!localBet.annonce_role)setField("annonce_role","starter");}
+              }} label="Pari sur annonce"/>
+            </div>
+            {localBet.annonce&&<>
+              <div style={row}>
+                <span style={lab}>Absent</span>
+                <input className="row-select" list="annonce-players" placeholder="Nom du joueur out"
+                  defaultValue={localBet.annonce_player?formatName(localBet.annonce_player):(localBet.annonce_note||"")}
+                  key={"ap"+(localBet.annonce_player||"")}
+                  onBlur={e=>{
+                    const v=e.target.value.trim();
+                    const p=players.find(x=>formatName(x.name).toLowerCase()===v.toLowerCase());
+                    const raw=p?p.name:(v||null);
+                    if(raw!==(localBet.annonce_player||null)){
+                      setField("annonce_player",raw);setField("annonce_note",v||null);
+                      const my=localBet.team||pData?.team;
+                      if(p&&my)setField("annonce_side",sameTeam(p.team,my)?"teammate":"opponent");
+                    }
+                  }}
+                  style={{color:dirty.annonce_player!==undefined?C.green:"#FBBF24",fontWeight:500}}/>
+                <datalist id="annonce-players">{players.map(p=><option key={p.name} value={formatName(p.name)}/>)}</datalist>
+              </div>
+              {[["annonce_side","Côté",[["teammate","Coéquipier"],["opponent","Adversaire"]]],
+                ["annonce_status","Statut absent",[["out","Out confirmé"],["doubt","Incertain"]]],
+                ["annonce_role","Importance",[["star","Star"],["starter","Titulaire"],["bench","Rotation"]]]].map(([k,l,opts])=>(
+                <div key={k} style={row}>
+                  <span style={lab}>{l}</span>
+                  <select className="row-select" value={localBet[k]||""} onChange={e=>setField(k,e.target.value)}
+                    style={{color:dirty[k]!==undefined?C.green:C.text}}>
+                    <option value="">—</option>{opts.map(([v,t2])=><option key={v} value={v}>{t2}</option>)}
+                  </select>
+                </div>
+              ))}
+            </>}
+            <div style={row}>
+              <span style={lab}>Cote clôture</span>
+              {(()=>{
+                const co=parseFloat(localBet.closing_odds);const o=parseFloat(localBet.odds);
+                if(!co||!o)return null;
+                const clv=(o/co-1)*100;
+                return <span style={{fontSize:13,fontWeight:600,color:pColor(clv),whiteSpace:"nowrap"}}>CLV {(clv>0?"+":"")+clv.toFixed(1).replace(".",",")}%</span>;
+              })()}
+              <input type="number" inputMode="decimal" className="row-select" placeholder="optionnel"
+                defaultValue={localBet.closing_odds??""} key={"co"+String(localBet.closing_odds)}
+                onBlur={e=>{
+                  const n=parseFloat(e.target.value.replace(",","."));
+                  const v=isNaN(n)?null:(n>=100?n/100:n);
+                  if(v!==(localBet.closing_odds??null))setField("closing_odds",v);
+                }}
+                onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}}
+                style={{fontWeight:600,color:dirty.closing_odds!==undefined?C.green:C.text}}/>
             </div>
             <div style={{...row,borderBottom:"none"}}>
               <span style={lab}>Date</span>
@@ -1712,7 +1932,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               </div>
               <div style={{fontSize:13,color:C.sub,margin:"2px 0 10px"}}>{descFR(localBet.description)} · même statut et même date</div>
               <div className="chip-row" style={{margin:"0 -14px",padding:"0 14px 2px"}}>
-                {bookmakerList.filter(bk=>bk.name!==localBet.bookmaker).map(bk=>{
+                {bookmakerList.filter(bk=>legs?!legs.some(l=>l.bookmaker===bk.name):bk.name!==localBet.bookmaker).map(bk=>{
                   const on=other.bookmaker===bk.name;
                   return(
                     <button key={bk.name} type="button" className={"pick-chip"+(on?" on":"")}
@@ -1737,9 +1957,12 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                   if(!odds||!stake){alert("Cote et mise obligatoires");return;}
                   setOtherSaving(true);
                   try{
-                    const{id,...copy}=localBet;
-                    await insertBet({...copy,id:uuid(),bookmaker:other.bookmaker,odds,stake,
-                      profit:calcProfit(localBet.status,stake,odds),created_at:localBet.created_at||new Date().toISOString()});
+                    const base=legs?legs[0]:localBet;
+                    const gid=base.group_id||base.id;
+                    if(!base.group_id)await updateBet(base.id,{group_id:gid});
+                    const{id,_group,...copy}=base;
+                    await insertBet({...copy,id:uuid(),group_id:gid,bookmaker:other.bookmaker,odds,stake,
+                      profit:calcProfit(localBet.status,stake,odds),created_at:base.created_at||new Date().toISOString()});
                     onUpdate();onClose();
                   }catch(e){alert("Erreur: "+e.message);setOtherSaving(false);}
                 }}
@@ -1753,8 +1976,14 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:16}}>
             <button type="button" className="btn btn-secondary press" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
               onClick={async()=>{
-                const{id,...copy}=localBet;
-                await insertBet({...copy,id:uuid(),status:"pending",profit:0,created_at:new Date().toISOString()});
+                const now=new Date().toISOString();
+                if(legs){
+                  const gid=uuid();
+                  await Promise.all(legs.map(l=>{const{id,...c}=l;return insertBet({...c,id:uuid(),group_id:gid,status:"pending",profit:0,created_at:now});}));
+                }else{
+                  const{id,_group,...copy}=localBet;
+                  await insertBet({...copy,id:uuid(),status:"pending",profit:0,created_at:now});
+                }
                 onUpdate();onClose();
               }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
@@ -1983,6 +2212,7 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
   const[tipster,setTipster]=useState("");
   const[bookmaker,setBookmaker]=useState("");
   const[date,setDate]=useState("");
+  const[annonce,setAnnonce]=useState("");
   const[saving,setSaving]=useState(false);
   const KEEP="__keep__";
   const ch={};
@@ -1991,6 +2221,8 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
   if(tipster)ch.tipster=tipster==="__none__"?null:tipster;
   if(bookmaker)ch.bookmaker=bookmaker==="__none__"?null:bookmaker;
   if(date)ch.created_at=new Date(date).toISOString();
+  if(annonce)ch.annonce=annonce==="yes";
+  if(annonce==="no"){ch.annonce_note=null;ch.annonce_player=null;ch.annonce_side=null;ch.annonce_status=null;ch.annonce_role=null;}
   Object.keys(ch).forEach(k=>ch[k]===undefined&&delete ch[k]);
   const n=Object.keys(ch).length;
   const row={display:"flex",alignItems:"center",gap:10,minHeight:52,padding:"0 16px",borderBottom:"1px solid "+C.line};
@@ -2024,6 +2256,10 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
             <select className="row-select" value={bookmaker} onChange={e=>setBookmaker(e.target.value)} style={{color:bookmaker?C.green:C.sub}}>
               {keepOpt}<option value="__none__">Aucun</option>{bookmakers.map(bk=><option key={bk.name} value={bk.name}>{bk.name}</option>)}
             </select></div>
+          <div style={row}><span style={lab}>Annonce</span>
+            <select className="row-select" value={annonce} onChange={e=>setAnnonce(e.target.value)} style={{color:annonce?C.green:C.sub}}>
+              {keepOpt}<option value="yes">Oui, pari sur annonce</option><option value="no">Non</option>
+            </select></div>
           <div style={{...row,borderBottom:"none"}}><span style={lab}>Date</span>
             <input type="datetime-local" className="row-select" value={date} onChange={e=>setDate(e.target.value)}
               style={{colorScheme:"dark",color:date?C.green:C.sub}}/>
@@ -2041,6 +2277,47 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
       </div>
     </div>
   );
+}
+
+function Switch({on,onChange,label}){
+  return(
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={()=>onChange(!on)}
+      style={{width:50,height:30,borderRadius:15,border:"none",padding:3,cursor:"pointer",flexShrink:0,
+        background:on?"#F59E0B":"#3A404C",transition:"background .2s",display:"flex",justifyContent:on?"flex-end":"flex-start"}}>
+      <span style={{width:24,height:24,borderRadius:12,background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.3)",transition:"all .2s"}}/>
+    </button>
+  );
+}
+function AnnonceBadge({note,small}){
+  return(
+    <span title={note?"Annonce : "+note:"Pari sur annonce"} style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0,
+      padding:small?"1px 6px":"3px 9px",borderRadius:8,fontSize:small?11:12,fontWeight:700,
+      background:"rgba(245,158,11,.16)",color:"#FBBF24",whiteSpace:"nowrap"}}>
+      <svg width={small?10:12} height={small?10:12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+      Annonce
+    </span>
+  );
+}
+
+// Regroupe les paris liés (même pari sur plusieurs bookmakers) en une seule entrée
+function mergeGroups(list){
+  const out=[],byG={};
+  list.forEach(b=>{
+    if(!b.group_id){out.push(b);return;}
+    if(!byG[b.group_id]){byG[b.group_id]=[];out.push({__gid:b.group_id});}
+    byG[b.group_id].push(b);
+  });
+  return out.map(x=>{
+    if(!x.__gid)return x;
+    const legs=byG[x.__gid];
+    if(legs.length===1)return legs[0];
+    const stake=legs.reduce((s,b)=>s+parseFloat(b.stake||0),0);
+    const profit=legs.reduce((s,b)=>s+parseFloat(b.profit||0),0);
+    const odds=stake>0?legs.reduce((s,b)=>s+parseFloat(b.odds||0)*parseFloat(b.stake||0),0)/stake:parseFloat(legs[0].odds||0);
+    const sts=[...new Set(legs.map(b=>b.status))];
+    return{...legs[0],id:"g:"+x.__gid,_group:legs,stake,profit,odds:Math.round(odds*100)/100,
+      status:sts.length===1?sts[0]:(sts.includes("pending")?"pending":legs[0].status)};
+  });
 }
 
 function EmptyState({title,sub,action}){
@@ -2082,7 +2359,8 @@ function CountUp({value,format,duration=900}){
 }
 
 // ── VUE ACCUEIL (Bankroll) ────────────────────────────────────────────────────
-function HomeView({bets,players,onNavigate,onAdd}){
+function HomeView({bets:rawBets,players,onNavigate,onAdd}){
+  const bets=mergeGroups(rawBets);
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
   const[calOpen,setCalOpen]=useState(false);
@@ -2305,8 +2583,12 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:7,fontSize:13,lineHeight:"20px",color:C.sub,overflow:"hidden"}}>
             {[
+              b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
               <span key="o" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>@{String(b.odds).replace(".",",")}</span>,
               <span key="m" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>{eur(stake,0)}</span>,
+              b._group&&<span key="g" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",color:"#8BB8FF",fontWeight:600}}>
+                {b._group.length} sites
+              </span>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
             ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{width:3,height:3,borderRadius:2,background:"#8B92A0",flexShrink:0}}/>{el}</React.Fragment>))}
           </span>
@@ -2329,13 +2611,13 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
   const[filter,setFilter]=useState("all");
   const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
-  const filtered=bets.filter(b=>{
+  const filtered=mergeGroups(bets).filter(b=>{
     if(filter==="pending"&&b.status!=="pending")return false;
     if(filter==="settled"&&b.status==="pending")return false;
     if(search){
       const q=search.toLowerCase();
       if(!(b.player||"").toLowerCase().includes(q)&&!(b.description||"").toLowerCase().includes(q)&&
-         !(b.tipster||"").toLowerCase().includes(q))return false;
+         !(b.tipster||"").toLowerCase().includes(q)&&!(b.annonce_player||b.annonce_note||"").toLowerCase().includes(q))return false;
     }
     return true;
   });
@@ -2472,6 +2754,20 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
           width:"calc(100% - 32px)",maxWidth:398,zIndex:150,display:"flex",alignItems:"center",gap:10,padding:"10px 10px 10px 16px",
           borderRadius:18,background:"rgba(30,34,42,.96)",border:"1px solid "+C.line,boxShadow:"0 16px 40px rgba(0,0,0,.5)",backdropFilter:"blur(12px)"}}>
           <span style={{flex:1,fontSize:15,fontWeight:600}}>{selIds.length} pari{selIds.length>1?"s":""} sélectionné{selIds.length>1?"s":""}</span>
+          {selIds.length>=2&&(
+            <button type="button" className="press" onClick={async()=>{
+                const legs=filtered.filter(b=>sel[b.id]).flatMap(b=>b._group||[b]);
+                const gid=legs.find(b=>b.group_id)?.group_id||legs[0].id;
+                try{
+                  await Promise.all(legs.map(b=>updateBet(b.id,{group_id:gid})));
+                  exitSelect();onRefresh&&onRefresh();
+                  showToast&&showToast("Paris fusionnés ✓");
+                }catch(e){alert("Erreur: "+e.message);}
+              }}
+              style={{height:42,padding:"0 14px",borderRadius:12,border:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              Fusionner
+            </button>
+          )}
           <button type="button" className="press" onClick={()=>setBulkOpen(true)}
             style={{height:42,padding:"0 18px",borderRadius:12,border:"none",background:C.blue,color:"#0C1424",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
             Modifier
@@ -2482,7 +2778,8 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
         <BulkEditSheet count={selIds.length} bookmakers={bookmakers} tipsters={tipsters} leagues={leagues}
           onClose={()=>setBulkOpen(false)}
           onApply={async ch=>{
-            const chosen=bets.filter(b=>sel[b.id]);
+            const chosenIds=new Set(filtered.filter(b=>sel[b.id]).flatMap(b=>b._group?b._group.map(x=>x.id):[b.id]));
+            const chosen=bets.filter(b=>chosenIds.has(b.id));
             await Promise.all(chosen.map(b=>{
               const up={...ch};
               if(ch.status)up.profit=calcProfit(ch.status,parseFloat(b.stake),parseFloat(b.odds));
@@ -2498,7 +2795,8 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
 }
 
 // ── VUE ANALYSE ───────────────────────────────────────────────────────────────
-function StatsView({bets,players=[]}){
+function StatsView({bets:rawBets,players=[]}){
+  const bets=mergeGroups(rawBets);
   const[tab,setTab]=useState("overview");
   if(bets.length===0)return(
     <div style={{padding:"0 20px"}}>
@@ -2536,7 +2834,7 @@ function StatsView({bets,players=[]}){
   const byMarket=groupBy(playerBets,b=>statFR((b.description||"Autre").replace(/^(Over|Under)\s[\d.]+\s/,"")));
   const byOU=groupBy(playerBets.filter(b=>/^(Over|Under)/.test(b.description||"")),b=>(b.description||"").startsWith("Over")?"Over":"Under");
   const byLeague=groupBy(bets,b=>b.game);
-  const byBook=groupBy(bets,b=>b.bookmaker||"Sans bookmaker");
+  const byBook=groupBy(rawBets,b=>b.bookmaker||"Sans bookmaker");
   const byPlayer=groupBy(playerBets,b=>formatName(b.player));
   const byOdds=groupBy(bets,b=>{const o=parseFloat(b.odds||0);return o<1.6?"Moins de 1,60":o<1.9?"1,60 – 1,89":o<2.2?"1,90 – 2,19":"2,20 et plus";});
   const oddsOrder=["Moins de 1,60","1,60 – 1,89","1,90 – 2,19","2,20 et plus"];
@@ -2595,6 +2893,32 @@ function StatsView({bets,players=[]}){
       <div style={{fontSize:22,fontWeight:600,color:col||C.text,marginTop:4}}>{val}</div>
     </div>
   );
+
+  // ── CLV (cote prise vs cote de clôture)
+  const clvOf=list=>{
+    const xs=list.filter(b=>parseFloat(b.closing_odds)>0&&parseFloat(b.odds)>0).map(b=>(parseFloat(b.odds)/parseFloat(b.closing_odds)-1)*100);
+    return{n:xs.length,avg:xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:0};
+  };
+  const clvAll=clvOf(bets);
+
+  // ── Annonces
+  const ann=bets.filter(b=>b.annonce);
+  const annSettled=ann.filter(b=>b.status==="won"||b.status==="lost").length;
+  const pObj=name=>players.find(p=>p.name===name);
+  const SIDE={teammate:"Coéquipier out",opponent:"Adversaire out"};
+  const STAT_A={out:"Out confirmé",doubt:"Incertain (anticipé)"};
+  const ROLE={star:"Star absente",starter:"Titulaire absent",bench:"Joueur de rotation absent"};
+  const posShort=r=>{const x=(r||"").split(",")[0].trim();return({PG:"Meneur",SG:"Arrière",SF:"Ailier",PF:"Ailier fort",C:"Pivot",G:"Arrière",F:"Ailier"})[x]||x||"?";};
+  const Reliability=({n})=>{
+    const lvl=n>=50?["Fiable","#4ADE80","rgba(74,222,128,.12)"]:n>=20?["Indicatif","#FBBF24","rgba(245,158,11,.12)"]:["Échantillon faible","#FF8A80","rgba(255,138,128,.12)"];
+    return(
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:12,background:lvl[2],marginTop:14}}>
+        <span style={{width:8,height:8,borderRadius:4,background:lvl[1]}}/>
+        <span style={{fontSize:13,color:C.text,flex:1}}><b style={{color:lvl[1]}}>{lvl[0]}</b> · {n} pari{n>1?"s":""} sur annonce réglé{n>1?"s":""}</span>
+        <span style={{fontSize:12,color:C.sub}}>{n<50?"fiable à partir de 50":""}</span>
+      </div>
+    );
+  };
 
   // ── Comparaison Over / Under
   const empty={won:0,lost:0,void:0,count:0,profit:0,staked:0,oddsSum:0};
@@ -2655,7 +2979,7 @@ function StatsView({bets,players=[]}){
   return(
     <div style={{padding:"0 20px 8px"}}>
       <div className="segment" style={{marginBottom:6}}>
-        {[["overview","Résumé"],["tipsters","Tipsters"],["positions","Postes"],["markets","Marchés"]].map(([k,l])=>(
+        {[["overview","Résumé"],["tipsters","Tipsters"],["positions","Postes"],["markets","Marchés"],["annonces","Annonces"]].map(([k,l])=>(
           <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -2667,6 +2991,7 @@ function StatsView({bets,players=[]}){
           {kpi("ROI",pct(roi),pColor(roi))}
           {kpi("Réussite",wr.toFixed(1).replace(".",",")+" %")}
           {kpi("Cote moyenne",avgOdds.toFixed(2).replace(".",","))}
+          {clvAll.n>0&&kpi("CLV moyenne ("+clvAll.n+")",pct(clvAll.avg),pColor(clvAll.avg))}
         </div>
         {highlights.length>0&&<>
           <SectionTitle>Points forts</SectionTitle>
@@ -2708,6 +3033,39 @@ function StatsView({bets,players=[]}){
         <SectionTitle>Meilleurs joueurs</SectionTitle>
         <ListCard rows={toRows(byPlayer).slice(0,10)}/>
       </>}
+
+      {tab==="annonces"&&(ann.length===0?(
+        <EmptyState title="Aucun pari sur annonce" sub="Active « Annonce » quand tu paries suite à une absence : tes stats d'annonces apparaîtront ici."/>
+      ):<>
+        <Reliability n={annSettled}/>
+        <SectionTitle>Annonce vs autres paris</SectionTitle>
+        <BarList rows={toRows(groupBy(bets,b=>b.annonce?"Paris sur annonce":"Autres paris"))}/>
+        {(clvOf(ann).n>0)&&(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginTop:12}}>
+            {kpi("CLV annonces ("+clvOf(ann).n+")",pct(clvOf(ann).avg),pColor(clvOf(ann).avg))}
+            {clvOf(bets.filter(b=>!b.annonce)).n>0&&kpi("CLV autres ("+clvOf(bets.filter(b=>!b.annonce)).n+")",pct(clvOf(bets.filter(b=>!b.annonce)).avg),pColor(clvOf(bets.filter(b=>!b.annonce)).avg))}
+          </div>
+        )}
+        <SectionTitle>Coéquipier ou adversaire</SectionTitle>
+        <BarList rows={toRows(groupBy(ann,b=>SIDE[b.annonce_side]||"Non précisé"))}/>
+        <SectionTitle>Confirmé ou anticipé</SectionTitle>
+        <BarList rows={toRows(groupBy(ann,b=>STAT_A[b.annonce_status]||"Non précisé"))}/>
+        <SectionTitle>Importance de l'absent</SectionTitle>
+        <BarList rows={toRows(groupBy(ann,b=>ROLE[b.annonce_role]||"Non précisé"))}/>
+        <SectionTitle>Par marché</SectionTitle>
+        <ListCard rows={toRows(groupBy(ann.filter(b=>b.bet_type!=="team"),b=>{const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";}))}/>
+        <SectionTitle>Poste absent → poste joué</SectionTitle>
+        <ListCard rows={toRows(groupBy(ann.filter(b=>b.bet_type!=="team"&&b.annonce_player),b=>
+          posShort(pObj(b.annonce_player)?.role)+" out → "+posShort(pObj(b.player)?.role)))}/>
+        <SectionTitle>Top des absents</SectionTitle>
+        <ListCard rows={toRows(groupBy(ann.filter(b=>b.annonce_player||b.annonce_note),b=>b.annonce_player?formatName(b.annonce_player):b.annonce_note)).slice(0,10)}/>
+        <SectionTitle>Par ligue</SectionTitle>
+        <ListCard rows={toRows(groupBy(ann,b=>b.game),g=>getLeagueLogo(g)||null)}/>
+        <SectionTitle>Par bookmaker</SectionTitle>
+        <ListCard rows={toRows(groupBy(rawBets.filter(b=>b.annonce),b=>b.bookmaker||"Sans bookmaker"))}/>
+        <SectionTitle>Par tipster</SectionTitle>
+        <ListCard rows={toRows(groupBy(ann,b=>b.tipster||"Sans tipster"))}/>
+      </>)}
 
       {tab==="markets"&&<>
         <SectionTitle>Bilan par marché</SectionTitle>
@@ -2836,7 +3194,7 @@ function SEmpty({title,sub}){
   );
 }
 
-function EditView({showToast}){
+function EditView({showToast,onPlayersChanged=()=>{}}){
   const[leagues,setLeagues]=useState([]);
   const[selectedLeague,setSelectedLeague]=useState(null);
   const[clubs,setClubs]=useState([]);
@@ -2961,6 +3319,7 @@ function EditView({showToast}){
       await updatePlayer(p.id,{photo_url:url,avatar_url:url});
       setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,photo_url:url}:pl));
       if(editingPlayer?.id===p.id)setEditingPlayer(prev=>({...prev,photo_url:url}));
+      onPlayersChanged();
       showToast("Photo mise à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
     setUploadingId(null);
@@ -2978,6 +3337,7 @@ function EditView({showToast}){
       const[newP]=await r.json();
       setPlayers(prev=>[...prev,newP].sort((a,b)=>a.name.localeCompare(b.name)));
       setCreatingPlayer(false);
+      onPlayersChanged();
       showToast(fields.name+" ajouté ✓");
     }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
   }
@@ -3003,6 +3363,7 @@ function EditView({showToast}){
       await updatePlayer(p.id,merged);
       setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,...merged}:pl));
       setEditingPlayer(null);
+      onPlayersChanged();
       showToast("Joueur mis à jour ✓");
     }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
   }
@@ -3142,6 +3503,7 @@ function EditView({showToast}){
                 }
                 setPlayers(prev=>prev.map(p=>({...p,team:selectedClub.name,...(selectedClub.logo?{team_logo_url:selectedClub.logo}:{})})));
                 setClubs(prev=>prev.map(c=>c.name===selectedClub.name?{...c,name_variants:[]}:c));
+                onPlayersChanged();
                 showToast("Club harmonisé ✓");
               }catch(e){showToast("Erreur: "+e.message,"#FF8A80");}
             }}>Harmoniser</button>
@@ -3590,7 +3952,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 }
 
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
-function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
+function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPlayersChanged}){
   const[tab,setTab]=useState("bookmakers");
   const[showAdd,setShowAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
@@ -3696,7 +4058,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast}){
         </>
       )}
 
-      {tab==="edit"&&<EditView showToast={showToast}/>}
+      {tab==="edit"&&<EditView showToast={showToast} onPlayersChanged={onPlayersChanged}/>}
     </div>
   );
 }
@@ -3784,7 +4146,7 @@ export default function App(){
         .catch(err=>console.warn('[SW] registration failed:',err));
     }
 
-    fetchPlayers().then(setPlayers).catch(()=>{});
+    refreshPlayers();
     fetchBookmakers().then(setBookmakers).catch(()=>{});
     fetchTipsters().then(setTipsters).catch(()=>{});
     // Logos ligues
@@ -3838,6 +4200,7 @@ export default function App(){
     return()=>{window.removeEventListener("touchstart",start);window.removeEventListener("touchmove",move);window.removeEventListener("touchend",end);};
   },[loadBets]);
 
+  function refreshPlayers(){fetchPlayers().then(setPlayers).catch(()=>{});}
   function openEdit(bet){setSelectedBet(null);setEditBet(bet);}
 
   if(loading)return(
@@ -3878,13 +4241,14 @@ export default function App(){
         </div>
 
         <div key={view} className="view-in" style={{paddingTop:4}}>
-          {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>setShowAdd(true)}/>}
+          {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
           {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
-            onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>setShowAdd(true)}/>}
+            onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
           {view==="stats"&&<StatsView bets={bets} players={players}/>}
           {view==="settings"&&<SettingsView
+            onPlayersChanged={refreshPlayers}
             bookmakers={bookmakers}
             onUpdateBK={()=>fetchBookmakers().then(setBookmakers).catch(()=>{})}
             tipsters={tipsters}
@@ -3900,7 +4264,7 @@ export default function App(){
           <button aria-label="Mes paris" className={"nav-btn"+(view==="bets"?" active":"")} onClick={()=>setView("bets")}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round"><path d="M5 3h14v18l-2.5-1.8L14 21l-2-1.8L10 21l-2.5-1.8L5 21z"/><path d="M9 8h6M9 12h6"/></svg>
           </button>
-          <button aria-label="Ajouter un pari" className="nav-add" onClick={()=>setShowAdd(true)}>
+          <button aria-label="Ajouter un pari" className="nav-add" onClick={()=>{refreshPlayers();setShowAdd(true);}}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
           <button aria-label="Analyse" className={"nav-btn"+(view==="stats"?" active":"")} onClick={()=>setView("stats")}>
