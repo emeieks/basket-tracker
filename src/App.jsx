@@ -31,6 +31,8 @@ function nowDT(){
     String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
 
+const START_BANKROLL=10000; // bankroll de départ (€)
+
 function eur(v,dec=2){
   return Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec})+"\u00a0€";
 }
@@ -398,8 +400,8 @@ img{image-rendering:auto;}
 .draw-fade{animation:fadeUp 1.2s ease .3s both;}
 @keyframes pulse{0%{r:4;opacity:1;}70%{r:4;opacity:1;}100%{r:4;opacity:1;}}
 .pulse-dot{filter:drop-shadow(0 0 6px currentColor);}
-@keyframes viewIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-.view-in{animation:viewIn .28s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes viewIn{from{opacity:0;}to{opacity:1;}}
+.view-in{animation:viewIn .28s ease backwards;}
 @keyframes sheetUp{from{transform:translateY(40px);opacity:.4;}to{transform:none;opacity:1;}}
 .modal-sheet{animation:sheetUp .32s cubic-bezier(.2,.8,.2,1) both;}
 @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
@@ -411,8 +413,8 @@ img{image-rendering:auto;}
 article,.pick-chip,.seg-btn,.nav-btn,.nav-add,.press,.s-add{transition:transform .12s ease,background .15s,border-color .15s,color .15s;}
 article:active{transform:scale(.985);}
 .pick-chip:active,.seg-btn:active,.press:active,.s-add:active,.nav-btn:active{transform:scale(.95);}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
-.fade-in{animation:fadeIn .22s ease both;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.fade-in{animation:fadeIn .22s ease backwards;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
 .row-select::-webkit-outer-spin-button,.row-select::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
@@ -1869,6 +1871,72 @@ function BankrollChart({bets,height=170}){
   );
 }
 
+function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
+  const[status,setStatus]=useState("");
+  const[game,setGame]=useState("");
+  const[tipster,setTipster]=useState("");
+  const[bookmaker,setBookmaker]=useState("");
+  const[date,setDate]=useState("");
+  const[saving,setSaving]=useState(false);
+  const KEEP="__keep__";
+  const ch={};
+  if(status)ch.status=status;
+  if(game)ch.game=game===KEEP?undefined:game;
+  if(tipster)ch.tipster=tipster==="__none__"?null:tipster;
+  if(bookmaker)ch.bookmaker=bookmaker==="__none__"?null:bookmaker;
+  if(date)ch.created_at=new Date(date).toISOString();
+  Object.keys(ch).forEach(k=>ch[k]===undefined&&delete ch[k]);
+  const n=Object.keys(ch).length;
+  const row={display:"flex",alignItems:"center",gap:10,minHeight:52,padding:"0 16px",borderBottom:"1px solid "+C.line};
+  const lab={fontSize:15,color:C.sub,width:92,flexShrink:0};
+  const keepOpt=<option value="">Ne pas changer</option>;
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet" style={{paddingBottom:"calc(20px + env(safe-area-inset-bottom))"}}>
+        <div className="modal-handle"/>
+        <div className="modal-title" style={{marginBottom:4}}>Modifier {count} pari{count>1?"s":""}</div>
+        <div style={{fontSize:14,color:C.sub,marginBottom:16}}>Seuls les champs que tu changes seront appliqués.</div>
+
+        <div className="pick-head" style={{marginTop:0}}><span>Statut</span>{status&&<span role="button" tabIndex={0} onClick={()=>setStatus("")} onKeyDown={e=>e.key==="Enter"&&setStatus("")} style={{color:C.blue,fontSize:13,cursor:"pointer"}}>Ne pas changer</span>}</div>
+        <div className="segment">
+          {[{k:"pending",l:"En cours"},{k:"won",l:"Gagné"},{k:"lost",l:"Perdu"},{k:"void",l:"Void"}].map(({k,l})=>{
+            const on=status===k;const col=k==="won"?C.green:k==="lost"?C.red:C.text;
+            return <button key={k} type="button" className={"seg-btn"+(on?" active":"")} onClick={()=>setStatus(on?"":k)} style={on?{color:col}:undefined}>{l}</button>;
+          })}
+        </div>
+
+        <div style={{marginTop:16,background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+          <div style={row}><span style={lab}>Ligue</span>
+            <select className="row-select" value={game} onChange={e=>setGame(e.target.value)} style={{color:game?C.green:C.sub}}>
+              {keepOpt}{leagues.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}
+            </select></div>
+          <div style={row}><span style={lab}>Tipster</span>
+            <select className="row-select" value={tipster} onChange={e=>setTipster(e.target.value)} style={{color:tipster?C.green:C.sub}}>
+              {keepOpt}<option value="__none__">Aucun</option>{tipsters.map(tp=><option key={tp.id||tp.name} value={tp.name}>{tp.name}</option>)}
+            </select></div>
+          <div style={row}><span style={lab}>Bookmaker</span>
+            <select className="row-select" value={bookmaker} onChange={e=>setBookmaker(e.target.value)} style={{color:bookmaker?C.green:C.sub}}>
+              {keepOpt}<option value="__none__">Aucun</option>{bookmakers.map(bk=><option key={bk.name} value={bk.name}>{bk.name}</option>)}
+            </select></div>
+          <div style={{...row,borderBottom:"none"}}><span style={lab}>Date</span>
+            <input type="datetime-local" className="row-select" value={date} onChange={e=>setDate(e.target.value)}
+              style={{colorScheme:"dark",color:date?C.green:C.sub}}/>
+            {date&&<button type="button" aria-label="Ne pas changer la date" onClick={()=>setDate("")}
+              style={{border:"none",background:"transparent",color:C.sub,fontSize:18,cursor:"pointer"}}>×</button>}
+          </div>
+        </div>
+
+        <button type="button" className="press" disabled={!n||saving}
+          onClick={async()=>{setSaving(true);try{await onApply(ch);}catch(e){alert("Erreur: "+e.message);setSaving(false);}}}
+          style={{width:"100%",marginTop:18,height:54,borderRadius:16,border:"none",cursor:n?"pointer":"default",
+            background:n?C.blue:"#262B35",color:n?"#0C1424":C.dim,fontSize:17,fontWeight:600,fontFamily:"inherit"}}>
+          {saving?"Enregistrement…":n?"Appliquer à "+count+" pari"+(count>1?"s":""):"Choisis au moins un changement"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({title,sub,action}){
   return(
     <div className="fade-in" style={{marginTop:24,padding:"36px 24px",textAlign:"center",borderRadius:22,
@@ -1911,7 +1979,7 @@ function CountUp({value,format,duration=900}){
 function HomeView({bets,players,onNavigate,onAdd}){
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
-  const[calOpen,setCalOpen]=useState(true);
+  const[calOpen,setCalOpen]=useState(false);
   const won=bets.filter(b=>b.status==="won").length;
   const lost=bets.filter(b=>b.status==="lost").length;
   const voids=bets.filter(b=>b.status==="void").length;
@@ -1961,7 +2029,7 @@ function HomeView({bets,players,onNavigate,onAdd}){
             background:`radial-gradient(120% 90% at 0% 0%, rgba(${tint},.16) 0%, rgba(${tint},0) 55%), linear-gradient(180deg,#1F232B 0%,#181B21 100%)`,
             border:"1px solid rgba(255,255,255,.07)",boxShadow:"0 20px 50px -20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 4px"}}>
-              <span style={{fontSize:13,fontWeight:500,color:C.sub}}>Profit total</span>
+              <span style={{fontSize:13,fontWeight:500,color:C.sub}}>Solde</span>
               {streak>=3&&(
                 <span className="fade-in" style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:12,fontSize:12,fontWeight:600,
                   background:kind==="won"?"rgba(251,146,60,.14)":"rgba(255,138,128,.12)",color:kind==="won"?"#FDBA74":C.red}}>
@@ -1972,13 +2040,19 @@ function HomeView({bets,players,onNavigate,onAdd}){
                 </span>
               )}
             </div>
-            <div style={{fontSize:42,fontWeight:700,letterSpacing:-1.5,color:pColor(profit),padding:"2px 4px 0",lineHeight:1.1}}>
+            <div style={{fontSize:40,fontWeight:700,letterSpacing:-1.5,color:C.text,padding:"2px 4px 0",lineHeight:1.1}}>
+              <CountUp value={START_BANKROLL+profit} format={v=>eur(v)}/>
+            </div>
+            <div style={{padding:"4px 4px 0",fontSize:15,fontWeight:600,color:pColor(profit)}}>
               <CountUp value={profit} format={v=>money(v)}/>
+              <span style={{marginLeft:8,padding:"2px 8px",borderRadius:8,fontSize:13,background:(profit>=0?"rgba(74,222,128,.14)":"rgba(255,138,128,.14)")}}>
+                {(profit>=0?"+":"")+(profit/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}
+              </span>
+              <span style={{marginLeft:8,fontSize:13,fontWeight:400,color:C.sub}}>depuis {eur(START_BANKROLL,0)}</span>
             </div>
             <div style={{display:"flex",gap:18,padding:"8px 4px 14px",fontSize:14}}>
               <span style={{color:C.sub}}>ROI <b style={{color:pColor(roi),fontWeight:600}}><CountUp value={roi} format={v=>(v>0?"+":"")+v.toFixed(1).replace(".",",")+" %"}/></b></span>
               <span style={{color:C.sub}}>Bilan <b style={{color:C.text,fontWeight:600}}>{won}-{lost}-{voids}</b></span>
-              <span style={{color:C.sub}}>Misé <b style={{color:C.text,fontWeight:600}}>{eur(staked,0)}</b></span>
             </div>
             <BankrollChart bets={bets} height={160}/>
           </div>
@@ -2033,7 +2107,7 @@ const navArrow={width:32,height:32,border:"none",background:"transparent",color:
 const linkBtn={border:"none",background:"transparent",color:C.blue,fontSize:15,cursor:"pointer",fontFamily:"inherit"};
 
 // ── TICKET DE PARI ────────────────────────────────────────────────────────────
-function BetSlip({b,players,bkPhotos,onClick}){
+function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const pData=players.find(p=>p.name===b.player);
   const isTeam=b.bet_type==="team";
   const teamName=b.team||pData?.team||"";
@@ -2054,8 +2128,14 @@ function BetSlip({b,players,bkPhotos,onClick}){
   const parts=name.split(" ").filter(Boolean);
   const lastName=isTeam||parts.length<2?name:parts[0][0]+"."+parts.slice(1).join(" ");
   return(
-    <article onClick={onClick} style={{background:"linear-gradient(180deg,#1F232B 0%,#1B1E25 100%)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.04)",border:"1px solid "+border,borderRadius:14,
+    <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{background:selected?"linear-gradient(180deg,#1E2A3E 0%,#1B2335 100%)":"linear-gradient(180deg,#1F232B 0%,#1B1E25 100%)",boxShadow:selected?"0 0 0 2px #5B9DFF":"inset 0 1px 0 rgba(255,255,255,.04)",border:"1px solid "+(selected?"#5B9DFF":border),borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
+      {selectMode&&(
+        <span style={{width:24,height:24,borderRadius:12,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+          border:selected?"none":"2px solid #4B5260",background:selected?C.blue:"transparent",transition:"all .15s"}}>
+          {selected&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0C1424" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
+        </span>
+      )}
       <div style={{position:"relative",flexShrink:0}}>
         {b.game&&(
           <span style={{position:"absolute",left:-3,bottom:-3,width:22,height:22,borderRadius:11,background:C.card,zIndex:1,
@@ -2093,7 +2173,14 @@ function BetSlip({b,players,bkPhotos,onClick}){
 }
 
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
-function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onAdd}){
+function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[],onSelectBet,onEdit,onAdd,onRefresh,showToast}){
+  const[selectMode,setSelectMode]=useState(false);
+  const[sel,setSel]=useState({});
+  const[bulkOpen,setBulkOpen]=useState(false);
+  const selIds=Object.keys(sel).filter(k=>sel[k]);
+  const toggleSel=id=>setSel(s=>({...s,[id]:!s[id]}));
+  const exitSelect=()=>{setSelectMode(false);setSel({});};
+  const slipClick=b=>selectMode?toggleSel(b.id):onSelectBet(b);
   const[filter,setFilter]=useState("all");
   const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
@@ -2125,13 +2212,32 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onA
 
   return(
     <div style={{padding:"0 20px 8px"}}>
-      <div style={{position:"relative"}}>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+      <div style={{position:"relative",flex:1}}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2" strokeLinecap="round"
           style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)"}}><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input placeholder="Rechercher un joueur, un tipster…" value={search} onChange={e=>setSearch(e.target.value)}
           style={{width:"100%",height:42,padding:"0 14px 0 38px",background:C.card,border:"1px solid "+C.line,
             borderRadius:12,color:C.text,fontSize:15,outline:"none"}}/>
       </div>
+      <button type="button" className="press" onClick={()=>selectMode?exitSelect():setSelectMode(true)}
+        style={{height:42,padding:"0 14px",borderRadius:12,border:"1px solid "+(selectMode?C.blue:C.line),cursor:"pointer",
+          background:selectMode?"rgba(91,157,255,.14)":C.card,color:selectMode?"#8BB8FF":C.text,fontSize:14,fontWeight:600,fontFamily:"inherit",flexShrink:0}}>
+        {selectMode?"Annuler":"Sélectionner"}
+      </button>
+      </div>
+      {selectMode&&(
+        <div className="fade-in" style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"10px 4px 0",fontSize:14}}>
+          <span style={{color:C.sub}}>Touche les paris à modifier</span>
+          <button type="button" onClick={()=>{
+              const all=selIds.length===filtered.length;
+              setSel(all?{}:Object.fromEntries(filtered.map(b=>[b.id,true])));
+            }}
+            style={{border:"none",background:"transparent",color:C.blue,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            {selIds.length===filtered.length&&filtered.length>0?"Tout désélectionner":"Tout sélectionner"}
+          </button>
+        </div>
+      )}
       <div className="segment" style={{marginTop:12}}>
         {[["pending","En cours"+(pendingCount?" · "+pendingCount:"")],["settled","Réglés"],["all","Tous"]].map(([k,l])=>(
           <button key={k} className={"seg-btn"+(filter===k?" active":"")} onClick={()=>setFilter(k)}>{l}</button>
@@ -2155,7 +2261,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onA
             </span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {pendingList.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>onSelectBet(b)}/>)}
+            {pendingList.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
           </div>
         </div>
       )}
@@ -2206,7 +2312,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onA
                       {settledDay&&days.length>1&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>onSelectBet(b)}/>)}
+                      {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
                     </div>
                   </div>
                 );
@@ -2216,6 +2322,32 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit,onA
         );
       })}
       </>}
+      {selectMode&&selIds.length>0&&(
+        <div style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:"calc(76px + env(safe-area-inset-bottom))",
+          width:"calc(100% - 32px)",maxWidth:398,zIndex:150,display:"flex",alignItems:"center",gap:10,padding:"10px 10px 10px 16px",
+          borderRadius:18,background:"rgba(30,34,42,.96)",border:"1px solid "+C.line,boxShadow:"0 16px 40px rgba(0,0,0,.5)",backdropFilter:"blur(12px)"}}>
+          <span style={{flex:1,fontSize:15,fontWeight:600}}>{selIds.length} pari{selIds.length>1?"s":""} sélectionné{selIds.length>1?"s":""}</span>
+          <button type="button" className="press" onClick={()=>setBulkOpen(true)}
+            style={{height:42,padding:"0 18px",borderRadius:12,border:"none",background:C.blue,color:"#0C1424",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            Modifier
+          </button>
+        </div>
+      )}
+      {bulkOpen&&(
+        <BulkEditSheet count={selIds.length} bookmakers={bookmakers} tipsters={tipsters} leagues={leagues}
+          onClose={()=>setBulkOpen(false)}
+          onApply={async ch=>{
+            const chosen=bets.filter(b=>sel[b.id]);
+            await Promise.all(chosen.map(b=>{
+              const up={...ch};
+              if(ch.status)up.profit=calcProfit(ch.status,parseFloat(b.stake),parseFloat(b.odds));
+              return updateBet(b.id,up);
+            }));
+            setBulkOpen(false);exitSelect();
+            onRefresh&&onRefresh();
+            showToast&&showToast(chosen.length+" pari"+(chosen.length>1?"s":"")+" modifié"+(chosen.length>1?"s":"")+" ✓");
+          }}/>
+      )}
     </div>
   );
 }
@@ -2319,6 +2451,62 @@ function StatsView({bets,players=[]}){
     </div>
   );
 
+  // ── Comparaison Over / Under
+  const empty={won:0,lost:0,void:0,count:0,profit:0,staked:0,oddsSum:0};
+  const ov=byOU.Over||empty, un=byOU.Under||empty;
+  const so=stat(ov), su=stat(un);
+  const OUCompare=()=>{
+    const rows=[
+      {l:"Profit",o:money(ov.profit),u:money(un.profit),oc:pColor(ov.profit),uc:pColor(un.profit),win:ov.profit===un.profit?0:ov.profit>un.profit?1:2},
+      {l:"ROI",o:so.roi!=null?pct(so.roi):"–",u:su.roi!=null?pct(su.roi):"–",oc:so.roi!=null?pColor(so.roi):C.sub,uc:su.roi!=null?pColor(su.roi):C.sub,
+        win:(so.roi??-1e9)===(su.roi??-1e9)?0:(so.roi??-1e9)>(su.roi??-1e9)?1:2},
+      {l:"Réussite",o:so.wr!=null?Math.round(so.wr)+"\u00a0%":"–",u:su.wr!=null?Math.round(su.wr)+"\u00a0%":"–",
+        win:(so.wr??-1)===(su.wr??-1)?0:(so.wr??-1)>(su.wr??-1)?1:2},
+      {l:"Bilan",o:`${ov.won}-${ov.lost}-${ov.void}`,u:`${un.won}-${un.lost}-${un.void}`,win:0},
+      {l:"Paris",o:String(ov.count),u:String(un.count),win:0},
+      {l:"Cote moy.",o:ov.count?so.avg.toFixed(2).replace(".",","):"–",u:un.count?su.avg.toFixed(2).replace(".",","):"–",win:0},
+    ];
+    const tot=ov.count+un.count||1;
+    return(
+      <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:18,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 90px 1fr",alignItems:"center",padding:"14px 14px 10px"}}>
+          <span style={{fontSize:17,fontWeight:700,color:C.green}}>Over</span>
+          <span style={{textAlign:"center",fontSize:12,color:C.dim,fontWeight:600}}>VS</span>
+          <span style={{fontSize:17,fontWeight:700,color:C.red,textAlign:"right"}}>Under</span>
+        </div>
+        <div style={{display:"flex",height:8,margin:"0 14px 6px",borderRadius:4,overflow:"hidden",background:"#262B35"}}>
+          <div style={{width:(ov.count/tot*100)+"%",background:C.green,opacity:.85}}/>
+          <div style={{width:(un.count/tot*100)+"%",background:C.red,opacity:.85}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",margin:"0 14px 8px",fontSize:12,color:C.sub}}>
+          <span>{Math.round(ov.count/tot*100)} % de tes paris</span><span>{Math.round(un.count/tot*100)} %</span>
+        </div>
+        {rows.map((r,i)=>(
+          <div key={r.l} style={{display:"grid",gridTemplateColumns:"1fr 90px 1fr",alignItems:"center",padding:"11px 14px",
+            borderTop:"1px solid "+C.line,fontSize:15}}>
+            <span style={{fontWeight:r.win===1?700:500,color:r.oc||C.text,display:"flex",alignItems:"center",gap:6}}>
+              {r.o}{r.win===1&&<span style={{width:6,height:6,borderRadius:3,background:C.green}}/>}
+            </span>
+            <span style={{textAlign:"center",fontSize:12,color:C.sub}}>{r.l}</span>
+            <span style={{fontWeight:r.win===2?700:500,color:r.uc||C.text,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6}}>
+              {r.win===2&&<span style={{width:6,height:6,borderRadius:3,background:C.green}}/>}{r.u}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  // Over vs Under par marché
+  const ouByMarket={};
+  playerBets.forEach(b=>{
+    const p=parseDesc(b.description);if(!p)return;
+    const m=statFR(p.stat);
+    if(!ouByMarket[m])ouByMarket[m]={Over:{...empty},Under:{...empty}};
+    const s=ouByMarket[m][p.ou];
+    s.count++;s.profit+=parseFloat(b.profit||0);
+    if(b.status==="won")s.won++;if(b.status==="lost")s.lost++;if(b.status==="void")s.void++;
+  });
+
   return(
     <div style={{padding:"0 20px 8px"}}>
       <div className="segment" style={{marginBottom:6}}>
@@ -2352,8 +2540,8 @@ function StatsView({bets,players=[]}){
             ))}
           </div>
         </>}
-        <SectionTitle>Over / Under</SectionTitle>
-        <ListCard rows={toRows(byOU)}/>
+        <SectionTitle>Over vs Under</SectionTitle>
+        <OUCompare/>
         <SectionTitle>Par cote</SectionTitle>
         <ListCard rows={toRows(byOdds).sort((a,b)=>oddsOrder.indexOf(a.key)-oddsOrder.indexOf(b.key))}/>
         <SectionTitle>Ligues</SectionTitle>
@@ -2379,6 +2567,27 @@ function StatsView({bets,players=[]}){
       {tab==="markets"&&<>
         <SectionTitle>Bilan par marché</SectionTitle>
         <BarList rows={toRows(byMarket)}/>
+        {Object.keys(ouByMarket).length>0&&<>
+          <SectionTitle>Over vs Under par marché</SectionTitle>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 96px 96px",padding:"10px 14px",fontSize:12,fontWeight:600}}>
+              <span style={{color:C.sub}}>Marché</span><span style={{color:C.green,textAlign:"right"}}>Over</span><span style={{color:C.red,textAlign:"right"}}>Under</span>
+            </div>
+            {Object.entries(ouByMarket).sort((a,b)=>(b[1].Over.profit+b[1].Under.profit)-(a[1].Over.profit+a[1].Under.profit)).map(([m,v])=>{
+              const cell=s=>s.count?(
+                <span style={{textAlign:"right"}}>
+                  <span style={{display:"block",fontSize:14,fontWeight:600,color:pColor(s.profit)}}>{money(s.profit,0)}</span>
+                  <span style={{fontSize:11,color:C.sub}}>{s.won}-{s.lost}-{s.void}</span>
+                </span>
+              ):<span style={{textAlign:"right",color:C.dim}}>–</span>;
+              return(
+                <div key={m} style={{display:"grid",gridTemplateColumns:"1fr 96px 96px",alignItems:"center",padding:"10px 14px",borderTop:"1px solid "+C.line}}>
+                  <span style={{fontSize:15,fontWeight:500}}>{m}</span>{cell(v.Over)}{cell(v.Under)}
+                </div>
+              );
+            })}
+          </div>
+        </>}
       </>}
       </div>
     </div>
@@ -3470,6 +3679,7 @@ export default function App(){
           {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>setShowAdd(true)}/>}
           {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
+            tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>setShowAdd(true)}/>}
           {view==="stats"&&<StatsView bets={bets} players={players}/>}
           {view==="settings"&&<SettingsView
