@@ -244,12 +244,21 @@ async function pasteImageToSupabase(name){
         const html=await(await item.getType("text/html")).text();
         const m=html.match(/src=["']([^"']+)["']/);
         if(m&&m[1]){
-          const r=await fetch(m[1]);
-          if(r.ok){const b=await r.blob();return uploadBlob(b);}
+          try{
+            const r=await fetch(m[1]);
+            if(r.ok){const b=await r.blob();if(b.type.startsWith("image/")){return uploadBlob(b);}}
+          }catch(_){}
+          // fallback: retourner l'URL directement si c'est une URL publique valide
+          if(m[1].match(/^https?:\/\//))return m[1];
         }
       }catch(_){}
     }
   }
+  // fallback: lire l'URL texte dans le presse-papier
+  try{
+    const text=(await navigator.clipboard.readText()).trim();
+    if(text.match(/^https?:\/\/.*\.(png|jpg|jpeg|webp|svg|gif)/i))return text;
+  }catch(_){}
   throw new Error("Aucune image trouvée — fais clic-droit → Copier l'image");
 }
 
@@ -2595,23 +2604,50 @@ function EditView({showToast}){
     }catch(e){showToast("Erreur: "+e.message,"#F87171");}
   }
 
+  async function applyClubLogo(club,url){
+    setClubs(prev=>prev.map(c=>c.name===club.name?{...c,logo:url}:c));
+    if(selectedClub?.name===club.name)setSelectedClub(prev=>({...prev,logo:url}));
+    setPlayers(prev=>prev.map(p=>p.team===club.name?{...p,team_logo_url:url}:p));
+    CLUB_LOGOS_MAP[club.name]=url;
+    syncClubLogoAllLeagues(club.name,url).catch(e=>console.warn("Club logo sync:",e));
+    fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(club.name),{
+      method:"PATCH",headers:{...H},body:JSON.stringify({team_logo_url:url}),
+    }).catch(e=>console.warn("Players team_logo_url:",e));
+    showToast("Logo "+club.name+" synchronisé ✓");
+  }
+
   async function pasteClubLogo(club){
     try{
       const url=await pasteImageToSupabase("club_"+club.name.replace(/\s/g,"_").toLowerCase());
-      // Mettre à jour tous les clubs du même nom en local (toutes ligues)
-      setClubs(prev=>prev.map(c=>c.name===club.name?{...c,logo:url}:c));
-      if(selectedClub?.name===club.name)setSelectedClub(prev=>({...prev,logo:url}));
-      setPlayers(prev=>prev.map(p=>p.team===club.name?{...p,team_logo_url:url}:p));
-      // Map global → toutes les vues (BetDetailModal, Mes Paris, etc.)
-      CLUB_LOGOS_MAP[club.name]=url;
-      // Sync DB : tous les clubs du même nom, toutes ligues
-      syncClubLogoAllLeagues(club.name,url).catch(e=>console.warn("Club logo sync:",e));
-      // Sync tous les joueurs du même club
-      fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(club.name),{
-        method:"PATCH",headers:{...H},body:JSON.stringify({team_logo_url:url}),
-      }).catch(e=>console.warn("Players team_logo_url:",e));
-      showToast("Logo "+club.name+" synchronisé sur toutes les ligues ✓");
-    }catch(e){showToast("Erreur: "+e.message,"#F87171");}
+      await applyClubLogo(club,url);
+    }catch(e){
+      // Si le presse-papier ne contient pas d'image, ouvrir le file picker
+      showToast("Presse-papier vide — choisis un fichier","#F59E0B");
+      pickClubLogoFile(club);
+    }
+  }
+
+  function pickClubLogoFile(club){
+    const input=document.createElement("input");
+    input.type="file";input.accept="image/*";
+    input.onchange=async()=>{
+      const file=input.files[0];if(!file)return;
+      try{
+        const safe=club.name.replace(/\s/g,"_").toLowerCase();
+        const ext=file.name.split(".").pop()||"png";
+        const rand=Math.random().toString(36).slice(2,6);
+        const path="photos/players/club_"+safe+"_"+Date.now()+"_"+rand+"."+ext;
+        const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{
+          method:"POST",
+          headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":file.type,"x-upsert":"true"},
+          body:file,
+        });
+        if(!res.ok)throw new Error("Upload "+res.status);
+        const url=SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+        await applyClubLogo(club,url);
+      }catch(e){showToast("Erreur: "+e.message,"#F87171");}
+    };
+    input.click();
   }
 
   async function pastePlayerPhoto(p){
@@ -2758,13 +2794,22 @@ function EditView({showToast}){
               <div style={{fontSize:14,fontWeight:700,color:"#F2F2F7",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{club.name}</div>
               {club.player_count>0&&<div style={{fontSize:11,color:"rgba(255,255,255,.28)",marginTop:2}}>{club.player_count} joueur{club.player_count>1?"s":""}</div>}
             </div>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button className="icon-btn" title="Changer logo"
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <button className="icon-btn" title="Coller logo (presse-papier)"
                 onClick={e=>{e.stopPropagation();pasteClubLogo(club);}}
                 style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
                   <rect x="8" y="2" width="12" height="14" rx="2"/>
+                </svg>
+              </button>
+              <button className="icon-btn" title="Choisir logo (fichier)"
+                onClick={e=>{e.stopPropagation();pickClubLogoFile(club);}}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </button>
               <span style={{color:"#4B5563",fontSize:20}}>›</span>
@@ -2812,12 +2857,20 @@ function EditView({showToast}){
           <div style={{fontSize:16,fontWeight:800,color:"#F2F2F7"}}>{selectedClub.name}</div>
           <div style={{fontSize:11,color:"rgba(255,255,255,.28)"}}>{players.length} joueur{players.length!==1?"s":""}</div>
         </div>
-        {/* Coller logo */}
-        <button className="icon-btn" onClick={()=>pasteClubLogo(selectedClub)}
+        {/* Logo : paste OU fichier */}
+        <button className="icon-btn" title="Coller logo (presse-papier)" onClick={()=>pasteClubLogo(selectedClub)}
           style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
             <rect x="8" y="2" width="12" height="14" rx="2"/>
+          </svg>
+        </button>
+        <button className="icon-btn" title="Choisir logo depuis fichier" onClick={()=>pickClubLogoFile(selectedClub)}
+          style={{display:"flex",alignItems:"center",justifyContent:"center",padding:6}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </button>
         {/* Ajouter joueur */}
