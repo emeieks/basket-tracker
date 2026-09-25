@@ -1049,30 +1049,30 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           background:pc?`linear-gradient(145deg,${pc}99 0%,${pc}33 50%,#08090E 100%)`:"#0D0D12",
           zIndex:0}}/>
 
-        {/* ── Logo équipe — grand, bien visible droite ── */}
+        {/* ── Logo équipe — bas droite, bien visible, ne chevauche pas le profit ── */}
         {teamLogoHeader&&(
           <img src={teamLogoHeader} alt=""
-            style={{position:"absolute",right:10,top:"50%",transform:"translateY(-55%)",
-              width:200,height:200,objectFit:"contain",
-              opacity:.7,pointerEvents:"none",zIndex:4,
-              filter:"drop-shadow(0 4px 24px rgba(0,0,0,.6))"}}/>
+            style={{position:"absolute",right:16,bottom:28,
+              width:130,height:130,objectFit:"contain",
+              opacity:.75,pointerEvents:"none",zIndex:4,
+              filter:"drop-shadow(0 4px 20px rgba(0,0,0,.7))"}}/>
         )}
 
-        {/* ── Dégradé bas pour merger avec le contenu ── */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:110,
-          background:"linear-gradient(to top,#08090E 0%,#08090E 20%,transparent 100%)",
+        {/* ── Dégradé bas — fondu propre vers le formulaire ── */}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:130,
+          background:`linear-gradient(to top,#08090E 0%,#08090E 25%,transparent 100%)`,
           pointerEvents:"none",zIndex:3}}/>
 
-        {/* ── Photo joueur — grande, fondue sur tous les bords ── */}
+        {/* ── Photo joueur — décalée pour voir visage + corps ── */}
         {playerPhoto&&(
           <img src={playerPhoto} alt={form.player}
-            style={{position:"absolute",left:-5,bottom:0,
-              height:"120%",width:"auto",maxWidth:"58%",
-              objectFit:"cover",objectPosition:"50% 5%",
+            style={{position:"absolute",left:-5,bottom:-10,
+              height:"115%",width:"auto",maxWidth:"58%",
+              objectFit:"cover",objectPosition:"50% 15%",
               zIndex:2,
-              maskImage:"linear-gradient(to right,black 0%,black 45%,transparent 88%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+              maskImage:"linear-gradient(to right,black 0%,black 42%,transparent 85%),linear-gradient(to bottom,transparent 0%,black 10%,black 65%,transparent 100%)",
               maskComposite:"intersect",
-              WebkitMaskImage:"linear-gradient(to right,black 0%,black 45%,transparent 88%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
+              WebkitMaskImage:"linear-gradient(to right,black 0%,black 42%,transparent 85%),linear-gradient(to bottom,transparent 0%,black 10%,black 65%,transparent 100%)",
               WebkitMaskComposite:"source-in"}}/>
         )}
         {/* Cas équipe sans photo — logo centré */}
@@ -1111,18 +1111,18 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             profitColor="rgba(255,255,255,.45)";
           }
           return(
-            <div style={{position:"absolute",top:12,right:14,zIndex:10,textAlign:"right"}}>
-              <div style={{fontSize:26,fontWeight:900,color:profitColor,letterSpacing:-1,
-                textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1}}>
+            <div style={{position:"absolute",top:14,right:16,zIndex:10,textAlign:"right"}}>
+              <div style={{fontSize:28,fontWeight:900,color:profitColor,letterSpacing:-1.5,
+                textShadow:"0 2px 16px rgba(0,0,0,.95)",lineHeight:1}}>
                 {profitStr}
               </div>
             </div>
           );
         })()}
 
-        {/* ── Infos texte — overlay bas droite ── */}
-        <div style={{position:"absolute",bottom:16,right:0,left:"42%",
-          padding:"0 16px 0 8px",zIndex:4}}>
+        {/* ── Infos texte — overlay bas, depuis centre ── */}
+        <div style={{position:"absolute",bottom:18,right:0,left:"44%",
+          padding:"0 160px 0 0",zIndex:5}}>
 
           {/* Nom */}
           {isTeamBet?(
