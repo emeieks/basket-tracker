@@ -1474,6 +1474,113 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   );
 }
 
+// ── EditCell — hors du modal pour éviter remount à chaque render ──────────────
+const EditCell=React.memo(function EditCell({fieldKey,label,value,suffix="",type="text",
+  dirty,dropdown,setDropdown,setField,bkPhotos,bookmakerList,tipsterList,leagueList}){
+  const isDropdown=["bookmaker","tipster","game"].includes(fieldKey);
+  const isOpen=dropdown===fieldKey;
+  const[localVal,setLocalVal]=useState(String(value||""));
+
+  // Sync si value change de l'extérieur
+  const prevValue=React.useRef(value);
+  if(prevValue.current!==value){prevValue.current=value;setLocalVal(String(value||""));}
+
+  const opts=fieldKey==="bookmaker"
+    ?bookmakerList.map(b=>({label:b.name,logo:b.logo}))
+    :fieldKey==="tipster"
+      ?tipsterList.map(t=>({label:t.name,logo:null}))
+      :leagueList.map(l=>({label:l.name,logo:l.logo||getLeagueLogo(l.name)}));
+
+  const logoSrc=fieldKey==="bookmaker"?bkPhotos[value]
+    :fieldKey==="game"?getLeagueLogo(value)
+    :null;
+
+  function handleBlur(e){
+    let v=e.target.value.trim();
+    if(fieldKey==="odds"){
+      const n=parseFloat(v.replace(",","."));
+      if(!isNaN(n)&&n>=100) v=(n/100).toFixed(2);
+      else if(!isNaN(n)) v=n.toFixed(2);
+    }
+    if(v!==String(value||"")) setField(fieldKey,v);
+  }
+
+  const isDirty=dirty[fieldKey]!==undefined;
+
+  return(
+    <div style={{position:"relative",flex:1,minWidth:0}}>
+      <div style={{
+        background:isDirty?"rgba(0,230,118,.06)":"#1A1A20",
+        borderTop:isDirty?"1px solid rgba(0,230,118,.25)":"1px solid transparent",
+        padding:"14px 10px 10px",
+        display:"flex",flexDirection:"column",alignItems:"center",gap:5,
+        cursor:"pointer",transition:"background .15s",minHeight:72,
+        borderRadius:0,position:"relative",
+      }}>
+        <span style={{fontSize:9,fontWeight:700,color:isDirty?"#00E676":"rgba(255,255,255,.3)",
+          letterSpacing:.8,textTransform:"uppercase",transition:"color .15s"}}>{label}</span>
+
+        {isDropdown?(
+          <div onClick={e=>{e.stopPropagation();setDropdown(isOpen?null:fieldKey);}}
+            style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",justifyContent:"center"}}>
+            {logoSrc&&<img src={logoSrc} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>}
+            <span style={{fontSize:13,fontWeight:700,color:value?"#F2F2F7":"rgba(255,255,255,.3)",textAlign:"center"}}>
+              {value||"—"}
+            </span>
+            <span style={{fontSize:9,color:"rgba(255,255,255,.3)",marginLeft:1}}>▾</span>
+          </div>
+        ):(
+          <input
+            type={type}
+            value={localVal}
+            onChange={e=>setLocalVal(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}}
+            style={{
+              width:"100%",background:"transparent",border:"none",
+              borderBottom:`1px solid ${isDirty?"rgba(0,230,118,.4)":"rgba(255,255,255,.08)"}`,
+              color:"#F2F2F7",fontSize:13,fontWeight:700,textAlign:"center",
+              outline:"none",padding:"2px 0",fontFamily:"inherit",
+            }}
+          />
+        )}
+        {suffix&&value&&!isDropdown&&(
+          <span style={{fontSize:10,color:"rgba(255,255,255,.25)",marginTop:-4}}>{suffix}</span>
+        )}
+
+        {isOpen&&(
+          <div style={{
+            position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",
+            zIndex:100,background:"#242429",border:"1px solid rgba(255,255,255,.1)",
+            borderRadius:12,overflow:"hidden",minWidth:140,maxHeight:220,overflowY:"auto",
+            boxShadow:"0 8px 32px rgba(0,0,0,.6)",
+          }}>
+            {opts.map(o=>(
+              <div key={o.label} onClick={e=>{e.stopPropagation();setField(fieldKey,o.label);}}
+                style={{
+                  display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                  cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,.04)",
+                  background:value===o.label?"rgba(0,230,118,.08)":"transparent",
+                  fontSize:13,fontWeight:value===o.label?700:500,
+                  color:value===o.label?"#00E676":"#F2F2F7",
+                }}>
+                {o.logo&&<img src={o.logo} alt="" style={{width:18,height:18,objectFit:"contain",borderRadius:3,flexShrink:0}}/>}
+                {o.label}
+                {value===o.label&&<span style={{marginLeft:"auto",fontSize:11}}>✓</span>}
+              </div>
+            ))}
+            {opts.length===0&&(
+              <div style={{padding:"12px 14px",fontSize:12,color:"rgba(255,255,255,.3)"}}>
+                Aucune option
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 // ── DÉTAIL PARI ───────────────────────────────────────────────────────────────
 function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[],leagueList=[],onClose,onUpdate,onDelete}){
   const[saving,setSaving]=useState(false);
@@ -1497,11 +1604,11 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
   const hasDirty=Object.keys(dirty).length>0;
 
-  function setField(field,value){
+  const setField=React.useCallback((field,value)=>{
     setLocalBet(prev=>({...prev,[field]:value}));
     setDirty(prev=>({...prev,[field]:value}));
     setDropdown(null);
-  }
+  },[]);
 
   async function changeStatus(status){
     setSaving(true);
@@ -1541,110 +1648,6 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
   const statusColor=localBet.status==="won"?"#00E676":localBet.status==="lost"?"#F87171":localBet.status==="void"?"rgba(255,255,255,.3)":"rgba(255,255,255,.5)";
   const bkLogo=bkPhotos[localBet.bookmaker];
-
-  // Mini composant champ éditable
-  function EditCell({fieldKey,label,value,suffix="",type="text"}){
-    const isDropdown=["bookmaker","tipster","game"].includes(fieldKey);
-    const isOpen=dropdown===fieldKey;
-    const [localVal,setLocalVal]=useState(String(value||""));
-
-    // Options selon le champ
-    const opts=fieldKey==="bookmaker"
-      ?bookmakerList.map(b=>({label:b.name,logo:b.logo}))
-      :fieldKey==="tipster"
-        ?tipsterList.map(t=>({label:t.name,logo:null}))
-        :leagueList.map(l=>({label:l.name,logo:l.logo||getLeagueLogo(l.name)}));
-
-    const logoSrc=fieldKey==="bookmaker"?bkPhotos[value]
-      :fieldKey==="game"?getLeagueLogo(value)
-      :null;
-
-    function handleBlur(e){
-      let v=e.target.value.trim();
-      if(fieldKey==="odds"){
-        const n=parseFloat(v.replace(",","."));
-        if(!isNaN(n)&&n>=100) v=(n/100).toFixed(2);
-        else if(!isNaN(n)) v=n.toFixed(2);
-      }
-      if(v!==String(value||"")) setField(fieldKey,v);
-    }
-
-    const isDirty=dirty[fieldKey]!==undefined;
-
-    return(
-      <div style={{position:"relative",flex:1,minWidth:0}}>
-        <div style={{
-          background:isDirty?"rgba(0,230,118,.06)":"#1A1A20",
-          borderTop:isDirty?"1px solid rgba(0,230,118,.25)":"1px solid transparent",
-          padding:"14px 10px 10px",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:5,
-          cursor:"pointer",transition:"background .15s",minHeight:72,
-          borderRadius:0,position:"relative",
-        }}>
-          <span style={{fontSize:9,fontWeight:700,color:isDirty?"#00E676":"rgba(255,255,255,.3)",
-            letterSpacing:.8,textTransform:"uppercase",transition:"color .15s"}}>{label}</span>
-
-          {isDropdown?(
-            <div onClick={()=>setDropdown(isOpen?null:fieldKey)}
-              style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",justifyContent:"center"}}>
-              {logoSrc&&<img src={logoSrc} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>}
-              <span style={{fontSize:13,fontWeight:700,color:value?"#F2F2F7":"rgba(255,255,255,.3)",textAlign:"center"}}>
-                {value||"—"}
-              </span>
-              <span style={{fontSize:9,color:"rgba(255,255,255,.3)",marginLeft:1}}>▾</span>
-            </div>
-          ):(
-            <input
-              type={type}
-              value={localVal}
-              onChange={e=>setLocalVal(e.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}}
-              style={{
-                width:"100%",background:"transparent",border:"none",
-                borderBottom:`1px solid ${isDirty?"rgba(0,230,118,.4)":"rgba(255,255,255,.08)"}`,
-                color:"#F2F2F7",fontSize:13,fontWeight:700,textAlign:"center",
-                outline:"none",padding:"2px 0",fontFamily:"inherit",
-              }}
-            />
-          )}
-          {suffix&&value&&!isDropdown&&(
-            <span style={{fontSize:10,color:"rgba(255,255,255,.25)",marginTop:-4}}>{suffix}</span>
-          )}
-
-          {/* Dropdown options */}
-          {isOpen&&(
-            <div style={{
-              position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",
-              zIndex:100,background:"#242429",border:"1px solid rgba(255,255,255,.1)",
-              borderRadius:12,overflow:"hidden",minWidth:140,maxHeight:220,overflowY:"auto",
-              boxShadow:"0 8px 32px rgba(0,0,0,.6)",
-            }}>
-              {opts.map(o=>(
-                <div key={o.label} onClick={()=>setField(fieldKey,o.label)}
-                  style={{
-                    display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
-                    cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,.04)",
-                    background:value===o.label?"rgba(0,230,118,.08)":"transparent",
-                    fontSize:13,fontWeight:value===o.label?700:500,
-                    color:value===o.label?"#00E676":"#F2F2F7",
-                  }}>
-                  {o.logo&&<img src={o.logo} alt="" style={{width:18,height:18,objectFit:"contain",borderRadius:3,flexShrink:0}}/>}
-                  {o.label}
-                  {value===o.label&&<span style={{marginLeft:"auto",fontSize:11}}>✓</span>}
-                </div>
-              ))}
-              {opts.length===0&&(
-                <div style={{padding:"12px 14px",fontSize:12,color:"rgba(255,255,255,.3)"}}>
-                  Aucune option
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return(
     <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget){setDropdown(null);onClose();}}}>
@@ -1742,11 +1745,21 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
           {/* 5 colonnes éditables */}
           <div style={{display:"flex",gap:1,background:"rgba(255,255,255,.04)",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-            <EditCell fieldKey="odds"       label="COTE"    value={localBet.odds}       type="number"/>
-            <EditCell fieldKey="stake"      label="MISE"    value={localBet.stake}      suffix="$" type="number"/>
-            <EditCell fieldKey="bookmaker"  label="BOOK"    value={localBet.bookmaker}/>
-            <EditCell fieldKey="tipster"    label="TIPSTER" value={localBet.tipster}/>
-            <EditCell fieldKey="game"       label="LIGUE"   value={localBet.game}/>
+            <EditCell fieldKey="odds"      label="COTE"    value={localBet.odds}      type="number"
+              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
+              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
+            <EditCell fieldKey="stake"     label="MISE"    value={localBet.stake}     suffix="$" type="number"
+              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
+              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
+            <EditCell fieldKey="bookmaker" label="BOOK"    value={localBet.bookmaker}
+              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
+              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
+            <EditCell fieldKey="tipster"   label="TIPSTER" value={localBet.tipster}
+              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
+              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
+            <EditCell fieldKey="game"      label="LIGUE"   value={localBet.game}
+              dirty={dirty} dropdown={dropdown} setDropdown={setDropdown} setField={setField}
+              bkPhotos={bkPhotos} bookmakerList={bookmakerList} tipsterList={tipsterList} leagueList={leagueList}/>
           </div>
 
           <div style={{padding:"14px 14px 24px"}}>
@@ -1800,6 +1813,30 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             )}
 
             {/* Actions */}
+            {/* Dupliquer */}
+            <button onClick={async()=>{
+              const{id,...copy}=localBet;
+              copy.status="pending";
+              copy.profit=0;
+              copy.created_at=new Date().toISOString();
+              await insertBet(copy);
+              onUpdate();
+              onClose();
+            }} style={{
+              width:"100%",marginBottom:8,padding:"13px 16px",borderRadius:12,
+              border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",
+              color:"rgba(255,255,255,.75)",fontSize:14,fontWeight:600,
+              cursor:"pointer",fontFamily:"inherit",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+            }}>
+              {/* Icône dupliquer — deux pages avec coin plié */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+                <rect x="8" y="2" width="12" height="14" rx="2"/>
+                <path d="M16 2v4h4"/>
+              </svg>
+              Dupliquer ce pari
+            </button>
             <button className="btn btn-danger" onClick={remove} style={{marginBottom:8}}>Supprimer</button>
             <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
           </div>
