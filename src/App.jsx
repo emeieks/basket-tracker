@@ -1066,16 +1066,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {playerPhoto&&(
           <img src={playerPhoto} alt={form.player}
             style={{position:"absolute",left:0,bottom:0,
-              height:"100%",width:"auto",maxWidth:"55%",
+              height:"115%",width:"auto",maxWidth:"55%",
               objectFit:"cover",objectPosition:"50% 8%",
-              zIndex:2}}/>
-        )}
-        {/* Dégradé droite sur la photo pour fondre */}
-        {playerPhoto&&(
-          <div style={{position:"absolute",left:0,bottom:0,
-            height:"100%",width:"55%",
-            background:"linear-gradient(to right,transparent 55%,#08090E 100%)",
-            pointerEvents:"none",zIndex:2}}/>
+              zIndex:2,
+              maskImage:"linear-gradient(to right,black 40%,transparent 90%),linear-gradient(to bottom,transparent 0%,black 15%,black 75%,transparent 100%)",
+              maskComposite:"intersect",
+              WebkitMaskImage:"linear-gradient(to right,black 40%,transparent 90%),linear-gradient(to bottom,transparent 0%,black 15%,black 75%,transparent 100%)",
+              WebkitMaskComposite:"source-in"}}/>
         )}
         {/* Cas équipe sans photo — logo centré */}
         {!playerPhoto&&isTeamBet&&teamLogoHeader&&(
