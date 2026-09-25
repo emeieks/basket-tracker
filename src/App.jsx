@@ -1932,15 +1932,22 @@ function BetSlip({b,players,bkPhotos,onClick}){
   return(
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"10px 12px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-      <PlayerFace src={photo} name={name} size={42}/>
+      <div style={{position:"relative",flexShrink:0}}>
+        <PlayerFace src={photo} name={name} size={42}/>
+        {teamName&&!isTeam&&(
+          <span style={{position:"absolute",right:-3,bottom:-3,width:20,height:20,borderRadius:10,background:C.card,
+            border:"1.5px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={clubLogo} label={teamName} size={15}/>
+          </span>
+        )}
+      </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
         <span style={{fontSize:14,fontWeight:600,lineHeight:1.25}}>
           {lastName} · {b.description}
+          {b.game&&<span style={{display:"inline-flex",verticalAlign:"-2px",marginLeft:6}}><MiniLogo src={leagueLogo} label={b.game} size={15} round={false}/></span>}
         </span>
         <span style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.sub,minWidth:0}}>
           {[
-            teamName&&<MiniLogo key="c" src={clubLogo} label={teamName} size={15}/>,
-            b.game&&<MiniLogo key="l" src={leagueLogo} label={b.game} size={15} round={false}/>,
             b.bookmaker&&<MiniLogo key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={15} round={false}/>,
             b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4",fontWeight:500}}>{b.tipster}</span>,
           ].filter(Boolean).flatMap((el,i)=>i===0?[el]:[<span key={"s"+i} style={{width:4,height:4,borderRadius:2,background:"#6B7280",flexShrink:0}}/>,el])}
