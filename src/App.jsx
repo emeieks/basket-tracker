@@ -352,6 +352,8 @@ img{image-rendering:auto;}
 .pick-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:20px;
   border:1px solid #252A34;background:#1C1F26;color:#C4C9D4;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s;}
 .pick-chip:hover{border-color:#3A404C;}
+.pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;}
+.pick-chip.logo.on{border-width:2px;}
 .pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
@@ -1027,7 +1029,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               maxWidth:"55%",objectFit:"contain",objectPosition:"50% 100%"}}/>
           )}
           <span style={{position:"absolute",left:18,top:20,bottom:18,right:"45%",display:"flex",flexDirection:"column",gap:8}}>
-            <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{isTeamBet?"Équipe":"Joueur"}</span>
+            <span style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>
+              {(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})}
+              {" · "}{(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
+            </span>
             <span style={{fontSize:28,fontWeight:700,letterSpacing:-.6,lineHeight:1.08}}>
               {firstLine&&<>{firstLine}<br/></>}{secondLine}
             </span>
@@ -1170,8 +1175,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           {bookmakers.map(bk=>{
             const on=form.bookmaker===bk;
             return(
-              <button key={bk} type="button" className={"pick-chip"+(on?" on":"")} onClick={()=>f("bookmaker",on?"":bk)}>
-                {bkPhotos[bk]&&<MiniLogo src={bkPhotos[bk]} label={bk} size={18} round={false}/>}{bk}
+              <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
+                onClick={()=>f("bookmaker",on?"":bk)}>
+                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
               </button>
             );
           })}
@@ -1894,6 +1900,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
 function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
   const[filter,setFilter]=useState("all");
+  const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
   const filtered=bets.filter(b=>{
     if(filter==="pending"&&b.status!=="pending")return false;
@@ -1955,7 +1962,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
           </div>
         </div>
       )}
-      {months.map(m=>{
+      {months.map((m,mi)=>{
         const w=m.bets.filter(x=>x.status==="won").length;
         const l=m.bets.filter(x=>x.status==="lost").length;
         const v=m.bets.filter(x=>x.status==="void").length;
@@ -1963,20 +1970,23 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         const st=m.bets.filter(x=>x.status==="won"||x.status==="lost").reduce((s,x)=>s+parseFloat(x.stake||0),0);
         const allSt=m.bets.reduce((s,x)=>s+parseFloat(x.stake||0),0);
         const roi=st>0?p/st*100:0;
-        const pend=m.bets.filter(x=>x.status==="pending").length;
+        const isOpen=openMonths[m.key]??(mi===0);
         return(
           <div key={m.key}>
-            <div style={{position:"sticky",top:0,zIndex:5,background:C.bg,margin:"14px -20px 0",padding:"12px 20px 10px",
-              borderBottom:"1px solid "+C.line,display:"flex",alignItems:"center",gap:10}}>
-              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"baseline",gap:8,whiteSpace:"nowrap",overflow:"hidden"}}>
-                <span style={{fontSize:17,fontWeight:700,letterSpacing:-.3}}>{m.label}</span>
-                <span style={{fontSize:13,color:C.sub,overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</span> · {allSt.toFixed(0)}€
-                </span>
+            <button type="button" aria-expanded={isOpen} onClick={()=>setOpenMonths(o=>({...o,[m.key]:!isOpen}))}
+              style={{width:"100%",marginTop:14,background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:"14px 16px",
+                display:"flex",alignItems:"center",gap:12,cursor:"pointer",color:C.text,textAlign:"left",fontFamily:"inherit"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:17,fontWeight:700,letterSpacing:-.3}}>{m.label}</div>
+                <div style={{fontSize:13,color:C.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {m.bets.length} paris · {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</span> · {allSt.toFixed(0)}€
+                </div>
               </div>
               <span style={{fontSize:17,fontWeight:700,color:pColor(p),flexShrink:0}}>{money(p)}</span>
-            </div>
-            {(()=>{
+              <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
+                style={{flexShrink:0,transition:"transform .2s",transform:isOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
+            </button>
+            {isOpen&&(()=>{
               const sorted=[...m.bets].sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
               const days=[];const di={};
               sorted.forEach(b=>{
