@@ -1099,12 +1099,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 background:"linear-gradient(to right,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 55%,rgba(0,0,0,.0) 100%)",
                 zIndex:1}}/>
 
-              {/* Logo équipe en arrière-plan — toujours visible */}
+              {/* Logo équipe en arrière-plan — grand, centré à droite */}
               {teamLogoHeader&&(
                 <img src={teamLogoHeader} alt=""
-                  style={{position:"absolute",right:isDesktop?130:80,top:"50%",transform:"translateY(-50%)",
-                    width:isDesktop?160:120,height:isDesktop?160:120,objectFit:"contain",
-                    opacity:.18,pointerEvents:"none",zIndex:1}}/>
+                  style={{position:"absolute",right:playerPhoto?(isDesktop?"8%":"5%"):"10%",
+                    top:"50%",transform:"translateY(-50%)",
+                    width:isDesktop?220:170,height:isDesktop?220:170,objectFit:"contain",
+                    opacity:.35,pointerEvents:"none",zIndex:1,
+                    filter:"drop-shadow(0 0 30px rgba(255,255,255,.08)) blur(0.5px)"}}/>
               )}
 
               {/* Photo joueur — droite, plus lumineuse */}
@@ -1122,34 +1124,18 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
               {/* Texte — gauche */}
               <div style={{position:"absolute",left:0,top:0,bottom:0,zIndex:3,
-                padding:isDesktop?"22px 24px":"18px 18px",
-                display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                padding:isDesktop?"18px 24px":"14px 16px",
+                display:"flex",flexDirection:"column",justifyContent:"flex-start"}}>
 
-                {/* Badge sport + profit */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{fontSize:11,background:"rgba(255,255,255,.12)",
-                      borderRadius:6,padding:"3px 8px",fontWeight:700,
-                      color:"rgba(255,255,255,.7)",letterSpacing:.4}}>🏀 {leagueName}</span>
-                  </div>
-                  {profitStr&&(
-                    <div style={{fontSize:isDesktop?28:22,fontWeight:900,color:profitColor,
-                      letterSpacing:-1,textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1,
-                      marginRight:playerPhoto?"48%":"0"}}>
-                      {profitStr}
-                    </div>
-                  )}
-                </div>
-
-                {/* Nom joueur */}
-                <div>
+                {/* Nom joueur — tout en haut */}
+                <div style={{marginBottom:"auto"}}>
                   {displayFirst&&(
                     <div style={{fontSize:isDesktop?15:13,fontWeight:500,
                       color:"rgba(255,255,255,.6)",letterSpacing:.1,lineHeight:1.2}}>
                       {displayFirst}
                     </div>
                   )}
-                  <div style={{fontSize:isDesktop?40:32,fontWeight:900,color:"#fff",
+                  <div style={{fontSize:isDesktop?40:30,fontWeight:900,color:"#fff",
                     letterSpacing:-.8,lineHeight:1,marginBottom:8}}>
                     {displayName}
                   </div>
@@ -1166,6 +1152,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                       </span>
                     )}
                   </div>
+
+                  {/* Profit */}
+                  {profitStr&&(
+                    <div style={{marginTop:8,fontSize:isDesktop?26:20,fontWeight:900,
+                      color:profitColor,letterSpacing:-1,
+                      textShadow:"0 2px 12px rgba(0,0,0,.9)",lineHeight:1}}>
+                      {profitStr}
+                    </div>
+                  )}
                 </div>
 
                 {/* Infos pari — ligne/cote/mise/tipster */}
