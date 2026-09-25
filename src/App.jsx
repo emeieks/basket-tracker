@@ -247,14 +247,14 @@ async function pasteImageToSupabase(name){
 
 // ── STYLES CSS ────────────────────────────────────────────────────────────────
 const CSS=`
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600;700;800;900&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 body{
   background:#18181B;
   color:#F2F2F7;
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:'Barlow',system-ui,sans-serif;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -283,11 +283,11 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
   letter-spacing:.8px;text-transform:uppercase;
   transition:color .15s;
 }
-.nav-btn.active{color:#818CF8;}
+.nav-btn.active{color:#A78BFA;}
 .nav-icon{font-size:20px;line-height:1;}
 .nav-add{
   width:48px;height:48px;border-radius:50%;
-  background:#6366F1;border:none;
+  background:#7C3AED;border:none;
   color:#fff;font-size:24px;font-weight:400;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   margin-top:-16px;flex-shrink:0;
@@ -324,7 +324,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
   font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;
   box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
 }
-.form-input:focus{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.12),0 2px 6px rgba(0,0,0,.35);}
+.form-input:focus{border-color:rgba(124,58,237,.5);box-shadow:0 0 0 3px rgba(124,58,237,.12),0 2px 6px rgba(0,0,0,.35);}
 .form-input::placeholder{color:rgba(255,255,255,.22);}
 .form-select{
   width:100%;
@@ -338,13 +338,13 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
   appearance:none;-webkit-appearance:none;cursor:pointer;
   box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
 }
-.form-select:focus{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.12),0 2px 6px rgba(0,0,0,.35);}
+.form-select:focus{border-color:rgba(124,58,237,.5);box-shadow:0 0 0 3px rgba(124,58,237,.12),0 2px 6px rgba(0,0,0,.35);}
 .form-select option{background:#1A1A1F;color:#E8E8F0;}
 
 /* ── BUTTONS ── */
 .btn{border:none;border-radius:10px;padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .12s;width:100%;font-family:inherit;}
 .btn:active{opacity:.7;}
-.btn-primary{background:#6366F1;color:#fff;}
+.btn-primary{background:#7C3AED;color:#fff;}
 .btn-secondary{background:transparent;color:rgba(255,255,255,.35);border:1px solid #2A2A2E;}
 .btn-danger{background:transparent;color:rgba(255,80,80,.8);border:1px solid rgba(255,80,80,.2);}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:8px;}
@@ -371,7 +371,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .bet-desc{font-size:12px;color:rgba(255,255,255,.3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bet-right{text-align:right;flex-shrink:0;}
 .bet-profit{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.bet-profit.pos{color:#22C55E;}
+.bet-profit.pos{color:#00E676;}
 .bet-profit.neg{color:#F87171;}
 .bet-profit.neu{color:rgba(255,255,255,.3);}
 .bet-odds{font-size:11px;color:rgba(255,255,255,.2);margin-top:2px;}
@@ -379,9 +379,9 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 /* ── STATUS BUTTONS ── */
 .status-row{display:flex;gap:6px;margin-top:0;}
 .status-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.08);border-bottom-color:rgba(0,0,0,.4);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:linear-gradient(180deg,#1A1A1F 0%,#111114 100%);color:rgba(255,255,255,.3);font-family:inherit;letter-spacing:.2px;box-shadow:0 2px 6px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04);}
-.status-btn.won.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#22C55E;}
+.status-btn.won.active{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.35);color:#00E676;}
 .status-btn.lost.active{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:#F87171;}
-.status-btn.pending.active{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.35);color:#818CF8;}
+.status-btn.pending.active{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.35);color:#A78BFA;}
 .status-btn.void.active{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.45);}
 
 /* ── STATS GRID ── */
@@ -402,12 +402,12 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 /* ── TABS ── */
 .tabs{display:flex;gap:2px;background:#1C1C1F;border-radius:8px;padding:3px;margin-bottom:14px;}
 .tab{flex:1;padding:8px;border:none;background:transparent;color:rgba(255,255,255,.28);font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;font-family:inherit;}
-.tab.active{background:#6366F1;color:#fff;}
+.tab.active{background:#7C3AED;color:#fff;}
 
 /* ── SEGMENT ── */
 .segment{display:flex;background:#1C1C1F;border-radius:8px;padding:3px;gap:2px;}
 .seg-btn{flex:1;padding:9px;border:none;background:transparent;color:rgba(255,255,255,.3);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;transition:all .12s;font-family:inherit;}
-.seg-btn.active{background:#6366F1;color:#fff;}
+.seg-btn.active{background:#7C3AED;color:#fff;}
 
 /* ── SETTINGS ── */
 .bk-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#1C1C1F;border:1px solid #2A2A2E;border-radius:12px;margin-bottom:6px;}
@@ -421,7 +421,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 
 /* ── PROFIT BIG ── */
 .profit-big{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;}
-.profit-big.pos{color:#22C55E;}.profit-big.neg{color:#F87171;}.profit-big.neu{color:#fff;}
+.profit-big.pos{color:#00E676;}.profit-big.neg{color:#F87171;}.profit-big.neu{color:#fff;}
 
 /* ── EMPTY STATE ── */
 .empty{text-align:center;padding:60px 20px;}
@@ -433,7 +433,7 @@ img{-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:tran
 .filter-row{display:flex;gap:6px;overflow-x:auto;padding:0 20px 14px;scrollbar-width:none;}
 .filter-row::-webkit-scrollbar{display:none;}
 .filter-chip{flex-shrink:0;padding:7px 16px;border-radius:20px;border:1px solid #2A2A2E;background:transparent;color:rgba(255,255,255,.3);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s;font-family:inherit;}
-.filter-chip.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.4);color:#818CF8;}
+.filter-chip.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:#A78BFA;}
 `;
 
 // ── LEAGUE LOGOS (dynamique depuis Supabase) ─────────────────────────────────
@@ -614,7 +614,7 @@ const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast(){
   const[toast,setToast]=useState(null);
-  const show=useCallback((msg,color="#22C55E")=>{
+  const show=useCallback((msg,color="#00E676")=>{
     setToast({msg,color});
     setTimeout(()=>setToast(null),2500);
   },[]);
@@ -1064,7 +1064,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         const odds=parseFloat(form.odds)||1;
         let profitStr="",profitColor="#fff";
         if(form.stake&&form.odds){
-          if(form.status==="won"){profitStr="+"+(((odds-1)*stake).toFixed(0))+"€";profitColor="#22C55E";}
+          if(form.status==="won"){profitStr="+"+(((odds-1)*stake).toFixed(0))+"€";profitColor="#00E676";}
           else if(form.status==="lost"){profitStr="-"+stake.toFixed(0)+"€";profitColor="#F87171";}
           else{profitStr="+"+(((odds-1)*stake).toFixed(0))+"€";profitColor="rgba(255,255,255,.4)";}
         }
@@ -1138,9 +1138,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                       {displayFirst}
                     </div>
                   )}
-                  {/* Nom sur UNE seule ligne — taille auto */}
-                  <div style={{fontSize:isDesktop?36:26,fontWeight:900,color:"#fff",
-                    letterSpacing:-.6,lineHeight:1,marginBottom:6,
+                  {/* Nom sur UNE seule ligne — Barlow Condensed */}
+                  <div style={{fontSize:isDesktop?44:32,fontWeight:900,color:"#fff",
+                    letterSpacing:.5,lineHeight:1,marginBottom:6,
+                    fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",
                     whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {displayName}
                   </div>
@@ -1405,7 +1406,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             ].map(({key,label})=>{
               const isActive=form.status===key;
               const colors={
-                won:  {bg:"rgba(34,197,94,.15)", border:"rgba(34,197,94,.4)",  text:"#22C55E"},
+                won:  {bg:"rgba(0,230,118,.15)", border:"rgba(0,230,118,.4)",  text:"#00E676"},
                 lost: {bg:"rgba(248,113,113,.12)",border:"rgba(248,113,113,.35)",text:"#F87171"},
                 pending:{bg:`${pc}18`,            border:`${pc}50`,             text:"#fff"},
                 void: {bg:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.12)",text:"rgba(255,255,255,.4)"},
@@ -1456,14 +1457,16 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
         {/* ── Bouton submit — vert vif ── */}
         <button onClick={submit} disabled={saving}
-          style={{width:"100%",marginBottom:8,marginTop:8,padding:"17px 20px",fontSize:16,
-            fontWeight:800,letterSpacing:-.2,borderRadius:14,border:"none",cursor:"pointer",
-            background:"linear-gradient(180deg,#2DD97A 0%,#1DB85E 100%)",color:"#fff",
+          style={{width:"100%",marginBottom:8,marginTop:8,padding:"17px 20px",
+            fontSize:17,fontWeight:800,letterSpacing:.3,textTransform:"uppercase",
+            borderRadius:14,border:"none",cursor:"pointer",
+            background:"linear-gradient(180deg,#00E676 0%,#00C264 100%)",
+            color:"#001A0A",
             opacity:saving?.6:1,
-            boxShadow:"0 4px 24px rgba(29,184,94,.45)",
-            fontFamily:"inherit",transition:"opacity .12s",
+            boxShadow:"0 4px 28px rgba(0,230,118,.4),0 0 0 1px rgba(0,230,118,.2)",
+            fontFamily:"'Barlow Condensed',inherit",transition:"opacity .12s",
             display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          <span style={{fontSize:18}}>+</span>
+          <span style={{fontSize:20,fontWeight:900}}>+</span>
           {saving?"Enregistrement…":editBet?"Modifier le pari":"Ajouter le pari"}
         </button>
       </div>
@@ -1636,8 +1639,8 @@ function BankrollChart({bets,range}){
   });
 
   const isPos=pts[pts.length-1].v>=0;
-  const lineColor=isPos?"#22C55E":"#F87171";
-  const gradStart=isPos?"rgba(34,197,94,0.3)":"rgba(248,113,113,0.3)";
+  const lineColor=isPos?"#00E676":"#F87171";
+  const gradStart=isPos?"rgba(0,230,118,0.3)":"rgba(248,113,113,0.3)";
   const gradEnd="rgba(0,0,0,0)";
 
   return(
@@ -1694,7 +1697,7 @@ function HomeView({bets,players,onNavigate}){
   const initialBankroll=staked-profit;
   const progression=initialBankroll>0?profit/initialBankroll*100:0;
   const isPos=profit>=0;
-  const accentColor=isPos?"#22C55E":"#F87171";
+  const accentColor=isPos?"#00E676":"#F87171";
 
   return(
     <div style={{paddingBottom:8}}>
@@ -1714,7 +1717,7 @@ function HomeView({bets,players,onNavigate}){
           paddingLeft:54,paddingRight:12,marginBottom:8}}>
           <div>
             <div style={{fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:600,letterSpacing:.8}}>BANKROLL SAISON</div>
-            <div style={{fontSize:24,fontWeight:900,color:isPos?"#22C55E":"#F87171",letterSpacing:-1,marginTop:1}}>
+            <div style={{fontSize:24,fontWeight:900,color:isPos?"#00E676":"#F87171",letterSpacing:-1,marginTop:1}}>
               {isPos?"+":""}{profit.toFixed(2)}$
             </div>
           </div>
@@ -1732,9 +1735,9 @@ function HomeView({bets,players,onNavigate}){
             <button key={r} onClick={()=>setRange(r)}
               style={{
                 padding:"5px 14px",borderRadius:20,fontSize:11,fontWeight:700,
-                border:"1px solid "+(range===r?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"),
-                background:range===r?"rgba(99,102,241,.15)":"transparent",
-                color:range===r?"#818CF8":"rgba(255,255,255,.3)",
+                border:"1px solid "+(range===r?"rgba(124,58,237,.5)":"rgba(255,255,255,.08)"),
+                background:range===r?"rgba(124,58,237,.15)":"transparent",
+                color:range===r?"#A78BFA":"rgba(255,255,255,.3)",
                 cursor:"pointer",letterSpacing:.3,fontFamily:"inherit",
               }}>{r}</button>
           ))}
@@ -1774,7 +1777,7 @@ function HomeView({bets,players,onNavigate}){
             <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.28)",
               letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>{label}</div>
             <div style={{fontSize:26,fontWeight:900,
-              color:green?"#22C55E":value<0?"#F87171":"#F2F2F7",
+              color:green?"#00E676":value<0?"#F87171":"#F2F2F7",
               letterSpacing:-1,lineHeight:1}}>
               {fmt(value)}
             </div>
@@ -1805,7 +1808,7 @@ function HomeView({bets,players,onNavigate}){
                 borderRadius:12,position:"relative",overflow:"hidden",
               }}>
                 <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
-                  background:b.status==="won"?"#22C55E":b.status==="lost"?"#F87171":"rgba(255,255,255,.4)"}}/>
+                  background:b.status==="won"?"#00E676":b.status==="lost"?"#F87171":"rgba(255,255,255,.4)"}}/>
                 <PlayerAvatar w={52} h={38} photoUrl={photo} teamLogoUrl={tl}
                   teamName={b.team||pData?.team} round={false} logoSize={0.8}
                   style={{marginLeft:4,borderRadius:8}}/>
@@ -1818,7 +1821,7 @@ function HomeView({bets,players,onNavigate}){
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontSize:14,fontWeight:800,
-                    color:profitNum>0?"#22C55E":profitNum<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                    color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {profitNum>0?"+":""}{profitNum.toFixed(0)}$
                   </div>
                   <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>@{b.odds}</div>
@@ -1892,9 +1895,9 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         ].map(({k,label,count})=>(
           <button key={k} onClick={()=>setFilter(k)} style={{
             flexShrink:0,padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,
-            border:"1px solid "+(filter===k?"rgba(99,102,241,.5)":"rgba(255,255,255,.07)"),
-            background:filter===k?"rgba(99,102,241,.15)":"transparent",
-            color:filter===k?"#818CF8":"rgba(255,255,255,.35)",cursor:"pointer",
+            border:"1px solid "+(filter===k?"rgba(124,58,237,.5)":"rgba(255,255,255,.07)"),
+            background:filter===k?"rgba(124,58,237,.15)":"transparent",
+            color:filter===k?"#A78BFA":"rgba(255,255,255,.35)",cursor:"pointer",
             whiteSpace:"nowrap",fontFamily:"inherit",
           }}>{label} {count>0&&<span style={{opacity:.6}}>·{count}</span>}</button>
         ))}
@@ -1976,7 +1979,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
               }}>
                 <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,.5)"}}>{s.label}</span>
                 <span style={{fontSize:13,fontWeight:800,
-                  color:isPos?"#22C55E":"#F87171"}}>
+                  color:isPos?"#00E676":"#F87171"}}>
                   {isPos?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -1993,7 +1996,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
             ? null // pas de watermark si c'est déjà un logo d'équipe
             : getTeamLogo(b.team||pData?.team,pData?.team_logo_url);
           const profitNum=parseFloat(b.profit||0);
-          const statusColor=b.status==="won"?"#22C55E":b.status==="lost"?"#F87171":b.status==="void"?"rgba(255,255,255,.2)":"rgba(255,255,255,.4)";
+          const statusColor=b.status==="won"?"#00E676":b.status==="lost"?"#F87171":b.status==="void"?"rgba(255,255,255,.2)":"rgba(255,255,255,.4)";
           const bkLogo=bkPhotos?.[b.bookmaker];
 
           // Extraire le badge type (Map 1, Map 2, etc.) depuis la description ou un champ
@@ -2069,7 +2072,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                       </span>
                     )}
                     {mapBadge&&(
-                      <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",background:"rgba(99,102,241,.25)",border:"1px solid rgba(99,102,241,.4)",borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
+                      <span style={{fontSize:10,fontWeight:800,letterSpacing:.3,color:"#F2F2F7",background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",borderRadius:6,padding:"2px 7px",flexShrink:0}}>{mapBadge}</span>
                     )}
                   </div>
                   {/* Ligne 2 : @odds · mise · bookmaker · tipster */}
@@ -2103,7 +2106,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
                 <div style={{flexShrink:0,textAlign:"right"}}>
                   <div style={{
                     fontSize:16,fontWeight:900,letterSpacing:-.5,
-                    color:profitNum>0?"#22C55E":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
+                    color:profitNum>0?"#00E676":profitNum<0?"#F87171":"rgba(255,255,255,.3)",
                   }}>
                     {profitNum>0?"+":""}{profitNum===0&&b.status==="pending"?"—":profitNum.toFixed(2)+"$"}
                   </div>
@@ -2165,7 +2168,7 @@ function StatsView({bets}){
               <div key={g} style={{marginBottom:10,paddingBottom:10,borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontSize:13,fontWeight:700,color:"#F2F2F7"}}>{g}</span>
-                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                  <span style={{fontSize:14,fontWeight:800,color:s.profit>0?"#00E676":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                     {s.profit>0?"+":""}{s.profit.toFixed(2)}$
                   </span>
                 </div>
@@ -2186,7 +2189,7 @@ function StatsView({bets}){
                   <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{stat}</div>
                   <div style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>{s.won+s.lost} paris · WR {wr.toFixed(0)}%</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#00E676":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
               </div>
@@ -2201,7 +2204,7 @@ function StatsView({bets}){
             <div key={m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
               <div style={{fontSize:12,fontWeight:600,color:"#F2F2F7"}}>{m}</div>
               <div style={{textAlign:"right"}}>
-                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#22C55E":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
+                <span style={{fontSize:13,fontWeight:800,color:s.profit>0?"#00E676":s.profit<0?"#F87171":"rgba(255,255,255,.3)"}}>
                   {s.profit>0?"+":""}{s.profit.toFixed(0)}$
                 </span>
                 <span style={{fontSize:11,color:"rgba(255,255,255,.28)",marginLeft:8}}>{s.count} paris</span>
@@ -2844,8 +2847,8 @@ export default function App(){
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <div style={{width:8,height:8,borderRadius:"50%",
-              background:syncing?"rgba(255,255,255,.6)":"#6366F1",
-              boxShadow:"0 0 6px "+(syncing?"rgba(245,158,11,.8)":"rgba(34,197,94,.8)")}}/>
+              background:syncing?"rgba(255,255,255,.6)":"#7C3AED",
+              boxShadow:"0 0 6px "+(syncing?"rgba(245,158,11,.8)":"rgba(0,230,118,.8)")}}/>
             <button onClick={()=>loadBets(true)}
               style={{background:"transparent",border:"none",color:"rgba(255,255,255,.28)",cursor:"pointer",fontSize:18,padding:"4px 8px"}}>↻</button>
           </div>
