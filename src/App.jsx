@@ -408,8 +408,9 @@ img{image-rendering:auto;}
   border:1px solid #252A34;background:#1C1F26;color:#C4C9D4;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s;}
 .pick-chip:hover{border-color:#3A404C;}
 .pick-chip:focus{outline:none;}.pick-chip:focus-visible{outline:2px solid #5B9DFF;outline-offset:2px;}
-.pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;}
-.pick-chip.logo.on{border-width:2px;}
+.pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;border-color:transparent;background:transparent;}
+.pick-chip.logo:hover{border-color:transparent;background:rgba(255,255,255,.05);}
+.pick-chip.logo.on{border-color:transparent;background:rgba(91,157,255,.18);}
 .pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
 .sentence input::-webkit-outer-spin-button,.sentence input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .sentence{display:flex;align-items:center;height:56px;background:#1C1F26;border:1px solid #252A34;border-radius:16px;overflow:hidden;}
@@ -2548,10 +2549,6 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         return(
           <div>
-            <div style={{fontSize:13,color:C.sub,marginTop:2}}>Solde</div>
-            <div style={{fontSize:42,fontWeight:700,letterSpacing:-1.5,lineHeight:1.1}}>
-              <CountUp value={START_BANKROLL+profit} format={v=>eur(v)}/>
-            </div>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:18}}>
               <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
@@ -2680,6 +2677,10 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
                 {b._group.length} sites
               </span>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
+              (b._group?b._group.some(l=>l.bookmaker):b.bookmaker)&&<span key="bk" style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}}>
+                {(b._group?[...new Set(b._group.map(l=>l.bookmaker).filter(Boolean))]:[b.bookmaker]).map(n=>
+                  <MiniLogo key={n} src={bkPhotos?.[n]} label={n} size={16} round={false}/>)}
+              </span>,
             ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{width:3,height:3,borderRadius:2,background:"#8B92A0",flexShrink:0}}/>{el}</React.Fragment>))}
           </span>
         </div>
@@ -2703,8 +2704,23 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
   const[openMonths,setOpenMonths]=useState({});
   const[search,setSearch]=useState("");
   const bkActive=Object.keys(bkSel).filter(k=>bkSel[k]);
-  // filtre au niveau de chaque site, puis regroupement : seuls les montants des bookmakers choisis comptent
-  const filtered=mergeGroups(bkActive.length?bets.filter(b=>bkActive.includes(b.bookmaker)):bets).filter(b=>{
+  const[flt,setFlt]=useState({leagues:{},tipsters:{},annonce:{},roles:{},status:{}});
+  const[fltOpen,setFltOpen]=useState(false);
+  const on=o=>Object.keys(o).filter(k=>o[k]);
+  const roleOf=b=>{const p=players.find(x=>x.name===b.player);return((p?.role||"").split(",")[0].trim())||"?";};
+  const fltCount=on(flt.leagues).length+on(flt.tipsters).length+on(flt.annonce).length+on(flt.roles).length+on(flt.status).length+bkActive.length;
+  const legOk=b=>{
+    if(bkActive.length&&!bkActive.includes(b.bookmaker))return false;
+    const L=on(flt.leagues);if(L.length&&!L.includes(b.game))return false;
+    const T=on(flt.tipsters);if(T.length&&!T.includes(b.tipster||"__none__"))return false;
+    const A=on(flt.annonce);if(A.length&&!A.includes(b.annonce?"yes":"no"))return false;
+    const R=on(flt.roles);if(R.length&&(b.bet_type==="team"||!R.includes(roleOf(b))))return false;
+    const S=on(flt.status);if(S.length&&!S.includes(b.status))return false;
+    return true;
+  };
+  const legsF=fltCount?bets.filter(legOk):bets;
+  // filtre au niveau de chaque site, puis regroupement : seuls les montants retenus comptent
+  const filtered=mergeGroups(legsF).filter(b=>{
     if(search){
       const q=search.toLowerCase();
       if(!(b.player||"").toLowerCase().includes(q)&&!(b.description||"").toLowerCase().includes(q)&&
@@ -2738,6 +2754,13 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
           style={{width:"100%",height:42,padding:"0 14px 0 38px",background:C.card,border:"1px solid "+C.line,
             borderRadius:12,color:C.text,fontSize:15,outline:"none"}}/>
       </div>
+      <button type="button" className="press" aria-label="Filtres" onClick={()=>setFltOpen(true)}
+        style={{position:"relative",width:42,height:42,borderRadius:12,border:"1px solid "+(fltCount?C.blue:C.line),cursor:"pointer",flexShrink:0,
+          background:fltCount?"rgba(91,157,255,.14)":C.card,color:fltCount?"#8BB8FF":C.text,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        {fltCount>0&&<span style={{position:"absolute",top:-5,right:-5,minWidth:18,height:18,padding:"0 5px",borderRadius:9,background:C.blue,
+          color:"#0C1424",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{fltCount}</span>}
+      </button>
       <button type="button" className="press" onClick={()=>selectMode?exitSelect():setSelectMode(true)}
         style={{height:42,padding:"0 14px",borderRadius:12,border:"1px solid "+(selectMode?C.blue:C.line),cursor:"pointer",
           background:selectMode?"rgba(91,157,255,.14)":C.card,color:selectMode?"#8BB8FF":C.text,fontSize:14,fontWeight:600,fontFamily:"inherit",flexShrink:0}}>
@@ -2782,8 +2805,8 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
           </div>
         );
       })()}
-      {bkActive.length>0&&(()=>{
-        const legs=bets.filter(b=>bkActive.includes(b.bookmaker));
+      {fltCount>0&&(()=>{
+        const legs=mergeGroups(legsF);
         const p=legs.reduce((s,b)=>s+parseFloat(b.profit||0),0);
         const w=legs.filter(b=>b.status==="won").length,l=legs.filter(b=>b.status==="lost").length,v=legs.filter(b=>b.status==="void").length;
         const st=legs.filter(b=>b.status==="won"||b.status==="lost").reduce((s,b)=>s+parseFloat(b.stake||0),0);
@@ -2792,7 +2815,11 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
           <div className="fade-in" style={{display:"flex",alignItems:"center",gap:10,marginTop:10,padding:"10px 14px",borderRadius:14,
             background:"rgba(91,157,255,.08)",border:"1px solid rgba(91,157,255,.25)"}}>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{bkActive.join(" + ")}</div>
+              <div style={{fontSize:14,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {fltCount} filtre{fltCount>1?"s":""} actif{fltCount>1?"s":""}
+                <button type="button" onClick={()=>{setFlt({leagues:{},tipsters:{},annonce:{},roles:{},status:{}});setBkSel({});}}
+                  style={{marginLeft:8,border:"none",background:"transparent",color:C.blue,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:0}}>Effacer</button>
+              </div>
               <div style={{fontSize:12,color:C.sub}}>{legs.length} paris · {w}-{l}-{v} · ROI <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")} %</span></div>
             </div>
             <span style={{fontSize:17,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
@@ -2865,7 +2892,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                   <div key={d.k} className="fade-in">
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"18px 4px 8px"}}>
                       <span style={{fontSize:14,fontWeight:600,color:"#C4C9D4"}}>{d.label}</span>
-                      {settledDay&&days.length>1&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
+                      {settledDay&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
@@ -2919,12 +2946,60 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
             showToast&&showToast(chosen.length+" pari"+(chosen.length>1?"s":"")+" modifié"+(chosen.length>1?"s":"")+" ✓");
           }}/>
       )}
+      {fltOpen&&(()=>{
+        const tog=(grp,k)=>setFlt(f0=>({...f0,[grp]:{...f0[grp],[k]:!f0[grp][k]}}));
+        const games=[...new Set(bets.map(b=>b.game).filter(Boolean))].sort();
+        const tips=[...new Set(bets.map(b=>b.tipster).filter(Boolean))].sort();
+        const roleOrder=["PG","SG","SF","PF","C","G","F"];
+        const roles=[...new Set(bets.filter(b=>b.bet_type!=="team").map(roleOf))].filter(r=>r!=="?").sort((a,b)=>roleOrder.indexOf(a)-roleOrder.indexOf(b));
+        const Chips=({grp,items})=>(
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {items.map(([k,label,logo])=>{
+              const act=grp==="bk"?!!bkSel[k]:!!flt[grp][k];
+              return(
+                <button key={k} type="button" className={"pick-chip"+(act?" on":"")}
+                  onClick={()=>grp==="bk"?setBkSel(s=>({...s,[k]:!act})):tog(grp,k)}>
+                  {logo!==undefined&&<MiniLogo src={logo} label={label} size={18} round={false}/>}{label}
+                </button>
+              );
+            })}
+          </div>
+        );
+        const Sec=({title,children})=>(<><div className="pick-head" style={{margin:"16px 2px 8px"}}><span>{title}</span></div>{children}</>);
+        return(
+          <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setFltOpen(false);}}>
+            <div className="modal-sheet" style={{display:"flex",flexDirection:"column",maxHeight:"88vh",paddingBottom:"calc(16px + env(safe-area-inset-bottom))"}}>
+              <div className="modal-handle"/>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div className="modal-title" style={{margin:0}}>Filtres</div>
+                {fltCount>0&&<button type="button" onClick={()=>{setFlt({leagues:{},tipsters:{},annonce:{},roles:{},status:{}});setBkSel({});}}
+                  style={{border:"none",background:"transparent",color:C.blue,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Tout effacer</button>}
+              </div>
+              <div style={{overflowY:"auto",flex:1,paddingBottom:8}}>
+                <Sec title="Résultat"><Chips grp="status" items={[["won","Gagné"],["lost","Perdu"],["pending","En cours"],["void","Void"]]}/></Sec>
+                {games.some(g=>!isCup(g))&&<Sec title="Ligues"><Chips grp="leagues" items={games.filter(g=>!isCup(g)).map(g=>[g,g,getLeagueLogo(g)||null])}/></Sec>}
+                {games.some(isCup)&&<Sec title="Coupes"><Chips grp="leagues" items={games.filter(isCup).map(g=>[g,g,getLeagueLogo(g)||null])}/></Sec>}
+                <Sec title="Tipster"><Chips grp="tipsters" items={[...tips.map(x=>[x,x]),["__none__","Sans tipster"]]}/></Sec>
+                <Sec title="Annonce"><Chips grp="annonce" items={[["yes","Sur annonce"],["no","Sans annonce"]]}/></Sec>
+                {roles.length>0&&<Sec title="Poste du joueur"><Chips grp="roles" items={roles.map(r=>[r,r])}/></Sec>}
+                {bookmakers.filter(bk=>!bk.hidden&&bets.some(b=>b.bookmaker===bk.name)).length>0&&
+                  <Sec title="Bookmaker"><Chips grp="bk" items={bookmakers.filter(bk=>!bk.hidden&&bets.some(b=>b.bookmaker===bk.name)).map(bk=>[bk.name,bk.name,bk.logo||null])}/></Sec>}
+              </div>
+              <button type="button" className="press" onClick={()=>setFltOpen(false)}
+                style={{width:"100%",marginTop:10,height:52,borderRadius:16,border:"none",background:C.blue,color:"#0C1424",
+                  fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                Voir {mergeGroups(legsF).length} pari{mergeGroups(legsF).length>1?"s":""}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
 
 // ── VUE ANALYSE ───────────────────────────────────────────────────────────────
-function StatsView({bets:rawBets,players=[]}){
+function StatsView({bets:rawBets,players=[],bkPhotos={}}){
   const bets=mergeGroups(rawBets);
   const[tab,setTab]=useState("overview");
   if(bets.length===0)return(
@@ -3146,7 +3221,7 @@ function StatsView({bets:rawBets,players=[]}){
         <SectionTitle>Ligues</SectionTitle>
         <ListCard rows={toRows(byLeague,g=>getLeagueLogo(g)||null)}/>
         <SectionTitle>Bookmakers</SectionTitle>
-        <ListCard rows={toRows(byBook)}/>
+        <ListCard rows={toRows(byBook,n=>bkPhotos[n]||null)}/>
         <SectionTitle>Par mois</SectionTitle>
         <ListCard rows={monthRows}/>
       </>}
@@ -3338,6 +3413,22 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   const[globalSearch,setGlobalSearch]=useState("");
   const[playerSearch,setPlayerSearch]=useState("");
   const[pickClubs,setPickClubs]=useState(false);
+  const[gIndex,setGIndex]=useState(null); // {clubs:[],players:[]}
+  const navRef=useRef(null); // navigation en attente {club, player}
+  useEffect(()=>{
+    if(globalSearch.trim().length<2||gIndex)return;
+    Promise.all([
+      fetch(SUPA_URL+"/rest/v1/clubs?select=*&order=name.asc&limit=5000",{headers:H}).then(r=>r.json()).catch(()=>[]),
+      fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H}).then(r=>r.json()).catch(()=>[]),
+    ]).then(([cl,pl])=>setGIndex({clubs:Array.isArray(cl)?cl:[],players:Array.isArray(pl)?pl:[]}));
+  },[globalSearch,gIndex]);
+  useEffect(()=>{if(!globalSearch)setGIndex(null);},[globalSearch]);
+  function goTo(club,player){
+    const lg=leagues.find(l=>l.name===club.league)||{id:club.league,name:club.league};
+    navRef.current={club,player};
+    setGlobalSearch("");
+    setSelectedLeague(lg);
+  }
 
   useEffect(()=>{
     fetchLeagues().then(rows=>{
@@ -3372,6 +3463,11 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
         }
       }catch(_){}
       setClubs(cs);
+      if(navRef.current?.club){
+        const target=cs.find(c=>normTeam(c.name)===normTeam(navRef.current.club.name))||navRef.current.club;
+        if(!navRef.current.player)navRef.current=null;
+        setSelectedClub(target);
+      }
     }).catch(()=>{}).finally(()=>setLoading(false));
   },[selectedLeague]);
 
@@ -3380,7 +3476,15 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
     setLoading(true);setPlayers([]);setPlayerSearch("");
     fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H})
       .then(r=>r.json())
-      .then(rows=>setPlayers(Array.isArray(rows)?rows.filter(p=>p.team&&sameTeam(p.team,selectedClub.name)):[]))
+      .then(rows=>{
+        const list=Array.isArray(rows)?rows.filter(p=>p.team&&sameTeam(p.team,selectedClub.name)):[];
+        setPlayers(list);
+        if(navRef.current?.player){
+          const pl=list.find(p=>p.id===navRef.current.player.id)||navRef.current.player;
+          navRef.current=null;
+          setEditingPlayer(pl);
+        }
+      })
       .catch(()=>{}).finally(()=>setLoading(false));
   },[selectedClub]);
 
@@ -3531,8 +3635,43 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
             }}>Importer</button>
           </div>
         ))}
-        <SSearch value={globalSearch} onChange={setGlobalSearch} placeholder="Rechercher une ligue…"/>
-        {leagueMatches.length===0?<SEmpty title="Aucune ligue trouvée"/>:(()=>{
+        <SSearch value={globalSearch} onChange={setGlobalSearch} placeholder="Ligue, club ou joueur…"/>
+        {globalSearch.trim().length>=2&&(()=>{
+          const q=normTeam(globalSearch);
+          const qi=globalSearch.toLowerCase().trim();
+          if(!gIndex)return <div style={{textAlign:"center",color:C.sub,padding:"8px 0 16px",fontSize:14}}>Recherche…</div>;
+          const seen=new Set();
+          const clubHits=gIndex.clubs.filter(c=>normTeam(c.name).includes(q)).filter(c=>{const k=normTeam(c.name)+"|"+c.league;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,8);
+          const playerHits=gIndex.players.filter(p=>{
+            const n=(p.name||"").toLowerCase();
+            return normTeam(p.name).includes(q)||n.split(" ").map(w=>w[0]).join("")===qi;
+          }).slice(0,10);
+          const clubOf=p=>gIndex.clubs.find(c=>c.league===p.game&&sameTeam(c.name,p.team))||gIndex.clubs.find(c=>sameTeam(c.name,p.team));
+          return(<>
+            {clubHits.length>0&&<>
+              <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"4px 4px 8px"}}>Clubs</div>
+              <SGroup>{clubHits.map(c=>(
+                <SRow key={c.name+c.league} logo={<SLogo src={c.logo||CLUB_LOGOS_MAP[c.name]} name={c.name} size={42}/>}
+                  title={c.name} sub={c.league} onClick={()=>goTo(c,null)} chevron/>
+              ))}</SGroup>
+            </>}
+            {playerHits.length>0&&<>
+              <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"18px 4px 8px"}}>Joueurs</div>
+              <SGroup>{playerHits.map(p=>{
+                const club=clubOf(p);
+                return(
+                  <SRow key={p.id||p.name} logo={<PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} team={p.team} size={44}/>}
+                    title={formatName(p.name)} sub={[p.role,p.team,p.game].filter(Boolean).join(" · ")}
+                    onClick={()=>club?goTo(club,p):showToast("Club introuvable pour ce joueur","#FF8A80")} chevron/>
+                );
+              })}</SGroup>
+            </>}
+            {(leagueMatches.length>0&&(clubHits.length>0||playerHits.length>0))&&
+              <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"18px 4px 8px"}}>Ligues</div>}
+            {leagueMatches.length===0&&clubHits.length===0&&playerHits.length===0&&<SEmpty title={"Aucun résultat pour « "+globalSearch+" »"}/>}
+          </>);
+        })()}
+        {leagueMatches.length===0?(globalSearch.trim().length>=2?null:<SEmpty title="Aucune ligue trouvée"/>):(()=>{
           const row=lg=>(
             <SRow key={lg.id}
               logo={<SLogo src={lg.logo} name={lg.name} size={42}/>}
@@ -4412,7 +4551,7 @@ export default function App(){
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
-          {view==="stats"&&<StatsView bets={bets} players={players}/>}
+          {view==="stats"&&<StatsView bets={bets} players={players} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}/>}
           {view==="settings"&&<SettingsView
             onPlayersChanged={refreshPlayers}
             bookmakers={bookmakers}
