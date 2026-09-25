@@ -1226,7 +1226,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             return(
               <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
                 onClick={()=>f("bookmaker",on?"":bk)}>
-                <LogoTile src={bkPhotos[bk]} label={bk} size={30} fill/>
+                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
               </button>
             );
           })}
@@ -1883,6 +1883,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
   return(
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
+      {b.game&&<MiniLogo src={leagueLogo} label={b.game} size={22} round={false}/>}
       <div style={{position:"relative",flexShrink:0}}>
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={54}/>
         {teamName&&!isTeam&&(
@@ -1902,12 +1903,11 @@ function BetSlip({b,players,bkPhotos,onClick}){
         <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
           <span style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:7,fontSize:13,lineHeight:"20px",color:C.sub,overflow:"hidden"}}>
             {[
-              b.bookmaker&&<LogoTile key="b" src={bkPhotos?.[b.bookmaker]} label={b.bookmaker} size={22} fill/>,
+              <span key="o" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>@{String(b.odds).replace(".",",")}</span>,
+              <span key="m" style={{whiteSpace:"nowrap",color:"#C4C9D4"}}>{eur(stake,0)}</span>,
               b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4C9D4"}}>{b.tipster}</span>,
-              b.game&&<LogoTile key="l" src={leagueLogo} label={b.game} size={22}/>,
             ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{width:3,height:3,borderRadius:2,background:"#8B92A0",flexShrink:0}}/>{el}</React.Fragment>))}
           </span>
-          <span style={{flexShrink:0,fontSize:13,lineHeight:"18px",color:C.sub}}>@{String(b.odds).replace(".",",")} · {eur(stake,0)}</span>
         </div>
       </div>
     </article>
