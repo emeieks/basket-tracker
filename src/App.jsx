@@ -1,4 +1,4 @@
-import{useState,useEffect,useCallback,useRef,memo}from"react";
+import React,{useState,useEffect,useCallback,useRef,memo}from"react";
 
 // ── CONFIG SUPABASE ───────────────────────────────────────────────────────────
 const SUPA_URL="https://khjljfeknwwktfjjznhp.supabase.co";
@@ -2906,7 +2906,6 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
   const[photoUrl,setPhotoUrl]=useState(null);
   const[uploading,setUploading]=useState(false);
   const[saving,setSaving]=useState(false);
-  const ROLES=["PG","SG","SF","PF","C","Guard","Wing","Forward","Big","G","F"];
   const clubLogo=club?.logo||CLUB_LOGOS_MAP[club?.name]||null;
 
   const nameFormatted=name.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
@@ -3004,16 +3003,17 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
             </div>
           </div>
 
-          {/* Position — chips */}
+          {/* Position — 5 positions standard */}
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
               letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Position</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-              {ROLES.map(r=>(
+            <div style={{display:"flex",gap:8}}>
+              {BASKET_POSITIONS.map(r=>(
                 <button key={r} onClick={()=>setRole(r===role?"":r)}
-                  style={{padding:"8px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
-                    background:role===r?"#6366F1":"rgba(255,255,255,.07)",
-                    color:role===r?"#fff":"rgba(255,255,255,.5)",transition:"all .15s"}}>
+                  style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:.3,
+                    background:role===r?"#6366F1":"rgba(255,255,255,.06)",
+                    color:role===r?"#fff":"rgba(255,255,255,.4)",
+                    transition:"all .15s",boxShadow:role===r?"0 0 14px rgba(99,102,241,.4)":"none"}}>
                   {r}
                 </button>
               ))}
@@ -3031,32 +3031,61 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
 }
 
 // ── MODAL ÉDITION JOUEUR ──────────────────────────────────────────────────────
+// Les 5 positions basket standard — on peut en cumuler plusieurs
+const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
+
+// game peut être "EuroLeague" ou "EuroLeague,ACB" — on parse en tableau
+function parseGames(g){return(g||"").split(",").map(s=>s.trim()).filter(Boolean);}
+function serializeGames(arr){return arr.join(",");}
+
 function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploadingId}){
-  const[role,setRole]=useState(player.role||"");
+  // Positions : tableau de positions sélectionnées (multi)
+  const initRoles=parseGames(player.role||"").filter(r=>BASKET_POSITIONS.includes(r));
+  const[roles,setRoles]=useState(initRoles.length?initRoles:(player.role?[player.role]:[]) );
   const[team,setTeam]=useState(player.team||"");
-  const[game,setGame]=useState(player.game||"");
+  // Ligues multiples
+  const initGames=parseGames(player.game||"");
+  const[selectedGames,setSelectedGames]=useState(initGames);
   const[saving,setSaving]=useState(false);
-  const[openPicker,setOpenPicker]=useState(null); // "league"|"club"|"position"
-  const ROLES=["PG","SG","SF","PF","C","Guard","Wing","Forward","Big","G","F"];
+  const[openPicker,setOpenPicker]=useState(null);
+
   const photo=player.photo_url||player.avatar_url;
   const resolvedTeamLogo=getTeamLogo(team||player.team, player.team_logo_url||null);
   const tc=getTeamColor(team||player.team);
   const pc=tc?.p||"#1C1C22";
-
-  // Formatage Prénom Nom
   const nameFormatted=(player.name||"").trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 
-  // Ligue associée au club sélectionné
-  const currentLeagueObj=leagues.find(l=>l.name===game);
-  const filteredClubs=clubs.filter(c=>c.league===game).sort((a,b)=>a.name.localeCompare(b.name));
-  const currentClubObj=filteredClubs.find(c=>c.name===team)||clubs.find(c=>c.name===team);
+  // Clubs filtrés = union de tous les clubs de toutes les ligues sélectionnées
+  const filteredClubs=clubs.filter(c=>selectedGames.includes(c.league)).sort((a,b)=>a.name.localeCompare(b.name));
+  const currentClubObj=clubs.find(c=>c.name===team);
+  // Affichage des logos de ligues sélectionnées
+  const selectedLeagueObjs=selectedGames.map(g=>leagues.find(l=>l.name===g)).filter(Boolean);
+
+  function toggleGame(lname){
+    setSelectedGames(prev=>
+      prev.includes(lname)?prev.filter(g=>g!==lname):[...prev,lname]
+    );
+    // Si on retire la ligue du club actuel, reset le club
+    if(selectedGames.includes(lname)){
+      const remaining=selectedGames.filter(g=>g!==lname);
+      if(currentClubObj&&!remaining.includes(currentClubObj.league))setTeam("");
+    }
+  }
+
+  function toggleRole(r){
+    setRoles(prev=>prev.includes(r)?prev.filter(x=>x!==r):[...prev,r]);
+  }
 
   async function save(){
     if(saving)return;
     setSaving(true);
-    await onSave(player,{role,team,game,league:game});
+    const gameStr=serializeGames(selectedGames);
+    const roleStr=serializeGames(roles);
+    await onSave(player,{role:roleStr,team,game:gameStr,league:gameStr});
     setSaving(false);
   }
+
+  const roleDisplay=roles.length?roles.join(" · "):"—";
 
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -3068,14 +3097,12 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
           position:"relative",height:180,overflow:"hidden",flexShrink:0,
           background:pc?`linear-gradient(135deg,${pc}CC 0%,${pc}44 50%,#0D0D12 100%)`:"#1C1C22",
         }}>
-          {/* Logo club en fond */}
           {resolvedTeamLogo&&(
             <img src={resolvedTeamLogo} alt="" style={{
               position:"absolute",right:-20,top:"50%",transform:"translateY(-50%)",
               width:160,height:160,objectFit:"contain",opacity:.08,filter:"blur(1px)",pointerEvents:"none",
             }}/>
           )}
-          {/* Photo joueur */}
           <div style={{position:"absolute",bottom:0,left:20,display:"flex",alignItems:"flex-end",gap:16}}>
             <div style={{position:"relative"}}>
               {photo?(
@@ -3090,10 +3117,8 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                   background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",
                   justifyContent:"center",fontSize:48,color:"rgba(255,255,255,.15)"}}>◎</div>
               )}
-              {/* Bouton coller photo */}
               <button onClick={onPastePhoto} disabled={uploadingId===player.id}
-                style={{position:"absolute",bottom:8,right:8,
-                  width:30,height:30,borderRadius:"50%",
+                style={{position:"absolute",bottom:8,right:8,width:30,height:30,borderRadius:"50%",
                   background:"rgba(0,0,0,.7)",border:"1.5px solid rgba(255,255,255,.2)",
                   display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                 {uploadingId===player.id
@@ -3101,27 +3126,25 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                   :<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
                     <rect x="8" y="2" width="12" height="14" rx="2"/>
-                  </svg>
-                }
+                  </svg>}
               </button>
             </div>
-            {/* Infos joueur */}
             <div style={{paddingBottom:14,flex:1}}>
-              <div style={{
-                fontFamily:"'Barlow Condensed',inherit",fontSize:26,fontWeight:900,
-                color:"#F2F2F7",lineHeight:1.05,letterSpacing:-.3,
-                textShadow:"0 2px 12px rgba(0,0,0,.6)",
-              }}>{nameFormatted}</div>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginTop:5}}>
-                {currentLeagueObj?.logo&&(
-                  <img src={currentLeagueObj.logo} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>
-                )}
-                <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>
-                  {game||"—"}
-                </span>
-                {role&&<>
-                  <span style={{fontSize:10,color:"rgba(255,255,255,.2)"}}>·</span>
-                  <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>{role}</span>
+              <div style={{fontFamily:"'Barlow Condensed',inherit",fontSize:26,fontWeight:900,
+                color:"#F2F2F7",lineHeight:1.05,letterSpacing:-.3,textShadow:"0 2px 12px rgba(0,0,0,.6)"}}>
+                {nameFormatted}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5,flexWrap:"wrap"}}>
+                {selectedLeagueObjs.map((l,i)=>(
+                  <React.Fragment key={l.name}>
+                    {i>0&&<span style={{fontSize:9,color:"rgba(255,255,255,.2)"}}>+</span>}
+                    {l.logo&&<img src={l.logo} alt="" style={{width:14,height:14,objectFit:"contain",borderRadius:2}}/>}
+                    <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>{l.name}</span>
+                  </React.Fragment>
+                ))}
+                {roles.length>0&&<>
+                  <span style={{fontSize:9,color:"rgba(255,255,255,.2)"}}>·</span>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>{roleDisplay}</span>
                 </>}
               </div>
             </div>
@@ -3131,32 +3154,52 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
         {/* ── CHAMPS ÉDITABLES ── */}
         <div style={{padding:"20px 16px 32px",display:"flex",flexDirection:"column",gap:10}}>
 
-          {/* Ligue */}
+          {/* Ligues — multi-sélection */}
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
-              textTransform:"uppercase",marginBottom:6}}>Ligue</div>
+              textTransform:"uppercase",marginBottom:6}}>
+              Ligues <span style={{color:"rgba(99,102,241,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
+            </div>
             <button onClick={()=>setOpenPicker(openPicker==="league"?null:"league")}
-              style={{width:"100%",background:"#1C1C22",border:`1px solid ${openPicker==="league"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
-                borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-              {currentLeagueObj?.logo&&<img src={currentLeagueObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
-              <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:game?"#F2F2F7":"rgba(255,255,255,.3)"}}>
-                {game||"Sélectionner une ligue…"}
-              </span>
-              <span style={{fontSize:10,color:"rgba(255,255,255,.25)"}}>▾</span>
+              style={{width:"100%",background:"#1C1C22",
+                border:`1px solid ${openPicker==="league"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",minHeight:46}}>
+              {selectedLeagueObjs.length===0&&(
+                <span style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,.3)"}}>Sélectionner…</span>
+              )}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",flex:1,alignItems:"center"}}>
+                {selectedLeagueObjs.map(l=>(
+                  <div key={l.name} style={{display:"flex",alignItems:"center",gap:5,
+                    background:"rgba(99,102,241,.15)",borderRadius:20,padding:"3px 10px 3px 6px"}}>
+                    {l.logo&&<img src={l.logo} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>}
+                    <span style={{fontSize:12,fontWeight:700,color:"#818CF8"}}>{l.name}</span>
+                  </div>
+                ))}
+              </div>
+              <span style={{fontSize:10,color:"rgba(255,255,255,.25)",flexShrink:0}}>▾</span>
             </button>
             {openPicker==="league"&&(
               <div style={{background:"#1C1C22",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,
-                marginTop:4,overflow:"hidden",maxHeight:200,overflowY:"auto"}}>
-                {leagues.map(l=>(
-                  <div key={l.id} onClick={()=>{setGame(l.name);setTeam("");setOpenPicker(null);}}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
-                      background:game===l.name?"rgba(99,102,241,.1)":"transparent",
-                      borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-                    {l.logo&&<img src={l.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
-                    <span style={{fontSize:13,fontWeight:600,color:game===l.name?"#818CF8":"#F2F2F7"}}>{l.name}</span>
-                    {game===l.name&&<span style={{marginLeft:"auto",fontSize:11,color:"#818CF8"}}>✓</span>}
-                  </div>
-                ))}
+                marginTop:4,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
+                {leagues.map(l=>{
+                  const checked=selectedGames.includes(l.name);
+                  return(
+                    <div key={l.id} onClick={()=>toggleGame(l.name)}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
+                        background:checked?"rgba(99,102,241,.1)":"transparent",
+                        borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                      {/* Checkbox visuelle */}
+                      <div style={{width:18,height:18,borderRadius:5,flexShrink:0,
+                        background:checked?"#6366F1":"transparent",
+                        border:`1.5px solid ${checked?"#6366F1":"rgba(255,255,255,.2)"}`,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {checked&&<span style={{fontSize:10,color:"#fff",lineHeight:1}}>✓</span>}
+                      </div>
+                      {l.logo&&<img src={l.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
+                      <span style={{fontSize:13,fontWeight:600,color:checked?"#818CF8":"#F2F2F7"}}>{l.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -3166,9 +3209,10 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
               textTransform:"uppercase",marginBottom:6}}>Club</div>
             <button onClick={()=>setOpenPicker(openPicker==="club"?null:"club")}
-              style={{width:"100%",background:"#1C1C22",border:`1px solid ${openPicker==="club"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+              style={{width:"100%",background:"#1C1C22",
+                border:`1px solid ${openPicker==="club"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
                 borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-              {currentClubObj?.logo&&<img src={currentClubObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
+              {currentClubObj?.logo&&<img src={currentClubObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4,background:"#2A2A2E",padding:2}}/>}
               <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:team?"#F2F2F7":"rgba(255,255,255,.3)"}}>
                 {team||"Sélectionner un club…"}
               </span>
@@ -3179,7 +3223,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                 marginTop:4,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
                 {filteredClubs.length===0&&(
                   <div style={{padding:"12px 14px",fontSize:12,color:"rgba(255,255,255,.3)"}}>
-                    {game?"Aucun club":"Sélectionnez d'abord une ligue"}
+                    {selectedGames.length?"Aucun club trouvé":"Sélectionnez d'abord une ligue"}
                   </div>
                 )}
                 {filteredClubs.map(c=>(
@@ -3188,31 +3232,39 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                       background:team===c.name?"rgba(99,102,241,.1)":"transparent",
                       borderBottom:"1px solid rgba(255,255,255,.04)"}}>
                     {c.logo&&<img src={c.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4,background:"#2A2A2E",padding:2}}/>}
-                    <span style={{fontSize:13,fontWeight:600,color:team===c.name?"#818CF8":"#F2F2F7"}}>{c.name}</span>
-                    {team===c.name&&<span style={{marginLeft:"auto",fontSize:11,color:"#818CF8"}}>✓</span>}
+                    <span style={{flex:1,fontSize:13,fontWeight:600,color:team===c.name?"#818CF8":"#F2F2F7"}}>{c.name}</span>
+                    {/* Badge ligue du club */}
+                    <span style={{fontSize:10,color:"rgba(255,255,255,.25)"}}>{c.league}</span>
+                    {team===c.name&&<span style={{fontSize:11,color:"#818CF8"}}>✓</span>}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Position */}
+          {/* Position — 5 positions standard, multi-sélection */}
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
-              textTransform:"uppercase",marginBottom:6}}>Position</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-              {ROLES.map(r=>(
-                <button key={r} onClick={()=>setRole(r===role?"":r)}
-                  style={{padding:"8px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
-                    background:role===r?"#6366F1":"rgba(255,255,255,.07)",
-                    color:role===r?"#fff":"rgba(255,255,255,.5)",
-                    transition:"all .15s",
-                  }}>{r}</button>
-              ))}
+              textTransform:"uppercase",marginBottom:8}}>
+              Position <span style={{color:"rgba(99,102,241,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              {BASKET_POSITIONS.map(r=>{
+                const active=roles.includes(r);
+                return(
+                  <button key={r} onClick={()=>toggleRole(r)}
+                    style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",
+                      fontSize:13,fontWeight:800,letterSpacing:.3,
+                      background:active?"#6366F1":"rgba(255,255,255,.06)",
+                      color:active?"#fff":"rgba(255,255,255,.4)",
+                      transition:"all .15s",boxShadow:active?"0 0 14px rgba(99,102,241,.4)":"none"}}>
+                    {r}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Bouton sauvegarder */}
           <button className="btn btn-primary" onClick={save} disabled={saving} style={{marginTop:6}}>
             {saving?"Sauvegarde…":"Sauvegarder"}
           </button>
