@@ -957,6 +957,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
   const tc=getTeamColor(isTeamBet?form.team:(form.playerObj?.team||""));
   const pc=tc?.p||"#EBEBEB";
+  const lum=h=>{const n=parseInt((h||"#000").slice(1),16);const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+  // couleur principale du club ; si elle est presque noire, on prend la secondaire
+  const btnBg=!tc?C.blue:(lum(tc.p)<.03&&tc.s?tc.s:tc.p);
+  const btnFg=lum(btnBg)>.35?"#0C1424":"#FFFFFF";
 
   // ── ÉTAPE 2 : Formulaire ──────────────────────────────────────
   const playerPhoto=!isTeamBet&&(form.playerObj?.photo_url||form.playerObj?.avatar_url);
@@ -1056,6 +1060,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               {firstLine&&<>{firstLine}<br/></>}{secondLine}
             </span>
             <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
+              {!isTeamBet&&form.playerObj?.role&&(
+                <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>
+                  {form.playerObj.role}
+                </span>
+              )}
               {teamName&&<MiniLogo src={teamLogoHeader} label={teamName} size={18}/>}
               {!isTeamBet&&<span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>}
               {form.game&&<MiniLogo src={leagueLogo} label={form.game} size={18} round={false}/>}
@@ -1238,11 +1247,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         <div style={{position:"sticky",bottom:0,margin:"20px -20px 0",padding:"14px 20px calc(14px + env(safe-area-inset-bottom))",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
           <button onClick={submit} disabled={saving} className="press"
-            style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:"pointer",background:C.blue,color:"#0C1424",
+            style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:"pointer",background:btnBg,color:btnFg,boxShadow:"0 6px 24px "+btnBg+"40",
               fontSize:17,fontWeight:600,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {saving?"Enregistrement…":<>
               {editBet?"Modifier le pari":"Ajouter"}
-              {potential&&<span style={{fontWeight:500,opacity:.75}}>· gain {potential}</span>}
+              {potential&&<span style={{fontWeight:500,opacity:.75}}>· Gain {potential}</span>}
             </>}
           </button>
         </div>
@@ -1781,6 +1790,7 @@ function BankrollChart({bets}){
 function HomeView({bets,players,onNavigate}){
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
+  const[calOpen,setCalOpen]=useState(true);
   const won=bets.filter(b=>b.status==="won").length;
   const lost=bets.filter(b=>b.status==="lost").length;
   const voids=bets.filter(b=>b.status==="void").length;
@@ -1810,9 +1820,8 @@ function HomeView({bets,players,onNavigate}){
 
   return(
     <div style={{padding:"0 20px 8px"}}>
-      <div style={{fontSize:15,color:C.sub,marginTop:-4}}>Depuis le début · {bets.length} paris</div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:18}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:6}}>
         <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
           <div style={{fontSize:19,fontWeight:600,color:pColor(profit),marginTop:3}}>{money(profit)}</div></div>
         <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>ROI</div>
@@ -1828,11 +1837,20 @@ function HomeView({bets,players,onNavigate}){
 
       <SectionTitle right={
         <div style={{display:"flex",alignItems:"center",gap:4}}>
+          {calOpen&&<>
           <button aria-label="Mois précédent" onClick={()=>shift(-1)} style={navArrow}>‹</button>
           <span style={{fontSize:13,color:C.sub,textTransform:"capitalize",minWidth:96,textAlign:"center"}}>{monthLabel}</span>
           <button aria-label="Mois suivant" onClick={()=>shift(1)} style={navArrow}>›</button>
+          </>}
+          <button type="button" aria-expanded={calOpen} aria-label={calOpen?"Fermer le calendrier":"Ouvrir le calendrier"}
+            onClick={()=>setCalOpen(o=>!o)} className="press"
+            style={{width:36,height:36,border:"none",borderRadius:10,background:C.card,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
+              style={{transition:"transform .2s",transform:calOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
+          </button>
         </div>
       }>Calendrier</SectionTitle>
+      {calOpen&&<div className="fade-in">
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:5,fontSize:11,color:C.dim,textAlign:"center"}}>
         {["L","M","M","J","V","S","D"].map((d,i)=><span key={i}>{d}</span>)}
       </div>
@@ -1852,6 +1870,7 @@ function HomeView({bets,players,onNavigate}){
           );
         })}
       </div>
+      </div>}
 
       {leagueRows.length>0&&<>
         <SectionTitle right={<button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>}>Ligues</SectionTitle>
@@ -1882,7 +1901,8 @@ function BetSlip({b,players,bkPhotos,onClick}){
   else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=eur(stake);}
   else{result="→ "+eur(stake*odds);resultCol=C.blue;outLabel="Gain potentiel";out=eur(stake*odds);}
   const name=isTeam?(b.team||b.player):formatName(b.player);
-  const lastName=isTeam?name:(name.split(" ").slice(-1)[0]||name);
+  const parts=name.split(" ").filter(Boolean);
+  const lastName=isTeam||parts.length<2?name:parts[0][0]+"."+parts.slice(1).join(" ");
   return(
     <article onClick={onClick} style={{background:C.card,border:"1px solid "+border,borderRadius:14,
       padding:"14px 14px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
