@@ -1042,36 +1042,37 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       display:"flex",flexDirection:"column",overflowY:"auto"}}>
 
       {/* ══ HERO — photo plein fond + overlay ══ */}
-      <div style={{position:"relative",flexShrink:0,height:220}}>
+      <div style={{position:"relative",flexShrink:0,height:260}}>
 
         {/* ── Fond couleur équipe ── */}
         <div style={{position:"absolute",inset:0,
-          background:pc?`linear-gradient(160deg,${pc}88 0%,#0A0A0F 100%)`:"#0D0D12",
+          background:pc?`linear-gradient(145deg,${pc}99 0%,${pc}33 50%,#08090E 100%)`:"#0D0D12",
           zIndex:0}}/>
 
-        {/* ── Logo équipe — grand, centré-droite, bien visible ── */}
+        {/* ── Logo équipe — grand, centré-droite, intégré ── */}
         {teamLogoHeader&&(
           <img src={teamLogoHeader} alt=""
-            style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",
-              width:210,height:210,objectFit:"contain",
-              opacity:.35,pointerEvents:"none",zIndex:1}}/>
+            style={{position:"absolute",right:-10,top:"50%",transform:"translateY(-50%)",
+              width:220,height:220,objectFit:"contain",
+              opacity:.18,pointerEvents:"none",zIndex:1,
+              filter:"blur(1px) saturate(0.6)"}}/>
         )}
 
         {/* ── Dégradé bas pour merger avec le contenu ── */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:100,
-          background:"linear-gradient(to top,#08090E 0%,#08090E 15%,transparent 100%)",
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:110,
+          background:"linear-gradient(to top,#08090E 0%,#08090E 20%,transparent 100%)",
           pointerEvents:"none",zIndex:3}}/>
 
-        {/* ── Photo joueur — pleine hauteur à gauche, intégrée ── */}
+        {/* ── Photo joueur — grande, fondue sur tous les bords ── */}
         {playerPhoto&&(
           <img src={playerPhoto} alt={form.player}
-            style={{position:"absolute",left:0,bottom:0,
-              height:"115%",width:"auto",maxWidth:"55%",
-              objectFit:"cover",objectPosition:"50% 8%",
+            style={{position:"absolute",left:-5,bottom:0,
+              height:"120%",width:"auto",maxWidth:"58%",
+              objectFit:"cover",objectPosition:"50% 5%",
               zIndex:2,
-              maskImage:"linear-gradient(to right,black 40%,transparent 90%),linear-gradient(to bottom,transparent 0%,black 15%,black 75%,transparent 100%)",
+              maskImage:"linear-gradient(to right,black 0%,black 45%,transparent 88%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
               maskComposite:"intersect",
-              WebkitMaskImage:"linear-gradient(to right,black 40%,transparent 90%),linear-gradient(to bottom,transparent 0%,black 15%,black 75%,transparent 100%)",
+              WebkitMaskImage:"linear-gradient(to right,black 0%,black 45%,transparent 88%),linear-gradient(to bottom,transparent 0%,black 12%,black 70%,transparent 100%)",
               WebkitMaskComposite:"source-in"}}/>
         )}
         {/* Cas équipe sans photo — logo centré */}
@@ -1237,7 +1238,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               <label className="form-label">vs Adversaire (optionnel)</label>
               <input className="form-input" placeholder="Nom de l'adversaire"
                 value={form.opponent} onChange={e=>f("opponent",e.target.value)}
-                style={{background:`${pc}0D`,borderColor:`${pc}25`}}/>
+                style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
             </div>
             {["handicap","total","team_total","half"].includes(form.betType)&&(
               <div className="form-group">
@@ -1261,7 +1262,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                   <input className="form-input" type="number" step="0.5"
                     placeholder={form.betType==="handicap"?"-5.5":"220.5"}
                     value={form.line} onChange={e=>f("line",e.target.value)}
-                    style={{flex:1,background:`${pc}0D`,borderColor:`${pc}25`}}/>
+                    style={{flex:1,background:`${pc}14`,borderColor:`${pc}40`}}/>
                 </div>
               </div>
             )}
@@ -1300,7 +1301,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             <div style={{display:"flex",gap:10}}>
               <select className="form-select" value={form.line}
                 onChange={e=>f("line",e.target.value)}
-                style={{flex:1,background:`${pc}0D`,borderColor:`${pc}25`}}>
+                style={{flex:1,background:`${pc}14`,borderColor:`${pc}40`}}>
                 <option value="">Ligne</option>
                 {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=>(
                   <option key={v} value={v}>{v}</option>
@@ -1308,7 +1309,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               </select>
               <select className="form-select" value={form.stat}
                 onChange={e=>f("stat",e.target.value)}
-                style={{flex:1,background:`${pc}0D`,borderColor:`${pc}25`}}>
+                style={{flex:1,background:`${pc}14`,borderColor:`${pc}40`}}>
                 {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
                   "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
                   "Turnovers","Fantasy Score","Minutes"].map(s=>(
@@ -1325,13 +1326,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             <label className="form-label">Cote</label>
             <input className="form-input" type="number" step="0.01" placeholder="1.85"
               value={form.odds} onChange={e=>f("odds",e.target.value)}
-              style={{background:`${pc}0D`,borderColor:`${pc}25`}}/>
+              style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
           </div>
           <div style={{flex:1}}>
             <label className="form-label">Mise (€)</label>
             <input className="form-input" type="number" placeholder="100"
               value={form.stake} onChange={e=>f("stake",e.target.value)}
-              style={{background:`${pc}0D`,borderColor:`${pc}25`}}/>
+              style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
           </div>
         </div>
 
@@ -1376,7 +1377,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             <select className="form-select" value={form.bookmaker}
               onChange={e=>f("bookmaker",e.target.value)}
               style={{paddingLeft:form.bookmaker&&bkPhotos[form.bookmaker]?42:14,
-                background:`${pc}0D`,borderColor:`${pc}25`}}>
+                background:`${pc}14`,borderColor:`${pc}40`}}>
               <option value="">Aucun</option>
               {bookmakers.map(b=><option key={b}>{b}</option>)}
             </select>
@@ -1433,14 +1434,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           {tipsters.length>0?(
             <select className="form-select" value={form.tipster}
               onChange={e=>f("tipster",e.target.value)}
-              style={{background:`${pc}0D`,borderColor:`${pc}25`}}>
+              style={{background:`${pc}14`,borderColor:`${pc}40`}}>
               <option value="">Aucun</option>
               {tipsters.map(t=><option key={t.id} value={t.name}>{t.name}</option>)}
             </select>
           ):(
             <input className="form-input" placeholder="Optionnel"
               value={form.tipster} onChange={e=>f("tipster",e.target.value)}
-              style={{background:`${pc}0D`,borderColor:`${pc}25`}}/>
+              style={{background:`${pc}14`,borderColor:`${pc}40`}}/>
           )}
         </div>
 
