@@ -1918,7 +1918,7 @@ function BetSlip({b,players,bkPhotos,onClick}){
   if(b.status==="won"){result=money(profit);resultCol=C.green;outLabel="Retour";out=(stake+profit).toFixed(2)+"€";}
   else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out="0.00€";}
   else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=stake.toFixed(2)+"€";}
-  else{result="En cours";resultCol=C.sub;outLabel="Gain potentiel";out=(stake*odds).toFixed(2)+"€";}
+  else{result="→ "+(stake*odds).toFixed(2)+"€";resultCol=C.blue;outLabel="Gain potentiel";out=(stake*odds).toFixed(2)+"€";}
   const name=isTeam?(b.team||b.player):formatName(b.player);
   const lastName=isTeam?name:(name.split(" ").slice(-1)[0]||name);
   return(
@@ -1971,7 +1971,9 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
   });
   const months=[];
   const idx={};
-  filtered.forEach(b=>{
+  const pendingList=filtered.filter(b=>b.status==="pending")
+    .sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
+  filtered.filter(b=>b.status!=="pending").forEach(b=>{
     const d=b.created_at?new Date(b.created_at):null;
     const key=d?d.getFullYear()+"-"+d.getMonth():"?";
     if(idx[key]===undefined){
@@ -2001,7 +2003,23 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
       {filtered.length===0?(
         <div className="empty"><div className="empty-text">Aucun pari{search?" trouvé":""}</div>
           <div className="empty-sub">{search?"Essaie un autre terme":"Ajoute ton premier pari avec +"}</div></div>
-      ):months.map(m=>{
+      ):<>
+      {pendingList.length>0&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"20px 4px 8px"}}>
+            <span style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,color:C.text}}>
+              <span style={{width:7,height:7,borderRadius:4,background:C.blue}}/>En cours · {pendingList.length}
+            </span>
+            <span style={{fontSize:14,fontWeight:600,color:C.blue}}>
+              → {pendingList.reduce((s,x)=>s+parseFloat(x.stake||0)*parseFloat(x.odds||0),0).toFixed(2)}€
+            </span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {pendingList.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>onSelectBet(b)}/>)}
+          </div>
+        </div>
+      )}
+      {months.map(m=>{
         const w=m.bets.filter(x=>x.status==="won").length;
         const l=m.bets.filter(x=>x.status==="lost").length;
         const v=m.bets.filter(x=>x.status==="void").length;
@@ -2012,19 +2030,15 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
         const pend=m.bets.filter(x=>x.status==="pending").length;
         return(
           <div key={m.key}>
-            <div style={{marginTop:18,background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:"14px 16px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
-                <div>
-                  <div style={{fontSize:19,fontWeight:700,letterSpacing:-.4}}>{m.label}</div>
-                  <div style={{fontSize:13,color:C.sub,marginTop:2}}>{m.bets.length} paris{pend?" · "+pend+" en cours":""}</div>
-                </div>
-                <span style={{fontSize:19,fontWeight:700,color:pColor(p)}}>{money(p)}</span>
+            <div style={{position:"sticky",top:0,zIndex:5,background:C.bg,margin:"14px -20px 0",padding:"12px 20px 10px",
+              borderBottom:"1px solid "+C.line,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"baseline",gap:8,whiteSpace:"nowrap",overflow:"hidden"}}>
+                <span style={{fontSize:17,fontWeight:700,letterSpacing:-.3}}>{m.label}</span>
+                <span style={{fontSize:13,color:C.sub,overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</span> · {allSt.toFixed(0)}€
+                </span>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:10,paddingTop:10,borderTop:"1px solid #2A2F3A"}}>
-                <div><div style={{fontSize:12,color:C.sub}}>Bilan</div><div style={{fontSize:15,fontWeight:600}}>{w}-{l}-{v}</div></div>
-                <div><div style={{fontSize:12,color:C.sub}}>ROI</div><div style={{fontSize:15,fontWeight:600,color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1)} %</div></div>
-                <div><div style={{fontSize:12,color:C.sub}}>Misé</div><div style={{fontSize:15,fontWeight:600}}>{allSt.toFixed(0)}€</div></div>
-              </div>
+              <span style={{fontSize:17,fontWeight:700,color:pColor(p),flexShrink:0}}>{money(p)}</span>
             </div>
             {(()=>{
               const sorted=[...m.bets].sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
@@ -2058,6 +2072,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},onSelectBet,onEdit}){
           </div>
         );
       })}
+      </>}
     </div>
   );
 }
