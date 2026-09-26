@@ -628,10 +628,46 @@ function lookupByTeam(map,name){
 function getTeamLogo(teamName,playerTeamLogoUrl=null){
   // Priorité 1 : logo du club depuis Édition (table clubs) — toujours le plus à jour
   const fromMap=lookupByTeam(CLUB_LOGOS_MAP,teamName);
-  if(fromMap)return fromMap;
-  // Priorité 2 : team_logo_url propagé sur le joueur (fallback si club pas encore dans map)
-  if(playerTeamLogoUrl)return playerTeamLogoUrl;
-  return null;
+  const url=fromMap||playerTeamLogoUrl||null;
+  if(url&&teamName)primeTeamColor(teamName,url);
+  return url;
+}
+
+// ── Couleurs tirées automatiquement du logo (clubs absents de TEAM_COLORS) ──
+const LOGO_COLORS={};          // normTeam(nom) → {p,s}
+const LOGO_COLOR_PENDING={};
+try{Object.assign(LOGO_COLORS,JSON.parse(localStorage.getItem("team_logo_colors")||"{}"));}catch(e){}
+function primeTeamColor(team,url){
+  const k=normTeam(team);
+  if(!k||LOGO_COLORS[k]||LOGO_COLOR_PENDING[k]||lookupByTeam(TEAM_COLORS,team))return;
+  if(typeof Image==="undefined")return;
+  LOGO_COLOR_PENDING[k]=true;
+  const img=new Image();img.crossOrigin="anonymous";
+  img.onload=()=>{
+    try{
+      const N=40,cv=document.createElement("canvas");cv.width=cv.height=N;
+      const x=cv.getContext("2d");x.drawImage(img,0,0,N,N);
+      const d=x.getImageData(0,0,N,N).data;const bk={};
+      for(let i=0;i<d.length;i+=4){
+        const r=d[i],g=d[i+1],b=d[i+2],a=d[i+3];if(a<200)continue;
+        const mx=Math.max(r,g,b),mn=Math.min(r,g,b);if(mx<45||mn>228)continue;
+        const sat=(mx-mn)/mx;if(sat<.28)continue;
+        const key=(r>>5)+","+(g>>5)+","+(b>>5);
+        const e=bk[key]||(bk[key]={n:0,r:0,g:0,b:0});e.n++;e.r+=r;e.g+=g;e.b+=b;
+      }
+      const list=Object.values(bk).filter(e=>e.n>=3).map(e=>({n:e.n,c:[e.r/e.n,e.g/e.n,e.b/e.n]})).sort((a,b)=>b.n-a.n);
+      if(!list.length)return;
+      const hex=c=>"#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
+      const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+      const p=list[0].c;
+      const second=list.find(e=>dist(e.c,p)>110);
+      LOGO_COLORS[k]={p:hex(p),s:second?hex(second.c):"#FFFFFF",auto:true};
+      try{localStorage.setItem("team_logo_colors",JSON.stringify(LOGO_COLORS));}catch(e){}
+      try{window.dispatchEvent(new Event("team-colors"));}catch(e){}
+    }catch(e){}
+  };
+  img.onerror=()=>{};
+  img.src=url;
 }
 
 // ── COULEURS ÉQUIPES ──────────────────────────────────────────────────────────
@@ -701,7 +737,7 @@ const TEAM_COLORS={
 
 function getTeamColor(team){
   if(!team)return null;
-  return lookupByTeam(TEAM_COLORS,team);
+  return lookupByTeam(TEAM_COLORS,team)||LOGO_COLORS[normTeam(team)]||null;
 }
 
 // ── COMPOSANT UNIVERSEL : Avatar joueur avec logo équipe en watermark ─────────
@@ -4489,6 +4525,8 @@ function BKModal({bk,existing,onClose,onSave}){
 
 // ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
 export default function App(){
+  const[,setColorTick]=useState(0);
+  useEffect(()=>{const h=()=>setColorTick(t=>t+1);window.addEventListener("team-colors",h);return()=>window.removeEventListener("team-colors",h);},[]);
   const[bets,setBets]=useState([]);
   const[bookmakers,setBookmakers]=useState([]);
   const[tipsters,setTipsters]=useState([]);
