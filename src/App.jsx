@@ -1246,7 +1246,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
 
         {/* ── Carte joueur ── */}
         {step!=="search"&&<div
-          style={{marginTop:14,position:"relative",width:"100%",height:230,borderRadius:20,overflow:"hidden",
+          style={{marginTop:14,position:"relative",width:"100%",height:230,borderRadius:20,overflow:"hidden",containerType:"inline-size",
             border:"1px solid "+C.line,background:`linear-gradient(135deg,${pc}40 0%,${C.card} 70%)`,
             padding:0,color:C.text,textAlign:"left",display:"block"}}>
           <span style={{position:"absolute",top:14,right:14,zIndex:2,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
@@ -1266,19 +1266,20 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           {teamName&&(()=>{
             const tcol=getTeamColor(teamName);
             const stroke=(tcol&&tcol.s)||"#ffffff";
-            const words=cityOf(teamName).split(" ");
-            const lines=words.length>1&&cityOf(teamName).length>9?[words.slice(0,Math.ceil(words.length/2)).join(" "),words.slice(Math.ceil(words.length/2)).join(" ")]:[cityOf(teamName)];
+            const city=cityOf(teamName);
+            const len=Math.max(4,city.length);
+            // Taille calculée pour que la ville tienne sur toute la largeur, en bas de la carte
             return(
-              <span aria-hidden="true" style={{position:"absolute",left:-6,top:34,zIndex:0,pointerEvents:"none",
-                fontSize:lines.length>1?88:96,fontWeight:900,lineHeight:.86,letterSpacing:-2,textTransform:"uppercase",whiteSpace:"nowrap",
-                color:"transparent",WebkitTextStroke:"1.5px "+stroke+"59",display:"flex",flexDirection:"column"}}>
-                {lines.map((l,i)=><span key={i}>{l}</span>)}
+              <span aria-hidden="true" style={{position:"absolute",left:10,right:10,bottom:-6,zIndex:0,pointerEvents:"none",
+                fontSize:"min(84px, calc((100cqw - 20px) / "+(len*0.64).toFixed(2)+"))",fontWeight:900,lineHeight:1,letterSpacing:-1,
+                textTransform:"uppercase",whiteSpace:"nowrap",color:"transparent",WebkitTextStroke:"1.5px "+stroke+"66"}}>
+                {city}
               </span>
             );
           })()}
           {teamLogoHeader&&(
-            <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:10,top:"50%",transform:"translateY(-50%)",
-              width:isTeamBet?150:170,height:isTeamBet?150:170,objectFit:"contain",opacity:isTeamBet?1:.14,pointerEvents:"none",
+            <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:14,top:isTeamBet?"50%":10,transform:isTeamBet?"translateY(-50%)":"none",
+              width:isTeamBet?150:128,height:isTeamBet?150:128,objectFit:"contain",opacity:isTeamBet?1:.14,pointerEvents:"none",
               filter:isTeamBet?"drop-shadow(0 8px 24px rgba(0,0,0,.45))":"none"}}/>
           )}
           {playerPhoto&&(
