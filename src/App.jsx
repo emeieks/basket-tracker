@@ -2960,8 +2960,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
         return(
           <div key={m.key}>
             <button type="button" aria-expanded={isOpen} onClick={()=>setOpenMonths(o=>({...o,[m.key]:!isOpen}))}
-              style={{width:"100%",marginTop:16,background:"linear-gradient(180deg,#20242C 0%,#1B1E25 100%)",border:"1px solid "+C.line,borderRadius:18,padding:"20px 18px",
-                boxShadow:"inset 0 1px 0 rgba(255,255,255,.05)",
+              style={{width:"100%",marginTop:16,background:"linear-gradient(135deg,#243458 0%,#1a2440 55%,#161d33 100%)",border:"1px solid rgba(91,157,255,.35)",borderRadius:18,padding:"20px 18px",boxShadow:"inset 4px 0 0 #5B9DFF, 0 6px 18px rgba(0,0,0,.25)",
                 display:"flex",alignItems:"center",gap:12,cursor:"pointer",color:C.text,textAlign:"left",fontFamily:"inherit"}}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:21,fontWeight:700,letterSpacing:-.4}}>{m.label}</div>
