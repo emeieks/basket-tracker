@@ -4034,6 +4034,24 @@ const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
 function parseGames(g){return(g||"").split(",").map(s=>s.trim()).filter(Boolean);}
 function serializeGames(arr){return arr.join(",");}
 
+
+// Ville d'un club (pour le grand texte en arrière-plan)
+const NBA_CITY={"Atlanta Hawks":"Atlanta","Boston Celtics":"Boston","Brooklyn Nets":"Brooklyn","Charlotte Hornets":"Charlotte","Chicago Bulls":"Chicago","Cleveland Cavaliers":"Cleveland","Dallas Mavericks":"Dallas","Denver Nuggets":"Denver","Detroit Pistons":"Detroit","Golden State Warriors":"Golden State","Houston Rockets":"Houston","Indiana Pacers":"Indiana","LA Clippers":"Los Angeles","Los Angeles Clippers":"Los Angeles","Los Angeles Lakers":"Los Angeles","Memphis Grizzlies":"Memphis","Miami Heat":"Miami","Milwaukee Bucks":"Milwaukee","Minnesota Timberwolves":"Minnesota","New Orleans Pelicans":"New Orleans","New York Knicks":"New York","Oklahoma City Thunder":"Oklahoma City","Orlando Magic":"Orlando","Philadelphia 76ers":"Philadelphia","Phoenix Suns":"Phoenix","Portland Trail Blazers":"Portland","Sacramento Kings":"Sacramento","San Antonio Spurs":"San Antonio","Toronto Raptors":"Toronto","Utah Jazz":"Utah","Washington Wizards":"Washington"};
+function cityOf(team){
+  if(!team)return "";
+  if(NBA_CITY[team])return NBA_CITY[team];
+  const hit=Object.keys(NBA_CITY).find(k=>sameTeam(k,team));
+  if(hit)return NBA_CITY[hit];
+  const n=normTeam(team);
+  const EU=[["panathinaikos","Athènes"],["olympiacos","Le Pirée"],["fenerbahce","Istanbul"],["efes","Istanbul"],["besiktas","Istanbul"],["galatasaray","Istanbul"],
+    ["real madrid","Madrid"],["barcelona","Barcelone"],["baskonia","Vitoria"],["valencia","Valence"],["unicaja","Málaga"],["gran canaria","Las Palmas"],["tenerife","Tenerife"],["joventut","Badalone"],
+    ["monaco","Monaco"],["paris","Paris"],["asvel","Villeurbanne"],["villeurbanne","Villeurbanne"],["cholet","Cholet"],["le mans","Le Mans"],["nanterre","Nanterre"],["strasbourg","Strasbourg"],["dijon","Dijon"],["bourg","Bourg"],["limoges","Limoges"],["gravelines","Gravelines"],
+    ["bayern","Munich"],["munchen","Munich"],["alba","Berlin"],["ulm","Ulm"],["bonn","Bonn"],["milano","Milan"],["olimpia","Milan"],["virtus","Bologne"],["bologna","Bologne"],["venezia","Venise"],
+    ["zalgiris","Kaunas"],["maccabi","Tel Aviv"],["hapoel","Tel Aviv"],["partizan","Belgrade"],["crvena","Belgrade"],["zvezda","Belgrade"],["dubai","Dubaï"],["lietkabelis","Panevėžys"],["aek","Athènes"],["promitheas","Patras"]];
+  const e=EU.find(([k])=>n.includes(k));
+  return e?e[1]:team;
+}
+
 function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploadingId}){
   // Positions : tableau de positions sélectionnées (multi)
   const initRoles=parseGames(player.role||"").filter(r=>BASKET_POSITIONS.includes(r));
@@ -4093,10 +4111,19 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
           position:"relative",height:180,overflow:"hidden",flexShrink:0,
           background:pc?`linear-gradient(135deg,${pc}CC 0%,${pc}44 50%,#0D0D12 100%)`:"#1C1C22",
         }}>
+          {(team||player.team)&&(
+            <div aria-hidden="true" style={{
+              position:"absolute",left:120,top:"44%",transform:"translateY(-50%)",
+              fontSize:110,fontWeight:900,letterSpacing:-3,lineHeight:1,whiteSpace:"nowrap",
+              textTransform:"uppercase",color:"transparent",
+              WebkitTextStroke:"1.5px rgba(255,255,255,.22)",pointerEvents:"none",
+            }}>{cityOf(team||player.team)}</div>
+          )}
           {resolvedTeamLogo&&(
             <img src={resolvedTeamLogo} alt="" style={{
-              position:"absolute",right:-20,top:"50%",transform:"translateY(-50%)",
-              width:160,height:160,objectFit:"contain",opacity:.08,filter:"blur(1px)",pointerEvents:"none",
+              position:"absolute",right:18,top:18,
+              width:78,height:78,objectFit:"contain",pointerEvents:"none",
+              filter:"drop-shadow(0 4px 14px rgba(0,0,0,.45))",
             }}/>
           )}
           <div style={{position:"absolute",bottom:0,left:20,display:"flex",alignItems:"flex-end",gap:16}}>
