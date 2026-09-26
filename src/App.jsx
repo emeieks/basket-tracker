@@ -1266,12 +1266,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           {teamName&&(()=>{
             const tcol=getTeamColor(teamName);
             const stroke=(tcol&&tcol.s)||"#ffffff";
-            const city=cityOf(teamName);
+            const city=bigLabel(teamName);
             const len=Math.max(4,city.length);
             // Taille calculée pour que la ville tienne sur toute la largeur, en bas de la carte
             return(
               <span aria-hidden="true" style={{position:"absolute",left:10,bottom:-12,zIndex:0,pointerEvents:"none",
-                fontSize:"min(130px, calc((100cqw - 20px) / "+(len*0.62).toFixed(2)+"))",fontWeight:900,lineHeight:1,letterSpacing:-1,
+                fontSize:"min(120px, calc((100cqw - 20px) / "+(len*0.62).toFixed(2)+"))",transform:"scaleY(1.45)",transformOrigin:"left bottom",fontWeight:900,lineHeight:1,letterSpacing:-1,
                 textTransform:"uppercase",whiteSpace:"nowrap",color:"transparent",WebkitTextStroke:"1.5px "+stroke+"66"}}>
                 {city}
               </span>
@@ -1283,7 +1283,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               filter:isTeamBet?"drop-shadow(0 8px 24px rgba(0,0,0,.45))":"none"}}/>
           )}
           {playerPhoto&&(
-            <img src={playerPhoto} alt={form.player} style={{position:"absolute",right:0,bottom:0,height:"100%",
+            // Photos NBA (larges, beaucoup d'épaules) vs EuroLeague (serrées, en hauteur) : on égalise la taille de la tête
+            <img src={playerPhoto} alt={form.player}
+              onLoad={e=>{const im=e.currentTarget;const r=im.naturalWidth/(im.naturalHeight||1);im.style.height=r<0.95?"80%":r<1.25?"90%":"100%";}}
+              style={{position:"absolute",right:0,bottom:0,height:"100%",
               maxWidth:"55%",objectFit:"contain",objectPosition:"50% 100%"}}/>
           )}
           <span style={{position:"absolute",left:18,top:20,bottom:18,right:"45%",display:"flex",flexDirection:"column",gap:8}}>
@@ -2960,15 +2963,15 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
         return(
           <div key={m.key}>
             <button type="button" aria-expanded={isOpen} onClick={()=>setOpenMonths(o=>({...o,[m.key]:!isOpen}))}
-              style={{width:"100%",marginTop:16,background:"linear-gradient(135deg,#243458 0%,#1a2440 55%,#161d33 100%)",border:"1px solid rgba(91,157,255,.35)",borderRadius:18,padding:"20px 18px",boxShadow:"inset 4px 0 0 #5B9DFF, 0 6px 18px rgba(0,0,0,.25)",
-                display:"flex",alignItems:"center",gap:12,cursor:"pointer",color:C.text,textAlign:"left",fontFamily:"inherit"}}>
+              style={{width:"100%",marginTop:22,background:"transparent",border:"none",borderBottom:"1px solid #2A2F3A",borderRadius:0,padding:"6px 4px 12px",
+                display:"flex",alignItems:"flex-end",gap:12,cursor:"pointer",color:C.text,textAlign:"left",fontFamily:"inherit"}}>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:21,fontWeight:700,letterSpacing:-.4}}>{m.label}</div>
-                <div style={{fontSize:14,color:"#AEB4C0",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                <div style={{fontSize:23,fontWeight:800,letterSpacing:-.5,whiteSpace:"nowrap"}}>{m.label}</div>
+                <div style={{fontSize:14,color:"#8B92A0",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                   {m.bets.length} paris · {w}-{l}-{v} · <span style={{color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")+"\u00a0%"}</span> · {eur(allSt,0)}
                 </div>
               </div>
-              <span style={{fontSize:21,fontWeight:700,color:pColor(p),flexShrink:0}}>{money(p)}</span>
+              <span style={{fontSize:22,fontWeight:800,color:pColor(p),flexShrink:0,letterSpacing:-.4,whiteSpace:"nowrap"}}>{money(p)}</span>
               <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
                 style={{flexShrink:0,transition:"transform .2s",transform:isOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
             </button>
@@ -4101,6 +4104,22 @@ function cityOf(team){
   return e?e[1]:team;
 }
 
+
+// Texte des grosses lettres : ville si ≤ 9 caractères, sinon surnom / abréviation de l'équipe
+const BIG_SHORT={"Philadelphia 76ers":"SIXERS","Portland Trail Blazers":"BLAZERS","Minnesota Timberwolves":"WOLVES","Oklahoma City Thunder":"OKC","Golden State Warriors":"WARRIORS","New Orleans Pelicans":"PELICANS","San Antonio Spurs":"SPURS","Los Angeles Lakers":"LAKERS","Los Angeles Clippers":"CLIPPERS","LA Clippers":"CLIPPERS","LDLC ASVEL":"ASVEL"};
+function bigLabel(team){
+  if(!team)return "";
+  const city=cityOf(team);
+  if(city.length<=9)return city;
+  const hit=Object.keys(BIG_SHORT).find(k=>sameTeam(k,team));
+  if(hit)return BIG_SHORT[hit];
+  const words=String(team).replace(/[^\p{L}\p{N} ]/gu," ").split(/\s+/).filter(Boolean);
+  const nick=[...words].reverse().find(w=>w.length>=3&&w.length<=9&&!/^(bc|fc|kk|bk|cb|basket|basketball|club|sport)$/i.test(w));
+  if(nick)return nick;
+  const first=words.find(w=>w.length<=9);
+  return first||words.map(w=>w[0]).join("").slice(0,5);
+}
+
 function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploadingId}){
   // Positions : tableau de positions sélectionnées (multi)
   const initRoles=parseGames(player.role||"").filter(r=>BASKET_POSITIONS.includes(r));
@@ -4166,7 +4185,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               fontSize:110,fontWeight:900,letterSpacing:-3,lineHeight:1,whiteSpace:"nowrap",
               textTransform:"uppercase",color:"transparent",
               WebkitTextStroke:"1.5px rgba(255,255,255,.22)",pointerEvents:"none",
-            }}>{cityOf(team||player.team)}</div>
+            }}>{bigLabel(team||player.team)}</div>
           )}
           {resolvedTeamLogo&&(
             <img src={resolvedTeamLogo} alt="" style={{
