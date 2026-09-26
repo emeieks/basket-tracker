@@ -1227,6 +1227,19 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               </button>
             )}
           </span>
+          {teamName&&(()=>{
+            const tcol=getTeamColor(teamName);
+            const stroke=(tcol&&tcol.s)||"#ffffff";
+            const words=cityOf(teamName).split(" ");
+            const lines=words.length>1&&cityOf(teamName).length>9?[words.slice(0,Math.ceil(words.length/2)).join(" "),words.slice(Math.ceil(words.length/2)).join(" ")]:[cityOf(teamName)];
+            return(
+              <span aria-hidden="true" style={{position:"absolute",left:-6,top:34,zIndex:0,pointerEvents:"none",
+                fontSize:lines.length>1?88:96,fontWeight:900,lineHeight:.86,letterSpacing:-2,textTransform:"uppercase",whiteSpace:"nowrap",
+                color:"transparent",WebkitTextStroke:"1.5px "+stroke+"59",display:"flex",flexDirection:"column"}}>
+                {lines.map((l,i)=><span key={i}>{l}</span>)}
+              </span>
+            );
+          })()}
           {teamLogoHeader&&(
             <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:10,top:"50%",transform:"translateY(-50%)",
               width:isTeamBet?150:170,height:isTeamBet?150:170,objectFit:"contain",opacity:isTeamBet?1:.14,pointerEvents:"none",
