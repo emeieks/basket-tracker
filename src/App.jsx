@@ -282,6 +282,48 @@ async function confirmPhotoSize(width){
     throw new Error("Collage annulé");
 }
 
+// ── Détourage automatique : enlève le fond blanc (remplissage depuis les bords) ──
+function loadImg(src){return new Promise((ok,ko)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>ok(i);i.onerror=()=>ko(new Error("image illisible"));i.src=src;});}
+function isWhitePx(d,i){const r=d[i],g=d[i+1],b=d[i+2];return d[i+3]>200&&r>228&&g>228&&b>228&&Math.max(r,g,b)-Math.min(r,g,b)<22;}
+// true si les bords de l'image sont majoritairement blancs
+async function hasWhiteBg(blob){
+  const u=URL.createObjectURL(blob);
+  try{const im=await loadImg(u);const w=Math.min(200,im.naturalWidth),h=Math.round(im.naturalHeight*w/im.naturalWidth);
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.drawImage(im,0,0,w,h);
+    const d=x.getImageData(0,0,w,h).data;let n=0,t=0;
+    for(let X=0;X<w;X++){for(const Y of [0,1]){t++;if(isWhitePx(d,(Y*w+X)*4))n++;}}
+    for(let Y=0;Y<h;Y++){for(const X of [0,w-1]){t++;if(isWhitePx(d,(Y*w+X)*4))n++;}}
+    return n/t>0.55;
+  }finally{URL.revokeObjectURL(u);}
+}
+async function removeWhiteBg(blob){
+  const u=URL.createObjectURL(blob);
+  try{
+    const im=await loadImg(u);const w=im.naturalWidth,h=im.naturalHeight;
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.drawImage(im,0,0);
+    const img=x.getImageData(0,0,w,h),d=img.data,seen=new Uint8Array(w*h),st=[];
+    const push=p=>{if(!seen[p]&&isWhitePx(d,p*4)){seen[p]=1;st.push(p);}};
+    // pas depuis le bas : un maillot blanc coupé par le bas de la photo ne doit pas disparaître
+    for(let X=0;X<w;X++)push(X);
+    for(let Y=0;Y<h*0.6;Y++){push(Y*w);push(Y*w+w-1);}
+    while(st.length){const p=st.pop();d[p*4+3]=0;const X=p%w;
+      if(X>0)push(p-1);if(X<w-1)push(p+1);if(p>=w)push(p-w);if(p<w*(h-1))push(p+w);}
+    // adoucit le contour : pixels clairs voisins du fond → semi-transparents
+    for(let p=0;p<w*h;p++){if(seen[p])continue;const X=p%w;
+      const nb=(X>0&&seen[p-1])||(X<w-1&&seen[p+1])||(p>=w&&seen[p-w])||(p<w*(h-1)&&seen[p+w]);
+      if(nb){const i=p*4,l=(d[i]+d[i+1]+d[i+2])/3;if(l>180)d[i+3]=Math.round(255*(255-l)/75);}}
+    x.putImageData(img,0,0);
+    return await new Promise(ok=>c.toBlob(ok,"image/png"));
+  }finally{URL.revokeObjectURL(u);}
+}
+async function uploadAvatarBlob(blob,safe){
+  const path="photos/players/"+safe+"_"+Date.now()+"_"+Math.random().toString(36).slice(2,7)+".png";
+  const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{method:"POST",
+    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"image/png","x-upsert":"true"},body:blob});
+  if(!res.ok)throw new Error("Upload "+res.status);
+  return SUPA_URL+"/storage/v1/object/public/avatars/"+path;
+}
+
 async function pasteImageToSupabase(name){
   const url=await pasteImageRaw(name);
   // Les images déjà uploadées sont vérifiées avant l'envoi ; ici on vérifie les liens directs
@@ -293,6 +335,7 @@ async function pasteImageRaw(name){
   const safe=(name||"img").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
   async function uploadBlob(blob){
     if(safe.startsWith("player")){
+      try{if(await hasWhiteBg(blob))blob=await removeWhiteBg(blob);}catch(_){}
       const obj=URL.createObjectURL(blob);
       try{await confirmPhotoSize(await imageWidth(obj));}finally{URL.revokeObjectURL(obj);}
     }
@@ -3652,6 +3695,22 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
     input.click();
   }
 
+  const[cleaning,setCleaning]=useState("");
+  async function cleanAllWhiteBg(){
+    if(!window.confirm("Enlever le fond blanc de toutes les photos de joueurs qui en ont un ?\n(les anciennes photos restent dans le stockage)"))return;
+    let done=0,fail=0;const list=players.filter(p=>p.photo_url||p.avatar_url);
+    for(let k=0;k<list.length;k++){const p=list[k];setCleaning((k+1)+"/"+list.length);
+      try{
+        const r=await fetch(p.photo_url||p.avatar_url);if(!r.ok)throw 0;const b=await r.blob();
+        if(!(await hasWhiteBg(b)))continue;
+        const url=await uploadAvatarBlob(await removeWhiteBg(b),"player_"+p.name.replace(/[^a-z0-9]/gi,"_").toLowerCase().slice(0,30)+"_nobg");
+        await updatePlayer(p.id,{photo_url:url,avatar_url:url});
+        setPlayers(prev=>prev.map(pl=>pl.id===p.id?{...pl,photo_url:url,avatar_url:url}:pl));done++;
+      }catch(e){fail++;}
+    }
+    setCleaning("");onPlayersChanged();
+    showToast(done+" photo(s) détourée(s)"+(fail?" · "+fail+" impossible(s) (site qui bloque)":""));
+  }
   async function pastePlayerPhoto(p){
     setUploadingId(p.id);
     try{
@@ -3914,6 +3973,11 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
         );
       })()}
       <SSearch value={playerSearch} onChange={setPlayerSearch} placeholder="Rechercher un joueur…"/>
+      <button type="button" className="press" disabled={!!cleaning} onClick={cleanAllWhiteBg}
+        style={{width:"100%",height:42,margin:"4px 0 14px",borderRadius:12,border:"1px solid "+C.line,background:C.card,
+          color:cleaning?C.sub:C.blue,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+        {cleaning?"Détourage en cours… "+cleaning:"Enlever les fonds blancs des photos"}
+      </button>
 
       {loading&&<div style={{textAlign:"center",color:C.sub,padding:32}}>Chargement…</div>}
       {!loading&&filteredPlayers.length===0&&!playerSearch&&(
