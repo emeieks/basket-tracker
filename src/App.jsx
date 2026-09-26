@@ -55,6 +55,30 @@ function parseDesc(desc){
   const m=(desc||"").match(/^(Over|Under)\s+([\d.,]+)\s+(.+)$/);
   return m?{ou:m[1],line:m[2],stat:m[3]}:null;
 }
+
+// ── Marché d'un pari : joueur (stat) ou équipe (type de pari) ──
+function teamMarket(b){
+  const d=String(b.description||"");
+  if(/\b3\s*(pts|points)\b|3pt|3-pt|trois/i.test(d)&&/\b(Over|Under)\b/.test(d))return "3 pts équipe";
+  if(/gagne/i.test(d))return "Victoire";
+  if(/mi-temps/i.test(d))return "1re mi-temps";
+  if(/\(match\)/i.test(d))return "Total match";
+  if(/\b(Over|Under)\b/.test(d)&&/pts/i.test(d))return "Points équipe";
+  return "Handicap";
+}
+function marketOf(b){
+  if(b.bet_type==="team")return "Équipe · "+teamMarket(b);
+  const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";
+}
+// Over / Under : joueur toujours ; équipe seulement pour les totaux (match, points équipe, mi-temps, 3 pts)
+function ouOf(b){
+  if(b.bet_type==="team"){
+    if(["Victoire","Handicap"].includes(teamMarket(b)))return null;
+    const m=/\b(Over|Under)\b/.exec(b.description||"");return m?m[1]:null;
+  }
+  const p=parseDesc(b.description);if(p)return p.ou;
+  const m=/^(Over|Under)/.exec(b.description||"");return m?m[1]:null;
+}
 function descFR(desc){const p=parseDesc(desc);return p?p.ou+" "+p.line+" "+statFR(p.stat):(desc||"");}
 function descShort(desc){const p=parseDesc(desc);return p?(p.ou==="Over"?"O":"U")+" "+p.line+" "+(STAT_ABBR[p.stat]||statFR(p.stat)):(desc||"");}
 
@@ -1160,7 +1184,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       const dateIso=form.created_at?new Date(form.created_at).toISOString():(editBet?undefined:new Date().toISOString());
       bet={
         player:form.team,team:form.team,opponent:form.opponent||null,
-        description:desc,over_under:form.ou||null,
+        description:desc,over_under:["total","team_total","half"].includes(form.betType)?(form.ou||"Over"):null,
         line:form.line?parseFloat(form.line):null,
         odds,stake,bookmaker:form.bookmaker||null,
         status:form.status,profit:calcProfit(form.status,stake,odds),
@@ -3326,8 +3350,8 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
   const byTip=groupBy(bets,b=>b.tipster||"Sans tipster");
   const byPos=groupBy(playerBets,b=>{const r=roleCode(pOf(b)?.role);return r?(POS_LABEL[r]||r):"Poste inconnu";});
   const byPlayer=groupBy(playerBets,b=>formatName(b.player));
-  const byMarket=groupBy(playerBets,b=>{const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";});
-  const byOU=groupBy(playerBets.filter(b=>/^(Over|Under)/.test(b.description||"")),b=>(b.description||"").startsWith("Over")?"Over":"Under");
+  const byMarket=groupBy(bets,marketOf);
+  const byOU=groupBy(bets.filter(b=>ouOf(b)),ouOf);
   const byLeague=groupBy(bets,b=>b.game);
   const byBook=groupBy(rawBets,b=>b.bookmaker||"Sans bookmaker");
   const oddsOrder=["< 1,60","1,60 – 1,89","1,90 – 2,19","≥ 2,20"];
@@ -3400,7 +3424,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
       {tab==="tipsters"&&<>
         <Table rows={rowsOf(byTip)} limit={20}/>
         <Title>Tipster × marché</Title>
-        <Table rows={rowsOf(groupBy(playerBets.filter(b=>b.tipster),b=>{const p=parseDesc(b.description);return b.tipster+" · "+(p?statFR(p.stat):"Autre");}))}/>
+        <Table rows={rowsOf(groupBy(bets.filter(b=>b.tipster),b=>b.tipster+" · "+marketOf(b)))}/>
       </>}
 
       {tab==="players"&&<>
@@ -3411,10 +3435,14 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
       </>}
 
       {tab==="markets"&&<>
-        <Table rows={rowsOf(byMarket)} limit={12}/>
+        <Table rows={rowsOf(groupBy(bets,b=>b.bet_type==="team"?"Paris équipe":"Paris joueur"))}/>
+        <Title>Marchés joueur</Title>
+        <Table rows={rowsOf(groupBy(playerBets,marketOf))} limit={12}/>
+        <Title>Marchés équipe</Title>
+        <Table rows={rowsOf(groupBy(bets.filter(b=>b.bet_type==="team"),b=>teamMarket(b)))} empty="Aucun pari équipe"/>
         {(byOU.Over||byOU.Under)&&<><Title>Over vs Under</Title><OU/></>}
         <Title>Détail Over / Under</Title>
-        <Table rows={rowsOf(groupBy(playerBets,b=>{const p=parseDesc(b.description);return p?p.ou+" "+statFR(p.stat):null;}))} limit={10}/>
+        <Table rows={rowsOf(groupBy(bets.filter(b=>ouOf(b)),b=>ouOf(b)+" · "+marketOf(b)))} limit={10}/>
       </>}
 
       {tab==="annonces"&&(ann.length===0?(
@@ -3437,7 +3465,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
         <Title>Poste absent → poste joué</Title>
         <Table rows={rowsOf(groupBy(ann.filter(b=>b.bet_type!=="team"&&b.annonce_player),b=>posShort(pObj(b.annonce_player)?.role)+" → "+posShort(pObj(b.player)?.role)))}/>
         <Title>Par marché</Title>
-        <Table rows={rowsOf(groupBy(ann.filter(b=>b.bet_type!=="team"),b=>{const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";}))}/>
+        <Table rows={rowsOf(groupBy(ann,marketOf))}/>
         <Title>Top des absents</Title>
         <Table rows={rowsOf(groupBy(ann.filter(b=>b.annonce_player||b.annonce_note),b=>b.annonce_player?formatName(b.annonce_player):b.annonce_note))}/>
         <Title>Par tipster</Title>
