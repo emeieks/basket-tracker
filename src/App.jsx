@@ -1294,9 +1294,17 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               {(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})}
               {" · "}{(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
             </span>
-            <span style={{fontSize:28,fontWeight:700,letterSpacing:-.6,lineHeight:1.08}}>
-              {firstLine&&(firstLine+" "+secondLine).length>13?<>{firstLine}<br/>{secondLine}</>:<span style={{whiteSpace:"nowrap"}}>{firstLine?firstLine+" "+secondLine:secondLine}</span>}
-            </span>
+            {(()=>{
+              // Toujours sur une ligne : la police rétrécit avec la longueur (max 24 caractères)
+              let full=((firstLine?firstLine+" "+secondLine:secondLine)||"").replace(/(^|[\s-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
+              if(full.length>24)full=full.slice(0,23).trimEnd()+"…";
+              const n=Math.max(full.length,8);
+              return(
+                <span style={{position:"relative",zIndex:1,width:"calc(100cqw - 72px)",whiteSpace:"nowrap",overflow:"visible",
+                  fontSize:"clamp(16px, calc((100cqw - 76px) / "+(n*0.56).toFixed(2)+"), 28px)",fontWeight:700,letterSpacing:-.5,lineHeight:1.08,
+                  textShadow:"0 2px 10px rgba(0,0,0,.55)"}}>{full}</span>
+              );
+            })()}
             <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
               {isTeamBet&&(
                 <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>Équipe</span>
@@ -1324,9 +1332,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               const rows=[];
               if(!isTeamBet&&(form.ou||form.line||form.stat))rows.push(<span key="l" style={{color:"#fff",fontWeight:700}}>
                 {[form.ou,form.line,form.stat?statFR(form.stat):""].filter(Boolean).join(" ")}</span>);
-              if(form.odds)rows.push(<span key="o">Cote : <b style={{color:"#fff"}}>{form.odds}</b></span>);
-              if(form.stake)rows.push(<span key="s">Mise : <b style={{color:"#fff"}}>{eur(parseFloat(String(form.stake).replace(",","."))||0)}</b></span>);
-              if(form.tipster)rows.push(<span key="t">Tipster : <b style={{color:"#fff"}}>{form.tipster}</b></span>);
+              if(form.odds||form.stake)rows.push(<span key="o">{form.odds&&<>Cote <b style={{color:"#fff"}}>{form.odds}</b></>}{form.odds&&form.stake?" · ":""}{form.stake&&<>Mise <b style={{color:"#fff"}}>{eur(parseFloat(String(form.stake).replace(",","."))||0)}</b></>}</span>);
+              if(form.bookmaker)rows.push(<span key="b"><b style={{color:"#fff"}}>{form.bookmaker}</b>{form.tipster?<> · <b style={{color:"#fff"}}>{form.tipster}</b></>:null}</span>);
+              if(form.tipster&&!form.bookmaker)rows.push(<span key="t">Tipster : <b style={{color:"#fff"}}>{form.tipster}</b></span>);
               return rows.length?<span style={{marginTop:"auto",display:"flex",flexDirection:"column",gap:3,fontSize:13.5,color:"rgba(255,255,255,.72)",whiteSpace:"nowrap"}}>{rows}</span>:null;
             })()}
           </span>
@@ -1462,24 +1470,55 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             </>
           );
         })()}
-        {/* ── PARI JOUEUR : Over/Under · Ligne · Stat ── */}
-        {!isTeamBet&&(
-          <div className="sentence">
-            <select className="sent-sel" style={{color:form.ou?C.text:C.sub}} aria-label="Over ou Under" value={form.ou} onChange={e=>f("ou",e.target.value)}>
-              <option value="">Choisir</option><option>Over</option><option>Under</option>
-            </select>
-            <select className="sent-sel" aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)} style={form.line?undefined:{color:C.sub}}>
-              <option value="">Ligne</option>
-              {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v}>{v}</option>)}
-            </select>
-            <select className="sent-sel grow" aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)} style={form.stat?undefined:{color:C.sub}}>
-              <option value="">Choisir</option>
-              {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
-                "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s}>{statFR(s)}</option>)}
-            </select>
+        {/* ── Bookmaker ── */}
+        <div className="pick-head">
+          <span>Bookmaker</span>{lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
+        </div>
+        <div className="chip-row">
+          {bookmakers.map(bk=>{
+            const on=form.bookmaker===bk;
+            return(
+              <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
+                onClick={()=>f("bookmaker",on?"":bk)}>
+                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── PARI JOUEUR : Over/Under (cases) · Ligne · Stat ── */}
+        {!isTeamBet&&(<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:14}}>
+            {["Over","Under"].map(v=>{const on=form.ou===v;return(
+              <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
+                style={{height:54,borderRadius:16,cursor:"pointer",fontFamily:"inherit",fontSize:17,fontWeight:800,
+                  border:on?"none":"1.5px dashed "+C.line,background:on?"#fff":C.card,color:on?"#111":C.sub,transition:"all .15s"}}>
+                {on?"✓ ":""}{v}
+              </button>);})}
           </div>
-        )}
+          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1.4fr)",gap:10,marginTop:10}}>
+            <label className="fld-box" style={{position:"relative"}}>Ligne
+              <select aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}
+                style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?C.text:C.sub,
+                  fontSize:17,fontWeight:700,fontFamily:"inherit",padding:0,outline:"none",width:"100%"}}>
+                <option value="">—</option>
+                {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v}>{v}</option>)}
+              </select>
+              <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.sub,pointerEvents:"none"}}>▾</span>
+            </label>
+            <label className="fld-box" style={{position:"relative"}}>Stat
+              <select aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}
+                style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?C.text:C.sub,
+                  fontSize:17,fontWeight:700,fontFamily:"inherit",padding:0,outline:"none",width:"100%"}}>
+                <option value="">Choisir</option>
+                {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+                  "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
+                  "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s}>{statFR(s)}</option>)}
+              </select>
+              <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.sub,pointerEvents:"none"}}>▾</span>
+            </label>
+          </div>
+        </>)}
         </div>
 
         {/* ── Cote + Mise ── */}
@@ -1503,25 +1542,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             return(
               <button key={val} type="button" onClick={()=>f("stake",String(val))}
                 style={{height:34,borderRadius:17,border:"none",cursor:"pointer",
-                  background:active?C.blue:C.card,color:active?"#0C1424":C.sub,
+                  background:active?btnBg:C.card,color:active?btnFg:C.sub,
                   fontSize:12,fontWeight:600,lineHeight:1.2}}>
                 {pct}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Bookmaker ── */}
-        <div className="pick-head">
-          <span>Bookmaker</span>{lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
-        </div>
-        <div className="chip-row">
-          {bookmakers.map(bk=>{
-            const on=form.bookmaker===bk;
-            return(
-              <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
-                onClick={()=>f("bookmaker",on?"":bk)}>
-                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
               </button>
             );
           })}
@@ -1536,7 +1559,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             {tipsters.map(tp=>{
               const on=form.tipster===tp.name;
               return(
-                <button key={tp.id} type="button" className={"pick-chip"+(on?" on":"")} onClick={()=>f("tipster",on?"":tp.name)}>
+                <button key={tp.id} type="button" className="pick-chip" onClick={()=>f("tipster",on?"":tp.name)}
+                  style={on?{background:btnBg,color:btnFg,borderColor:btnBg,fontWeight:700}:undefined}>{on?"✓ ":""}
                   {tp.name}
                 </button>
               );
@@ -1545,6 +1569,19 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         ):(
           <input className="form-input" placeholder="Nom du tipster (optionnel)" value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
         )}
+
+        {/* ── Statut ── */}
+        <div className="pick-head"><span>Résultat</span></div>
+        <div className="segment">
+          {[{key:"pending",label:"En cours"},{key:"won",label:"Gagné"},{key:"lost",label:"Perdu"},{key:"void",label:"Void"}].map(({key,label})=>{
+            const on=form.status===key;
+            const col=key==="won"?C.green:key==="lost"?C.red:C.text;
+            return(
+              <button key={key} type="button" className={"seg-btn"+(on?" active":"")}
+                onClick={()=>f("status",key)} style={on?{color:col}:undefined}>{label}</button>
+            );
+          })}
+        </div>
 
         {/* ── Annonce (pari pris sur une absence) ── */}
         <div style={{marginTop:18,padding:"12px 14px",borderRadius:16,background:form.annonce?"rgba(245,158,11,.08)":C.card,
@@ -1614,19 +1651,6 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           })()}
         </div>
 
-        {/* ── Statut ── */}
-        <div className="pick-head"><span>Statut</span></div>
-        <div className="segment">
-          {[{key:"pending",label:"En cours"},{key:"won",label:"Gagné"},{key:"lost",label:"Perdu"},{key:"void",label:"Void"}].map(({key,label})=>{
-            const on=form.status===key;
-            const col=key==="won"?C.green:key==="lost"?C.red:C.text;
-            return(
-              <button key={key} type="button" className={"seg-btn"+(on?" active":"")}
-                onClick={()=>f("status",key)} style={on?{color:col}:undefined}>{label}</button>
-            );
-          })}
-        </div>
-
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
@@ -1634,10 +1658,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <button onClick={submit} disabled={saving||!!why} className="press"
             style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:why?"default":"pointer",
               background:why?"#262B35":btnBg,color:why?C.sub:btnFg,boxShadow:why?"none":"0 6px 24px "+btnBg+"40",
-              fontSize:17,fontWeight:600,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              fontSize:17,fontWeight:800,letterSpacing:.3,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {why?why:saving?"Enregistrement…":<>
-              {editBet?"Modifier le pari":"Ajouter"}
-              {potential&&<span style={{fontWeight:500,opacity:.75}}>· Gain {potential}</span>}
+              {(()=>{const g=stakeN&&oddsN?stakeN*(oddsN-1):0;
+                const gs=g?(Math.round(g*100)/100).toLocaleString("fr-FR",{maximumFractionDigits:2}):"";
+                return((editBet?"MODIFIER":"AJOUTER")+(g?" - GAIN "+gs+" EUROS":""));})()}
             </>}
           </button>);})()}
         </div>
