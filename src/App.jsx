@@ -3209,7 +3209,19 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
 
 // ── VUE ANALYSE ───────────────────────────────────────────────────────────────
 // ── Affiche joueur (format RDS) : bilan global sur ce joueur ─────────────────
-function PlayerPoster({player,bets,onClose}){
+function PlayerPoster({player:player0,bets,onClose,onChanged}){
+  const[player,setPlayer]=useState(player0);
+  const[gear,setGear]=useState(false);const[busy,setBusy]=useState("");const[editOpen,setEditOpen]=useState(null);
+  const fileRef=useRef(null);const fileKind=useRef("photo");
+  const slug=v=>(v||"x").toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,30);
+  const applyPhoto=async url=>{await updatePlayer(player.id,{photo_url:url,avatar_url:url});setPlayer(p=>({...p,photo_url:url,avatar_url:url}));onChanged&&onChanged();};
+  const applyLogo=async url=>{if(!player.team)return;CLUB_LOGOS_MAP[player.team]=url;await syncClubLogoAllLeagues(player.team,url).catch(()=>{});
+    await fetch(SUPA_URL+"/rest/v1/players?team=eq."+encodeURIComponent(player.team),{method:"PATCH",headers:{...H},body:JSON.stringify({team_logo_url:url})}).catch(()=>{});
+    setPlayer(p=>({...p,team_logo_url:url}));onChanged&&onChanged();};
+  const doPaste=async kind=>{setBusy(kind);try{const url=await pasteImageToSupabase((kind==="photo"?"player_":"club_")+slug(kind==="photo"?player.name:player.team));if(url)await(kind==="photo"?applyPhoto(url):applyLogo(url));setGear(false);}catch(e){alert("Erreur : "+e.message);}setBusy("");};
+  const onFile=async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;const kind=fileKind.current;setBusy(kind);
+    try{let blob=f;if(kind==="photo"){try{if(await hasWhiteBg(blob))blob=await removeWhiteBg(blob);}catch(_){}}const url=await uploadAvatarBlob(blob,(kind==="photo"?"player_":"club_")+slug(kind==="photo"?player.name:player.team));await(kind==="photo"?applyPhoto(url):applyLogo(url));setGear(false);}catch(err){alert("Erreur : "+err.message);}setBusy("");};
+  const openEdit=async()=>{try{const[l,c]=await Promise.all([fetchLeagues(),fetchClubs()]);setEditOpen({l,c});setGear(false);}catch(e){alert("Erreur : "+e.message);}};
   const tc=getTeamColor(player.team)||{p:"#3B2A6B",s:"#FDB927"};
   const pc=tc.p||"#3B2A6B",sc=tc.s||"#FDB927";
   const logo=getTeamLogo(player.team,player.team_logo_url||null);
@@ -3252,11 +3264,24 @@ function PlayerPoster({player,bets,onClose}){
           {roleCode(player.role)&&<span style={{fontSize:13,fontWeight:900,padding:"2px 8px",borderRadius:6,background:pc,color:sc,flexShrink:0}}>{roleCode(player.role)}</span>}
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer" style={{position:"absolute",left:12,bottom:74,zIndex:5,width:32,height:32,borderRadius:16,border:"none",background:"rgba(0,0,0,.45)",color:"#fff",fontSize:18,cursor:"pointer"}}>×</button>
+        {player.id&&<button type="button" onClick={()=>setGear(g=>!g)} aria-label="Modifier" style={{position:"absolute",left:50,bottom:74,zIndex:5,width:32,height:32,borderRadius:16,border:"none",background:"rgba(0,0,0,.45)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>}
+        {gear&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",left:12,bottom:112,zIndex:6,width:230,background:"rgba(14,16,24,.97)",border:"1px solid rgba(255,255,255,.12)",borderRadius:14,padding:6,boxShadow:"0 12px 30px rgba(0,0,0,.6)"}}>
+          {[["Photo du joueur · coller",()=>doPaste("photo"),"photo"],["Photo du joueur · fichier",()=>{fileKind.current="photo";fileRef.current&&fileRef.current.click();},"photo"],
+            ...(player.team?[["Logo "+player.team+" · coller",()=>doPaste("logo"),"logo"],["Logo "+player.team+" · fichier",()=>{fileKind.current="logo";fileRef.current&&fileRef.current.click();},"logo"]]:[]),
+            ["Poste, club, ligue…",openEdit,"edit"]].map(([l,fn,k])=>(
+            <button key={l} type="button" disabled={!!busy} onClick={fn} style={{width:"100%",textAlign:"left",padding:"10px 12px",border:"none",borderRadius:10,background:"transparent",color:"#fff",fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",opacity:busy&&busy!==k?.5:1}}>{busy===k?"Envoi…":l}</button>))}
+        </div>}
+        <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{display:"none"}}/>
       </div>
+      {editOpen&&<PlayerEditModal player={player} leagues={editOpen.l} clubs={editOpen.c} onClose={()=>setEditOpen(null)}
+        onPastePhoto={()=>doPaste("photo")} uploadingId={busy?player.id:null}
+        onSave={async(p,fields)=>{try{const extra={};if(fields.team&&fields.team!==p.team&&CLUB_LOGOS_MAP[fields.team])extra.team_logo_url=CLUB_LOGOS_MAP[fields.team];
+          const merged={...fields,...extra};await updatePlayer(p.id,merged);setPlayer(x=>({...x,...merged}));setEditOpen(null);onChanged&&onChanged();}catch(e){alert("Erreur : "+e.message);}}}/>}
     </div>
   );
 }
-function PlayerStatSearch({players,bets}){
+function PlayerStatSearch({players,bets,onChanged}){
   const[q,setQ]=useState("");const[sel,setSel]=useState(null);
   const ql=q.trim().toLowerCase();
   const res=ql.length<1?[]:players.filter(p=>(p.name||"").toLowerCase().includes(ql)).map(p=>{
@@ -3283,12 +3308,13 @@ function PlayerStatSearch({players,bets}){
         </button>))}
     </div>}
     {ql&&res.length===0&&<div style={{padding:"14px 4px",fontSize:14,color:C.sub}}>Aucun joueur pour « {q} »</div>}
-    {sel&&<PlayerPoster player={sel} bets={bets} onClose={()=>setSel(null)}/>}
+    {sel&&<PlayerPoster player={sel} bets={bets} onClose={()=>setSel(null)} onChanged={onChanged}/>}
   </>);
 }
 
-function StatsView({bets:allRaw,players=[],bkPhotos={}}){
+function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
   const[tab,setTab]=useState("overview");
+  const[posterP,setPosterP]=useState(null);
   const[period,setPeriod]=useState("all");
   const cutoff=period==="all"?null:Date.now()-({"7":7,"30":30,"90":90}[period])*864e5;
   const rawBets=cutoff?allRaw.filter(b=>b.created_at&&new Date(b.created_at).getTime()>=cutoff):allRaw;
@@ -3328,7 +3354,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
       color:v>=0?C.green:C.red,background:v>=0?"rgba(74,222,128,.10)":"rgba(255,138,128,.10)"}}>{(v>0?"+":"")+Math.round(v)+" %"}</span>
   );
   const COLS="minmax(0,1fr) 40px 58px 70px";
-  const Table=({rows,limit=6,empty:emp="Rien à afficher"})=>{
+  const Table=({rows,limit=6,empty:emp="Rien à afficher",onRow})=>{
     const[all,setAll]=useState(false);
     if(!rows.length)return <Card style={{padding:22,textAlign:"center",color:C.sub,fontSize:14}}>{emp}</Card>;
     const shown=all?rows:rows.slice(0,limit);
@@ -3341,7 +3367,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
         {shown.map(r=>{
           const x=stat(r.s);
           return(
-            <div key={r.key} style={{display:"grid",gridTemplateColumns:COLS,gap:6,alignItems:"center",padding:"11px 14px",borderTop:"1px solid "+C.line}}>
+            <div key={r.key} onClick={onRow?()=>onRow(r):undefined} style={{display:"grid",gridTemplateColumns:COLS,gap:6,alignItems:"center",padding:"11px 14px",borderTop:"1px solid "+C.line,cursor:onRow?"pointer":"default"}}>
               <span style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
                 {r.logo!==undefined&&<MiniLogo src={r.logo} label={r.name} size={26} round={false}/>}
                 <span style={{minWidth:0,flex:1}}>
@@ -3507,11 +3533,12 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
       </>}
 
       {tab==="players"&&<>
-        <PlayerStatSearch players={players} bets={allRaw}/>
+        <PlayerStatSearch players={players} bets={allRaw} onChanged={onPlayersChanged}/>
         <Title>Par poste</Title>
         <Table rows={rowsOf(byPos)} limit={10}/>
         <Title>Joueurs</Title>
-        <Table rows={rowsOf(byPlayer)} limit={8}/>
+        <Table rows={rowsOf(byPlayer)} limit={8} onRow={r=>{const p=players.find(x=>formatName(x.name)===r.name);if(p)setPosterP(p);}}/>
+        {posterP&&<PlayerPoster player={posterP} bets={allRaw} onClose={()=>setPosterP(null)} onChanged={onPlayersChanged}/>}
       </>}
 
       {tab==="markets"&&<>
@@ -4872,7 +4899,7 @@ export default function App(){
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
-          {view==="stats"&&<StatsView bets={bets} players={players} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}/>}
+          {view==="stats"&&<StatsView bets={bets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}/>}
           {view==="settings"&&<SettingsView
             onPlayersChanged={refreshPlayers}
             bookmakers={bookmakers}
