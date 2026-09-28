@@ -717,6 +717,18 @@ function normTeam(s){
     .toLowerCase().replace(/[^a-z0-9]/g,"");
 }
 // même club ? nom identique après normalisation, ou même premier mot significatif (≥5 lettres)
+// Index des équipes des joueurs (1 seule requête, gardé 60 s)
+let _TEAM_IDX=null,_TEAM_IDX_T=0,_TEAM_IDX_P=null;
+function teamIndex(force){
+  if(!force&&_TEAM_IDX&&Date.now()-_TEAM_IDX_T<60000)return Promise.resolve(_TEAM_IDX);
+  if(_TEAM_IDX_P)return _TEAM_IDX_P;
+  _TEAM_IDX_P=fetch(SUPA_URL+"/rest/v1/players?select=team&limit=10000",{headers:H}).then(r=>r.ok?r.json():[]).then(rows=>{
+    const m={};const w=s=>(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5)[0]||"";
+    rows.forEach(p=>{if(!p.team)return;[normTeam(p.team),"w:"+w(p.team)].forEach(k=>{if(k==="w:")return;const e=m[k]||(m[k]={n:0,names:new Set()});e.n++;e.names.add(p.team);});});
+    m.__w=w;
+    _TEAM_IDX=m;_TEAM_IDX_T=Date.now();_TEAM_IDX_P=null;return m;}).catch(e=>{_TEAM_IDX_P=null;throw e;});
+  return _TEAM_IDX_P;
+}
 function sameTeam(a,b){
   const na=normTeam(a),nb=normTeam(b);
   if(!na||!nb)return false;
@@ -3374,9 +3386,8 @@ function GroupPoster({kind,name,bets,onClose}){
       <div style={{width:"100%",maxWidth:420,aspectRatio:"390/560",maxHeight:"86vh",position:"relative",overflow:"hidden",borderRadius:22,containerType:"inline-size",color:"#fff",
         background:"radial-gradient(90% 70% at 72% 40%,"+pc+" 0%,"+pc+"99 40%,#0b0d14 100%)",boxShadow:"0 24px 60px rgba(0,0,0,.6)"}}>
         {isLg&&bg?<>
-          <div style={{position:"absolute",inset:-8,background:"url("+JSON.stringify(bg)+") center/cover",filter:"blur(1.2px) saturate(1.15)"}}/>
+          <img src={bg} alt="" onError={e=>{e.currentTarget.style.display="none";}} style={{position:"absolute",inset:-8,width:"calc(100% + 16px)",height:"calc(100% + 16px)",objectFit:"cover",filter:"saturate(1.1)"}}/>
           <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(8,6,4,.85) 100%),radial-gradient(120% 90% at 60% 40%,transparent 50%,rgba(0,0,0,.55) 100%)"}}/>
-          <div style={{position:"absolute",inset:0,opacity:.12,mixBlendMode:"overlay",backgroundImage:"url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>\")"}}/>
         </>:<div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 2px,transparent 2px 22px)"}}/>}
         {big&&!(isLg&&bg)&&<div aria-hidden="true" style={{position:"absolute",right:-8,top:"6%",fontSize:"min(140px, calc(90cqw / "+Math.max(3,big.length)*0.62+"))",fontWeight:900,letterSpacing:-3,
           color:"transparent",WebkitTextStroke:"1.5px "+sc+"66",whiteSpace:"nowrap",lineHeight:.85}}>{big}</div>}
@@ -3823,6 +3834,7 @@ function SEmpty({title,sub}){
 }
 
 function EditView({showToast,onPlayersChanged=()=>{}}){
+  useEffect(()=>{teamIndex().catch(()=>{});},[]);
   const[leagues,setLeagues]=useState([]);
   const[selectedLeague,setSelectedLeague]=useState(null);
   const[clubs,setClubs]=useState([]);
@@ -3867,21 +3879,13 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
     if(!selectedLeague)return;
     setLoading(true);setSelectedClub(null);setPlayers([]);
     fetchClubs(selectedLeague.name).then(async cs=>{
-      // 1. Appliquer logos depuis le cache global (résout le pb cross-ligue)
       cs=cs.map(c=>({...c,logo:CLUB_LOGOS_MAP[c.name]||c.logo||null}));
-      // 2. Count de joueurs par club — le champ ligue s'appelle "game" dans la table players
+      // Affichage immédiat, compteurs ensuite
+      setClubs(cs);setLoading(false);
       try{
         if(cs.length>0){
-          // Récupérer par team name (couvre les clubs présents dans plusieurs ligues)
-          const r=await fetch(SUPA_URL+"/rest/v1/players?select=team&limit=10000",{headers:H});
-          if(r.ok){
-            const rows=await r.json();
-            cs=cs.map(c=>{
-              const mine=rows.filter(p=>p.team&&sameTeam(p.team,c.name));
-              const variants=[...new Set(mine.map(p=>p.team).filter(n=>n!==c.name))];
-              return{...c,player_count:mine.length,name_variants:variants};
-            });
-          }
+          const idx=await teamIndex();
+          cs=cs.map(c=>{const a=idx[normTeam(c.name)],wk=idx.__w(c.name),b=wk?idx["w:"+wk]:null;const e=b&&(!a||b.n>a.n)?b:a;return{...c,player_count:e?e.n:0,name_variants:e?[...e.names].filter(n=>n!==c.name):[]};});
         }
       }catch(_){}
       setClubs(cs);
@@ -4137,18 +4141,24 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
           </>);
         })()}
         {leagueMatches.length===0?(globalSearch.trim().length>=2?null:<SEmpty title="Aucune ligue trouvée"/>):(()=>{
-          const row=lg=>{let ls="";try{ls=localStorage.getItem("league_bg_"+lg.name)||"";}catch(e){}const bgi=lg.bg_url||ls||leagueBgDefault(lg.name);return(
-            <div key={lg.id} style={{position:"relative",overflow:"hidden",background:bgi?"#000":"transparent"}}>
-              {bgi&&<><div style={{position:"absolute",inset:-6,background:"url("+JSON.stringify(bgi)+") center 40%/cover",filter:"blur(1px)"}}/>
-                <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(10,10,14,.92) 0%,rgba(10,10,14,.7) 45%,rgba(10,10,14,.35) 100%)"}}/></>}
-              <div style={{position:"relative"}}>
-              <SRow
+          const row=lg=>(
+            <SRow key={lg.id}
               logo={<SLogo src={lg.logo} name={lg.name} size={42}/>}
-              title={<span style={{fontWeight:700,color:"#fff",textShadow:bgi?"0 1px 6px rgba(0,0,0,.7)":"none"}}>{lg.name}</span>}
+              title={lg.name}
               sub={isCup(lg.name)?"Coupe · "+(CUPS[Object.keys(CUPS).find(c=>normTeam(c)===normTeam(lg.name))]||""):null}
               onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}
-              right={<button type="button" onClick={e=>{e.stopPropagation();setLgMenu(lg);}} aria-label={"Logo et fond de "+lg.name} style={{height:34,padding:"0 11px",borderRadius:10,border:"1px solid rgba(255,255,255,.15)",background:"rgba(0,0,0,.45)",color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginRight:2}}>Modifier</button>}
-              chevron/></div>
+              right={<IconBtn icon={Ico.paste} label={"Modifier "+lg.name} onClick={()=>setLgMenu(lg)}/>}
+              chevron/>
+          );
+          const tile=lg=>{let ls="";try{ls=localStorage.getItem("league_bg_"+lg.name)||"";}catch(e){}const bgi=lg.bg_url||ls||leagueBgDefault(lg.name);
+            const lc=LEAGUE_COLORS[lg.name]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===lg.name.toLowerCase())?.[1]||{p:"#3a4150",s:"#111"};
+            return(<div key={lg.id} onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}} style={{position:"relative",height:104,borderRadius:16,overflow:"hidden",cursor:"pointer",
+              background:"linear-gradient(135deg,"+lc.p+" 0%,"+lc.p+"66 45%,#15171d 100%)",border:"1px solid rgba(255,255,255,.08)"}}>
+              {bgi&&<img src={bgi} alt="" onError={e=>{e.currentTarget.style.display="none";}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.75))"}}/>
+              {lg.logo&&<img src={lg.logo} alt="" style={{position:"absolute",left:12,top:12,width:38,height:38,objectFit:"contain",filter:"drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/>}
+              <div style={{position:"absolute",left:12,right:12,bottom:10,fontSize:16,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textShadow:"0 1px 6px rgba(0,0,0,.7)"}}>{lg.name}</div>
+              <button type="button" aria-label={"Modifier "+lg.name} onClick={e=>{e.stopPropagation();setLgMenu(lg);}} style={{position:"absolute",right:8,top:8,width:30,height:30,borderRadius:15,border:"none",background:"rgba(0,0,0,.4)",color:"rgba(255,255,255,.85)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>⋯</button>
             </div>);};
           const champ=leagueMatches.filter(l=>!isCup(l.name));
           const cups=leagueMatches.filter(l=>isCup(l.name));
@@ -4176,9 +4186,9 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
                   {bgi&&<Item l="Retirer la photo de fond" k="bgx" red fn={()=>setLgBg(lg,"")}/>}
                   <Item l="Fermer" k="close" fn={()=>setLgMenu(null)}/>
                 </div></div>);})()}
-            <button type="button" onClick={cleanAllLeagueLogos} disabled={!!cleaning2} style={{width:"100%",height:44,marginBottom:10,borderRadius:12,border:"1px solid "+C.line,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:cleaning2?"default":"pointer",fontFamily:"inherit"}}>
-              {cleaning2?"Nettoyage… "+cleaning2:"Nettoyer tous les logos (retirer les fonds)"}</button>
-            {champ.length>0&&<SGroup>{champ.map(row)}</SGroup>}
+
+            {champ.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{champ.map(tile)}</div>}
+            <button type="button" onClick={cleanAllLeagueLogos} disabled={!!cleaning2} style={{display:"block",margin:"10px auto 0",background:"none",border:"none",color:C.sub,fontSize:12.5,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline",textUnderlineOffset:3}}>{cleaning2?"Nettoyage… "+cleaning2:"Nettoyer les fonds de tous les logos"}</button>
             {cups.length>0&&<>
               <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"24px 4px 8px"}}>Coupes</div>
               <SGroup>{cups.map(row)}</SGroup>
