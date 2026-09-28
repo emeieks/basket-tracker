@@ -3281,6 +3281,59 @@ function PlayerPoster({player:player0,bets,onClose,onChanged}){
     </div>
   );
 }
+const LEAGUE_COLORS={"NBA":{p:"#1D428A",s:"#C8102E"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0A7A3E",s:"#F2C400"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
+function GroupPoster({kind,name,bets,onClose}){
+  const isLg=kind==="league";
+  const tc=isLg?(LEAGUE_COLORS[name]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===String(name).toLowerCase())?.[1]||{p:"#3B2A6B",s:"#FDB927"}):(getTeamColor(name)||{p:"#3B2A6B",s:"#FDB927"});
+  const pc=tc.p||"#3B2A6B",sc=tc.s||"#FDB927";
+  const logo=isLg?getLeagueLogo(name):getTeamLogo(name,null);
+  const mine=isLg?bets.filter(b=>b.game===name):bets.filter(b=>b.bet_type==="team"&&sameTeam(b.team||b.player||"",name));
+  const settled=mine.filter(b=>b.status==="won"||b.status==="lost");
+  const won=settled.filter(b=>b.status==="won").length,lost=settled.length-won;
+  const profit=settled.reduce((t,b)=>t+(parseFloat(b.profit)||0),0),staked=settled.reduce((t,b)=>t+(parseFloat(b.stake)||0),0);
+  const wr=settled.length?won/settled.length:0,roi=staked?profit/staked*100:0;
+  const big=isLg?String(name).toUpperCase():(bigLabel(name)||"");
+  const splitP=isLg?settled.filter(b=>b.bet_type!=="team"):[],splitT=isLg?settled.filter(b=>b.bet_type==="team"):[];
+  const pr=a=>a.reduce((t,b)=>t+(parseFloat(b.profit)||0),0);
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[onClose]);
+  const txt=sc.toLowerCase()==="#ffffff"||sc.toLowerCase()==="#fff"?pc:"#fff";
+  const Stat=({v,l,c})=>(<div style={{textAlign:"center",padding:"8px 0 9px",borderBottom:"1.5px solid rgba(255,255,255,.3)"}}>
+    <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,color:c||"#fff",whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{v}</div>
+    <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>{l}</div></div>);
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div style={{width:"100%",maxWidth:420,aspectRatio:"390/560",maxHeight:"86vh",position:"relative",overflow:"hidden",borderRadius:22,containerType:"inline-size",color:"#fff",
+        background:"radial-gradient(90% 70% at 72% 40%,"+pc+" 0%,"+pc+"99 40%,#0b0d14 100%)",boxShadow:"0 24px 60px rgba(0,0,0,.6)"}}>
+        <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 2px,transparent 2px 22px)"}}/>
+        {big&&<div aria-hidden="true" style={{position:"absolute",right:-8,top:"6%",fontSize:"min(140px, calc(90cqw / "+Math.max(3,big.length)*0.62+"))",fontWeight:900,letterSpacing:-3,
+          color:"transparent",WebkitTextStroke:"1.5px "+sc+"66",whiteSpace:"nowrap",lineHeight:.85}}>{big}</div>}
+        {logo?<img src={logo} alt={name} style={{position:"absolute",right:"4%",top:"30%",width:"52%",height:"44%",objectFit:"contain",zIndex:1,filter:"drop-shadow(0 12px 30px rgba(0,0,0,.55))"}}/>
+          :<div style={{position:"absolute",right:"8%",top:"30%",width:"45%",aspectRatio:"1",borderRadius:"50%",background:"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:70,fontWeight:900,color:"rgba(255,255,255,.3)"}}>{String(name||"?").slice(0,2).toUpperCase()}</div>}
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"55%",background:"linear-gradient(90deg,rgba(8,8,16,.88) 0%,rgba(8,8,16,.55) 65%,transparent)",zIndex:2}}/>
+        <div style={{position:"absolute",left:"5%",top:"4%",width:"40%",zIndex:3}}>
+          <Stat v={settled.length} l="PARIS"/>
+          <Stat v={won+"-"+lost} l="BILAN"/>
+          <Stat v={(profit>=0?"+":"−")+Math.abs(Math.round(profit))} l="PROFIT €" c={profit>=0?"#4ade80":"#f87171"}/>
+          <div style={{textAlign:"center",padding:"8px 0 0"}}>
+            <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{settled.length?Math.round(wr*100)+"%":"—"}</div>
+            <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>RÉUSSITE</div>
+            <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)",marginTop:6}}>ROI {(roi>=0?"+":"")+roi.toFixed(1)} %</div>
+          </div>
+        </div>
+        {isLg&&(splitP.length>0||splitT.length>0)&&<div style={{position:"absolute",right:"4%",bottom:74,zIndex:3,display:"flex",gap:6}}>
+          {[["Joueurs",splitP],["Équipes",splitT]].filter(x=>x[1].length).map(([l,a])=>{const p=pr(a);return(<div key={l} style={{background:"rgba(0,0,0,.45)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"5px 9px",textAlign:"center"}}>
+            <div style={{fontSize:10,fontWeight:800,letterSpacing:.5,color:"rgba(255,255,255,.7)"}}>{l.toUpperCase()}</div>
+            <div style={{fontSize:13,fontWeight:900,color:p>=0?"#4ade80":"#f87171"}}>{(p>=0?"+":"−")+Math.abs(Math.round(p))} €</div></div>);})}
+        </div>}
+        <div style={{position:"absolute",left:0,right:0,bottom:0,height:62,background:sc,color:txt===pc?pc:(sc.toLowerCase()==="#111111"?"#fff":pc),zIndex:4,display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"0 14px"}}>
+          <span style={{fontSize:"clamp(22px,8cqw,34px)",fontWeight:900,textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.5}}>{name}</span>
+          <span style={{fontSize:12,fontWeight:900,padding:"2px 8px",borderRadius:6,background:pc,color:"#fff",flexShrink:0}}>{isLg?"LIGUE":"ÉQUIPE"}</span>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{position:"absolute",left:12,bottom:74,zIndex:5,width:32,height:32,borderRadius:16,border:"none",background:"rgba(0,0,0,.45)",color:"#fff",fontSize:18,cursor:"pointer"}}>×</button>
+      </div>
+    </div>);
+}
+
 function PlayerStatSearch({players,bets,onChanged}){
   const[q,setQ]=useState("");const[sel,setSel]=useState(null);
   const ql=q.trim().toLowerCase();
@@ -3315,6 +3368,7 @@ function PlayerStatSearch({players,bets,onChanged}){
 function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
   const[tab,setTab]=useState("overview");
   const[posterP,setPosterP]=useState(null);
+  const[groupP,setGroupP]=useState(null);
   const[period,setPeriod]=useState("all");
   const cutoff=period==="all"?null:Date.now()-({"7":7,"30":30,"90":90}[period])*864e5;
   const rawBets=cutoff?allRaw.filter(b=>b.created_at&&new Date(b.created_at).getTime()>=cutoff):allRaw;
@@ -3517,7 +3571,8 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
         </>}
         {(byOU.Over||byOU.Under)&&<><Title>Over vs Under</Title><OU/></>}
         <Title>Par ligue</Title>
-        <Table rows={rowsOf(byLeague,{logo:g=>getLeagueLogo(g)||null})}/>
+        <Table rows={rowsOf(byLeague,{logo:g=>getLeagueLogo(g)||null})} onRow={r=>setGroupP({kind:"league",name:r.key})}/>
+        {groupP&&groupP.kind==="league"&&<GroupPoster kind="league" name={groupP.name} bets={allRaw} onClose={()=>setGroupP(null)}/>}
         <Title>Par cote</Title>
         <Table rows={rowsOf(byOdds,{sort:(a,b)=>oddsOrder.indexOf(a.key)-oddsOrder.indexOf(b.key)})}/>
         <Title>Bookmakers</Title>
@@ -3538,7 +3593,10 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
         <Table rows={rowsOf(byPos)} limit={10}/>
         <Title>Joueurs</Title>
         <Table rows={rowsOf(byPlayer)} limit={8} onRow={r=>{const p=players.find(x=>formatName(x.name)===r.name);if(p)setPosterP(p);}}/>
+        <Title>Équipes (paris équipe)</Title>
+        <Table rows={rowsOf(groupBy(bets.filter(b=>b.bet_type==="team"&&(b.team||b.player)),b=>b.team||b.player),{logo:t=>getTeamLogo(t,null)||null})} limit={8} empty="Aucun pari équipe" onRow={r=>setGroupP({kind:"team",name:r.key})}/>
         {posterP&&<PlayerPoster player={posterP} bets={allRaw} onClose={()=>setPosterP(null)} onChanged={onPlayersChanged}/>}
+        {groupP&&groupP.kind==="team"&&<GroupPoster kind="team" name={groupP.name} bets={allRaw} onClose={()=>setGroupP(null)}/>}
       </>}
 
       {tab==="markets"&&<>
