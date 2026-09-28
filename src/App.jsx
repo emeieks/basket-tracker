@@ -2946,14 +2946,12 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const bkLogo=bkPhotos&&b.bookmaker?bkPhotos[b.bookmaker]:null;
   const lc=b.game?(LEAGUE_COLORS[b.game]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===String(b.game).toLowerCase())?.[1]||{p:"#3a4150"}):null;
   const st=b.status;
-  const bc=selected?"#5B9DFF":st==="won"?"rgba(74,222,128,.75)":st==="lost"?"rgba(248,113,113,.75)":st==="pending"?"rgba(250,204,21,.6)":"#2A2F3A";
+  const bc=selected?"#5B9DFF":st==="won"?"rgba(74,222,128,.75)":st==="lost"?"rgba(248,113,113,.75)":st==="pending"?"rgba(91,157,255,.8)":"#2A2F3A";
   const bg=selected?"#1E2A3E":st==="won"?"linear-gradient(270deg,rgba(74,222,128,.14),#1D2029 55%)":st==="lost"?"linear-gradient(270deg,rgba(248,113,113,.14),#1D2029 55%)":"#1D2029";
   const desc=b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U");
   return(
     <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"2px solid "+bc,borderRadius:16,
-      boxShadow:st==="pending"&&!selected?"0 0 12px rgba(250,204,21,.15)":"none",padding:"10px 14px 10px 12px",minHeight:80,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-      {lc&&<div style={{position:"absolute",right:-30,top:6,width:96,height:18,transform:"rotate(30deg)",background:lc.p,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>
-        {leagueLogo?<img src={leagueLogo} alt="" style={{height:13,maxWidth:40,objectFit:"contain",filter:lc.p.toLowerCase()==="#111111"?"none":"brightness(0) invert(1)"}}/>:<b style={{fontSize:9,fontWeight:900,color:"#fff"}}>{String(b.game).slice(0,4).toUpperCase()}</b>}</div>}
+      boxShadow:st==="pending"&&!selected?"0 0 12px rgba(91,157,255,.18)":"none",padding:"10px 14px 10px 12px",minHeight:80,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
       {selectMode&&(
         <span style={{width:24,height:24,borderRadius:12,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
           border:selected?"none":"2px solid #4B5260",background:selected?C.blue:"transparent",transition:"all .15s"}}>
@@ -2962,9 +2960,9 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
       )}
       <div style={{position:"relative",flexShrink:0}}>
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={56}/>
-        {b.bookmaker&&(
-          <span style={{position:"absolute",left:-4,bottom:-4,width:22,height:22,borderRadius:7,background:"#1D2029",border:"2px solid #1D2029",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {bkLogo?<img src={bkLogo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<b style={{fontSize:9,color:"#fff"}}>{b.bookmaker.slice(0,2).toUpperCase()}</b>}
+        {b.game&&(
+          <span style={{position:"absolute",left:-4,bottom:-4,width:22,height:22,borderRadius:11,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={leagueLogo} label={b.game} size={16} round={false}/>
           </span>
         )}
         {teamName&&!isTeam&&(
@@ -2974,10 +2972,11 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
-        <span style={{fontSize:14.5,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+        <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+        <span style={{fontSize:14.5,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
           {lastName}
         </span>
-        <span style={{alignSelf:"flex-start",maxWidth:"100%",padding:"2px 8px",borderRadius:6,background:"#fff",color:"#111",fontSize:11.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span>
+        <span style={{flexShrink:0,padding:"2px 8px",borderRadius:6,background:"#fff",color:"#111",fontSize:11.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
@@ -2988,7 +2987,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         </span>
       </div>
       <span style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
-        {st==="pending"?<><b style={{display:"block",fontSize:12.5,color:"#FACC15"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds,0)}</span></>
+        {st==="pending"?<><b style={{display:"block",fontSize:12.5,color:"#5B9DFF"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds,0)}</span></>
           :<b style={{fontSize:17,color:resultCol}}>{st==="void"?"Void":money(profit).replace(/,\d\d/,"")}</b>}
       </span>
     </article>
