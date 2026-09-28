@@ -3339,7 +3339,7 @@ function leagueBgDefault(name){const n=String(name||"").toLowerCase().normalize(
  if(n==="bcl"||n.includes("champions league"))return LEAGUE_BG_DEFAULT.BCL;if(n.includes("acb")||n.includes("liga endesa"))return LEAGUE_BG_DEFAULT.ACB;
  if(n.includes("betclic")||n.includes("elite")||n.includes("lnb")||n.includes("pro a"))return LEAGUE_BG_DEFAULT.BETCLIC;
  if(n.includes("lega")||n==="lba"||n.includes("serie a"))return LEAGUE_BG_DEFAULT.LEGA;if(n==="bbl"||n.includes("bundesliga")||n.includes("easycredit"))return LEAGUE_BG_DEFAULT.BBL;return "";}
-const LEAGUE_COLORS={"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#E4002B",s:"#111111"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0A7A3E",s:"#F2C400"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
+const LEAGUE_COLORS={"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#E4002B",s:"#111111"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0072CE",s:"#111111"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
 function GroupPoster({kind,name,bets,onClose}){
   const isLg=kind==="league";
   const bgKey="league_bg_"+name;
@@ -3427,6 +3427,17 @@ function GroupPoster({kind,name,bets,onClose}){
     </div>);
 }
 
+const _DARKLOGO={};
+function TileLogo({src,size=38}){
+  const[dark,setDark]=useState(_DARKLOGO[src]);
+  useEffect(()=>{if(!src||src in _DARKLOGO){setDark(_DARKLOGO[src]);return;}let alive=true;
+    loadImg(src).then(im=>{const W=48,H=Math.max(1,Math.round(48*im.naturalHeight/Math.max(1,im.naturalWidth)));const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.drawImage(im,0,0,W,H);
+      const d=x.getImageData(0,0,W,H).data;let op=0,lum=0,col=0;for(let i=0;i<d.length;i+=4){if(d[i+3]<60)continue;op++;const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);lum+=.2126*r+.7152*g+.0722*b;if(mx-mn>.25&&mx>.3)col++;}
+      const v=op>0&&lum/op<.32&&col/op<.2;_DARKLOGO[src]=v;if(alive)setDark(v);}).catch(()=>{_DARKLOGO[src]=false;if(alive)setDark(false);});
+    return()=>{alive=false;};},[src]);
+  return <img src={src} alt="" style={{position:"absolute",left:12,top:12,width:size,height:size,objectFit:"contain",
+    filter:dark?"brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.6))":"drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 6px rgba(255,255,255,.35)) drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/>;
+}
 function PlayerStatSearch({players,bets,onChanged}){
   const[q,setQ]=useState("");const[sel,setSel]=useState(null);
   const ql=q.trim().toLowerCase();
@@ -4156,7 +4167,8 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
               background:"linear-gradient(135deg,"+lc.p+" 0%,"+lc.p+"66 45%,#15171d 100%)",border:"1px solid rgba(255,255,255,.08)"}}>
               {bgi&&<img src={bgi} alt="" onError={e=>{e.currentTarget.style.display="none";}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}
               <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.75))"}}/>
-              {lg.logo&&<img src={lg.logo} alt="" style={{position:"absolute",left:12,top:12,width:38,height:38,objectFit:"contain",filter:"drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/>}
+              {lg.logo&&<TileLogo src={lg.logo}/>}
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:3,background:lc.p,boxShadow:"0 0 10px "+lc.p}}/>
               <div style={{position:"absolute",left:12,right:12,bottom:10,fontSize:16,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textShadow:"0 1px 6px rgba(0,0,0,.7)"}}>{lg.name}</div>
               <button type="button" aria-label={"Modifier "+lg.name} onClick={e=>{e.stopPropagation();setLgMenu(lg);}} style={{position:"absolute",right:8,top:8,width:30,height:30,borderRadius:15,border:"none",background:"rgba(0,0,0,.4)",color:"rgba(255,255,255,.85)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>⋯</button>
             </div>);};
