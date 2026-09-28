@@ -319,6 +319,8 @@ async function cleanLogoBlob(blob){
     const img=x.getImageData(0,0,w,h),d=img.data;
     // couleur dominante des bords
     const edge=[];for(let X=0;X<w;X++){edge.push(X,(h-1)*w+X);}for(let Y=0;Y<h;Y++){edge.push(Y*w,Y*w+w-1);}
+    let tr=0;for(let p=0;p<w*h;p++)if(d[p*4+3]<30)tr++;
+    if(tr/(w*h)>0.08)return null; // déjà détouré : on ne touche pas
     let op=0,R=0,G=0,B=0;edge.forEach(p=>{const i=p*4;if(d[i+3]>200){op++;R+=d[i];G+=d[i+1];B+=d[i+2];}});
     let changed=false;
     if(op>edge.length*0.6){
@@ -3918,10 +3920,26 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
       try{const r=await fetch(lg.logo,{cache:"no-store"});if(!r.ok)throw new Error(r.status);
         const nb=await cleanLogoBlob(await r.blob());if(!nb){skip++;continue;}
         const url=await uploadAvatarBlob(nb,"league_"+lg.name.replace(/[^a-z0-9]/gi,"_").toLowerCase());
+        try{localStorage.setItem("league_logo_prev_"+lg.id,lg.logo);}catch(e){}
         await updateLeague(lg.id,{logo:url});setLeagues(prev=>prev.map(l=>l.id===lg.id?{...l,logo:url}:l));LEAGUE_LOGOS_DYNAMIC[lg.name]=url;done++;
       }catch(e){console.warn("clean",lg.name,e);fail++;}}
     setCleaning2("");showToast(done+" logo(s) nettoyé(s)"+(skip?" · "+skip+" déjà propres":"")+(fail?" · "+fail+" impossible(s)":""),fail?"#FFB74D":undefined);
   }
+  const[lgMenu,setLgMenu]=useState(null);const[lgBusy,setLgBusy]=useState("");const lgFile=useRef(null);const lgFileKind=useRef("logo");
+  const setLgLogo=async(lg,url,keepPrev=true)=>{if(keepPrev&&lg.logo){try{localStorage.setItem("league_logo_prev_"+lg.id,lg.logo);}catch(e){}}
+    await updateLeague(lg.id,{logo:url});setLeagues(prev=>prev.map(l=>l.id===lg.id?{...l,logo:url}:l));LEAGUE_LOGOS_DYNAMIC[lg.name]=url;setLgMenu(m=>m&&m.id===lg.id?{...m,logo:url}:m);};
+  const setLgBg=async(lg,url)=>{try{url?localStorage.setItem("league_bg_"+lg.name,url):localStorage.removeItem("league_bg_"+lg.name);}catch(e){}
+    try{await updateLeague(lg.id,{bg_url:url||null});}catch(e){console.warn(e);}setLeagues(prev=>prev.map(l=>l.id===lg.id?{...l,bg_url:url||null}:l));setLgMenu(m=>m&&m.id===lg.id?{...m,bg_url:url||null}:m);};
+  const lgSlug=lg=>lg.name.replace(/[^a-z0-9]/gi,"_").toLowerCase();
+  const prepBg=async blob=>{const u=URL.createObjectURL(blob);try{const im=await loadImg(u);const k=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);return await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.9));}finally{URL.revokeObjectURL(u);}};
+  const lgUpload=async(lg,blob,kind)=>{if(kind==="bg"){blob=await prepBg(blob);await setLgBg(lg,await uploadAvatarBlob(blob,"leaguebg_"+lgSlug(lg)));}else await setLgLogo(lg,await uploadAvatarBlob(blob,"league_"+lgSlug(lg)));};
+  const lgPaste=async(lg,kind)=>{setLgBusy(kind);try{const items=await navigator.clipboard.read();let blob=null;for(const it of items){const t=it.types.find(x=>x.startsWith("image/"));if(t){blob=await it.getType(t);break;}}
+    if(!blob)throw new Error("Aucune image dans le presse-papier");await lgUpload(lg,blob,kind);showToast(kind==="bg"?"Photo de fond enregistrée ✓":"Logo mis à jour ✓");}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}setLgBusy("");};
+  const lgOnFile=async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f||!lgMenu)return;const k=lgFileKind.current;setLgBusy(k);try{await lgUpload(lgMenu,f,k);showToast("Enregistré ✓");}catch(err){showToast("Erreur : "+err.message,"#FF8A80");}setLgBusy("");};
+  const lgClean=async(lg,mode)=>{if(!lg.logo)return;setLgBusy(mode);try{const r=await fetch(lg.logo,{cache:"no-store"});let blob=await r.blob();
+    const nb=mode==="white"?await removeWhiteBg(blob,true):await cleanLogoBlob(blob);if(!nb){showToast("Rien à retirer sur ce logo");setLgBusy("");return;}
+    await setLgLogo(lg,await uploadAvatarBlob(nb,"league_"+lgSlug(lg)));showToast("Fond retiré ✓");}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}setLgBusy("");};
+  const lgRestore=async lg=>{let p="";try{p=localStorage.getItem("league_logo_prev_"+lg.id)||"";}catch(e){}if(!p)return showToast("Aucun ancien logo gardé","#FF8A80");await setLgLogo(lg,p,false);showToast("Logo d'origine remis ✓");};
   async function pasteLeagueLogo(lg){
     try{
       const url=await pasteImageToSupabase("league_"+lg.name.replace(/\s/g,"_").toLowerCase());
@@ -4129,12 +4147,35 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
               title={<span style={{fontWeight:700,color:"#fff",textShadow:bgi?"0 1px 6px rgba(0,0,0,.7)":"none"}}>{lg.name}</span>}
               sub={isCup(lg.name)?"Coupe · "+(CUPS[Object.keys(CUPS).find(c=>normTeam(c)===normTeam(lg.name))]||""):null}
               onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}
-              right={<IconBtn icon={Ico.paste} label={"Coller le logo de "+lg.name} onClick={()=>pasteLeagueLogo(lg)}/>}
+              right={<button type="button" onClick={e=>{e.stopPropagation();setLgMenu(lg);}} aria-label={"Logo et fond de "+lg.name} style={{height:34,padding:"0 11px",borderRadius:10,border:"1px solid rgba(255,255,255,.15)",background:"rgba(0,0,0,.45)",color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginRight:2}}>Modifier</button>}
               chevron/></div>
             </div>);};
           const champ=leagueMatches.filter(l=>!isCup(l.name));
           const cups=leagueMatches.filter(l=>isCup(l.name));
           return(<>
+            <input ref={lgFile} type="file" accept="image/*" onChange={lgOnFile} style={{display:"none"}}/>
+            {lgMenu&&(()=>{const lg=lgMenu;let prev="";try{prev=localStorage.getItem("league_logo_prev_"+lg.id)||"";}catch(e){}
+              let lsbg="";try{lsbg=localStorage.getItem("league_bg_"+lg.name)||"";}catch(e){}const bgi=lg.bg_url||lsbg;
+              const Item=({l,k,fn,red})=>(<button type="button" disabled={!!lgBusy} onClick={fn} style={{width:"100%",textAlign:"left",padding:"13px 14px",border:"none",borderTop:"1px solid "+C.line,background:"transparent",color:red?C.red:C.text,fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:lgBusy&&lgBusy!==k?.5:1}}>{lgBusy===k?"En cours…":l}</button>);
+              return(<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setLgMenu(null);}} style={{display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+                <div style={{width:"100%",maxWidth:480,background:C.card,borderRadius:"20px 20px 0 0",overflow:"hidden",paddingBottom:"env(safe-area-inset-bottom)"}}>
+                  <div style={{position:"relative",height:110,background:bgi?"#000":"#1a1d26",display:"flex",alignItems:"center",gap:14,padding:"0 18px"}}>
+                    {bgi&&<><div style={{position:"absolute",inset:0,background:"url("+JSON.stringify(bgi)+") center/cover"}}/><div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(0,0,0,.85),rgba(0,0,0,.3))"}}/></>}
+                    <div style={{position:"relative",width:64,height:64,borderRadius:14,background:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>{lg.logo&&<img src={lg.logo} alt="" style={{maxWidth:54,maxHeight:54,objectFit:"contain"}}/>}</div>
+                    <div style={{position:"relative",fontSize:22,fontWeight:800,color:"#fff"}}>{lg.name}</div>
+                  </div>
+                  <div style={{padding:"10px 14px 4px",fontSize:12,fontWeight:700,color:C.sub,textTransform:"uppercase",letterSpacing:.5}}>Logo</div>
+                  <Item l="Coller un logo" k="logo" fn={()=>lgPaste(lg,"logo")}/>
+                  <Item l="Choisir un fichier" k="logo" fn={()=>{lgFileKind.current="logo";lgFile.current&&lgFile.current.click();}}/>
+                  <Item l="Retirer le fond blanc" k="white" fn={()=>lgClean(lg,"white")}/>
+                  <Item l="Retirer le fond (couleur unie)" k="solid" fn={()=>lgClean(lg,"solid")}/>
+                  {prev&&prev!==lg.logo&&<Item l="Remettre le logo d'origine" k="restore" fn={()=>lgRestore(lg)}/>}
+                  <div style={{padding:"14px 14px 4px",fontSize:12,fontWeight:700,color:C.sub,textTransform:"uppercase",letterSpacing:.5}}>Photo de fond</div>
+                  <Item l="Coller une photo" k="bg" fn={()=>lgPaste(lg,"bg")}/>
+                  <Item l="Choisir un fichier" k="bg" fn={()=>{lgFileKind.current="bg";lgFile.current&&lgFile.current.click();}}/>
+                  {bgi&&<Item l="Retirer la photo de fond" k="bgx" red fn={()=>setLgBg(lg,"")}/>}
+                  <Item l="Fermer" k="close" fn={()=>setLgMenu(null)}/>
+                </div></div>);})()}
             <button type="button" onClick={cleanAllLeagueLogos} disabled={!!cleaning2} style={{width:"100%",height:44,marginBottom:10,borderRadius:12,border:"1px solid "+C.line,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:cleaning2?"default":"pointer",fontFamily:"inherit"}}>
               {cleaning2?"Nettoyage… "+cleaning2:"Nettoyer tous les logos (retirer les fonds)"}</button>
             {champ.length>0&&<SGroup>{champ.map(row)}</SGroup>}
