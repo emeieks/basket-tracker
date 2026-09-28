@@ -2953,7 +2953,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
     <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"2px solid "+bc,borderRadius:16,
       boxShadow:st==="pending"&&!selected?"0 0 12px rgba(250,204,21,.15)":"none",padding:"10px 14px 10px 12px",minHeight:80,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
       {lc&&<div style={{position:"absolute",right:-30,top:6,width:96,height:18,transform:"rotate(30deg)",background:lc.p,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>
-        {leagueLogo?<img src={leagueLogo} alt="" style={{height:12,maxWidth:40,objectFit:"contain",filter:"brightness(0) invert(1)"}}/>:<b style={{fontSize:9,fontWeight:900,color:"#fff"}}>{String(b.game).slice(0,4).toUpperCase()}</b>}</div>}
+        {leagueLogo?<img src={leagueLogo} alt="" style={{height:13,maxWidth:40,objectFit:"contain",filter:lc.p.toLowerCase()==="#111111"?"none":"brightness(0) invert(1)"}}/>:<b style={{fontSize:9,fontWeight:900,color:"#fff"}}>{String(b.game).slice(0,4).toUpperCase()}</b>}</div>}
       {selectMode&&(
         <span style={{width:24,height:24,borderRadius:12,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
           border:selected?"none":"2px solid #4B5260",background:selected?C.blue:"transparent",transition:"all .15s"}}>
@@ -2967,11 +2967,17 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
             {bkLogo?<img src={bkLogo} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<b style={{fontSize:9,color:"#fff"}}>{b.bookmaker.slice(0,2).toUpperCase()}</b>}
           </span>
         )}
+        {teamName&&!isTeam&&(
+          <span style={{position:"absolute",right:-4,bottom:-4,width:22,height:22,borderRadius:11,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={clubLogo} label={teamName} size={18}/>
+          </span>
+        )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
         <span style={{fontSize:14.5,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {lastName} <span style={{color:"#C9D1E3"}}>· {desc}</span>
+          {lastName}
         </span>
+        <span style={{alignSelf:"flex-start",maxWidth:"100%",padding:"2px 8px",borderRadius:6,background:"#fff",color:"#111",fontSize:11.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span>
         <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
@@ -3340,7 +3346,7 @@ function leagueBgDefault(name){const n=String(name||"").toLowerCase().normalize(
  if(n==="bcl"||n.includes("champions league"))return LEAGUE_BG_DEFAULT.BCL;if(n.includes("acb")||n.includes("liga endesa"))return LEAGUE_BG_DEFAULT.ACB;
  if(n.includes("betclic")||n.includes("elite")||n.includes("lnb")||n.includes("pro a"))return LEAGUE_BG_DEFAULT.BETCLIC;
  if(n.includes("lega")||n==="lba"||n.includes("serie a"))return LEAGUE_BG_DEFAULT.LEGA;if(n==="bbl"||n.includes("bundesliga")||n.includes("easycredit"))return LEAGUE_BG_DEFAULT.BBL;return "";}
-const LEAGUE_COLORS={"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#E4002B",s:"#111111"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0072CE",s:"#111111"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
+const LEAGUE_COLORS={"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#111111",s:"#E4002B"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0072CE",s:"#111111"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
 function GroupPoster({kind,name,bets,onClose}){
   const isLg=kind==="league";
   const bgKey="league_bg_"+name;
