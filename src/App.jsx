@@ -3208,6 +3208,85 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
 }
 
 // ── VUE ANALYSE ───────────────────────────────────────────────────────────────
+// ── Affiche joueur (format RDS) : bilan global sur ce joueur ─────────────────
+function PlayerPoster({player,bets,onClose}){
+  const tc=getTeamColor(player.team)||{p:"#3B2A6B",s:"#FDB927"};
+  const pc=tc.p||"#3B2A6B",sc=tc.s||"#FDB927";
+  const logo=getTeamLogo(player.team,player.team_logo_url||null);
+  const mine=bets.filter(b=>b.bet_type!=="team"&&b.player===player.name);
+  const won=mine.filter(b=>b.status==="won").length,lost=mine.filter(b=>b.status==="lost").length;
+  const settled=mine.filter(b=>b.status==="won"||b.status==="lost");
+  const profit=settled.reduce((t,b)=>t+(parseFloat(b.profit)||0),0);
+  const staked=settled.reduce((t,b)=>t+(parseFloat(b.stake)||0),0);
+  const wr=won+lost?won/(won+lost):0;
+  const roi=staked?profit/staked*100:0;
+  const photo=player.photo_url||player.avatar_url;
+  const big=bigLabel(player.team)||"";
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[onClose]);
+  const Stat=({v,l,c})=>(<div style={{textAlign:"center",padding:"8px 0 9px",borderBottom:"1.5px solid rgba(255,255,255,.3)"}}>
+    <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,color:c||"#fff",fontStretch:"condensed",whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{v}</div>
+    <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>{l}</div></div>);
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div style={{width:"100%",maxWidth:420,aspectRatio:"390/560",maxHeight:"86vh",position:"relative",overflow:"hidden",borderRadius:22,containerType:"inline-size",
+        background:"radial-gradient(90% 70% at 72% 35%,"+pc+" 0%,"+pc+"99 40%,#0b0d14 100%)",boxShadow:"0 24px 60px rgba(0,0,0,.6)"}}>
+        <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 2px,transparent 2px 22px)"}}/>
+        {big&&<div aria-hidden="true" style={{position:"absolute",right:-8,top:"6%",fontSize:"min(140px, calc(90cqw / "+Math.max(3,big.length)*0.62+"))",fontWeight:900,letterSpacing:-3,
+          color:"transparent",WebkitTextStroke:"1.5px "+sc+"55",textTransform:"uppercase",whiteSpace:"nowrap",lineHeight:.85}}>{big}</div>}
+        {logo&&<img src={logo} alt="" style={{position:"absolute",right:14,top:14,width:54,height:54,objectFit:"contain",zIndex:3,filter:"drop-shadow(0 4px 10px rgba(0,0,0,.5))"}}/>}
+        {photo?<img src={photo} alt={player.name} style={{position:"absolute",right:"-6%",bottom:62,height:"78%",maxWidth:"80%",objectFit:"contain",objectPosition:"bottom right",zIndex:1}}/>
+          :<div style={{position:"absolute",right:"8%",bottom:90,width:"45%",aspectRatio:"1",borderRadius:"50%",background:"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:80,fontWeight:900,color:"rgba(255,255,255,.25)"}}>{(player.name||"?")[0]}</div>}
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"60%",background:"linear-gradient(90deg,rgba(8,8,16,.88) 0%,rgba(8,8,16,.55) 65%,transparent)",zIndex:2}}/>
+        <div style={{position:"absolute",left:"5%",top:"4%",width:"40%",zIndex:3}}>
+          <Stat v={mine.length} l="PARIS"/>
+          <Stat v={won+"-"+lost} l="BILAN"/>
+          <Stat v={(profit>=0?"+":"")+Math.round(profit)} l="PROFIT €" c={profit>=0?"#4ade80":"#f87171"}/>
+          <div style={{textAlign:"center",padding:"8px 0 0"}}>
+            <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{won+lost?(wr>=1?"1,000":","+String(Math.round(wr*1000)).padStart(3,"0")):"—"}</div>
+            <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>RÉUSSITE</div>
+            <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.7)",marginTop:6}}>ROI {(roi>=0?"+":"")+roi.toFixed(1)} %</div>
+          </div>
+        </div>
+        <div style={{position:"absolute",left:0,right:0,bottom:0,height:62,background:sc,color:pc,zIndex:4,display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"0 14px"}}>
+          <span style={{fontSize:"clamp(22px,8cqw,34px)",fontWeight:900,textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.5}}>{formatName(player.name)}</span>
+          {roleCode(player.role)&&<span style={{fontSize:13,fontWeight:900,padding:"2px 8px",borderRadius:6,background:pc,color:sc,flexShrink:0}}>{roleCode(player.role)}</span>}
+        </div>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{position:"absolute",left:12,bottom:74,zIndex:5,width:32,height:32,borderRadius:16,border:"none",background:"rgba(0,0,0,.45)",color:"#fff",fontSize:18,cursor:"pointer"}}>×</button>
+      </div>
+    </div>
+  );
+}
+function PlayerStatSearch({players,bets}){
+  const[q,setQ]=useState("");const[sel,setSel]=useState(null);
+  const ql=q.trim().toLowerCase();
+  const res=ql.length<1?[]:players.filter(p=>(p.name||"").toLowerCase().includes(ql)).map(p=>{
+    const m=bets.filter(b=>b.bet_type!=="team"&&b.player===p.name);
+    const w=m.filter(b=>b.status==="won").length,l=m.filter(b=>b.status==="lost").length;
+    const pr=m.filter(b=>b.status==="won"||b.status==="lost").reduce((t,b)=>t+(parseFloat(b.profit)||0),0);
+    return{p,n:m.length,w,l,pr};
+  }).sort((a,b)=>((a.p.name||"").toLowerCase().startsWith(ql)?0:1)-((b.p.name||"").toLowerCase().startsWith(ql)?0:1)||b.n-a.n).slice(0,8);
+  return(<>
+    <div style={{position:"relative",marginTop:4}}>
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur"
+        style={{width:"100%",height:46,borderRadius:14,border:"1px solid "+C.line,background:C.card,color:C.text,fontSize:15,padding:"0 40px 0 14px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+      {q&&<button type="button" onClick={()=>setQ("")} aria-label="Effacer" style={{position:"absolute",right:8,top:8,width:30,height:30,border:"none",background:"transparent",color:C.sub,fontSize:18,cursor:"pointer"}}>×</button>}
+    </div>
+    {res.length>0&&<div style={{marginTop:8,background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+      {res.map((r,i)=>(
+        <button key={r.p.id||r.p.name} type="button" onClick={()=>setSel(r.p)} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"10px 14px",border:"none",borderTop:i?"1px solid "+C.line:"none",background:"transparent",color:C.text,cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>
+          <PlayerFace src={r.p.photo_url||r.p.avatar_url} name={formatName(r.p.name)} team={r.p.team} size={40}/>
+          <span style={{flex:1,minWidth:0}}>
+            <span style={{display:"block",fontSize:15,fontWeight:600}}>{formatName(r.p.name)}</span>
+            <span style={{fontSize:12.5,color:C.sub}}>{[r.p.team,roleCode(r.p.role)].filter(Boolean).join(" · ")}{r.n?" · "+r.w+"-"+r.l:" · aucun pari"}</span>
+          </span>
+          {r.n>0&&<span style={{fontSize:15,fontWeight:700,color:r.pr>=0?C.green:C.red}}>{(r.pr>=0?"+":"")+Math.round(r.pr)} €</span>}
+        </button>))}
+    </div>}
+    {ql&&res.length===0&&<div style={{padding:"14px 4px",fontSize:14,color:C.sub}}>Aucun joueur pour « {q} »</div>}
+    {sel&&<PlayerPoster player={sel} bets={bets} onClose={()=>setSel(null)}/>}
+  </>);
+}
+
 function StatsView({bets:allRaw,players=[],bkPhotos={}}){
   const[tab,setTab]=useState("overview");
   const[period,setPeriod]=useState("all");
@@ -3428,6 +3507,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={}}){
       </>}
 
       {tab==="players"&&<>
+        <PlayerStatSearch players={players} bets={allRaw}/>
         <Title>Par poste</Title>
         <Table rows={rowsOf(byPos)} limit={10}/>
         <Title>Joueurs</Title>
