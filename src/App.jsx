@@ -58,6 +58,7 @@ function parseDesc(desc){
 
 // ── Marché d'un pari : joueur (stat) ou équipe (type de pari) ──
 function teamMarket(b){
+  if(b.notes==="longterm")return "Long terme";
   const d=String(b.description||"");
   if(/\b3\s*(pts|points)\b|3pt|3-pt|trois/i.test(d)&&/\b(Over|Under)\b/.test(d))return "3 pts équipe";
   if(/gagne/i.test(d))return "Victoire";
@@ -67,11 +68,13 @@ function teamMarket(b){
   return "Handicap";
 }
 function marketOf(b){
+  if(b.notes==="longterm")return "Long terme";
   if(b.bet_type==="team")return "Équipe · "+teamMarket(b);
   const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";
 }
 // Over / Under : joueur toujours ; équipe seulement pour les totaux (match, points équipe, mi-temps, 3 pts)
 function ouOf(b){
+  if(b.notes==="longterm")return null;
   if(b.bet_type==="team"){
     if(["Victoire","Handicap"].includes(teamMarket(b)))return null;
     const m=/\b(Over|Under)\b/.exec(b.description||"");return m?m[1]:null;
@@ -1131,11 +1134,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
     team:editBet.team||"",
     opponent:editBet.opponent||"",
+    lt:editBet.notes==="longterm",ltDesc:editBet.notes==="longterm"?(editBet.description||""):"",
   }:{
     player:"",playerObj:null,stat:"",ou:"",line:"",
     odds:"",stake:"",bookmaker:"",
     status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",
-    betType:"moneyline",team:"",opponent:"",
+    betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:"",
   });
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   // Compétitions du club (championnats + coupes) pour changer la ligue du pari
@@ -1202,6 +1206,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   }
   // Ce qui manque pour pouvoir enregistrer
   function missing(){
+    if(form.lt){
+      if(isTeamBet?!form.team:!form.player)return isTeamBet?"Choisis une équipe":"Choisis un joueur";
+      if(!String(form.ltDesc||"").trim())return "Écris le pari";
+    }else{
     if(!isTeamBet&&form.player&&!form.ou)return "Choisis Over ou Under";
     if(isTeamBet){
       if(!form.team)return "Choisis une équipe";
@@ -1210,6 +1218,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       if(!form.player)return "Choisis un joueur";
       if(!form.line)return "Choisis la ligne";
       if(!form.stat)return "Choisis la stat";
+    }
     }
     if(!parseFloat(String(form.odds).replace(",",".")))return "Indique la cote";
     if(!parseFloat(String(form.stake).replace(",",".")))return "Indique la mise";
@@ -1224,7 +1233,19 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     const savedBK=lockedBK?form.bookmaker:null;
     const savedTip=lockedTip?form.tipster:null;
     let bet;
-    if(isTeamBet){
+    if(form.lt){
+      const dateIso=form.created_at?new Date(form.created_at).toISOString():(editBet?undefined:new Date().toISOString());
+      bet={
+        player:isTeamBet?form.team:form.player,team:isTeamBet?form.team:(form.playerObj?.team||null),opponent:null,
+        description:String(form.ltDesc).trim(),over_under:null,line:null,
+        odds,stake,bookmaker:form.bookmaker||null,
+        status:form.status,profit:calcProfit(form.status,stake,odds),
+        game:form.game||form.playerObj?.game||null,tipster:form.tipster||null,
+        ...annPayload(),
+        notes:"longterm",bet_type:isTeamBet?"team":"player",
+        ...(dateIso?{created_at:dateIso}:{}),
+      };
+    }else if(isTeamBet){
       if(!form.team){alert("Sélectionne une équipe");return;}
       let desc="";
       if(form.betType==="moneyline") desc=form.team+" gagne";
@@ -1508,8 +1529,25 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           );
         })()}
 
+        {/* ── PARI LONG TERME ── */}
+        {step!=="search"&&(
+          <div style={{marginTop:14}}>
+            <button type="button" className="press" onClick={()=>f("lt",!form.lt)}
+              style={{width:"100%",height:46,borderRadius:14,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,
+                border:form.lt?"none":"1.5px dashed "+C.line,background:form.lt?"#7C3AED":C.card,color:form.lt?"#fff":C.sub}}>
+              {form.lt?"✓ Pari long terme":"Pari long terme (champion, meilleur passeur…)"}
+            </button>
+            {form.lt&&(
+              <label className="fld-box" style={{marginTop:10,display:"block"}}>Le pari
+                <input value={form.ltDesc||""} onChange={e=>f("ltDesc",e.target.value)} placeholder={isTeamBet?"Ex : Champion EuroLeague 2026-27":"Ex : Meilleur passeur EuroLeague"}
+                  style={{display:"block",width:"100%",border:"none",background:"transparent",color:C.text,fontSize:17,fontWeight:600,fontFamily:"inherit",padding:0,outline:"none",marginTop:4}}/>
+              </label>
+            )}
+          </div>
+        )}
+
         {/* ── PARI ÉQUIPE ── */}
-        {isTeamBet&&(()=>{
+        {isTeamBet&&!form.lt&&(()=>{
           const types=[
             {key:"moneyline",label:"Vainqueur"},
             {key:"handicap",label:"Handicap"},
@@ -1608,7 +1646,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── PARI JOUEUR : Over/Under (cases) · Ligne · Stat ── */}
-        {!isTeamBet&&(<>
+        {!isTeamBet&&!form.lt&&(<>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:14}}>
             {["Over","Under"].map(v=>{const on=form.ou===v;return(
               <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
