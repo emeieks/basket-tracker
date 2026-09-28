@@ -2942,7 +2942,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   else{result="→ "+eur(stake*odds);resultCol=C.blue;outLabel="Gain potentiel";out=eur(stake*odds);}
   const name=isTeam?(b.team||b.player):formatName(b.player);
   const parts=name.split(" ").filter(Boolean);
-  const lastName=isTeam||parts.length<2?name:parts[0][0]+"."+parts.slice(1).join(" ");
+  const lastName=isTeam||parts.length<2?name:parts[0][0]+". "+parts.slice(1).join(" ");
   const bkLogo=bkPhotos&&b.bookmaker?bkPhotos[b.bookmaker]:null;
   const lc=b.game?(LEAGUE_COLORS[b.game]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===String(b.game).toLowerCase())?.[1]||{p:"#3a4150"}):null;
   const st=b.status;
@@ -2972,23 +2972,23 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
-        <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-        <span style={{fontSize:14.5,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
+        <span style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
+        <span style={{fontSize:14,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
           {lastName}
         </span>
-        <span style={{flexShrink:0,padding:"2px 8px",borderRadius:6,background:"#fff",color:"#111",fontSize:11.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
-        <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13.5,overflow:"hidden"}}>
+        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
+        <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
-            <b key="o" style={{whiteSpace:"nowrap",color:"#DBE4FF"}}>@{String(b.odds).replace(".",",")}</b>,
-            <b key="m" style={{whiteSpace:"nowrap",color:"#DBE4FF"}}>{eur(stake,0)}</b>,
+            <b key="o" style={{whiteSpace:"nowrap",color:"#fff"}}>@{String(b.odds).replace(".",",")}</b>,
+            <b key="m" style={{whiteSpace:"nowrap",color:"#fff"}}>{eur(stake)}</b>,
             b.tipster&&<b key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4B5FD"}}>{b.tipster}</b>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#5B6478",flexShrink:0}}>•</span>{el}</React.Fragment>))}
         </span>
       </div>
       <span style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
-        {st==="pending"?<><b style={{display:"block",fontSize:12.5,color:"#5B9DFF"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds,0)}</span></>
-          :<b style={{fontSize:17,color:resultCol}}>{st==="void"?"Void":money(profit).replace(/,\d\d/,"")}</b>}
+        {st==="pending"?<><b style={{display:"block",fontSize:12.5,color:"#5B9DFF"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds)}</span></>
+          :<b style={{fontSize:15.5,color:resultCol}}>{st==="void"?"Void":money(profit)}</b>}
       </span>
     </article>
   );
@@ -3122,10 +3122,10 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:18,fontWeight:900,letterSpacing:-.2,whiteSpace:"nowrap",textTransform:"uppercase"}}>{m.label}</div>
                 <div style={{fontSize:14,color:"#8B92A0",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {m.bets.length} paris · {w}-{l} · <span style={{color:C.green,fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span> · {eur(allSt,0)}
+                  {m.bets.length} paris · {w}-{l} · <span style={{color:C.green,fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span>
                 </div>
               </div>
-              <span style={{flexShrink:0,textAlign:"right"}}><span style={{display:"block",fontSize:22,fontWeight:900,color:pColor(p),letterSpacing:-.4,whiteSpace:"nowrap"}}>{money(p).replace(/,\d\d/,"")}</span>
+              <span style={{flexShrink:0,textAlign:"right"}}><span style={{display:"block",fontSize:22,fontWeight:900,color:pColor(p),letterSpacing:-.4,whiteSpace:"nowrap"}}>{money(p)}</span>
                 <span style={{fontSize:12,color:pColor(roi)}}>{(roi>0?"+":"")+roi.toFixed(1).replace(".",",")}% ROI</span></span>
               <svg width="14" height="9" viewBox="0 0 14 9" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round"
                 style={{flexShrink:0,transition:"transform .2s",transform:isOpen?"rotate(180deg)":"none"}}><path d="M1 1.5l6 6 6-6"/></svg>
