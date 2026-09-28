@@ -3341,6 +3341,10 @@ function GroupPoster({kind,name,bets,onClose}){
     if(lgRow.current){try{await updateLeague(lgRow.current.id,{bg_url:url});}catch(e){console.warn("bg_url",e);}}};
   const saveLogo=async url=>{LEAGUE_LOGOS_DYNAMIC[name]=url;setLgLogo(url);if(lgRow.current)await updateLeague(lgRow.current.id,{logo:url});};
   const upload=async(blob,kind)=>{if(kind==="logo"){try{blob=await removeWhiteBg(blob,true);}catch(_){}}
+    if(kind==="bg"){try{const u=URL.createObjectURL(blob);const im=await loadImg(u);URL.revokeObjectURL(u);const k=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight));
+      if(im.naturalWidth<700)alert("Photo assez petite ("+im.naturalWidth+"px) : elle sera un peu floue, une image plus grande rendra mieux.");
+      const c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      blob=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.9));}catch(_){}}
     const url=await uploadAvatarBlob(blob,(kind==="bg"?"leaguebg_":"league_")+slug);await(kind==="bg"?saveBg(url):saveLogo(url));};
   const doPaste=async kind=>{setBusy(kind);try{const items=await navigator.clipboard.read();let blob=null;for(const it of items){const t=it.types.find(x=>x.startsWith("image/"));if(t){blob=await it.getType(t);break;}}
     if(!blob)throw new Error("Aucune image dans le presse-papier");await upload(blob,kind);setGear(false);}catch(e){alert("Erreur : "+e.message);}setBusy("");};
@@ -3368,8 +3372,9 @@ function GroupPoster({kind,name,bets,onClose}){
       <div style={{width:"100%",maxWidth:420,aspectRatio:"390/560",maxHeight:"86vh",position:"relative",overflow:"hidden",borderRadius:22,containerType:"inline-size",color:"#fff",
         background:"radial-gradient(90% 70% at 72% 40%,"+pc+" 0%,"+pc+"99 40%,#0b0d14 100%)",boxShadow:"0 24px 60px rgba(0,0,0,.6)"}}>
         {isLg&&bg?<>
-          <div style={{position:"absolute",inset:0,background:"url("+JSON.stringify(bg)+") center/cover"}}/>
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(8,6,4,.85) 100%)"}}/>
+          <div style={{position:"absolute",inset:-8,background:"url("+JSON.stringify(bg)+") center/cover",filter:"blur(1.2px) saturate(1.15)"}}/>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(8,6,4,.85) 100%),radial-gradient(120% 90% at 60% 40%,transparent 50%,rgba(0,0,0,.55) 100%)"}}/>
+          <div style={{position:"absolute",inset:0,opacity:.12,mixBlendMode:"overlay",backgroundImage:"url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>\")"}}/>
         </>:<div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 2px,transparent 2px 22px)"}}/>}
         {big&&!(isLg&&bg)&&<div aria-hidden="true" style={{position:"absolute",right:-8,top:"6%",fontSize:"min(140px, calc(90cqw / "+Math.max(3,big.length)*0.62+"))",fontWeight:900,letterSpacing:-3,
           color:"transparent",WebkitTextStroke:"1.5px "+sc+"66",whiteSpace:"nowrap",lineHeight:.85}}>{big}</div>}
@@ -4114,9 +4119,9 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
           </>);
         })()}
         {leagueMatches.length===0?(globalSearch.trim().length>=2?null:<SEmpty title="Aucune ligue trouvée"/>):(()=>{
-          const row=lg=>{const bgi=lg.bg_url||leagueBgDefault(lg.name);return(
+          const row=lg=>{let ls="";try{ls=localStorage.getItem("league_bg_"+lg.name)||"";}catch(e){}const bgi=lg.bg_url||ls||leagueBgDefault(lg.name);return(
             <div key={lg.id} style={{position:"relative",overflow:"hidden",background:bgi?"#000":"transparent"}}>
-              {bgi&&<><div style={{position:"absolute",inset:0,background:"url("+JSON.stringify(bgi)+") center 40%/cover"}}/>
+              {bgi&&<><div style={{position:"absolute",inset:-6,background:"url("+JSON.stringify(bgi)+") center 40%/cover",filter:"blur(1px)"}}/>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(10,10,14,.92) 0%,rgba(10,10,14,.7) 45%,rgba(10,10,14,.35) 100%)"}}/></>}
               <div style={{position:"relative"}}>
               <SRow
