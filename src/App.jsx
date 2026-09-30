@@ -547,7 +547,7 @@ img{image-rendering:auto;}
   background:radial-gradient(120% 80% at 0% 0%,rgba(91,157,255,.07),transparent 55%),linear-gradient(180deg,#23272F 0%,#1A1D23 100%);
   border:1px solid var(--cbd);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 24px -12px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.35);}
-.acard .pick-head span:first-child::before,.acard-h::before{content:"";display:inline-block;width:5px;height:15px;border-radius:3px;background:var(--ca);margin-right:8px;vertical-align:-2px;}
+.acard .pick-head span:first-child::before,.acard-h::before{content:"";display:inline-block;width:3px;height:13px;border-radius:2px;background:var(--ca);margin-right:8px;vertical-align:-2px;}
 .acard .pick-head{margin:0 0 10px;height:24px;font-size:14px;font-weight:700;color:#E6E9EF;}
 .acard-h{font-size:14px;font-weight:700;color:#E6E9EF;margin:0 0 10px;}
 .acard .fld-box{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
@@ -1342,6 +1342,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     ?getTeamLogo(form.team,players.find(p=>p.team===form.team)?.team_logo_url||null)
     :getTeamLogo(form.playerObj?.team,form.playerObj?.team_logo_url||null);
   const leagueLogo=form.game?getLeagueLogo(form.game):null;
+  const heroC=!tc?null:([tc.p,tc.s].filter(c=>c&&lum(c)>.02&&lum(c)<.6)[0]||null);
+  const shade=(h,k)=>{const n=parseInt(h.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(v*(1+k))));return "#"+[n>>16&255,n>>8&255,n&255].map(v=>f(v).toString(16).padStart(2,"0")).join("");};
   const nameParts=(isTeamBet?form.team:formatName(form.player)).trim().split(/\s+/);
   const firstLine=isTeamBet?"":nameParts[0]||"";
   const secondLine=isTeamBet?form.team:nameParts.slice(1).join(" ")||nameParts[0]||"";
@@ -1410,9 +1412,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Carte joueur ── */}
         {step!=="search"&&<div
           style={{marginTop:14,position:"relative",width:"100%",height:270,borderRadius:20,overflow:"hidden",containerType:"inline-size",
-            border:"1px solid "+C.line,background:`linear-gradient(135deg,${pc}40 0%,${C.card} 70%)`,
+            border:"1px solid "+(!isTeamBet&&heroC?"rgba(255,255,255,.12)":C.line),background:!isTeamBet&&heroC?`linear-gradient(120deg,${shade(heroC,-.35)} 0%,${heroC} 55%,${shade(heroC,-.2)} 100%)`:`linear-gradient(135deg,${pc}40 0%,${C.card} 70%)`,
+            boxShadow:!isTeamBet&&heroC?"inset 0 1px 0 rgba(255,255,255,.15),0 16px 30px -14px rgba(0,0,0,.8)":undefined,
             padding:0,color:C.text,textAlign:"left",display:"block"}}>
-          <span style={{position:"absolute",top:14,right:14,zIndex:2,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+          <span style={{position:"absolute",top:14,right:14,zIndex:2,display:"flex",flexDirection:isTeamBet?"column":"row-reverse",alignItems:isTeamBet?"flex-end":"center",gap:8}}>
             {!isTeamBet&&form.playerObj&&(
               <button type="button" aria-label="Réglages du joueur" className="press" onClick={openPlayerSettings}
                 style={{width:30,height:30,borderRadius:15,border:"none",cursor:"pointer",background:"rgba(0,0,0,.35)",
@@ -1426,7 +1429,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               Changer {isTeamBet?"d'équipe":"de joueur"}
             </button>
           </span>
-          {teamName&&(()=>{
+          {teamName&&isTeamBet&&(()=>{
             const tcol=getTeamColor(teamName);
             const stroke=(tcol&&tcol.s)||"#ffffff";
             const city=bigLabel(teamName);
@@ -1440,7 +1443,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               </span>
             );
           })()}
-          {teamLogoHeader&&(
+          {teamLogoHeader&&!isTeamBet&&<>
+            <img src={teamLogoHeader} alt="" aria-hidden="true" style={{position:"absolute",left:-70,top:-60,width:360,height:360,objectFit:"contain",opacity:.13,pointerEvents:"none",filter:"grayscale(1) brightness(2.2)",imageRendering:"auto"}}/>
+            <img src={teamLogoHeader} alt={teamName} style={{position:"absolute",left:16,top:16,width:50,height:50,objectFit:"contain",zIndex:2,pointerEvents:"none",filter:"drop-shadow(0 4px 10px rgba(0,0,0,.35))"}}/>
+          </>}
+          {teamLogoHeader&&isTeamBet&&(
             <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:6,top:isTeamBet?"50%":4,transform:isTeamBet?"translateY(-50%)":"none",
               width:isTeamBet?150:160,height:isTeamBet?150:160,objectFit:"contain",opacity:isTeamBet?1:.4,pointerEvents:"none",
               filter:isTeamBet?"drop-shadow(0 8px 24px rgba(0,0,0,.45))":"none"}}/>
@@ -1449,15 +1456,19 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             // Photos NBA (larges, beaucoup d'épaules) vs EuroLeague (serrées, en hauteur) : on égalise la taille de la tête
             <img src={playerPhoto} alt={form.player}
               onLoad={e=>{const im=e.currentTarget;const r=im.naturalWidth/(im.naturalHeight||1);im.style.height=r<0.95?"80%":r<1.25?"90%":"100%";}}
-              style={{position:"absolute",right:0,bottom:0,height:"100%",
-              maxWidth:"55%",objectFit:"contain",objectPosition:"50% 100%"}}/>
+              style={{position:"absolute",...(isTeamBet?{right:0}:{left:18}),bottom:0,height:"100%",
+              maxWidth:isTeamBet?"55%":"50%",objectFit:"contain",objectPosition:"50% 100%",filter:isTeamBet?undefined:"drop-shadow(0 10px 20px rgba(0,0,0,.35))"}}/>
           )}
-          <span style={{position:"absolute",left:18,top:20,bottom:18,right:"45%",display:"flex",flexDirection:"column",gap:8}}>
+          <span style={isTeamBet?{position:"absolute",left:18,top:20,bottom:18,right:"45%",display:"flex",flexDirection:"column",gap:8}
+            :{position:"absolute",right:18,top:56,bottom:16,left:"50%",display:"flex",flexDirection:"column",alignItems:"flex-end",textAlign:"right",gap:6,zIndex:1}}>
+            {!isTeamBet&&<span style={{fontSize:12.5,fontWeight:600,color:"rgba(255,255,255,.9)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{[teamName,form.playerObj?.role].filter(Boolean).join(" · ")}</span>}
             {(()=>{
               // Toujours sur une ligne : la police rétrécit avec la longueur (max 24 caractères)
               let full=((firstLine?firstLine+" "+secondLine:secondLine)||"").replace(/(^|[\s-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
               if(full.length>24)full=full.slice(0,23).trimEnd()+"…";
               const n=Math.max(full.length,8);
+              if(!isTeamBet){const pts=full.split(" ");const a=pts[0]||"",b=pts.slice(1).join(" ")||"";const L=Math.max(a.length,b.length,5);
+                return(<span style={{fontSize:"clamp(22px, calc(52cqw / "+(L*0.62).toFixed(2)+"), 38px)",fontWeight:900,lineHeight:.95,letterSpacing:-.5,textTransform:"uppercase",textShadow:"0 2px 12px rgba(0,0,0,.35)"}}>{a}{b&&<><br/>{b}</>}</span>);}
               return(
                 <span style={{position:"relative",zIndex:1,width:"calc(100cqw - 72px)",whiteSpace:"nowrap",overflow:"visible",
                   fontSize:"clamp(16px, calc((100cqw - 76px) / "+(n*0.56).toFixed(2)+"), 28px)",fontWeight:600,letterSpacing:-.5,lineHeight:1.08,
@@ -1468,16 +1479,16 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               {(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})}
               {" · "}{(editBet?.created_at?new Date(editBet.created_at):new Date()).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
             </span>
-            <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
+            <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0,justifyContent:isTeamBet?"flex-start":"flex-end"}}>
               {isTeamBet&&(
                 <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>Équipe</span>
               )}
-              {!isTeamBet&&form.playerObj?.role&&(
+              {false&&!isTeamBet&&form.playerObj?.role&&(
                 <span style={{padding:"2px 7px",borderRadius:6,background:"rgba(255,255,255,.16)",color:"#fff",fontSize:11,fontWeight:700,flexShrink:0}}>
                   {form.playerObj.role}
                 </span>
               )}
-              {teamName&&!isTeamBet&&<MiniLogo src={teamLogoHeader} label={teamName} size={22}/>}
+
 
               {form.game&&(
                 <span role="button" tabIndex={0} aria-label={"Ligue : "+form.game+". Changer de compétition"}
@@ -1496,10 +1507,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               if(!isTeamBet&&(form.ou||form.line||form.stat))rows.push(<span key="l" style={{color:"#fff",fontWeight:600}}>
                 {[form.ou,form.line,form.stat?statFR(form.stat):""].filter(Boolean).join(" ")}</span>);
               const W=(k,l,v)=>rows.push(<span key={k}>{l} <b style={{color:"#fff",fontWeight:600}}>{v}</b></span>);
-              if(form.odds)W("o","Cote",form.odds);
-              if(form.stake)W("s","Mise",eur(parseFloat(String(form.stake).replace(",","."))||0));
-              if(form.tipster)W("t","Tipster",form.tipster);
-              if(form.bookmaker)W("b","Bookmaker",form.bookmaker);
+
               return rows.length?<span style={{marginTop:"auto",display:"flex",flexDirection:"column",gap:2,fontSize:13,color:"rgba(255,255,255,.72)",whiteSpace:"nowrap"}}>{rows}</span>:null;
             })()}
           </span>
@@ -1680,8 +1688,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
             <label style={{flex:1,minWidth:0,cursor:"text"}}>
               <div className="acard-h" style={{marginBottom:4}}>Cote</div>
-              <input type="number" step="0.01" inputMode="decimal" placeholder="1,85" value={form.odds}
-                onChange={e=>f("odds",e.target.value)}
+              <input type="text" inputMode="decimal" placeholder="1,85" value={String(form.odds||"").replace(".",",")}
+                onChange={e=>f("odds",e.target.value.replace(",","."))}
                 onBlur={e=>{const n=parseFloat(e.target.value.replace(",","."));if(!isNaN(n)&&n>=100)f("odds",(n/100).toFixed(2));}}
                 className="big-in"/>
             </label>
@@ -1709,8 +1717,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div className="acard-h" style={{marginBottom:4}}>Mise</div>
           <div style={{display:"flex",alignItems:"baseline",gap:6}}>
             <input type="number" inputMode="decimal" placeholder="0" value={form.stake}
-              onChange={e=>f("stake",e.target.value)} className="big-in" style={{flex:"none",width:(Math.max(1,String(form.stake||"0").length)*0.68+0.3)+"em"}}/>
-            <span style={{fontSize:17,fontWeight:800,color:C.sub}}>€</span>
+              onChange={e=>f("stake",e.target.value)} className="big-in" style={{flex:"none",width:(Math.max(1,String(form.stake||"0").length)+0.3)+"ch"}}/>
+            <span style={{fontSize:20,fontWeight:800,color:C.sub,marginLeft:-2}}>€</span>
             {stakeN>0&&oddsN>0&&<span style={{marginLeft:"auto",fontSize:13.5,fontWeight:800,color:"#4ADE80",whiteSpace:"nowrap"}}>→ +{(stakeN*(oddsN-1)).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})} €</span>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:6,marginTop:10}}>
@@ -1835,12 +1843,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               background:why?"#262B35":form.status==="won"?"#16A34A":form.status==="lost"?"#DC2626":btnBg,color:why?C.sub:(form.status==="won"||form.status==="lost")?"#fff":btnFg,boxShadow:why?"none":"0 6px 24px "+(form.status==="won"?"#16A34A":form.status==="lost"?"#DC2626":btnBg)+"40",
               fontSize:16,fontWeight:600,letterSpacing:.3,opacity:saving?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {why?why:saving?"Enregistrement…":<>
-{(()=>{const st=form.status;const fmt=v=>(Math.round(v*100)/100).toLocaleString("fr-FR",{maximumFractionDigits:2})+" €";
-                const g=stakeN&&oddsN?stakeN*(oddsN-1):0;const base=editBet?"MODIFIER":"AJOUTER";
-                if(st==="won")return base+(g?" - GAIN "+fmt(g):" - GAGNÉ");
-                if(st==="lost")return base+" - PERDU"+(stakeN?" - "+fmt(stakeN):"");
-                if(st==="void")return base+" - REMBOURSÉ";
-                return base+(g?" - GAIN POTENTIEL "+fmt(g):"");})()}
+{(()=>{const st=form.status;const fmt=v=>(Math.round(v*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+                const g=stakeN&&oddsN?stakeN*(oddsN-1):0;const base=editBet?"Modifier":"Ajouter";
+                if(st==="won")return base+(g?" · Gain +"+fmt(g):" · Gagné");
+                if(st==="lost")return base+" · Perdu"+(stakeN?" −"+fmt(stakeN):"");
+                if(st==="void")return base+" · Remboursé";
+                return base+(g?" · Gain +"+fmt(g):"");})()}
             </>}
           </button>);})()}
         </div>
