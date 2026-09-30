@@ -542,19 +542,20 @@ img{image-rendering:auto;}
 .sent-sel:focus-visible{background-color:rgba(91,157,255,.1);}
 .sent-sel option{background:#1C1F26;color:#F2F3F5;}
 .fld-box input::placeholder{color:transparent;}
-.acard{position:relative;margin-top:14px;padding:14px;border-radius:20px;
+.acard{position:relative;margin-top:14px;padding:14px;border-radius:20px;--ca:#5B9DFF;--cag:rgba(91,157,255,.3);--cab:rgba(91,157,255,.14);--cbd:rgba(255,255,255,.06);
   background:radial-gradient(120% 80% at 0% 0%,rgba(91,157,255,.07),transparent 55%),linear-gradient(180deg,#23272F 0%,#1A1D23 100%);
-  border:1px solid rgba(255,255,255,.06);
+  border:1px solid var(--cbd);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 24px -12px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.35);}
+.acard .pick-head span:first-child::before,.acard-h::before{content:"";display:inline-block;width:5px;height:15px;border-radius:3px;background:var(--ca);margin-right:8px;vertical-align:-2px;}
 .acard .pick-head{margin:0 0 10px;height:24px;font-size:14px;font-weight:700;color:#E6E9EF;}
 .acard-h{font-size:14px;font-weight:700;color:#E6E9EF;margin:0 0 10px;}
-.acard .fld-box{background:#14171C;border-color:rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
-.acard .fld-box:focus-within{border-color:#5B9DFF;}
+.acard .fld-box{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
+.acard .fld-box:focus-within{border-color:var(--ca);}
 .acard .chip-row{margin:0;padding:0 0 2px;}
-.acard .pick-chip.logo{width:60px;height:56px;border-radius:14px;background:#14171C;border:1px solid rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
-.acard .pick-chip.logo.on{background:rgba(91,157,255,.14);border:1.5px solid #5B9DFF;box-shadow:0 0 16px rgba(91,157,255,.25);}
-.acard .pick-chip{background:#14171C;border-color:rgba(255,255,255,.07);}
-.acard .segment{background:#14171C;box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
+.acard .pick-chip.logo{width:60px;height:56px;border-radius:14px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
+.acard .pick-chip.logo.on{background:var(--cab);border:1.5px solid var(--ca);box-shadow:0 0 16px var(--cag);}
+.acard .pick-chip{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.07);}
+.acard .segment{background:rgba(0,0,0,.32);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
 /* animations */
 @keyframes drawLine{from{stroke-dasharray:1;stroke-dashoffset:1;}to{stroke-dasharray:1;stroke-dashoffset:0;}}
 .draw-line{animation:drawLine 1.1s cubic-bezier(.3,.7,.2,1) both;}
@@ -1322,7 +1323,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const pc=tc?.p||"#EBEBEB";
   const lum=h=>{const n=parseInt((h||"#000").slice(1),16);const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*c[0]+.7152*c[1]+.0722*c[2];};
   // couleur principale du club ; si elle est presque noire, on prend la secondaire
-  const btnBg=!tc?C.blue:(lum(tc.p)<.03&&tc.s?tc.s:tc.p);
+  const pickA=()=>{if(!tc)return C.blue;const cs=[tc.p,tc.s].filter(Boolean).filter(c=>lum(c)<.75);if(!cs.length)return tc.p;return cs.reduce((a,b)=>lum(b)>lum(a)?b:a);};
+  const btnBg=pickA();
+  const baseC=!tc?"#1C2A4A":([tc.p,tc.s].filter(c=>c&&c!==btnBg&&lum(c)<.75)[0]||btnBg);
+  const hexA=(h,a)=>{const n=parseInt((h||"#000").slice(1),16);return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")";};
+  const clubVars={"--ca":btnBg,"--cag":hexA(btnBg,.35),"--cab":hexA(btnBg,.16),"--cbd":hexA(btnBg,.22),
+    background:"linear-gradient(180deg,"+hexA(baseC,.34)+" 0%,"+hexA(baseC,.14)+" 100%),#15171D"};
   const btnFg=lum(btnBg)>.35?"#0C1424":"#FFFFFF";
 
   // ── ÉTAPE 2 : Formulaire ──────────────────────────────────────
@@ -1626,7 +1632,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           );
         })()}
         {/* ── Bookmaker ── */}
-        <div className="acard">
+        <div className="acard" style={clubVars}>
         <div className="pick-head">
           <span>Bookmaker</span>{lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
         </div>
@@ -1644,13 +1650,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── PARI JOUEUR : Over/Under (cases) · Ligne · Stat ── */}
-        {!isTeamBet&&!form.lt&&(<div className="acard">
+        {!isTeamBet&&!form.lt&&(<div className="acard" style={clubVars}>
           <div className="acard-h">Type de pari</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {["Over","Under"].map(v=>{const on=form.ou===v;return(
               <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
                 style={{height:54,borderRadius:14,cursor:"pointer",fontFamily:"inherit",fontSize:16,fontWeight:900,letterSpacing:1,textTransform:"uppercase",
-                  border:on?"1.5px solid "+(v==="Over"?"#22E07A":"#60A5FA"):"1px solid rgba(255,255,255,.06)",background:on?(v==="Over"?"rgba(34,224,122,.12)":"rgba(96,165,250,.12)"):"#14171C",color:on?(v==="Over"?"#22E07A":"#60A5FA"):"#5B6478",boxShadow:on?"0 0 16px "+(v==="Over"?"rgba(34,224,122,.2)":"rgba(96,165,250,.2)"):"none",transition:"all .15s"}}>
+                  border:on?"none":"1px solid rgba(255,255,255,.06)",background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:"rgba(255,255,255,.4)",boxShadow:on?"0 8px 20px -6px "+hexA(btnBg,.55):"none",transition:"all .15s"}}>
                 {v}
               </button>);})}
           </div>
@@ -1680,7 +1686,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── Cote + Mise ── */}
-        <div className="acard">
+        <div className="acard" style={clubVars}>
         <div className="acard-h">Cote &amp; Mise</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
           <label className="fld-box">Cote
@@ -1701,8 +1707,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             const active=String(form.stake)===String(val);
             return(
               <button key={val} type="button" onClick={()=>f("stake",String(val))}
-                style={{height:36,borderRadius:11,cursor:"pointer",border:active?"1.5px solid #5B9DFF":"1px solid rgba(255,255,255,.06)",
-                  background:active?"rgba(91,157,255,.16)":"#14171C",color:active?"#BFD6FF":C.sub,
+                style={{height:36,borderRadius:11,cursor:"pointer",border:"none",
+                  background:active?btnBg:"rgba(0,0,0,.32)",color:active?btnFg:C.sub,
                   fontSize:12,fontWeight:700,lineHeight:1.2}}>
                 {pct}
               </button>
@@ -1712,7 +1718,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── Tipster ── */}
-        <div className="acard">
+        <div className="acard" style={clubVars}>
         <div className="pick-head">
           <span>Tipster</span>{lockBtn(lockedTip,()=>setLockedTip(p=>!p),"Verrouiller le tipster")}
         </div>
@@ -1722,7 +1728,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               const on=form.tipster===tp.name;
               return(
                 <button key={tp.id} type="button" className="pick-chip" onClick={()=>f("tipster",on?"":tp.name)}
-                  style={on?{background:"rgba(91,157,255,.16)",color:"#fff",borderColor:"#5B9DFF",fontWeight:700}:undefined}>
+                  style={on?{background:btnBg,color:btnFg,borderColor:btnBg,fontWeight:800}:undefined}>
                   {tp.name}
                 </button>
               );
@@ -1734,7 +1740,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── Statut ── */}
-        <div className="acard">
+        <div className="acard" style={clubVars}>
         <div className="pick-head"><span>Résultat</span></div>
         <div className="segment">
           {[{key:"pending",label:"En cours"},{key:"won",label:"Gagné"},{key:"lost",label:"Perdu"},{key:"void",label:"Void"}].map(({key,label})=>{
