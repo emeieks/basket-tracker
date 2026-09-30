@@ -463,14 +463,15 @@ async function pasteImageRaw(name){
 }
 
 // ── STYLES CSS ────────────────────────────────────────────────────────────────
-const CSS=`
+const CSS=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
+.sysfont,.sysfont *{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif!important;}
 body{
   background:#14161B;
   color:#F2F2F7;
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
   font-variant-numeric:tabular-nums;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
@@ -555,6 +556,9 @@ img{image-rendering:auto;}
 .acard .pick-chip.logo{width:60px;height:56px;border-radius:14px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.05);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
 .acard .pick-chip.logo.on{background:var(--cab);border:1.5px solid var(--ca);box-shadow:0 0 16px var(--cag);}
 .acard .pick-chip{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.07);}
+.big-in{border:none;background:transparent;color:#fff;font-size:30px;font-weight:900;outline:none;padding:0;width:100%;font-family:inherit;-moz-appearance:textfield;}
+.big-in::-webkit-outer-spin-button,.big-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.big-in::placeholder{color:#3A404C;}
 .acard .segment{background:rgba(0,0,0,.32);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
 /* animations */
 @keyframes drawLine{from{stroke-dasharray:1;stroke-dashoffset:1;}to{stroke-dasharray:1;stroke-dashoffset:0;}}
@@ -1631,114 +1635,114 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             </>
           );
         })()}
-        {/* ── Bookmaker ── */}
+        {/* ── PARI JOUEUR : Over / Under ── */}
+        {!isTeamBet&&!form.lt&&(<>
         <div className="acard" style={clubVars}>
-        <div className="pick-head">
-          <span>Bookmaker</span>{lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
-        </div>
-        <div className="chip-row">
-          {bookmakers.map(bk=>{
-            const on=form.bookmaker===bk;
-            return(
-              <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
-                onClick={()=>f("bookmaker",on?"":bk)}>
-                <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
-              </button>
-            );
-          })}
-        </div>
-        </div>
-
-        {/* ── PARI JOUEUR : Over/Under (cases) · Ligne · Stat ── */}
-        {!isTeamBet&&!form.lt&&(<div className="acard" style={clubVars}>
-          <div className="acard-h">Type de pari</div>
+          <div className="acard-h">Over / Under</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {["Over","Under"].map(v=>{const on=form.ou===v;return(
               <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
-                style={{height:54,borderRadius:14,cursor:"pointer",fontFamily:"inherit",fontSize:16,fontWeight:900,letterSpacing:1,textTransform:"uppercase",
-                  border:on?"none":"1px solid rgba(255,255,255,.06)",background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:"rgba(255,255,255,.4)",boxShadow:on?"0 8px 20px -6px "+hexA(btnBg,.55):"none",transition:"all .15s"}}>
-                {v}
+                style={{height:56,borderRadius:15,cursor:"pointer",fontFamily:"inherit",fontSize:17,fontWeight:800,
+                  border:"none",background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:"rgba(255,255,255,.4)",boxShadow:on?"0 8px 20px -6px "+hexA(btnBg,.55):"inset 0 2px 5px rgba(0,0,0,.45)",transition:"all .15s"}}>
+                {v==="Over"?"▲ ":"▼ "}{v}
               </button>);})}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1.4fr)",gap:10,marginTop:10}}>
-            <label className="fld-box" style={{position:"relative"}}>Ligne
-              <select aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}
-                style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?C.text:C.sub,
-                  fontSize:17,fontWeight:600,fontFamily:"inherit",padding:0,outline:"none",width:"100%",colorScheme:"dark"}}>
-                <option value="">—</option>
-                {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v}>{v}</option>)}
-              </select>
-              <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.sub,pointerEvents:"none"}}>▾</span>
+        </div>
+        {/* ── Ligne | Stat ── */}
+        <div className="acard" style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0}}>
+          <label style={{flex:1,position:"relative",padding:"14px 16px",cursor:"pointer"}}>
+            <div className="acard-h" style={{marginBottom:4}}>Ligne</div>
+            <select aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}
+              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
+                fontSize:30,fontWeight:900,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
+              <option value="">—</option>
+              {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+          </label>
+          <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
+          <label style={{flex:1.3,position:"relative",padding:"14px 16px",cursor:"pointer",minWidth:0}}>
+            <div className="acard-h" style={{marginBottom:4}}>Stat</div>
+            <select aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}
+              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
+                fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:900,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              <option value="">Choisir</option>
+              {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+                "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
+                "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s}>{statFR(s)}</option>)}
+            </select>
+          </label>
+        </div>
+        </>)}
+        </div>
+
+        {/* ── Cote + Bookmaker ── */}
+        <div className="acard" style={clubVars}>
+          <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
+            <label style={{flex:1,minWidth:0,cursor:"text"}}>
+              <div className="acard-h" style={{marginBottom:4}}>Cote</div>
+              <input type="number" step="0.01" inputMode="decimal" placeholder="1,85" value={form.odds}
+                onChange={e=>f("odds",e.target.value)}
+                onBlur={e=>{const n=parseFloat(e.target.value.replace(",","."));if(!isNaN(n)&&n>=100)f("odds",(n/100).toFixed(2));}}
+                className="big-in"/>
             </label>
-            <label className="fld-box" style={{position:"relative"}}>Stat
-              <select aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}
-                style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?C.text:C.sub,
-                  fontSize:17,fontWeight:600,fontFamily:"inherit",padding:0,outline:"none",width:"100%",colorScheme:"dark"}}>
-                <option value="">Choisir</option>
-                {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
-                  "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                  "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s}>{statFR(s)}</option>)}
-              </select>
-              <span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.sub,pointerEvents:"none"}}>▾</span>
-            </label>
+            <div style={{textAlign:"right",paddingBottom:4,minWidth:0}}>
+              <div style={{fontSize:11.5,color:C.sub}}>Bookmaker</div>
+              <div style={{fontSize:14,fontWeight:800,color:form.bookmaker?"#fff":C.dim,whiteSpace:"nowrap"}}>{form.bookmaker||"—"}</div>
+            </div>
+            {lockBtn(lockedBK,()=>setLockedBK(p=>!p),"Verrouiller le bookmaker")}
           </div>
-        </div>)}
-        </div>
-
-        {/* ── Cote + Mise ── */}
-        <div className="acard" style={clubVars}>
-        <div className="acard-h">Cote &amp; Mise</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
-          <label className="fld-box">Cote
-            <input type="number" step="0.01" inputMode="decimal" placeholder="" value={form.odds}
-              onChange={e=>f("odds",e.target.value)}
-              onBlur={e=>{
-                const n=parseFloat(e.target.value.replace(",","."));
-                if(!isNaN(n)&&n>=100)f("odds",(n/100).toFixed(2));
-              }}/>
-          </label>
-          <label className="fld-box">Mise (€)
-            <input type="number" inputMode="decimal" placeholder="" value={form.stake}
-              onChange={e=>f("stake",e.target.value)}/>
-          </label>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:6,marginTop:8}}>
-          {[{pct:"0.5%",val:50},{pct:"0.75%",val:75},{pct:"1%",val:100},{pct:"1.25%",val:125},{pct:"1.5%",val:150}].map(({pct,val})=>{
-            const active=String(form.stake)===String(val);
-            return(
-              <button key={val} type="button" onClick={()=>f("stake",String(val))}
-                style={{height:36,borderRadius:11,cursor:"pointer",border:"none",
-                  background:active?btnBg:"rgba(0,0,0,.32)",color:active?btnFg:C.sub,
-                  fontSize:12,fontWeight:700,lineHeight:1.2}}>
-                {pct}
-              </button>
-            );
-          })}
-        </div>
-        </div>
-
-        {/* ── Tipster ── */}
-        <div className="acard" style={clubVars}>
-        <div className="pick-head">
-          <span>Tipster</span>{lockBtn(lockedTip,()=>setLockedTip(p=>!p),"Verrouiller le tipster")}
-        </div>
-        {tipsters.length>0?(
-          <div className="chip-row">
-            {tipsters.map(tp=>{
-              const on=form.tipster===tp.name;
+          <div className="chip-row" style={{marginTop:10}}>
+            {bookmakers.map(bk=>{
+              const on=form.bookmaker===bk;
               return(
-                <button key={tp.id} type="button" className="pick-chip" onClick={()=>f("tipster",on?"":tp.name)}
-                  style={on?{background:btnBg,color:btnFg,borderColor:btnBg,fontWeight:800}:undefined}>
-                  {tp.name}
+                <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
+                  onClick={()=>f("bookmaker",on?"":bk)}>
+                  <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
                 </button>
               );
             })}
           </div>
-        ):(
-          <input className="form-input" placeholder="Nom du tipster (optionnel)" value={form.tipster} onChange={e=>f("tipster",e.target.value)}/>
-        )}
         </div>
 
+        {/* ── Mise ── */}
+        <div className="acard" style={clubVars}>
+          <div className="acard-h" style={{marginBottom:4}}>Mise</div>
+          <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+            <input type="number" inputMode="decimal" placeholder="0" value={form.stake}
+              onChange={e=>f("stake",e.target.value)} className="big-in" style={{flex:"none",width:(Math.max(1,String(form.stake||"0").length)*0.68+0.3)+"em"}}/>
+            <span style={{fontSize:17,fontWeight:800,color:C.sub}}>€</span>
+            {stakeN>0&&oddsN>0&&<span style={{marginLeft:"auto",fontSize:13.5,fontWeight:800,color:"#4ADE80",whiteSpace:"nowrap"}}>→ +{(stakeN*(oddsN-1)).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})} €</span>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:6,marginTop:10}}>
+            {[{pct:"0.5%",val:50},{pct:"0.75%",val:75},{pct:"1%",val:100},{pct:"1.25%",val:125},{pct:"1.5%",val:150}].map(({pct,val})=>{
+              const active=String(form.stake)===String(val);
+              return(
+                <button key={val} type="button" onClick={()=>f("stake",String(val))}
+                  style={{height:38,borderRadius:11,cursor:"pointer",border:"none",
+                    background:active?btnBg:"rgba(0,0,0,.32)",color:active?btnFg:C.sub,boxShadow:active?"0 6px 16px -6px "+hexA(btnBg,.55):"inset 0 2px 5px rgba(0,0,0,.45)",
+                    fontSize:12.5,fontWeight:800,lineHeight:1.2}}>
+                  {pct}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Tipster ── */}
+        <div className="acard" style={{...clubVars,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+          <div className="acard-h" style={{margin:0}}>Tipster</div>
+          <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
+            {tipsters.length>0?tipsters.map(tp=>{
+              const on=form.tipster===tp.name;
+              return(
+                <button key={tp.id} type="button" onClick={()=>f("tipster",on?"":tp.name)}
+                  style={{padding:"8px 13px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13.5,fontWeight:800,
+                    background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:C.sub}}>{tp.name}</button>
+              );
+            }):<input className="form-input" placeholder="Nom (optionnel)" value={form.tipster} onChange={e=>f("tipster",e.target.value)} style={{height:38,width:160}}/>}
+            {lockBtn(lockedTip,()=>setLockedTip(p=>!p),"Verrouiller le tipster")}
+          </div>
+        </div>
         {/* ── Statut ── */}
         <div className="acard" style={clubVars}>
         <div className="pick-head"><span>Résultat</span></div>
@@ -2444,7 +2448,7 @@ function PlayerFace({src,name,size=46,team=null}){
 }
 
 // Carte liste (Ligues, Marchés…) avec chevron
-function ListCard({rows,chevron=false,onRow}){
+function ListCard({rows,chevron=false,onRow,numFont=false}){
   return(
     <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
       {rows.map((r,i)=>(
@@ -2453,9 +2457,9 @@ function ListCard({rows,chevron=false,onRow}){
           {r.logo!==undefined&&<MiniLogo src={r.logo} label={r.name} size={32} round={false}/>}
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:16,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</div>
-            <div style={{fontSize:13,color:C.sub,marginTop:1}}>{r.meta}</div>
+            <div className={numFont?"sysfont":undefined} style={{fontSize:13,color:C.sub,marginTop:1}}>{r.meta}</div>
           </div>
-          <span style={{fontSize:16,fontWeight:500,color:pColor(r.profit)}}>{money(r.profit)}</span>
+          <span className={numFont?"sysfont":undefined} style={{fontSize:16,fontWeight:500,color:pColor(r.profit)}}>{money(r.profit)}</span>
           {chevron&&<span style={{display:"flex",marginLeft:2}}>{Ico.chevron}</span>}
         </div>
       ))}
@@ -2908,14 +2912,14 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:2}}>
               <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
-                <div style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
+                <div className="sysfont" style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
               <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>Progression</div>
-                <div style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}>{(pp>0?"+":"")+(pp/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}</div></div>
+                <div className="sysfont" style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}>{(pp>0?"+":"")+(pp/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}</div></div>
               <div style={{textAlign:"right"}}><div style={{fontSize:13,color:C.sub}}>Bilan</div>
-                <div style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
+                <div className="sysfont" style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
             </div>
 
-            <div style={{marginTop:14,borderRadius:16,padding:"14px 10px 8px",background:"#181B21",border:"1px solid "+C.line,position:"relative"}}>
+            <div className="sysfont" style={{marginTop:14,borderRadius:16,padding:"14px 10px 8px",background:"#181B21",border:"1px solid "+C.line,position:"relative"}}>
               <span style={{position:"absolute",right:14,top:10,fontSize:12,color:C.sub,zIndex:1}}>{fmt(pp)}</span>
               <BankrollChart key={period+pOff} bets={pb} height={160} fmt={fmt}/>
             </div>
@@ -2940,7 +2944,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:5,fontSize:11,color:C.dim,textAlign:"center"}}>
         {["L","M","M","J","V","S","D"].map((d,i)=><span key={i}>{d}</span>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:5,marginTop:6}}>
+      <div className="sysfont" style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:5,marginTop:6}}>
         {Array.from({length:offset}).map((_,i)=><div key={"e"+i}/>)}
         {Array.from({length:daysInMonth},(_,i)=>i+1).map(day=>{
           const v=dayP[day];
@@ -2964,7 +2968,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
           <span style={{fontSize:18,fontWeight:600,letterSpacing:-.3}}>Ligues</span>
           <button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>
         </div>
-        <ListCard rows={leagueRows} chevron onRow={()=>onNavigate("stats")}/>
+        <ListCard rows={leagueRows} chevron numFont onRow={()=>onNavigate("stats")}/>
       </>}
     </div>
   );
@@ -5168,7 +5172,7 @@ export default function App(){
         </div>
 
         <div key={view} className="view-in" style={{paddingTop:4}}>
-          {view==="home"&&<HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
+          {view==="home"&&<div><HomeView bets={bets} players={players} onNavigate={setView} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/></div>}
           {view==="bets"&&<BetsView bets={bets} players={players} bookmakers={bookmakers}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
