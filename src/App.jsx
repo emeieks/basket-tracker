@@ -3543,8 +3543,7 @@ function TileLogo({src,size=38}){
       const tot=d.length/4;const v=op>0&&op<tot*.8&&lum/op<.32&&col/op<.2;_DARKLOGO[src]=v;if(alive)setDark(v);}).catch(()=>{_DARKLOGO[src]=false;if(alive)setDark(false);});
     return()=>{alive=false;};},[src]);
   // Logo toujours dans le même cadre (même place, même taille) quel que soit son format
-  return <span style={{position:"absolute",left:10,top:10,width:size+8,height:size+8,borderRadius:12,background:"rgba(10,12,16,.45)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",
-    boxShadow:"inset 0 0 0 1px rgba(255,255,255,.12)",display:"flex",alignItems:"center",justifyContent:"center"}}><img src={src} alt="" style={{width:size-6,height:size-6,objectFit:"contain",borderRadius:4,
+  return <span style={{position:"absolute",left:10,top:10,width:size+8,height:size+8,display:"flex",alignItems:"center",justifyContent:"center"}}><img src={src} alt="" style={{width:size+4,height:size+4,objectFit:"contain",borderRadius:4,
     filter:dark?"brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.6))":"drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 6px rgba(255,255,255,.35)) drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/></span>;
 }
 function PlayerStatSearch({players,bets,onChanged}){
