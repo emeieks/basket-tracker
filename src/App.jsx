@@ -1973,6 +1973,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const[dropdown,setDropdown]=useState(null); // "bookmaker"|"tipster"|"game"
   const[saveAnim,setSaveAnim]=useState(false);
   const[editMode,setEditMode]=useState(false);
+  const editRef=useRef(null);
+  const toggleEdit=()=>setEditMode(v=>{const n=!v;if(n)setTimeout(()=>editRef.current&&editRef.current.scrollIntoView({behavior:"smooth",block:"start"}),60);return n;});
   const legs=bet._group||null;
   const[legEdits,setLegEdits]=useState({}); // {id:{odds,stake}}
   const[other,setOther]=useState(null); // {bookmaker,odds,stake}
@@ -2100,6 +2102,12 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               background:"rgba(0,0,0,.35)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
+          <button type="button" aria-label="Modifier le pari" onClick={toggleEdit} className="press"
+            style={{position:"absolute",top:14,right:56,height:34,padding:"0 12px",borderRadius:17,border:"none",zIndex:3,
+              background:editMode?C.green:"rgba(0,0,0,.35)",color:editMode?"#05231A":"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontWeight:700,fontFamily:"inherit"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            {editMode?"Fermer":"Modifier"}
+          </button>
           <div style={{position:"absolute",left:18,top:26,bottom:18,right:"46%",display:"flex",flexDirection:"column",gap:6,zIndex:2}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"3px 10px",borderRadius:12,
@@ -2153,13 +2161,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 style={{flex:1,height:40,borderRadius:12,border:"1px solid "+(on?"rgba(255,255,255,.5)":C.line),background:on?"rgba(255,255,255,.08)":"transparent",color:on?"#fff":C.sub,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>);})}
           </div>
 
-          <button type="button" className="press" onClick={()=>setEditMode(v=>!v)}
-            style={{width:"100%",marginTop:14,height:46,borderRadius:14,border:"1px solid "+(editMode?C.green+"88":C.line),background:editMode?"rgba(52,211,153,.08)":C.card,color:editMode?C.green:C.text,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            {editMode?"Fermer la modification":"Modifier le pari"}
-          </button>
-
-          {editMode&&<div className="fade-in" style={{marginTop:12}}>
+          {editMode&&<div ref={editRef} className="fade-in" style={{marginTop:12,scrollMarginTop:8}}>
           {(()=>{
             const pd=!isTeamBet?parseDesc(localBet.description):null;
             if(!pd)return(
@@ -2339,13 +2341,15 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                   style={{border:"none",background:"transparent",color:C.sub,fontSize:20,cursor:"pointer",width:32,height:32}}>×</button>
               </div>
               <div style={{fontSize:13,color:C.sub,margin:"2px 0 10px"}}>{descFR(localBet.description)} · même statut et même date</div>
-              <div className="chip-row" style={{margin:"0 -14px",padding:"0 14px 2px"}}>
-                {bookmakerList.filter(bk=>legs?!legs.some(l=>l.bookmaker===bk.name):bk.name!==localBet.bookmaker).map(bk=>{
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {bookmakerList.filter(bk=>!bk.hidden&&(legs?!legs.some(l=>l.bookmaker===bk.name):bk.name!==localBet.bookmaker)).map(bk=>{
                   const on=other.bookmaker===bk.name;
                   return(
-                    <button key={bk.name} type="button" className={"pick-chip"+(on?" on":"")}
-                      onClick={()=>setOther(o=>({...o,bookmaker:on?"":bk.name}))}>
-                      <BkBadge src={bk.logo} label={bk.name} size={18}/>{bk.name}
+                    <button key={bk.name} type="button" title={bk.name} aria-label={bk.name} aria-pressed={on}
+                      onClick={()=>setOther(o=>({...o,bookmaker:on?"":bk.name}))}
+                      style={{width:48,height:48,padding:0,borderRadius:14,border:"2px solid "+(on?C.green:"transparent"),background:"transparent",cursor:"pointer",
+                        opacity:other.bookmaker&&!on?.4:1,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}}>
+                      <BkBadge src={bk.logo} label={bk.name} size={40}/>
                     </button>
                   );
                 })}
@@ -5462,7 +5466,7 @@ export default function App(){
             bet={selectedBet}
             players={players}
             bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
-            bookmakerList={bookmakers.map(bk=>({name:bk.name,logo:bk.logo}))}
+            bookmakerList={bookmakers.map(bk=>({name:bk.name,logo:bk.logo,hidden:!!bk.hidden}))}
             tipsterList={tipsters}
             leagueList={leagues}
             onClose={()=>setSelectedBet(null)}
