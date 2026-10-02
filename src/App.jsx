@@ -498,14 +498,15 @@ img{image-rendering:auto;}
   width:52px;height:40px;display:flex;align-items:center;justify-content:center;
   border:none;background:transparent;color:#6B7280;cursor:pointer;transition:color .15s;
 }
-.nav-btn.active{color:#5B9DFF;}
+.nav-btn.active{color:#34D399;}
 .nav-add{
-  width:44px;height:44px;border-radius:14px;background:#5B9DFF;border:none;color:#0C1424;
+  width:44px;height:44px;border-radius:14px;background:#34D399;border:none;color:#05231A;
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s;
 }
 .nav-add:active{transform:scale(.92);}
 
 /* ── HEADER ── */
+.app::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#14161B;z-index:450;pointer-events:none;}
 .header{padding:calc(18px + env(safe-area-inset-top)) 20px 10px;display:flex;align-items:center;justify-content:space-between;}
 .header-title{font-size:32px;font-weight:700;color:#F2F3F5;letter-spacing:-.6px;}
 
@@ -513,11 +514,11 @@ img{image-rendering:auto;}
 .fld{width:100%;height:54px;background:#1C1F26 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238B92A0' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
   border:1px solid #252A34;border-radius:14px;color:#F2F3F5;padding:0 30px 0 12px;font-size:16px;font-weight:600;
   appearance:none;-webkit-appearance:none;outline:none;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.fld:focus{border-color:#5B9DFF;}
+.fld:focus{border-color:#34D399;}
 .fld option{background:#1C1F26;color:#F2F3F5;}
 .fld-box{height:62px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 14px;
   background:#1C1F26;border:1px solid #252A34;border-radius:14px;font-size:12px;color:#8B92A0;}
-.fld-box:focus-within{border-color:#5B9DFF;}
+.fld-box:focus-within{border-color:#34D399;}
 .fld-box input::-webkit-outer-spin-button,.fld-box input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .fld-box input[type=number]{-moz-appearance:textfield;}
 .fld-box input{border:none;background:transparent;color:#F2F3F5;font-size:18px;font-weight:600;outline:none;padding:0;width:100%;}
@@ -528,11 +529,11 @@ img{image-rendering:auto;}
 .pick-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:20px;
   border:1px solid #252A34;background:#1C1F26;color:#C4C9D4;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s;}
 .pick-chip:hover{border-color:#3A404C;}
-.pick-chip:focus{outline:none;}.pick-chip:focus-visible{outline:2px solid #5B9DFF;outline-offset:2px;}
+.pick-chip:focus{outline:none;}.pick-chip:focus-visible{outline:2px solid #34D399;outline-offset:2px;}
 .pick-chip.logo{width:56px;height:48px;padding:0;justify-content:center;border-radius:14px;border-color:transparent;background:transparent;}
 .pick-chip.logo:hover{border-color:transparent;background:rgba(255,255,255,.05);}
-.pick-chip.logo.on{border-color:transparent;background:rgba(91,157,255,.18);}
-.pick-chip.on{border-color:#5B9DFF;background:rgba(91,157,255,.14);color:#F2F3F5;}
+.pick-chip.logo.on{border-color:transparent;background:rgba(52,211,153,.18);}
+.pick-chip.on{border-color:#34D399;background:rgba(52,211,153,.14);color:#F2F3F5;}
 .sentence input::-webkit-outer-spin-button,.sentence input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .sentence{display:flex;align-items:center;height:56px;background:#1C1F26;border:1px solid #252A34;border-radius:16px;overflow:hidden;}
 .sent-sel{height:100%;border:none;background:transparent;color:#F2F3F5;font-size:17px;font-weight:600;font-family:inherit;
@@ -540,11 +541,11 @@ img{image-rendering:auto;}
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%238B92A0' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center;}
 .sent-sel+.sent-sel{border-left:1px solid #252A34;}
 .sent-sel.grow{flex:1;min-width:0;}
-.sent-sel:focus-visible{background-color:rgba(91,157,255,.1);}
+.sent-sel:focus-visible{background-color:rgba(52,211,153,.1);}
 .sent-sel option{background:#1C1F26;color:#F2F3F5;}
 .fld-box input::placeholder{color:transparent;}
-.acard{position:relative;margin-top:14px;padding:14px;border-radius:20px;--ca:#5B9DFF;--cag:rgba(91,157,255,.3);--cab:rgba(91,157,255,.14);--cbd:rgba(255,255,255,.06);
-  background:radial-gradient(120% 80% at 0% 0%,rgba(91,157,255,.07),transparent 55%),linear-gradient(180deg,#23272F 0%,#1A1D23 100%);
+.acard{position:relative;margin-top:14px;padding:14px;border-radius:20px;--ca:#34D399;--cag:rgba(52,211,153,.3);--cab:rgba(52,211,153,.14);--cbd:rgba(255,255,255,.06);
+  background:radial-gradient(120% 80% at 0% 0%,rgba(52,211,153,.07),transparent 55%),linear-gradient(180deg,#23272F 0%,#1A1D23 100%);
   border:1px solid var(--cbd);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 24px -12px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.35);}
 .acard .pick-head span:first-child::before,.acard-h::before{content:"";display:inline-block;width:3px;height:13px;border-radius:2px;background:var(--ca);margin-right:8px;vertical-align:-2px;}
@@ -583,7 +584,7 @@ article:active{transform:scale(.985);}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 .fade-in{animation:fadeIn .22s ease backwards;}
 .leg-in{width:100%;height:34px;border-radius:9px;border:1px solid #252A34;background:#181B21;color:#F2F3F5;text-align:center;font-size:14px;font-weight:600;outline:none;font-family:inherit;-moz-appearance:textfield;}
-.leg-in:focus{border-color:#5B9DFF;}
+.leg-in:focus{border-color:#34D399;}
 .leg-in::-webkit-outer-spin-button,.leg-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#F2F3F5;font-size:15px;
   text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
@@ -609,7 +610,7 @@ article:active{transform:scale(.985);}
   width:100%;height:46px;background:#1C1F26;border:1px solid #252A34;border-radius:12px;padding:0 14px;
   color:#F2F3F5;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;
 }
-.form-input:focus,.form-select:focus{border-color:#5B9DFF;}
+.form-input:focus,.form-select:focus{border-color:#34D399;}
 .form-input::placeholder{color:#6B7280;}
 .form-input:disabled{opacity:.6;}
 .form-select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:34px;
@@ -619,7 +620,7 @@ article:active{transform:scale(.985);}
 /* ── BUTTONS ── */
 .btn{border:none;border-radius:12px;height:50px;padding:0 20px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .12s;width:100%;font-family:inherit;}
 .btn:active{opacity:.7;}
-.btn-primary{background:#5B9DFF;color:#0C1424;}
+.btn-primary{background:#34D399;color:#05231A;}
 .btn-secondary{background:#262B35;color:#F2F3F5;}
 .btn-danger{background:transparent;color:#FF8A80;border:1px solid rgba(255,138,128,.35);}
 .btn-sm{height:36px;padding:0 14px;font-size:13px;border-radius:10px;}
@@ -630,8 +631,8 @@ article:active{transform:scale(.985);}
 .s-icon:hover{background:#262B35;color:#F2F3F5;}
 .s-icon.danger:hover{background:rgba(255,138,128,.12);color:#FF8A80;}
 .s-add{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:none;border-radius:18px;
-  background:rgba(91,157,255,.14);color:#8BB8FF;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;}
-.s-add:hover{background:rgba(91,157,255,.22);}
+  background:rgba(52,211,153,.14);color:#6EE7B7;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.s-add:hover{background:rgba(52,211,153,.22);}
 
 /* ── PLAYER AVATAR ── */
 .player-avatar-wrap{position:relative;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border-radius:8px;}
@@ -665,7 +666,7 @@ article:active{transform:scale(.985);}
 .status-btn{flex:1;padding:11px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.08);border-bottom-color:rgba(0,0,0,.4);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:linear-gradient(180deg,#1A1A1F 0%,#111114 100%);color:rgba(255,255,255,.3);font-family:inherit;letter-spacing:.2px;box-shadow:0 2px 6px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04);}
 .status-btn.won.active{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35);color:#4ADE80;}
 .status-btn.lost.active{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:#FF8A80;}
-.status-btn.pending.active{background:rgba(91,157,255,.12);border-color:rgba(91,157,255,.35);color:#8BB8FF;}
+.status-btn.pending.active{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35);color:#6EE7B7;}
 .status-btn.void.active{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.45);}
 
 /* ── STATS GRID ── */
@@ -686,7 +687,7 @@ article:active{transform:scale(.985);}
 /* ── TABS ── */
 .tabs{display:flex;gap:2px;background:#1C1F26;border-radius:8px;padding:3px;margin-bottom:14px;}
 .tab{flex:1;padding:8px;border:none;background:transparent;color:rgba(255,255,255,.28);font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;font-family:inherit;}
-.tab.active{background:#5B9DFF;color:#fff;}
+.tab.active{background:#34D399;color:#fff;}
 
 /* ── SEGMENT ── */
 .segment{display:flex;background:#1C1F26;border-radius:10px;padding:2px;gap:2px;}
@@ -717,7 +718,7 @@ article:active{transform:scale(.985);}
 .filter-row{display:flex;gap:6px;overflow-x:auto;padding:0 20px 14px;scrollbar-width:none;}
 .filter-row::-webkit-scrollbar{display:none;}
 .filter-chip{flex-shrink:0;padding:7px 16px;border-radius:20px;border:1px solid #252A34;background:transparent;color:rgba(255,255,255,.3);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s;font-family:inherit;}
-.filter-chip.active{background:rgba(91,157,255,.15);border-color:rgba(91,157,255,.4);color:#8BB8FF;}
+.filter-chip.active{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#6EE7B7;}
 `;
 
 // ── LEAGUE LOGOS (dynamique depuis Supabase) ─────────────────────────────────
@@ -1333,7 +1334,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const hexA=(h,a)=>{const n=parseInt((h||"#000").slice(1),16);return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")";};
   const clubVars={"--ca":btnBg,"--cag":hexA(btnBg,.35),"--cab":hexA(btnBg,.16),"--cbd":hexA(btnBg,.22),
     background:"linear-gradient(180deg,"+hexA(baseC,.34)+" 0%,"+hexA(baseC,.14)+" 100%),#15171D"};
-  const btnFg=lum(btnBg)>.35?"#0C1424":"#FFFFFF";
+  const btnFg=lum(btnBg)>.35?"#05231A":"#FFFFFF";
 
   // ── ÉTAPE 2 : Formulaire ──────────────────────────────────────
   const playerPhoto=!isTeamBet&&(form.playerObj?.photo_url||form.playerObj?.avatar_url);
@@ -1705,7 +1706,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               return(
                 <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
                   onClick={()=>f("bookmaker",on?"":bk)}>
-                  <MiniLogo src={bkPhotos[bk]} label={bk} size={26} round={false}/>
+                  <BkBadge src={bkPhotos[bk]} label={bk} size={26}/>
                 </button>
               );
             })}
@@ -2059,7 +2060,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const statusLabel=st==="pending"?"En cours":st==="won"?"Gagné":st==="lost"?"Perdu":"Void";
   const lum=h=>{const n=parseInt((h||"#000").slice(1),16);const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*c[0]+.7152*c[1]+.0722*c[2];};
   const accent=!tc?C.blue:(lum(tc.p)<.03&&tc.s?tc.s:tc.p);
-  const accentFg=lum(accent)>.35?"#0C1424":"#FFFFFF";
+  const accentFg=lum(accent)>.35?"#05231A":"#FFFFFF";
   const stakeN=parseFloat(localBet.stake)||0,oddsN=parseFloat(localBet.odds)||0;
   const bigValue=st==="pending"?"→ "+eur(stakeN*oddsN):st==="void"?eur(stakeN):money(profitNum);
   const bigLabel=st==="pending"?"Gain potentiel":st==="void"?"Remboursé":"Résultat";
@@ -2187,7 +2188,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                     <div key={l.id} style={{display:"grid",gridTemplateColumns:"1fr 64px 70px 84px",alignItems:"center",gap:8,
                       padding:"8px 0",borderTop:i?"1px solid "+C.line:"none"}}>
                       <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-                        <MiniLogo src={bkPhotos[l.bookmaker]} label={l.bookmaker||"?"} size={22} round={false}/>
+                        <BkBadge src={bkPhotos[l.bookmaker]} label={l.bookmaker||"?"} size={22}/>
                         <span style={{fontSize:14,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.bookmaker||"—"}</span>
                       </span>
                       <input type="number" inputMode="decimal" aria-label={"Cote "+l.bookmaker} defaultValue={l.odds}
@@ -2209,7 +2210,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <div style={row}><span style={lab}>Mise (€)</span>{numInput("stake")}</div>
             <div style={row}>
               <span style={lab}>Bookmaker</span>
-              {localBet.bookmaker&&<MiniLogo src={bkPhotos[localBet.bookmaker]} label={localBet.bookmaker} size={20} round={false}/>}
+              {localBet.bookmaker&&<BkBadge src={bkPhotos[localBet.bookmaker]} label={localBet.bookmaker} size={20}/>}
               <select className="row-select" value={localBet.bookmaker||""} onChange={e=>setField("bookmaker",e.target.value)}
                 style={{color:dirty.bookmaker!==undefined?C.green:C.text}}>
                 <option value="">Aucun</option>
@@ -2307,7 +2308,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               Même pari sur un autre site
             </button>
           ):(
-            <div className="fade-in" style={{marginTop:16,padding:14,borderRadius:16,background:C.card,border:"1px solid rgba(91,157,255,.35)"}}>
+            <div className="fade-in" style={{marginTop:16,padding:14,borderRadius:16,background:C.card,border:"1px solid rgba(52,211,153,.35)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:15,fontWeight:600}}>Même pari sur un autre site</span>
                 <button type="button" aria-label="Annuler" onClick={()=>setOther(null)}
@@ -2320,7 +2321,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                   return(
                     <button key={bk.name} type="button" className={"pick-chip"+(on?" on":"")}
                       onClick={()=>setOther(o=>({...o,bookmaker:on?"":bk.name}))}>
-                      {bk.logo&&<MiniLogo src={bk.logo} label={bk.name} size={18} round={false}/>}{bk.name}
+                      <BkBadge src={bk.logo} label={bk.name} size={18}/>{bk.name}
                     </button>
                   );
                 })}
@@ -2350,7 +2351,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                   }catch(e){alert("Erreur: "+e.message);setOtherSaving(false);}
                 }}
                 style={{width:"100%",marginTop:12,height:48,borderRadius:14,border:"none",fontSize:15,fontWeight:600,fontFamily:"inherit",
-                  cursor:other.bookmaker?"pointer":"default",background:other.bookmaker?C.blue:"#262B35",color:other.bookmaker?"#0C1424":C.dim}}>
+                  cursor:other.bookmaker?"pointer":"default",background:other.bookmaker?C.blue:"#262B35",color:other.bookmaker?"#05231A":C.dim}}>
                 {otherSaving?"Ajout…":other.bookmaker?"Ajouter sur "+other.bookmaker:"Choisis un bookmaker"}
               </button>
             </div>
@@ -2401,8 +2402,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 // ── COULEURS UI ───────────────────────────────────────────────────────────────
 const C={
   bg:"#14161B",card:"#1C1F26",inner:"#181B21",line:"#252A34",chip:"#262B35",
-  text:"#F2F3F5",sub:"#8B92A0",dim:"#6B7280",blue:"#5B9DFF",
-  green:"#4ADE80",red:"#FF8A80",greenBorder:"#2F8F5B",redBorder:"#A8474D",
+  text:"#F2F3F5",sub:"#8B92A0",dim:"#6B7280",blue:"#34D399",
+  green:"#34D399",red:"#FF8A80",greenBorder:"#2F8F5B",redBorder:"#A8474D",
 };
 const money=(v,dec=2)=>(v>0?"+":v<0?"−":"")+eur(Math.abs(v),dec);
 const pColor=v=>v>0?C.green:v<0?C.red:C.sub;
@@ -2419,6 +2420,25 @@ function MiniLogo({src,label,size=16,round=true}){
     <span style={{width:size,height:size,borderRadius:round?size/2:4,background:C.chip,color:"#C4C9D4",
       fontSize:Math.max(7,Math.round(size*.42)),fontWeight:700,display:"inline-flex",alignItems:"center",
       justifyContent:"center",flexShrink:0}}>{label.slice(0,3).toUpperCase()}</span>
+  );
+}
+
+// Badge bookmaker UNIFORME : même carré arrondi partout, logo qui remplit la tuile,
+// liseré fin ; sans logo → initiales sur un dégradé propre (couleur stable selon le nom)
+function BkBadge({src,label,size=26}){
+  const[err,setErr]=useState(false);
+  const name=String(label||"?");
+  let h=0;for(const ch of name)h=(h*31+ch.charCodeAt(0))>>>0;
+  const hue=h%360;
+  const ini=name.replace(/[^A-Za-z0-9]/g," ").trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()||name.slice(0,2).toUpperCase();
+  return(
+    <span title={name} style={{width:size,height:size,borderRadius:Math.round(size*.26),overflow:"hidden",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center",
+      background:src&&!err?"#0E1014":"linear-gradient(135deg,hsl("+hue+" 55% 42%),hsl("+((hue+40)%360)+" 60% 28%))",
+      boxShadow:"0 0 0 1px rgba(255,255,255,.12), 0 2px 6px rgba(0,0,0,.35)"}}>
+      {src&&!err
+        ?<img src={src} alt="" onError={()=>setErr(true)} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        :<span style={{fontSize:Math.round(size*.4),fontWeight:800,color:"#fff",letterSpacing:-.3}}>{ini}</span>}
+    </span>
   );
 }
 
@@ -2610,7 +2630,7 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
   const Section=({icon,title,value,onReset,children})=>(
     <div style={{padding:"14px 0",borderTop:"1px solid "+C.line}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <span style={{width:28,height:28,borderRadius:8,background:value?"rgba(91,157,255,.16)":C.chip,color:value?"#8BB8FF":C.sub,
+        <span style={{width:28,height:28,borderRadius:8,background:value?"rgba(52,211,153,.16)":C.chip,color:value?"#6EE7B7":C.sub,
           display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</span>
         <span style={{flex:1,fontSize:15,fontWeight:600,color:value?C.text:"#C4C9D4"}}>{title}</span>
         {value?<button type="button" onClick={onReset} style={{border:"none",background:"transparent",color:C.blue,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Annuler</button>
@@ -2638,7 +2658,7 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
         <div className="modal-handle"/>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:22,fontWeight:700,letterSpacing:-.4}}>Modifier</span>
-          <span style={{padding:"3px 10px",borderRadius:12,background:"rgba(91,157,255,.16)",color:"#8BB8FF",fontSize:14,fontWeight:700}}>
+          <span style={{padding:"3px 10px",borderRadius:12,background:"rgba(52,211,153,.16)",color:"#6EE7B7",fontSize:14,fontWeight:700}}>
             {count} pari{count>1?"s":""}
           </span>
           <span style={{flex:1}}/>
@@ -2678,7 +2698,7 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
               {bookmakers.filter(bk=>!bk.hidden).map(bk=>(
                 <button key={bk.name} type="button" aria-label={bk.name} title={bk.name}
                   className={"pick-chip logo"+(bookmaker===bk.name?" on":"")} onClick={()=>setBookmaker(bookmaker===bk.name?"":bk.name)}>
-                  <MiniLogo src={bk.logo} label={bk.name} size={26} round={false}/>
+                  <BkBadge src={bk.logo} label={bk.name} size={26}/>
                 </button>
               ))}
             </div>
@@ -2697,8 +2717,8 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
         <button type="button" className="press" disabled={!n||saving}
           onClick={async()=>{setSaving(true);try{await onApply(ch);}catch(e){alert("Erreur: "+e.message);setSaving(false);}}}
           style={{width:"100%",marginTop:12,height:54,borderRadius:16,border:"none",cursor:n?"pointer":"default",
-            background:n?C.blue:"#262B35",color:n?"#0C1424":C.dim,fontSize:17,fontWeight:600,fontFamily:"inherit",
-            boxShadow:n?"0 8px 24px rgba(91,157,255,.3)":"none"}}>
+            background:n?C.blue:"#262B35",color:n?"#05231A":C.dim,fontSize:17,fontWeight:600,fontFamily:"inherit",
+            boxShadow:n?"0 8px 24px rgba(52,211,153,.3)":"none"}}>
           {saving?"Enregistrement…":n?"Appliquer "+n+" changement"+(n>1?"s":"")+" · "+count+" pari"+(count>1?"s":""):"Choisis au moins un changement"}
         </button>
       </div>
@@ -2784,7 +2804,7 @@ function CupClubPicker({cup,existing,onClose,onAdd}){
                       title={c.name}
                       right={<span style={{width:24,height:24,borderRadius:12,marginRight:8,display:"flex",alignItems:"center",justifyContent:"center",
                         border:on?"none":"2px solid #4B5260",background:on?C.blue:"transparent"}}>
-                        {on&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0C1424" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
+                        {on&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#05231A" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
                       </span>}/>
                   );
                 })}
@@ -2795,7 +2815,7 @@ function CupClubPicker({cup,existing,onClose,onAdd}){
         <button type="button" className="press" disabled={!chosen.length||busy}
           onClick={async()=>{setBusy(true);await onAdd(chosen);setBusy(false);}}
           style={{width:"100%",marginTop:12,height:52,borderRadius:16,border:"none",fontSize:16,fontWeight:600,fontFamily:"inherit",
-            cursor:chosen.length?"pointer":"default",background:chosen.length?C.blue:"#262B35",color:chosen.length?"#0C1424":C.dim}}>
+            cursor:chosen.length?"pointer":"default",background:chosen.length?C.blue:"#262B35",color:chosen.length?"#05231A":C.dim}}>
           {busy?"Ajout…":chosen.length?"Ajouter "+chosen.length+" club"+(chosen.length>1?"s":""):"Choisis des clubs"}
         </button>
       </div>
@@ -2806,17 +2826,17 @@ function CupClubPicker({cup,existing,onClose,onAdd}){
 function EmptyState({title,sub,action}){
   return(
     <div className="fade-in" style={{marginTop:24,padding:"36px 24px",textAlign:"center",borderRadius:22,
-      background:"radial-gradient(80% 60% at 50% 0%, rgba(91,157,255,.12) 0%, rgba(91,157,255,0) 70%), #1A1D23",
+      background:"radial-gradient(80% 60% at 50% 0%, rgba(52,211,153,.12) 0%, rgba(52,211,153,0) 70%), #1A1D23",
       border:"1px solid rgba(255,255,255,.06)"}}>
       <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style={{marginBottom:14}}>
         <rect x="14" y="8" width="36" height="48" rx="8" fill="#262B35" stroke="#3A404C"/>
-        <path d="M22 22h20M22 30h14M22 38h18" stroke="#5B9DFF" strokeWidth="3" strokeLinecap="round" opacity=".8"/>
-        <circle cx="48" cy="48" r="11" fill="#5B9DFF"/><path d="M48 43v10M43 48h10" stroke="#0C1424" strokeWidth="2.6" strokeLinecap="round"/>
+        <path d="M22 22h20M22 30h14M22 38h18" stroke="#34D399" strokeWidth="3" strokeLinecap="round" opacity=".8"/>
+        <circle cx="48" cy="48" r="11" fill="#34D399"/><path d="M48 43v10M43 48h10" stroke="#05231A" strokeWidth="2.6" strokeLinecap="round"/>
       </svg>
       <div style={{fontSize:18,fontWeight:600,color:C.text}}>{title}</div>
       <div style={{fontSize:14,color:C.sub,marginTop:6,lineHeight:1.45}}>{sub}</div>
       {action&&<button type="button" className="press" onClick={action.onClick}
-        style={{marginTop:18,height:46,padding:"0 22px",borderRadius:14,border:"none",background:C.blue,color:"#0C1424",
+        style={{marginTop:18,height:46,padding:"0 22px",borderRadius:14,border:"none",background:C.blue,color:"#05231A",
           fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{action.label}</button>}
     </div>
   );
@@ -3008,16 +3028,19 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const bkLogo=bkPhotos&&b.bookmaker?bkPhotos[b.bookmaker]:null;
   const lc=b.game?(LEAGUE_COLORS[b.game]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===String(b.game).toLowerCase())?.[1]||{p:"#3a4150"}):null;
   const st=b.status;
-  const bc=selected?"#5B9DFF":st==="won"?"rgba(74,222,128,.75)":st==="lost"?"rgba(248,113,113,.75)":st==="pending"?"rgba(91,157,255,.8)":"#2A2F3A";
-  const bg=selected?"#1E2A3E":st==="won"?"linear-gradient(270deg,rgba(74,222,128,.14),#1D2029 55%)":st==="lost"?"linear-gradient(270deg,rgba(248,113,113,.14),#1D2029 55%)":"#1D2029";
+  // Sobre : fin contour neutre + barre de statut à gauche (vert gagné / rouge perdu / blanc en cours)
+  const bc=selected?"#34D399":st==="pending"?"rgba(255,255,255,.28)":"#262A33";
+  const bar=st==="won"?"#34D399":st==="lost"?"#FF8A80":st==="pending"?"#E8EAEE":"#3A404C";
+  const bg=selected?"#16271F":"#1B1E25";
   const desc=b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U");
   return(
-    <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"2px solid "+bc,borderRadius:16,
-      boxShadow:st==="pending"&&!selected?"0 0 12px rgba(91,157,255,.18)":"none",padding:"10px 14px 10px 12px",minHeight:80,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+    <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"1px solid "+bc,borderRadius:14,
+      padding:"9px 14px 9px 16px",minHeight:72,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+      <span aria-hidden="true" style={{position:"absolute",left:0,top:0,bottom:0,width:4,background:bar}}/>
       {selectMode&&(
         <span style={{width:24,height:24,borderRadius:12,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
           border:selected?"none":"2px solid #4B5260",background:selected?C.blue:"transparent",transition:"all .15s"}}>
-          {selected&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0C1424" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
+          {selected&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#05231A" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
         </span>
       )}
       <div style={{position:"relative",flexShrink:0}}>
@@ -3035,22 +3058,22 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
         <span style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-        <span style={{fontSize:14,fontWeight:800,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
+        <span style={{fontSize:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
           {lastName}
         </span>
         <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
-            <b key="o" style={{whiteSpace:"nowrap",color:"#fff"}}>@{String(b.odds).replace(".",",")}</b>,
-            <b key="m" style={{whiteSpace:"nowrap",color:"#fff"}}>{eur(stake)}</b>,
-            b.tipster&&<b key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4B5FD"}}>{b.tipster}</b>,
-          ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#5B6478",flexShrink:0}}>•</span>{el}</React.Fragment>))}
+            <span key="o" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
+            <span key="m" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>{eur(stake)}</span>,
+            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#8B92A0",fontWeight:500}}>{b.tipster}</span>,
+          ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#4B5260",flexShrink:0}}>·</span>{el}</React.Fragment>))}
         </span>
       </div>
       <span style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
-        {st==="pending"?<><b style={{display:"block",fontSize:12.5,color:"#5B9DFF"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds)}</span></>
-          :<b style={{fontSize:15.5,color:resultCol}}>{st==="void"?"Void":money(profit)}</b>}
+        {st==="pending"?<><b style={{display:"block",fontSize:12,letterSpacing:.5,color:"#E8EAEE"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds)}</span></>
+          :<b style={{fontSize:17,fontWeight:800,color:resultCol}}>{st==="void"?"Void":money(profit)}</b>}
       </span>
     </article>
   );
@@ -3122,14 +3145,14 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
       </div>
       <button type="button" className="press" aria-label="Filtres" onClick={()=>setFltOpen(true)}
         style={{position:"relative",width:42,height:42,borderRadius:12,border:"1px solid "+(fltCount?C.blue:C.line),cursor:"pointer",flexShrink:0,
-          background:fltCount?"rgba(91,157,255,.14)":C.card,color:fltCount?"#8BB8FF":C.text,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          background:fltCount?"rgba(52,211,153,.14)":C.card,color:fltCount?"#6EE7B7":C.text,display:"flex",alignItems:"center",justifyContent:"center"}}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
         {fltCount>0&&<span style={{position:"absolute",top:-5,right:-5,minWidth:18,height:18,padding:"0 5px",borderRadius:9,background:C.blue,
-          color:"#0C1424",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{fltCount}</span>}
+          color:"#05231A",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{fltCount}</span>}
       </button>
       <button type="button" className="press" onClick={()=>selectMode?exitSelect():setSelectMode(true)}
         style={{height:42,padding:"0 14px",borderRadius:12,border:"1px solid "+(selectMode?C.blue:C.line),cursor:"pointer",
-          background:selectMode?"rgba(91,157,255,.14)":C.card,color:selectMode?"#8BB8FF":C.text,fontSize:14,fontWeight:600,fontFamily:"inherit",flexShrink:0}}>
+          background:selectMode?"rgba(52,211,153,.14)":C.card,color:selectMode?"#6EE7B7":C.text,fontSize:14,fontWeight:600,fontFamily:"inherit",flexShrink:0}}>
         {selectMode?"Annuler":"Sélectionner"}
       </button>
       </div>
@@ -3211,7 +3234,9 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                 return(
                   <div key={d.k} className="fade-in">
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"18px 4px 8px"}}>
-                      <span style={{fontSize:14,fontWeight:600,color:"#C4C9D4"}}>{d.label}</span>
+                      {d.k===new Date().toDateString()
+                        ?<span style={{display:"flex",flexDirection:"column"}}><span style={{fontSize:12,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:C.blue}}>Aujourd'hui</span><span style={{fontSize:22,fontWeight:800,color:"#fff",letterSpacing:-.3}}>{d.label}</span></span>
+                        :<span style={{fontSize:17,fontWeight:700,color:"#D5D9E2"}}>{d.label}</span>}
                       {selectMode?(()=>{
                         const allOn=d.bets.every(x=>sel[x.id]);
                         return(
@@ -3220,7 +3245,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                             {allOn?"Désélectionner la journée":"Sélectionner la journée"}
                           </button>
                         );
-                      })():settledDay&&<span style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
+                      })():settledDay&&<span style={{fontSize:d.k===new Date().toDateString()?20:17,fontWeight:700,color:pColor(dp)}}>{money(dp)}</span>}
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
@@ -3253,7 +3278,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
             </button>
           )}
           <button type="button" className="press" onClick={()=>setBulkOpen(true)}
-            style={{height:42,padding:"0 18px",borderRadius:12,border:"none",background:C.blue,color:"#0C1424",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            style={{height:42,padding:"0 18px",borderRadius:12,border:"none",background:C.blue,color:"#05231A",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
             Modifier
           </button>
         </div>
@@ -3287,7 +3312,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               return(
                 <button key={k} type="button" className={"pick-chip"+(grp==="bk"?" logo":"")+(act?" on":"")} aria-label={label} title={label}
                   onClick={()=>grp==="bk"?setBkSel(s=>({...s,[k]:!act})):tog(grp,k)}>
-                  {logo!==undefined&&<MiniLogo src={logo} label={label} size={grp==="bk"?26:18} round={false}/>}{grp==="bk"?null:label}
+                  {logo!==undefined&&(grp==="bk"?<BkBadge src={logo} label={label} size={26}/>:<MiniLogo src={logo} label={label} size={18} round={false}/>)}{grp==="bk"?null:label}
                 </button>
               );
             })}
@@ -3314,7 +3339,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                   <Sec title="Bookmaker"><Chips grp="bk" items={bookmakers.filter(bk=>!bk.hidden&&bets.some(b=>b.bookmaker===bk.name)).map(bk=>[bk.name,bk.name,bk.logo||null])}/></Sec>}
               </div>
               <button type="button" className="press" onClick={()=>setFltOpen(false)}
-                style={{width:"100%",marginTop:10,height:52,borderRadius:16,border:"none",background:C.blue,color:"#0C1424",
+                style={{width:"100%",marginTop:10,height:52,borderRadius:16,border:"none",background:C.blue,color:"#05231A",
                   fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 Voir {mergeGroups(legsF).length} pari{mergeGroups(legsF).length>1?"s":""}
               </button>
@@ -3503,8 +3528,10 @@ function TileLogo({src,size=38}){
       const d=x.getImageData(0,0,W,H).data;let op=0,lum=0,col=0;for(let i=0;i<d.length;i+=4){if(d[i+3]<60)continue;op++;const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);lum+=.2126*r+.7152*g+.0722*b;if(mx-mn>.25&&mx>.3)col++;}
       const tot=d.length/4;const v=op>0&&op<tot*.8&&lum/op<.32&&col/op<.2;_DARKLOGO[src]=v;if(alive)setDark(v);}).catch(()=>{_DARKLOGO[src]=false;if(alive)setDark(false);});
     return()=>{alive=false;};},[src]);
-  return <img src={src} alt="" style={{position:"absolute",left:12,top:12,width:size,height:size,objectFit:"contain",
-    filter:dark?"brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.6))":"drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 6px rgba(255,255,255,.35)) drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/>;
+  // Logo toujours dans le même cadre (même place, même taille) quel que soit son format
+  return <span style={{position:"absolute",left:10,top:10,width:size+8,height:size+8,borderRadius:12,background:"rgba(10,12,16,.45)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",
+    boxShadow:"inset 0 0 0 1px rgba(255,255,255,.12)",display:"flex",alignItems:"center",justifyContent:"center"}}><img src={src} alt="" style={{width:size-6,height:size-6,objectFit:"contain",borderRadius:4,
+    filter:dark?"brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.6))":"drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 6px rgba(255,255,255,.35)) drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/></span>;
 }
 function PlayerStatSearch({players,bets,onChanged}){
   const[q,setQ]=useState("");const[sel,setSel]=useState(null);
@@ -3580,7 +3607,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
       color:v>=0?C.green:C.red,background:v>=0?"rgba(74,222,128,.10)":"rgba(255,138,128,.10)"}}>{(v>0?"+":"")+Math.round(v)+" %"}</span>
   );
   const COLS="minmax(0,1fr) 40px 58px 70px";
-  const Table=({rows,limit=6,empty:emp="Rien à afficher",onRow})=>{
+  const Table=({rows,limit=6,empty:emp="Rien à afficher",onRow,bk=false})=>{
     const[all,setAll]=useState(false);
     if(!rows.length)return <Card style={{padding:22,textAlign:"center",color:C.sub,fontSize:14}}>{emp}</Card>;
     const shown=all?rows:rows.slice(0,limit);
@@ -3595,15 +3622,16 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
           return(
             <div key={r.key} onClick={onRow?()=>onRow(r):undefined} style={{display:"grid",gridTemplateColumns:COLS,gap:6,alignItems:"center",padding:"11px 14px",borderTop:"1px solid "+C.line,cursor:onRow?"pointer":"default"}}>
               <span style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-                {r.logo!==undefined&&<MiniLogo src={r.logo} label={r.name} size={26} round={false}/>}
+                {r.logo!==undefined&&(bk?<BkBadge src={r.logo} label={r.name} size={30}/>:<MiniLogo src={r.logo} label={r.name} size={26} round={false}/>)}
                 <span style={{minWidth:0,flex:1}}>
                   <span style={{display:"block",fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</span>
-                  <span style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-                                      </span>
+                  <span style={{display:"block",height:3,marginTop:6,borderRadius:2,background:"rgba(255,255,255,.05)",overflow:"hidden"}}>
+                    <span style={{display:"block",height:"100%",width:Math.max(4,Math.abs(r.s.profit)/maxAbs*100)+"%",borderRadius:2,background:r.s.profit>=0?"rgba(52,211,153,.7)":"rgba(255,138,128,.7)"}}/>
+                  </span>
                 </span>
               </span>
               <span style={{textAlign:"center",fontSize:13.5,color:"#C4C9D4",fontVariantNumeric:"tabular-nums"}}>{r.s.won}-{r.s.lost}</span>
-              <span style={{textAlign:"center"}}><Pill v={x.roi}/></span>
+              <span style={{textAlign:"center",fontSize:13,fontWeight:600,color:"#9AA1AE",fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{x.roi==null||isNaN(x.roi)?"—":(x.roi>0?"+":"")+Math.round(x.roi)+"%"}</span>
               <span style={{textAlign:"right",fontSize:15,fontWeight:700,color:pColor(r.s.profit),fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{money(r.s.profit,0)}</span>
             </div>
           );
@@ -3748,7 +3776,7 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
         <Title>Par cote</Title>
         <Table rows={rowsOf(byOdds,{sort:(a,b)=>oddsOrder.indexOf(a.key)-oddsOrder.indexOf(b.key)})}/>
         <Title>Bookmakers</Title>
-        <Table rows={rowsOf(byBook,{logo:n=>bkPhotos[n]||null})}/>
+        <Table bk rows={rowsOf(byBook,{logo:n=>bkPhotos[n]||null})}/>
         <Title>Par mois</Title>
         <Table rows={monthRows}/>
       </>}
@@ -4014,11 +4042,11 @@ function LeagueLTBets({league,showToast}){
     <div style={{marginTop:22}}>
       <div style={{display:"flex",alignItems:"center",margin:"0 4px 8px"}}>
         <div style={{fontSize:13,fontWeight:700,letterSpacing:.6,textTransform:"uppercase",color:C.sub}}>Paris long terme · {league}</div>
-        <button type="button" className="press" onClick={()=>setOpen(o=>!o)} style={{marginLeft:"auto",height:34,padding:"0 14px",borderRadius:17,border:"none",background:C.blue,color:"#0C1424",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{open?"Fermer":"+ Ajouter"}</button>
+        <button type="button" className="press" onClick={()=>setOpen(o=>!o)} style={{marginLeft:"auto",height:34,padding:"0 14px",borderRadius:17,border:"none",background:C.blue,color:"#05231A",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{open?"Fermer":"+ Ajouter"}</button>
       </div>
       {open&&<div style={{background:"#1A1D23",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:14,marginBottom:10}}>
         <div style={lab}>Club ou joueur (optionnel)</div>
-        {subj?<div style={{display:"flex",alignItems:"center",gap:10,height:46,padding:"0 12px",borderRadius:12,border:"1px solid "+C.blue,background:"rgba(91,157,255,.1)",marginBottom:10}}>
+        {subj?<div style={{display:"flex",alignItems:"center",gap:10,height:46,padding:"0 12px",borderRadius:12,border:"1px solid "+C.blue,background:"rgba(52,211,153,.1)",marginBottom:10}}>
           {subj.img?<img src={subj.img} alt="" style={{width:28,height:28,borderRadius:subj.kind==="player"?14:4,objectFit:subj.kind==="player"?"cover":"contain",background:subj.kind==="player"?"#262B35":"transparent"}}/>:null}
           <div style={{flex:1,minWidth:0}}><div style={{fontSize:15,fontWeight:600,color:C.text}}>{capW(subj.name)}</div>{subj.kind==="player"&&subj.team&&<div style={{fontSize:11.5,color:C.sub}}>{subj.team}</div>}</div>
           <button type="button" onClick={()=>{setSubj(null);setQ("");}} style={{background:"none",border:"none",color:C.sub,fontSize:18,cursor:"pointer"}}>✕</button>
@@ -4044,12 +4072,12 @@ function LeagueLTBets({league,showToast}){
         <div style={lab}>Tipster</div>
         <select value={f.tipster} onChange={e=>setF({...f,tipster:e.target.value})} style={{...inp,marginBottom:12}}><option value="">—</option>{tips.map(t=><option key={t.id||t.name} value={t.name}>{t.name}</option>)}</select>
         {okLegs.length>0&&<div style={{fontSize:13,color:C.sub,marginBottom:10}}>Mise totale <b style={{color:C.text}}>{okLegs.reduce((t,l)=>t+num(l.stake),0).toFixed(2).replace(".",",")} €</b> · gain potentiel <b style={{color:"#34D399"}}>+{okLegs.reduce((t,l)=>t+num(l.stake)*(num(l.odds)-1),0).toFixed(2).replace(".",",")} €</b></div>}
-        <button type="button" className="press" disabled={busy} onClick={add} style={{width:"100%",height:48,borderRadius:14,border:"none",background:C.blue,color:"#0C1424",fontWeight:700,fontSize:15.5,cursor:"pointer",fontFamily:"inherit"}}>{busy?"Ajout…":"Ajouter le pari long terme"}</button>
+        <button type="button" className="press" disabled={busy} onClick={add} style={{width:"100%",height:48,borderRadius:14,border:"none",background:C.blue,color:"#05231A",fontWeight:700,fontSize:15.5,cursor:"pointer",fontFamily:"inherit"}}>{busy?"Ajout…":"Ajouter le pari long terme"}</button>
       </div>}
       {list===null?<div style={{textAlign:"center",color:C.sub,padding:16}}>Chargement…</div>
       :list.length===0?<div style={{textAlign:"center",color:C.dim,fontSize:13.5,padding:"14px 0"}}>Aucun pari long terme pour {league}</div>
       :<>
-        {pending.length>0&&<div style={{background:"#1A1D23",border:"1px solid rgba(91,157,255,.35)",borderRadius:16,overflow:"hidden",marginBottom:10}}>
+        {pending.length>0&&<div style={{background:"#1A1D23",border:"1px solid rgba(52,211,153,.35)",borderRadius:16,overflow:"hidden",marginBottom:10}}>
           <div style={{padding:"10px 14px 2px",fontSize:12,fontWeight:700,color:C.blue}}>EN COURS ({pending.length}) · mise {pending.reduce((t,b)=>t+Number(b.stake||0),0).toFixed(2).replace(".",",")} €</div>
           {pending.map(b=><Card key={b.id} b={b}/>)}</div>}
         {closed.length>0&&<div style={{background:"#1A1D23",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,overflow:"hidden"}}>
@@ -4322,7 +4350,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
           }}}/>
         {Object.entries(LEAGUE_PRESETS).filter(([n])=>!leagues.some(l=>normTeam(l.name)===normTeam(n))).map(([n,clubsList])=>(
           <div key={n} className="fade-in" style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:14,borderRadius:14,
-            background:"rgba(91,157,255,.10)",border:"1px solid rgba(91,157,255,.3)"}}>
+            background:"rgba(52,211,153,.10)",border:"1px solid rgba(52,211,153,.3)"}}>
             <div style={{flex:1,fontSize:13,color:"#C4C9D4",lineHeight:1.4}}>
               <b style={{color:C.text}}>{n}</b> · saison 2026-27<br/><span style={{color:C.sub}}>{clubsList.length} clubs prêts à importer</span>
             </div>
@@ -4387,9 +4415,9 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
             return(<div key={lg.id} onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}} style={{position:"relative",height:104,borderRadius:16,overflow:"hidden",cursor:"pointer",
               background:"linear-gradient(135deg,"+lc.p+" 0%,"+lc.p+"66 45%,#15171d 100%)",border:"1px solid rgba(255,255,255,.08)"}}>
               {bgi&&<img src={bgi} alt="" onError={e=>{e.currentTarget.style.display="none";}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.75))"}}/>
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(8,10,14,.45),rgba(8,10,14,.85))"}}/>
               {lg.logo&&<TileLogo src={lg.logo}/>}
-              {ltCount[lg.name]>0&&<div title="Paris long terme en cours" style={{position:"absolute",right:44,top:11,minWidth:26,height:24,padding:"0 8px",borderRadius:12,background:C.blue,color:"#0C1424",fontSize:12.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.5)"}}>LT {ltCount[lg.name]}</div>}
+              {ltCount[lg.name]>0&&<div title="Paris long terme en cours" style={{position:"absolute",right:44,top:11,minWidth:26,height:24,padding:"0 8px",borderRadius:12,background:C.blue,color:"#05231A",fontSize:12.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.5)"}}>LT {ltCount[lg.name]}</div>}
               <div style={{position:"absolute",left:0,right:0,bottom:0,height:3,background:lc.p,boxShadow:"0 0 10px "+lc.p}}/>
               <div style={{position:"absolute",left:12,right:12,bottom:10,fontSize:16,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textShadow:"0 1px 6px rgba(0,0,0,.7)"}}>{lg.name}</div>
               <button type="button" aria-label={"Modifier "+lg.name} onClick={e=>{e.stopPropagation();setLgMenu(lg);}} style={{position:"absolute",right:8,top:8,width:30,height:30,borderRadius:15,border:"none",background:"rgba(0,0,0,.4)",color:"rgba(255,255,255,.85)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>⋯</button>
@@ -4528,7 +4556,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
         const n=players.filter(p=>p.team!==selectedClub.name).length;
         return(
           <div className="fade-in" style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:14,borderRadius:14,
-            background:"rgba(91,157,255,.10)",border:"1px solid rgba(91,157,255,.3)"}}>
+            background:"rgba(52,211,153,.10)",border:"1px solid rgba(52,211,153,.3)"}}>
             <div style={{flex:1,fontSize:13,color:"#C4C9D4",lineHeight:1.4}}>
               {n} joueur{n>1?"s":""} enregistré{n>1?"s":""} sous « {variants.join(" », « ")} ».
               <br/><span style={{color:C.sub}}>Harmoniser pour tout ranger sous « {selectedClub.name} ».</span>
@@ -4696,7 +4724,7 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
               <button onClick={pastePhoto} disabled={uploading}
                 style={{position:"absolute",bottom:-6,right:-6,
                   width:26,height:26,borderRadius:"50%",
-                  background:"#6366F1",border:"2px solid #111",
+                  background:"#34D399",border:"2px solid #111",
                   display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                 {uploading
                   ?<span style={{fontSize:9,color:"#fff"}}>…</span>
@@ -4730,9 +4758,9 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
               {BASKET_POSITIONS.map(r=>(
                 <button key={r} onClick={()=>setRole(r===role?"":r)}
                   style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:.3,
-                    background:role===r?"#6366F1":"rgba(255,255,255,.06)",
+                    background:role===r?"#34D399":"rgba(255,255,255,.06)",
                     color:role===r?"#fff":"rgba(255,255,255,.4)",
-                    transition:"all .15s",boxShadow:role===r?"0 0 14px rgba(99,102,241,.4)":"none"}}>
+                    transition:"all .15s",boxShadow:role===r?"0 0 14px rgba(52,211,153,.4)":"none"}}>
                   {r}
                 </button>
               ))}
@@ -4920,11 +4948,11 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
               textTransform:"uppercase",marginBottom:6}}>
-              Ligues <span style={{color:"rgba(99,102,241,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
+              Ligues <span style={{color:"rgba(52,211,153,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
             </div>
             <button onClick={()=>setOpenPicker(openPicker==="league"?null:"league")}
               style={{width:"100%",background:"#1C1C22",
-                border:`1px solid ${openPicker==="league"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                border:`1px solid ${openPicker==="league"?"rgba(52,211,153,.5)":"rgba(255,255,255,.08)"}`,
                 borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",minHeight:46}}>
               {selectedLeagueObjs.length===0&&(
                 <span style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,.3)"}}>Sélectionner…</span>
@@ -4932,9 +4960,9 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               <div style={{display:"flex",gap:6,flexWrap:"wrap",flex:1,alignItems:"center"}}>
                 {selectedLeagueObjs.map(l=>(
                   <div key={l.name} style={{display:"flex",alignItems:"center",gap:5,
-                    background:"rgba(99,102,241,.15)",borderRadius:20,padding:"3px 10px 3px 6px"}}>
+                    background:"rgba(52,211,153,.15)",borderRadius:20,padding:"3px 10px 3px 6px"}}>
                     {l.logo&&<img src={l.logo} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:3}}/>}
-                    <span style={{fontSize:12,fontWeight:700,color:"#818CF8"}}>{l.name}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:"#6EE7B7"}}>{l.name}</span>
                   </div>
                 ))}
               </div>
@@ -4948,17 +4976,17 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                   return(
                     <div key={l.id} onClick={()=>toggleGame(l.name)}
                       style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
-                        background:checked?"rgba(99,102,241,.1)":"transparent",
+                        background:checked?"rgba(52,211,153,.1)":"transparent",
                         borderBottom:"1px solid rgba(255,255,255,.04)"}}>
                       {/* Checkbox visuelle */}
                       <div style={{width:18,height:18,borderRadius:5,flexShrink:0,
-                        background:checked?"#6366F1":"transparent",
-                        border:`1.5px solid ${checked?"#6366F1":"rgba(255,255,255,.2)"}`,
+                        background:checked?"#34D399":"transparent",
+                        border:`1.5px solid ${checked?"#34D399":"rgba(255,255,255,.2)"}`,
                         display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {checked&&<span style={{fontSize:10,color:"#fff",lineHeight:1}}>✓</span>}
                       </div>
                       {l.logo&&<img src={l.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4}}/>}
-                      <span style={{fontSize:13,fontWeight:600,color:checked?"#818CF8":"#F2F2F7"}}>{l.name}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:checked?"#6EE7B7":"#F2F2F7"}}>{l.name}</span>
                     </div>
                   );
                 })}
@@ -4972,7 +5000,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               textTransform:"uppercase",marginBottom:6}}>Club</div>
             <button onClick={()=>setOpenPicker(openPicker==="club"?null:"club")}
               style={{width:"100%",background:"#1C1C22",
-                border:`1px solid ${openPicker==="club"?"rgba(99,102,241,.5)":"rgba(255,255,255,.08)"}`,
+                border:`1px solid ${openPicker==="club"?"rgba(52,211,153,.5)":"rgba(255,255,255,.08)"}`,
                 borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
               {currentClubObj?.logo&&<img src={currentClubObj.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4,background:"#252A34",padding:2}}/>}
               <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:team?"#F2F2F7":"rgba(255,255,255,.3)"}}>
@@ -4991,13 +5019,13 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                 {filteredClubs.map(c=>(
                   <div key={c.id} onClick={()=>{setTeam(c.name);setOpenPicker(null);}}
                     style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer",
-                      background:team===c.name?"rgba(99,102,241,.1)":"transparent",
+                      background:team===c.name?"rgba(52,211,153,.1)":"transparent",
                       borderBottom:"1px solid rgba(255,255,255,.04)"}}>
                     {c.logo&&<img src={c.logo} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:4,background:"#252A34",padding:2}}/>}
-                    <span style={{flex:1,fontSize:13,fontWeight:600,color:team===c.name?"#818CF8":"#F2F2F7"}}>{c.name}</span>
+                    <span style={{flex:1,fontSize:13,fontWeight:600,color:team===c.name?"#6EE7B7":"#F2F2F7"}}>{c.name}</span>
                     {/* Badge ligue du club */}
                     <span style={{fontSize:10,color:"rgba(255,255,255,.25)"}}>{c.league}</span>
-                    {team===c.name&&<span style={{fontSize:11,color:"#818CF8"}}>✓</span>}
+                    {team===c.name&&<span style={{fontSize:11,color:"#6EE7B7"}}>✓</span>}
                   </div>
                 ))}
               </div>
@@ -5008,7 +5036,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:.8,
               textTransform:"uppercase",marginBottom:8}}>
-              Position <span style={{color:"rgba(99,102,241,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
+              Position <span style={{color:"rgba(52,211,153,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
             </div>
             <div style={{display:"flex",gap:8}}>
               {BASKET_POSITIONS.map(r=>{
@@ -5017,9 +5045,9 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
                   <button key={r} onClick={()=>toggleRole(r)}
                     style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",
                       fontSize:13,fontWeight:800,letterSpacing:.3,
-                      background:active?"#6366F1":"rgba(255,255,255,.06)",
+                      background:active?"#34D399":"rgba(255,255,255,.06)",
                       color:active?"#fff":"rgba(255,255,255,.4)",
-                      transition:"all .15s",boxShadow:active?"0 0 14px rgba(99,102,241,.4)":"none"}}>
+                      transition:"all .15s",boxShadow:active?"0 0 14px rgba(52,211,153,.4)":"none"}}>
                     {r}
                   </button>
                 );
@@ -5328,7 +5356,7 @@ export default function App(){
       <div className="app">
         {pull>0&&(
           <div style={{height:pull*.6,display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,
-            color:pull>70?"#5B9DFF":"#6B7280",fontSize:13,transition:"color .15s"}}>
+            color:pull>70?"#34D399":"#6B7280",fontSize:13,transition:"color .15s"}}>
             {pull>70?"Relâche pour actualiser":"Tire pour actualiser"}
           </div>
         )}
