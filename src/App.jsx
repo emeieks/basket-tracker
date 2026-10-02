@@ -3919,7 +3919,24 @@ function LeagueLTBets({league,showToast}){
   const[list,setList]=useState(null);
   const[open,setOpen]=useState(false);
   const[bks,setBks]=useState([]);const[tips,setTips]=useState([]);
-  const[f,setF]=useState({desc:"",odds:"",stake:"",bookmaker:"",tipster:""});
+  const[f,setF]=useState({desc:"",tipster:""});
+  const[legs,setLegs]=useState([{bookmaker:"",odds:"",stake:""}]);
+  const[subj,setSubj]=useState(null); // {kind:"club"|"player",name,team,img}
+  const[q,setQ]=useState("");const[sugg,setSugg]=useState([]);
+  const clubsAll=useRef(null);
+  useEffect(()=>{const t=q.trim();if(t.length<2){setSugg([]);return;}let alive=true;
+    const tm=setTimeout(async()=>{
+      try{
+        if(!clubsAll.current)clubsAll.current=await fetchAllClubs();
+        const nq=normTeam(t);
+        const seen=new Set();const cl=[];
+        (clubsAll.current||[]).forEach(c=>{const k=normTeam(c.name);if(!seen.has(k)&&k.includes(nq)){seen.add(k);cl.push({kind:"club",name:c.name,team:c.name,img:CLUB_LOGOS_MAP[c.name]||c.logo});}});
+        const r=await fetch(SUPA_URL+"/rest/v1/players?select=name,team,photo_url,avatar_url&name=ilike.*"+encodeURIComponent(t)+"*&order=name.asc&limit=8",{headers:H});
+        const ps=r.ok?await r.json():[];
+        if(alive)setSugg([...cl.slice(0,5),...ps.map(p=>({kind:"player",name:p.name,team:p.team,img:p.photo_url||p.avatar_url}))]);
+      }catch(_){}
+    },180);
+    return()=>{alive=false;clearTimeout(tm);};},[q]);
   const[busy,setBusy]=useState(false);
   const load=useCallback(async()=>{
     try{const r=await fetch(SUPA_URL+"/rest/v1/bets?select=*&notes=eq.longterm&game=eq."+encodeURIComponent(league)+"&order=created_at.desc",{headers:H});
@@ -3928,34 +3945,42 @@ function LeagueLTBets({league,showToast}){
   useEffect(()=>{load();fetchBookmakers().then(setBks).catch(()=>{});fetchTipsters().then(setTips).catch(()=>{});},[load]);
   const num=v=>parseFloat(String(v||"").replace(",","."));
   const ping=()=>{try{window.dispatchEvent(new Event("bets:reload"));}catch(_){}};
+  const okLegs=legs.filter(l=>num(l.odds)>1&&num(l.stake)>0);
   const add=async()=>{
-    const odds=num(f.odds),stake=num(f.stake);
-    if(!f.desc.trim()||!(odds>1)||!(stake>0)){showToast("Remplis le pari, la cote et la mise","#FF8A80");return;}
+    if(!f.desc.trim()||!okLegs.length){showToast("Remplis le pari, une cote et une mise","#FF8A80");return;}
     setBusy(true);
     try{
       const now=new Date().toISOString();
-      await insertBet({id:uuid(),player:f.desc.trim(),team:null,opponent:null,description:f.desc.trim(),over_under:null,line:null,
-        odds,stake,bookmaker:f.bookmaker||null,tipster:f.tipster||null,status:"pending",profit:0,game:league,
-        notes:"longterm",bet_type:"team",created_at:now});
-      setF({desc:"",odds:"",stake:"",bookmaker:f.bookmaker,tipster:f.tipster});setOpen(false);showToast("Pari long terme ajouté ✓");load();
+      const gid=okLegs.length>1?uuid():null;
+      for(const l of okLegs){
+        await insertBet({id:uuid(),player:subj?subj.name:f.desc.trim(),team:subj?(subj.team||null):null,opponent:null,description:f.desc.trim(),over_under:null,line:null,
+          odds:num(l.odds),stake:num(l.stake),bookmaker:l.bookmaker||null,tipster:f.tipster||null,status:"pending",profit:0,game:league,
+          notes:"longterm",bet_type:subj&&subj.kind==="player"?"player":"team",created_at:now,...(gid?{group_id:gid}:{})});
+      }
+      setF({desc:"",tipster:f.tipster});setLegs([{bookmaker:legs[0].bookmaker,odds:"",stake:""}]);setSubj(null);setQ("");setOpen(false);
+      showToast("Pari long terme ajouté ✓"+(okLegs.length>1?" ("+okLegs.length+" bookmakers)":""));load();
     }catch(e){showToast("Erreur : "+e.message,"#FF8A80");}
     setBusy(false);
   };
+  const grp=b=>b.group_id?(list||[]).filter(x=>x.group_id===b.group_id&&x.status===b.status):[b];
   const close=async(b,status)=>{
-    if(!window.confirm((status==="won"?"Gagné":"Perdu")+" : "+b.description+" ?"))return;
+    const g=grp(b);
+    if(!window.confirm((status==="won"?"Gagné":"Perdu")+" : "+(b.player&&b.player!==b.description?b.player+" — ":"")+b.description+(g.length>1?" ("+g.length+" bookmakers)":"")+" ?"))return;
     const now=new Date().toISOString();
-    const fields={status,profit:calcProfit(status,Number(b.stake),Number(b.odds)),created_at:now};
     try{
-      try{await updateBet(b.id,{...fields,opened_at:b.opened_at||b.created_at});}
-      catch(e){if(/opened_at/.test(e.message))await updateBet(b.id,fields);else throw e;}
+      for(const x of g){
+        const fields={status,profit:calcProfit(status,Number(x.stake),Number(x.odds)),created_at:now};
+        try{await updateBet(x.id,{...fields,opened_at:x.opened_at||x.created_at});}
+        catch(e){if(/opened_at/.test(e.message))await updateBet(x.id,fields);else throw e;}
+      }
       showToast(status==="won"?"Gagné ✓ — ajouté à Mes paris":"Perdu — ajouté à Mes paris");load();ping();
     }catch(e){showToast("Erreur : "+e.message,"#FF8A80");}
   };
   const reopen=async b=>{
     if(!window.confirm("Remettre « "+b.description+" » en cours ?"))return;
-    try{await updateBet(b.id,{status:"pending",profit:0,...(b.opened_at?{created_at:b.opened_at}:{})});load();ping();}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}
+    try{for(const x of grp(b))await updateBet(x.id,{status:"pending",profit:0,...(x.opened_at?{created_at:x.opened_at}:{})});load();ping();}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}
   };
-  const del=async b=>{if(!window.confirm("Supprimer « "+b.description+" » ?"))return;try{await deleteBet(b.id);load();ping();}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}};
+  const del=async b=>{const g=grp(b);if(!window.confirm("Supprimer « "+b.description+" »"+(g.length>1?" ("+g.length+" bookmakers)":"")+" ?"))return;try{for(const x of g)await deleteBet(x.id);load();ping();}catch(e){showToast("Erreur : "+e.message,"#FF8A80");}};
   const pending=(list||[]).filter(b=>b.status==="pending"),closed=(list||[]).filter(b=>b.status!=="pending");
   const d=x=>x?new Date(x).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"}):"";
   const inp={width:"100%",boxSizing:"border-box",height:46,borderRadius:12,border:"1px solid #2E3440",background:"#14171C",color:C.text,fontSize:16,padding:"0 12px",fontFamily:"inherit",outline:"none",colorScheme:"dark"};
@@ -3963,7 +3988,10 @@ function LeagueLTBets({league,showToast}){
   const Card=({b})=>{const g=b.status==="won",l=b.status==="lost";return(
     <div style={{padding:"12px 14px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
       <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-        <div style={{flex:1,minWidth:0,fontSize:15.5,fontWeight:600,color:C.text}}>{b.description}</div>
+        <div style={{flex:1,minWidth:0}}>
+          {b.player&&b.player!==b.description&&<div style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,fontWeight:700,color:C.blue,marginBottom:2}}>{(CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player])&&<img src={CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player]} alt="" style={{width:16,height:16,objectFit:"contain"}}/>}{b.player}</div>}
+          <div style={{fontSize:15.5,fontWeight:600,color:C.text}}>{b.description}</div>
+        </div>
         <div style={{fontSize:15,fontWeight:700,color:g?"#34D399":l?"#F87171":C.text,whiteSpace:"nowrap"}}>{g?"+"+Number(b.profit).toFixed(2)+" €":l?Number(b.profit).toFixed(2)+" €":"@"+Number(b.odds).toFixed(2).replace(".",",")}</div>
       </div>
       <div style={{fontSize:12.5,color:C.sub,marginTop:3}}>{Number(b.stake).toFixed(2).replace(".",",")} € · @{Number(b.odds).toFixed(2).replace(".",",")}{b.bookmaker?" · "+b.bookmaker:""}{b.tipster?" · "+b.tipster:""}</div>
@@ -3983,17 +4011,33 @@ function LeagueLTBets({league,showToast}){
         <button type="button" className="press" onClick={()=>setOpen(o=>!o)} style={{marginLeft:"auto",height:34,padding:"0 14px",borderRadius:17,border:"none",background:C.blue,color:"#0C1424",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{open?"Fermer":"+ Ajouter"}</button>
       </div>
       {open&&<div style={{background:"#1A1D23",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:14,marginBottom:10}}>
+        <div style={lab}>Club ou joueur (optionnel)</div>
+        {subj?<div style={{display:"flex",alignItems:"center",gap:10,height:46,padding:"0 12px",borderRadius:12,border:"1px solid "+C.blue,background:"rgba(91,157,255,.1)",marginBottom:10}}>
+          {subj.img?<img src={subj.img} alt="" style={{width:28,height:28,borderRadius:subj.kind==="player"?14:4,objectFit:subj.kind==="player"?"cover":"contain",background:subj.kind==="player"?"#262B35":"transparent"}}/>:null}
+          <div style={{flex:1,minWidth:0}}><div style={{fontSize:15,fontWeight:600,color:C.text}}>{subj.name}</div>{subj.kind==="player"&&subj.team&&<div style={{fontSize:11.5,color:C.sub}}>{subj.team}</div>}</div>
+          <button type="button" onClick={()=>{setSubj(null);setQ("");}} style={{background:"none",border:"none",color:C.sub,fontSize:18,cursor:"pointer"}}>✕</button>
+        </div>:<div style={{position:"relative",marginBottom:10}}>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ex. fener, james…" style={inp}/>
+          {sugg.length>0&&<div style={{position:"absolute",left:0,right:0,top:50,zIndex:20,background:"#20242C",border:"1px solid #2E3440",borderRadius:12,overflow:"hidden",boxShadow:"0 10px 30px rgba(0,0,0,.5)"}}>
+            {sugg.map(x=><div key={x.kind+x.name} onClick={()=>{setSubj(x);setSugg([]);}} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",cursor:"pointer",borderTop:"1px solid rgba(255,255,255,.04)"}}>
+              {x.img?<img src={x.img} alt="" style={{width:28,height:28,borderRadius:x.kind==="player"?14:4,objectFit:x.kind==="player"?"cover":"contain",background:x.kind==="player"?"#262B35":"transparent"}}/>:<div style={{width:28,height:28,borderRadius:14,background:"#262B35"}}/>}
+              <div style={{flex:1,minWidth:0}}><div style={{fontSize:14.5,fontWeight:600,color:C.text}}>{x.name}</div><div style={{fontSize:11.5,color:C.sub}}>{x.kind==="club"?"Club":(x.team||"Joueur")}</div></div>
+            </div>)}
+          </div>}
+        </div>}
         <div style={lab}>Pari</div>
-        <input value={f.desc} onChange={e=>setF({...f,desc:e.target.value})} placeholder={"Ex. Fenerbahçe champion "+league} style={{...inp,marginBottom:10}}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-          <div><div style={lab}>Cote</div><input inputMode="decimal" value={f.odds} onChange={e=>setF({...f,odds:e.target.value})} placeholder="3,50" style={inp}/></div>
-          <div><div style={lab}>Mise (€)</div><input inputMode="decimal" value={f.stake} onChange={e=>setF({...f,stake:e.target.value})} placeholder="20" style={inp}/></div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          <div><div style={lab}>Bookmaker</div><select value={f.bookmaker} onChange={e=>setF({...f,bookmaker:e.target.value})} style={inp}><option value="">—</option>{bks.map(b=><option key={b.id||b.name} value={b.name}>{b.name}</option>)}</select></div>
-          <div><div style={lab}>Tipster</div><select value={f.tipster} onChange={e=>setF({...f,tipster:e.target.value})} style={inp}><option value="">—</option>{tips.map(t=><option key={t.id||t.name} value={t.name}>{t.name}</option>)}</select></div>
-        </div>
-        {num(f.odds)>1&&num(f.stake)>0&&<div style={{fontSize:13,color:C.sub,marginBottom:10}}>Gain potentiel : <b style={{color:"#34D399"}}>+{(num(f.stake)*(num(f.odds)-1)).toFixed(2).replace(".",",")} €</b></div>}
+        <input value={f.desc} onChange={e=>setF({...f,desc:e.target.value})} placeholder={subj?(subj.kind==="club"?"Ex. Champion "+league:"Ex. MVP de la saison"):"Ex. Fenerbahçe champion "+league} style={{...inp,marginBottom:12}}/>
+        <div style={lab}>Bookmaker · cote · mise</div>
+        {legs.map((l,k)=><div key={k} style={{display:"grid",gridTemplateColumns:"1.3fr .8fr .8fr"+(legs.length>1?" 30px":""),gap:6,marginBottom:6}}>
+          <select value={l.bookmaker} onChange={e=>setLegs(ls=>ls.map((x,i2)=>i2===k?{...x,bookmaker:e.target.value}:x))} style={{...inp,padding:"0 8px",fontSize:14.5}}><option value="">Bookmaker</option>{bks.map(b=><option key={b.id||b.name} value={b.name}>{b.name}</option>)}</select>
+          <input inputMode="decimal" value={l.odds} onChange={e=>setLegs(ls=>ls.map((x,i2)=>i2===k?{...x,odds:e.target.value}:x))} placeholder="Cote" style={{...inp,padding:"0 8px"}}/>
+          <input inputMode="decimal" value={l.stake} onChange={e=>setLegs(ls=>ls.map((x,i2)=>i2===k?{...x,stake:e.target.value}:x))} placeholder="Mise €" style={{...inp,padding:"0 8px"}}/>
+          {legs.length>1&&<button type="button" onClick={()=>setLegs(ls=>ls.filter((_,i2)=>i2!==k))} style={{background:"none",border:"none",color:C.sub,fontSize:16,cursor:"pointer"}}>✕</button>}
+        </div>)}
+        <button type="button" onClick={()=>setLegs(ls=>[...ls,{bookmaker:"",odds:ls[ls.length-1].odds,stake:""}])} style={{background:"none",border:"1px dashed #3A404C",borderRadius:10,color:C.blue,fontWeight:600,fontSize:13.5,height:36,width:"100%",cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>+ Ajouter un bookmaker</button>
+        <div style={lab}>Tipster</div>
+        <select value={f.tipster} onChange={e=>setF({...f,tipster:e.target.value})} style={{...inp,marginBottom:12}}><option value="">—</option>{tips.map(t=><option key={t.id||t.name} value={t.name}>{t.name}</option>)}</select>
+        {okLegs.length>0&&<div style={{fontSize:13,color:C.sub,marginBottom:10}}>Mise totale <b style={{color:C.text}}>{okLegs.reduce((t,l)=>t+num(l.stake),0).toFixed(2).replace(".",",")} €</b> · gain potentiel <b style={{color:"#34D399"}}>+{okLegs.reduce((t,l)=>t+num(l.stake)*(num(l.odds)-1),0).toFixed(2).replace(".",",")} €</b></div>}
         <button type="button" className="press" disabled={busy} onClick={add} style={{width:"100%",height:48,borderRadius:14,border:"none",background:C.blue,color:"#0C1424",fontWeight:700,fontSize:15.5,cursor:"pointer",fontFamily:"inherit"}}>{busy?"Ajout…":"Ajouter le pari long terme"}</button>
       </div>}
       {list===null?<div style={{textAlign:"center",color:C.sub,padding:16}}>Chargement…</div>
