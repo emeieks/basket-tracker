@@ -38,14 +38,14 @@ function eur(v,dec=2){
 }
 
 const STAT_FR={
-  "Points":"Points","Rebonds":"Rebonds","Assists":"Passes",
-  "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Passes",
-  "Points+Rebonds+Assists":"Points + Rebonds + Passes","3 Points Made":"Tirs à 3 pts",
+  "Points":"Points","Rebonds":"Rebonds","Assists":"Assists",
+  "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Assists",
+  "Points+Rebonds+Assists":"Points + Rebonds + Assists","3 Points Made":"Tirs à 3 pts",
   "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
   "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Minutes":"Minutes",
 };
 const STAT_ABBR={
-  "Points":"Pts","Rebonds":"Reb","Assists":"Pas","Points+Rebonds":"P+R","Points+Assists":"P+P",
+  "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A",
   "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
   "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Minutes":"Min",
 };
