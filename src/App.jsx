@@ -3915,6 +3915,8 @@ function SEmpty({title,sub}){
 
 // ── Paris LONG TERME d'une ligue (vainqueur, MVP…) ─────────────────────────
 // En cours : visibles seulement ici. Une fois gagné/perdu → dans Mes paris et les stats à la DATE DE CLÔTURE.
+let _LT_PLAYERS=null;
+const capW=n=>String(n||"").split(/(\s+|-)/).map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join("");
 function LeagueLTBets({league,showToast}){
   const[list,setList]=useState(null);
   const[open,setOpen]=useState(false);
@@ -3931,8 +3933,12 @@ function LeagueLTBets({league,showToast}){
         const nq=normTeam(t);
         const seen=new Set();const cl=[];
         (clubsAll.current||[]).forEach(c=>{const k=normTeam(c.name);if(!seen.has(k)&&k.includes(nq)){seen.add(k);cl.push({kind:"club",name:c.name,team:c.name,img:CLUB_LOGOS_MAP[c.name]||c.logo});}});
-        const r=await fetch(SUPA_URL+"/rest/v1/players?select=name,team,photo_url,avatar_url&name=ilike.*"+encodeURIComponent(t)+"*&order=name.asc&limit=8",{headers:H});
-        const ps=r.ok?await r.json():[];
+        if(!_LT_PLAYERS)_LT_PLAYERS=fetchPlayers();
+        const all=await _LT_PLAYERS;
+        // recherche souple : chaque mot tapé (prénom, nom, dans n'importe quel ordre, sans accents)
+        const words=t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/\s+/).filter(Boolean);
+        const ps=(all||[]).filter(p=>{const n=String(p.name||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");return words.every(w=>n.includes(w));})
+          .sort((a,b)=>{const na=String(a.name).toLowerCase(),nb=String(b.name).toLowerCase(),w=words[0];return (na.startsWith(w)?0:1)-(nb.startsWith(w)?0:1)||na.localeCompare(nb);}).slice(0,8);
         if(alive)setSugg([...cl.slice(0,5),...ps.map(p=>({kind:"player",name:p.name,team:p.team,img:p.photo_url||p.avatar_url}))]);
       }catch(_){}
     },180);
@@ -3958,7 +3964,7 @@ function LeagueLTBets({league,showToast}){
           notes:"longterm",bet_type:subj&&subj.kind==="player"?"player":"team",created_at:now,...(gid?{group_id:gid}:{})});
       }
       setF({desc:"",tipster:f.tipster});setLegs([{bookmaker:legs[0].bookmaker,odds:"",stake:""}]);setSubj(null);setQ("");setOpen(false);
-      showToast("Pari long terme ajouté ✓"+(okLegs.length>1?" ("+okLegs.length+" bookmakers)":""));load();
+      showToast("Pari long terme ajouté ✓"+(okLegs.length>1?" ("+okLegs.length+" bookmakers)":""));load();ping();
     }catch(e){showToast("Erreur : "+e.message,"#FF8A80");}
     setBusy(false);
   };
@@ -3989,7 +3995,7 @@ function LeagueLTBets({league,showToast}){
     <div style={{padding:"12px 14px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
       <div style={{display:"flex",alignItems:"baseline",gap:8}}>
         <div style={{flex:1,minWidth:0}}>
-          {b.player&&b.player!==b.description&&<div style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,fontWeight:700,color:C.blue,marginBottom:2}}>{(CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player])&&<img src={CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player]} alt="" style={{width:16,height:16,objectFit:"contain"}}/>}{b.player}</div>}
+          {b.player&&b.player!==b.description&&<div style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,fontWeight:700,color:C.blue,marginBottom:2}}>{(CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player])&&<img src={CLUB_LOGOS_MAP[b.team]||CLUB_LOGOS_MAP[b.player]} alt="" style={{width:16,height:16,objectFit:"contain"}}/>}{capW(b.player)}</div>}
           <div style={{fontSize:15.5,fontWeight:600,color:C.text}}>{b.description}</div>
         </div>
         <div style={{fontSize:15,fontWeight:700,color:g?"#34D399":l?"#F87171":C.text,whiteSpace:"nowrap"}}>{g?"+"+Number(b.profit).toFixed(2)+" €":l?Number(b.profit).toFixed(2)+" €":"@"+Number(b.odds).toFixed(2).replace(".",",")}</div>
@@ -4014,14 +4020,14 @@ function LeagueLTBets({league,showToast}){
         <div style={lab}>Club ou joueur (optionnel)</div>
         {subj?<div style={{display:"flex",alignItems:"center",gap:10,height:46,padding:"0 12px",borderRadius:12,border:"1px solid "+C.blue,background:"rgba(91,157,255,.1)",marginBottom:10}}>
           {subj.img?<img src={subj.img} alt="" style={{width:28,height:28,borderRadius:subj.kind==="player"?14:4,objectFit:subj.kind==="player"?"cover":"contain",background:subj.kind==="player"?"#262B35":"transparent"}}/>:null}
-          <div style={{flex:1,minWidth:0}}><div style={{fontSize:15,fontWeight:600,color:C.text}}>{subj.name}</div>{subj.kind==="player"&&subj.team&&<div style={{fontSize:11.5,color:C.sub}}>{subj.team}</div>}</div>
+          <div style={{flex:1,minWidth:0}}><div style={{fontSize:15,fontWeight:600,color:C.text}}>{capW(subj.name)}</div>{subj.kind==="player"&&subj.team&&<div style={{fontSize:11.5,color:C.sub}}>{subj.team}</div>}</div>
           <button type="button" onClick={()=>{setSubj(null);setQ("");}} style={{background:"none",border:"none",color:C.sub,fontSize:18,cursor:"pointer"}}>✕</button>
         </div>:<div style={{position:"relative",marginBottom:10}}>
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ex. fener, james…" style={inp}/>
           {sugg.length>0&&<div style={{position:"absolute",left:0,right:0,top:50,zIndex:20,background:"#20242C",border:"1px solid #2E3440",borderRadius:12,overflow:"hidden",boxShadow:"0 10px 30px rgba(0,0,0,.5)"}}>
             {sugg.map(x=><div key={x.kind+x.name} onClick={()=>{setSubj(x);setSugg([]);}} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",cursor:"pointer",borderTop:"1px solid rgba(255,255,255,.04)"}}>
               {x.img?<img src={x.img} alt="" style={{width:28,height:28,borderRadius:x.kind==="player"?14:4,objectFit:x.kind==="player"?"cover":"contain",background:x.kind==="player"?"#262B35":"transparent"}}/>:<div style={{width:28,height:28,borderRadius:14,background:"#262B35"}}/>}
-              <div style={{flex:1,minWidth:0}}><div style={{fontSize:14.5,fontWeight:600,color:C.text}}>{x.name}</div><div style={{fontSize:11.5,color:C.sub}}>{x.kind==="club"?"Club":(x.team||"Joueur")}</div></div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontSize:14.5,fontWeight:600,color:C.text}}>{capW(x.name)}</div><div style={{fontSize:11.5,color:C.sub}}>{x.kind==="club"?"Club":(x.team||"Joueur")}</div></div>
             </div>)}
           </div>}
         </div>}
@@ -4058,6 +4064,11 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{teamIndex().catch(()=>{});},[]);
   const[leagues,setLeagues]=useState([]);
   const[selectedLeague,setSelectedLeague]=useState(null);
+  // Nombre de paris long terme EN COURS par ligue (un pari multi-bookmakers compte pour 1)
+  const[ltCount,setLtCount]=useState({});
+  useEffect(()=>{const load=()=>fetch(SUPA_URL+"/rest/v1/bets?select=id,game,group_id&notes=eq.longterm&status=eq.pending",{headers:H}).then(r=>r.ok?r.json():[]).then(rows=>{
+      const m={};const seen=new Set();(rows||[]).forEach(b=>{const k=b.group_id||b.id;if(seen.has(k))return;seen.add(k);m[b.game]=(m[b.game]||0)+1;});setLtCount(m);}).catch(()=>{});
+    load();window.addEventListener("bets:reload",load);return()=>window.removeEventListener("bets:reload",load);},[selectedLeague]);
   const[clubs,setClubs]=useState([]);
   const[selectedClub,setSelectedClub]=useState(null);
   const[players,setPlayers]=useState([]);
@@ -4378,6 +4389,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
               {bgi&&<img src={bgi} alt="" onError={e=>{e.currentTarget.style.display="none";}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>}
               <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.75))"}}/>
               {lg.logo&&<TileLogo src={lg.logo}/>}
+              {ltCount[lg.name]>0&&<div title="Paris long terme en cours" style={{position:"absolute",right:44,top:11,minWidth:26,height:24,padding:"0 8px",borderRadius:12,background:C.blue,color:"#0C1424",fontSize:12.5,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.5)"}}>LT {ltCount[lg.name]}</div>}
               <div style={{position:"absolute",left:0,right:0,bottom:0,height:3,background:lc.p,boxShadow:"0 0 10px "+lc.p}}/>
               <div style={{position:"absolute",left:12,right:12,bottom:10,fontSize:16,fontWeight:800,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textShadow:"0 1px 6px rgba(0,0,0,.7)"}}>{lg.name}</div>
               <button type="button" aria-label={"Modifier "+lg.name} onClick={e=>{e.stopPropagation();setLgMenu(lg);}} style={{position:"absolute",right:8,top:8,width:30,height:30,borderRadius:15,border:"none",background:"rgba(0,0,0,.4)",color:"rgba(255,255,255,.85)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>⋯</button>
