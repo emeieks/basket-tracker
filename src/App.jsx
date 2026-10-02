@@ -3501,7 +3501,7 @@ function TileLogo({src,size=38}){
   useEffect(()=>{if(!src||src in _DARKLOGO){setDark(_DARKLOGO[src]);return;}let alive=true;
     loadImg(src).then(im=>{const W=48,H=Math.max(1,Math.round(48*im.naturalHeight/Math.max(1,im.naturalWidth)));const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.drawImage(im,0,0,W,H);
       const d=x.getImageData(0,0,W,H).data;let op=0,lum=0,col=0;for(let i=0;i<d.length;i+=4){if(d[i+3]<60)continue;op++;const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);lum+=.2126*r+.7152*g+.0722*b;if(mx-mn>.25&&mx>.3)col++;}
-      const v=op>0&&lum/op<.32&&col/op<.2;_DARKLOGO[src]=v;if(alive)setDark(v);}).catch(()=>{_DARKLOGO[src]=false;if(alive)setDark(false);});
+      const tot=d.length/4;const v=op>0&&op<tot*.8&&lum/op<.32&&col/op<.2;_DARKLOGO[src]=v;if(alive)setDark(v);}).catch(()=>{_DARKLOGO[src]=false;if(alive)setDark(false);});
     return()=>{alive=false;};},[src]);
   return <img src={src} alt="" style={{position:"absolute",left:12,top:12,width:size,height:size,objectFit:"contain",
     filter:dark?"brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.6))":"drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 6px rgba(255,255,255,.35)) drop-shadow(0 2px 6px rgba(0,0,0,.6))"}}/>;
