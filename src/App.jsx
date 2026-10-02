@@ -3067,12 +3067,12 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
             <span key="o" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
             <span key="m" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>{eur(stake)}</span>,
-            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#8B92A0",fontWeight:500}}>{b.tipster}</span>,
+            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4B5FD",fontWeight:600}}>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#4B5260",flexShrink:0}}>·</span>{el}</React.Fragment>))}
         </span>
       </div>
       <span style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
-        {st==="pending"?<><b style={{display:"block",fontSize:12,letterSpacing:.5,color:"#E8EAEE"}}>EN COURS</b><span style={{fontSize:12,color:"#8B93A7"}}>→ {eur(stake*odds)}</span></>
+        {st==="pending"?<><b style={{display:"block",fontSize:12,letterSpacing:.5,color:"#E8EAEE"}}>EN COURS</b></>
           :<b style={{fontSize:17,fontWeight:800,color:resultCol}}>{st==="void"?"Void":money(profit)}</b>}
       </span>
     </article>
@@ -3181,7 +3181,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
             <span style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,color:C.text}}>
               <span style={{width:7,height:7,borderRadius:4,background:C.blue}}/>En cours · {pendingList.length}
             </span>
-            <span style={{fontSize:14,fontWeight:600,color:C.blue}}>
+            <span style={{fontSize:14,fontWeight:600,color:"#E8EAEE"}}>
               → {eur(pendingList.reduce((s,x)=>s+parseFloat(x.stake||0)*parseFloat(x.odds||0),0))}
             </span>
           </div>
