@@ -4012,6 +4012,8 @@ const capW=n=>String(n||"").split(/(\s+|-)/).map(w=>w?w.charAt(0).toUpperCase()+
 function LTBetsView({showToast,players=[],bookmakers=[]}){
   const[league,setLeague]=useState("");const[leagues,setLeagues]=useState([]);
   const[sel,setSel]=useState(null);
+  const[ed,setEd]=useState(null); // édition du pari ouvert
+  const[edBusy,setEdBusy]=useState(false);
   useEffect(()=>{fetchLeagues().then(r=>setLeagues(r||[])).catch(()=>{});},[]);
   const bkPhotos=Object.fromEntries(bookmakers.map(b=>[b.name,b.logo]).filter(([,v])=>v));
   const[list,setList]=useState(null);
@@ -4168,7 +4170,7 @@ function LTBetsView({showToast,players=[],bookmakers=[]}){
       </>}
       {sel&&(()=>{const b=sel;const g=grp(b);const d0=x=>x?new Date(x).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"}):"";
         const act=(l,c,f)=><button type="button" className="press" onClick={async()=>{await f();setSel(null);}} style={{height:50,borderRadius:14,border:"1.5px solid "+c+"66",background:c+"18",color:c,fontWeight:800,fontSize:16,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>;
-        return(<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setSel(null);}}>
+        return(<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget){setSel(null);setEd(null);}}}>
           <div className="modal-sheet" style={{paddingBottom:"calc(18px + env(safe-area-inset-bottom))"}}>
             <div className="modal-handle"/>
             {b.player&&b.player!==b.description&&<div style={{fontSize:14,fontWeight:700,color:C.green}}>{capW(b.player)}</div>}
@@ -4176,6 +4178,42 @@ function LTBetsView({showToast,players=[],bookmakers=[]}){
             <div style={{fontSize:13,color:C.sub,marginTop:4}}>{b.game} · ouvert le {d0(b.opened_at||b.created_at)}{b.status!=="pending"?" · fermé le "+d0(b.created_at):""}</div>
             <div style={{margin:"12px 0",display:"flex",flexDirection:"column",gap:6}}>{g.map(x=><div key={x.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.text}}><BkBadge src={bkPhotos[x.bookmaker]} label={x.bookmaker||"?"} size={24}/><b>{x.bookmaker||"—"}</b><span style={{marginLeft:"auto",color:C.sub}}>@{Number(x.odds).toFixed(2).replace(".",",")} · {eur(Number(x.stake)||0)}</span></div>)}
               {b.tipster&&<div style={{fontSize:13,color:"#C4B5FD"}}>Tipster : {b.tipster}</div>}</div>
+            {!ed?<button type="button" onClick={()=>setEd({desc:b.description||"",player:b.player&&b.player!==b.description?b.player:"",game:b.game||"",tipster:b.tipster||"",legs:g.map(x=>({id:x.id,bookmaker:x.bookmaker||"",odds:String(x.odds??""),stake:String(x.stake??"")}))})}
+                style={{width:"100%",height:42,marginBottom:10,borderRadius:12,border:"1px solid "+C.line,background:C.card,color:C.text,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>✏️ Modifier le pari</button>
+            :<div style={{background:C.card,border:"1px solid "+C.line,borderRadius:14,padding:12,marginBottom:10}}>
+              <div style={lab}>Club ou joueur</div>
+              <input value={ed.player} onChange={e=>setEd({...ed,player:e.target.value})} placeholder="(optionnel)" style={{...inp,marginBottom:8}}/>
+              <div style={lab}>Pari</div>
+              <input value={ed.desc} onChange={e=>setEd({...ed,desc:e.target.value})} style={{...inp,marginBottom:8}}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                <div><div style={lab}>Ligue</div><select value={ed.game} onChange={e=>setEd({...ed,game:e.target.value})} style={inp}><option value="">—</option>{leagues.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}</select></div>
+                <div><div style={lab}>Tipster</div><select value={ed.tipster} onChange={e=>setEd({...ed,tipster:e.target.value})} style={inp}><option value="">—</option>{tips.map(t=><option key={t.id||t.name} value={t.name}>{t.name}</option>)}</select></div>
+              </div>
+              <div style={lab}>Bookmaker · cote · mise</div>
+              {ed.legs.map((l,k)=><div key={l.id} style={{display:"grid",gridTemplateColumns:"1.3fr .8fr .8fr",gap:6,marginBottom:6}}>
+                <select value={l.bookmaker} onChange={e=>setEd({...ed,legs:ed.legs.map((x,i2)=>i2===k?{...x,bookmaker:e.target.value}:x)})} style={{...inp,padding:"0 8px",fontSize:14.5}}><option value="">—</option>{bks.map(x=><option key={x.id||x.name} value={x.name}>{x.name}</option>)}</select>
+                <input inputMode="decimal" value={l.odds} onChange={e=>setEd({...ed,legs:ed.legs.map((x,i2)=>i2===k?{...x,odds:e.target.value}:x)})} style={{...inp,padding:"0 8px"}}/>
+                <input inputMode="decimal" value={l.stake} onChange={e=>setEd({...ed,legs:ed.legs.map((x,i2)=>i2===k?{...x,stake:e.target.value}:x)})} style={{...inp,padding:"0 8px"}}/>
+              </div>)}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+                <button type="button" onClick={()=>setEd(null)} style={{height:44,borderRadius:12,border:"1px solid "+C.line,background:"transparent",color:C.sub,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>Annuler</button>
+                <button type="button" disabled={edBusy} onClick={async()=>{
+                  if(!ed.desc.trim()){showToast("Le pari ne peut pas être vide","#FF8A80");return;}
+                  setEdBusy(true);
+                  try{
+                    for(const l of ed.legs){
+                      const x=g.find(y=>y.id===l.id)||{};const odds=num(l.odds),stake=num(l.stake);
+                      if(!(odds>1)||!(stake>0))throw new Error("cote ou mise invalide");
+                      const up={description:ed.desc.trim(),player:ed.player.trim()||ed.desc.trim(),game:ed.game||null,tipster:ed.tipster||null,bookmaker:l.bookmaker||null,odds,stake};
+                      if(x.status&&x.status!=="pending")up.profit=calcProfit(x.status,stake,odds);
+                      await updateBet(l.id,up);
+                    }
+                    showToast("Pari modifié ✓");setEd(null);setSel(null);load();ping();
+                  }catch(err){showToast("Erreur : "+err.message,"#FF8A80");}
+                  setEdBusy(false);
+                }} style={{height:44,borderRadius:12,border:"none",background:C.green,color:"#05231A",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{edBusy?"…":"Enregistrer"}</button>
+              </div>
+            </div>}
             {b.status==="pending"?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{act("Gagné",C.green,()=>close(b,"won"))}{act("Perdu",C.red,()=>close(b,"lost"))}</div>
               :<button type="button" className="press" onClick={async()=>{await reopen(b);setSel(null);}} style={{width:"100%",height:46,borderRadius:14,border:"1px solid "+C.line,background:C.card,color:C.text,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>↺ Remettre en cours</button>}
             <button type="button" onClick={async()=>{await del(b);setSel(null);}} style={{width:"100%",marginTop:10,height:42,borderRadius:12,border:"none",background:"transparent",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>Supprimer</button>
