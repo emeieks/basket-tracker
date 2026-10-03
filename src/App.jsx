@@ -4793,6 +4793,9 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
     }catch(err){showToast("Erreur photo: "+err.message,"#FF8A80");}
     setUploading(false);
   }
+  // couleur dominante du logo du club (extraite en arrière-plan)
+  const[,tick]=useState(0);
+  useEffect(()=>{if(club?.name&&clubLogo){primeTeamColor(club.name,clubLogo);const t=setTimeout(()=>tick(x=>x+1),500);return()=>clearTimeout(t);}},[club?.name,clubLogo]);
   const tc=getTeamColor(club?.name);
   const lc=LEAGUE_COLORS[league?.name]||{};
   const acc=(tc&&tc.p)||lc.p||"#34D399";
@@ -4814,7 +4817,7 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
             </div>
             <div style={{flex:1,minWidth:0,paddingBottom:18}}>
               {role&&<span style={{display:"inline-block",padding:"3px 9px",borderRadius:6,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.18)",fontSize:12,fontWeight:700,color:"#fff",marginBottom:8}}>{role}</span>}
-              <div style={{fontSize:"clamp(24px,7vw,36px)",fontWeight:900,color:"#fff",letterSpacing:-.8,lineHeight:1.05,overflowWrap:"anywhere"}}>{nameFormatted||"Nouveau joueur"}</div>
+              <div style={{fontSize:"clamp(22px,6.2vw,32px)",fontWeight:900,color:"#fff",letterSpacing:-.6,lineHeight:1.08,overflowWrap:"normal",wordBreak:"keep-all",hyphens:"none"}}>{nameFormatted||"Nouveau joueur"}</div>
               <div style={{display:"flex",alignItems:"center",gap:7,marginTop:9,fontSize:14,color:"#cbd5e1",fontWeight:600,flexWrap:"wrap"}}>
                 <MiniLogo src={getLeagueLogo(league?.name)} label={league?.name} size={18} round={false}/><span>{league?.name}</span>
                 <span style={{color:"#5b6478"}}>•</span><span>{club?.name}</span>
@@ -4824,8 +4827,8 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
           </div>
         </div>
 
-        <div style={{padding:"14px 16px calc(20px + env(safe-area-inset-bottom))",overflowY:"auto",display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14}}>
+        <div style={{padding:"14px 16px calc(20px + env(safe-area-inset-bottom))",overflowY:"auto",flex:1,minHeight:0,display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14,flexShrink:0}}>
             <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:10}}>Identité</div>
             <input className="form-input" placeholder="Prénom Nom" value={name} onChange={e=>setName(e.target.value)} style={{fontSize:17,fontWeight:700}} autoFocus/>
             <div style={{fontSize:12,fontWeight:700,color:C.sub,margin:"14px 2px 8px"}}>Position{isHockey(league)?" (hockey)":""}</div>
@@ -4837,7 +4840,7 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
               ))}
             </div>
           </div>
-          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14}}>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14,flexShrink:0}}>
             <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:10}}>Photo</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               <button type="button" onClick={pastePhoto} disabled={uploading} style={{height:44,borderRadius:12,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",color:C.text,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{uploading?"Envoi…":"📋 Coller"}</button>
@@ -4846,8 +4849,8 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
             <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{display:"none"}}/>
             {photoUrl&&<button type="button" onClick={()=>setPhotoUrl(null)} style={{marginTop:8,background:"none",border:"none",color:C.red,fontSize:13,fontWeight:600,cursor:"pointer"}}>Retirer la photo</button>}
           </div>
-          <button className="btn btn-primary" onClick={save} disabled={saving||!name.trim()}>{saving?"Création…":name.trim()?"Créer "+nameFormatted:"Entre un nom"}</button>
-          <button className="btn btn-secondary" onClick={onClose}>Annuler</button>
+          <button className="btn btn-primary" onClick={save} disabled={saving||!name.trim()} style={{flexShrink:0,minHeight:52}}>{saving?"Création…":name.trim()?"Créer "+nameFormatted:"Entre un nom"}</button>
+          <button className="btn btn-secondary" onClick={onClose} style={{flexShrink:0,minHeight:48}}>Annuler</button>
         </div>
       </div>
     </div>
