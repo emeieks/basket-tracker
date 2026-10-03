@@ -741,11 +741,15 @@ function normTeam(s){
 // même club ? nom identique après normalisation, ou même premier mot significatif (≥5 lettres)
 // Index des équipes des joueurs (1 seule requête, gardé 60 s)
 let _TEAM_IDX=null,_TEAM_IDX_T=0,_TEAM_IDX_P=null;
+// Mot distinctif d'un club (≥5 lettres) en sautant les VILLES partagées par plusieurs sports
+// (« Boston » Celtics/Bruins, « Chicago » Bulls/Blackhawks…) pour ne pas mélanger NBA et NHL.
+const CITY_WORDS=new Set(["boston","chicago","dallas","detroit","toronto","washington","philadelphia","minnesota","angeles","denver","phoenix","golden","vegas","florida","tampa","carolina","colorado","seattle","vancouver","montreal","ottawa","calgary","edmonton","winnipeg","nashville","pittsburgh","columbus","buffalo","anaheim","louis","jersey","atlanta","miami","milwaukee","orlando","portland","sacramento","antonio","houston","memphis","cleveland","indiana","charlotte","brooklyn","francisco","oklahoma","orleans"]);
+function teamWord(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5&&!CITY_WORDS.has(x))[0]||"";}
 function teamIndex(force){
   if(!force&&_TEAM_IDX&&Date.now()-_TEAM_IDX_T<60000)return Promise.resolve(_TEAM_IDX);
   if(_TEAM_IDX_P)return _TEAM_IDX_P;
   _TEAM_IDX_P=fetch(SUPA_URL+"/rest/v1/players?select=team&limit=10000",{headers:H}).then(r=>r.ok?r.json():[]).then(rows=>{
-    const m={};const w=s=>(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5)[0]||"";
+    const m={};const w=teamWord;
     rows.forEach(p=>{if(!p.team)return;[normTeam(p.team),"w:"+w(p.team)].forEach(k=>{if(k==="w:")return;const e=m[k]||(m[k]={n:0,names:new Set()});e.n++;e.names.add(p.team);});});
     m.__w=w;
     _TEAM_IDX=m;_TEAM_IDX_T=Date.now();_TEAM_IDX_P=null;return m;}).catch(e=>{_TEAM_IDX_P=null;throw e;});
@@ -755,7 +759,7 @@ function sameTeam(a,b){
   const na=normTeam(a),nb=normTeam(b);
   if(!na||!nb)return false;
   if(na===nb)return true;
-  const w=s=>(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5)[0]||"";
+  const w=teamWord;
   const wa=w(a),wb=w(b);
   return !!wa&&wa===wb;
 }
