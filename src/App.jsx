@@ -4778,93 +4778,75 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
     setSaving(false);
   }
 
+  // Fichier depuis le téléphone / l'ordi
+  const fileRef=useRef(null);
+  async function onFile(ev){
+    const f=ev.target.files&&ev.target.files[0];ev.target.value="";if(!f)return;
+    setUploading(true);
+    try{
+      const safe=("player_"+(name.trim()||"joueur")).toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+      const ext=f.type.includes("png")?"png":f.type.includes("webp")?"webp":"jpg";
+      const path="photos/players/"+safe+"_"+Date.now()+"."+ext;
+      const res=await fetch(SUPA_URL+"/storage/v1/object/avatars/"+path,{method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":f.type,"x-upsert":"true"},body:f});
+      if(!res.ok)throw new Error("envoi "+res.status);
+      setPhotoUrl(SUPA_URL+"/storage/v1/object/public/avatars/"+path);
+    }catch(err){showToast("Erreur photo: "+err.message,"#FF8A80");}
+    setUploading(false);
+  }
+  const tc=getTeamColor(club?.name);
+  const lc=LEAGUE_COLORS[league?.name]||{};
+  const acc=(tc&&tc.p)||lc.p||"#34D399";
+  const POS=positionsFor(league);
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal-sheet" style={{padding:0,overflow:"hidden",borderRadius:"24px 24px 0 0"}}>
-        <div className="modal-handle" style={{margin:"12px auto 0"}}/>
-
-        {/* Mini header club */}
-        <div style={{display:"flex",alignItems:"center",gap:10,padding:"16px 16px 0"}}>
-          {clubLogo
-            ?<img src={clubLogo} alt="" style={{width:28,height:28,objectFit:"contain",borderRadius:6,background:"#252A34",padding:3}}/>
-            :<div style={{width:28,height:28,borderRadius:6,background:"#252A34",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>◫</div>
-          }
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:"#F2F2F7"}}>{club.name}</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>{league.name}</div>
+      <div className="modal-sheet" style={{padding:0,overflow:"hidden",borderRadius:"24px 24px 0 0",maxHeight:"94vh",display:"flex",flexDirection:"column"}}>
+        {/* Aperçu en direct (comme l'app Esport) */}
+        <div style={{position:"relative",overflow:"hidden",minHeight:200,flexShrink:0,
+          background:"radial-gradient(120% 150% at 85% 30%,"+acc+"66 0%,rgba(11,18,32,0) 60%),linear-gradient(180deg,#151a24 0%,#0e1117 100%)",borderBottom:"3px solid "+acc}}>
+          {club?.name&&<div aria-hidden="true" style={{position:"absolute",left:"3%",top:"50%",transform:"translateY(-50%)",fontSize:"clamp(54px,17vw,110px)",fontWeight:900,letterSpacing:-2,whiteSpace:"nowrap",color:"rgba(255,255,255,.04)",textTransform:"uppercase",pointerEvents:"none"}}>{club.name.split(" ").slice(-1)[0]}</div>}
+          <div className="modal-handle" style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",margin:0}}/>
+          <button onClick={onClose} aria-label="Fermer" style={{position:"absolute",top:12,right:12,zIndex:3,width:34,height:34,borderRadius:17,border:"none",background:"rgba(0,0,0,.4)",color:"#fff",fontSize:18,cursor:"pointer"}}>×</button>
+          <span style={{position:"absolute",top:14,left:16,zIndex:3,fontSize:11.5,fontWeight:700,color:"#e5e7eb",background:"rgba(0,0,0,.4)",padding:"5px 10px",borderRadius:20}}>Nouveau joueur · aperçu en direct</span>
+          <div style={{position:"relative",zIndex:2,display:"flex",alignItems:"flex-end",gap:12,padding:"52px 16px 0",minHeight:200}}>
+            <div style={{width:"clamp(96px,27vw,140px)",height:150,flexShrink:0,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+              {photoUrl?<img src={photoUrl} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",objectPosition:"50% 100%",filter:"drop-shadow(0 6px 18px rgba(0,0,0,.5))"}}/>
+                :<div style={{width:96,height:96,marginBottom:22,borderRadius:"50%",background:"linear-gradient(135deg,"+acc+",#1f2937)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,fontWeight:900,color:"#fff"}}>{nameFormatted?nameFormatted.split(" ").map(w=>w[0]).join("").slice(0,2):"?"}</div>}
+            </div>
+            <div style={{flex:1,minWidth:0,paddingBottom:18}}>
+              {role&&<span style={{display:"inline-block",padding:"3px 9px",borderRadius:6,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.18)",fontSize:12,fontWeight:700,color:"#fff",marginBottom:8}}>{role}</span>}
+              <div style={{fontSize:"clamp(24px,7vw,36px)",fontWeight:900,color:"#fff",letterSpacing:-.8,lineHeight:1.05,overflowWrap:"anywhere"}}>{nameFormatted||"Nouveau joueur"}</div>
+              <div style={{display:"flex",alignItems:"center",gap:7,marginTop:9,fontSize:14,color:"#cbd5e1",fontWeight:600,flexWrap:"wrap"}}>
+                <MiniLogo src={getLeagueLogo(league?.name)} label={league?.name} size={18} round={false}/><span>{league?.name}</span>
+                <span style={{color:"#5b6478"}}>•</span><span>{club?.name}</span>
+              </div>
+            </div>
+            {clubLogo&&<img src={clubLogo} alt="" style={{width:"clamp(56px,16vw,88px)",height:"clamp(56px,16vw,88px)",objectFit:"contain",alignSelf:"flex-start",marginTop:-6,flexShrink:0,filter:"drop-shadow(0 4px 14px rgba(0,0,0,.5))"}}/>}
           </div>
-          <button onClick={onClose}
-            style={{marginLeft:"auto",background:"transparent",border:"none",color:"rgba(255,255,255,.4)",
-              fontSize:22,cursor:"pointer",lineHeight:1,padding:4}}>×</button>
         </div>
 
-        <div style={{padding:"16px 16px 32px",display:"flex",flexDirection:"column",gap:14}}>
-
-          {/* Zone photo + nom */}
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            {/* Photo */}
-            <div style={{position:"relative",flexShrink:0}}>
-              {photoUrl?(
-                <img src={photoUrl} alt="" style={{
-                  width:80,height:92,objectFit:"cover",objectPosition:"top center",
-                  borderRadius:12,border:"2px solid rgba(255,255,255,.1)"
-                }}/>
-              ):(
-                <div style={{width:80,height:92,borderRadius:12,
-                  background:"rgba(255,255,255,.05)",border:"1.5px dashed rgba(255,255,255,.12)",
-                  display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
-                  <span style={{fontSize:24,color:"rgba(255,255,255,.15)"}}>◎</span>
-                </div>
-              )}
-              <button onClick={pastePhoto} disabled={uploading}
-                style={{position:"absolute",bottom:-6,right:-6,
-                  width:26,height:26,borderRadius:"50%",
-                  background:"#34D399",border:"2px solid #111",
-                  display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                {uploading
-                  ?<span style={{fontSize:9,color:"#fff"}}>…</span>
-                  :<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
-                    <rect x="8" y="2" width="12" height="14" rx="2"/>
-                  </svg>
-                }
-              </button>
-            </div>
-            {/* Nom */}
-            <div style={{flex:1}}>
-              <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
-                letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Nom du joueur</div>
-              <input className="form-input"
-                placeholder="Prénom Nom"
-                value={name}
-                onChange={e=>setName(e.target.value)}
-                style={{fontSize:16,fontWeight:700}}
-                autoFocus
-              />
-              {name.trim()&&<div style={{fontSize:11,color:"rgba(255,255,255,.3)",marginTop:4}}>→ {nameFormatted}</div>}
-            </div>
-          </div>
-
-          {/* Position — 5 positions standard */}
-          <div>
-            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
-              letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Position</div>
-            <div style={{display:"flex",gap:isHockey(league)?6:8}}>
-              {positionsFor(league).map(r=>(
-                <button key={r} onClick={()=>setRole(r===role?"":r)}
-                  style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:.3,
-                    background:role===r?"#34D399":"rgba(255,255,255,.06)",
-                    color:role===r?"#fff":"rgba(255,255,255,.4)",
-                    transition:"all .15s",boxShadow:role===r?"0 0 14px rgba(52,211,153,.4)":"none"}}>
-                  {r}
-                </button>
+        <div style={{padding:"14px 16px calc(20px + env(safe-area-inset-bottom))",overflowY:"auto",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:10}}>Identité</div>
+            <input className="form-input" placeholder="Prénom Nom" value={name} onChange={e=>setName(e.target.value)} style={{fontSize:17,fontWeight:700}} autoFocus/>
+            <div style={{fontSize:12,fontWeight:700,color:C.sub,margin:"14px 2px 8px"}}>Position{isHockey(league)?" (hockey)":""}</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat("+POS.length+",1fr)",gap:6}}>
+              {POS.map(r=>(
+                <button key={r} type="button" onClick={()=>setRole(r===role?"":r)}
+                  style={{height:44,borderRadius:12,border:"1px solid "+(role===r?C.green:C.line),cursor:"pointer",fontSize:14,fontWeight:800,fontFamily:"inherit",
+                    background:role===r?"rgba(52,211,153,.16)":"rgba(255,255,255,.03)",color:role===r?C.green:C.sub}}>{r}</button>
               ))}
             </div>
           </div>
-
-          <button className="btn btn-primary" onClick={save} disabled={saving||!name.trim()}>
-            {saving?"Création…":"Créer le joueur"}
-          </button>
+          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:10}}>Photo</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button type="button" onClick={pastePhoto} disabled={uploading} style={{height:44,borderRadius:12,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",color:C.text,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{uploading?"Envoi…":"📋 Coller"}</button>
+              <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading} style={{height:44,borderRadius:12,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",color:C.text,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>📁 Fichier</button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{display:"none"}}/>
+            {photoUrl&&<button type="button" onClick={()=>setPhotoUrl(null)} style={{marginTop:8,background:"none",border:"none",color:C.red,fontSize:13,fontWeight:600,cursor:"pointer"}}>Retirer la photo</button>}
+          </div>
+          <button className="btn btn-primary" onClick={save} disabled={saving||!name.trim()}>{saving?"Création…":name.trim()?"Créer "+nameFormatted:"Entre un nom"}</button>
           <button className="btn btn-secondary" onClick={onClose}>Annuler</button>
         </div>
       </div>
@@ -4877,7 +4859,7 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
 const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
 // Hockey (NHL) : Centre, Ailier gauche/droit, Défenseur gauche/droit, Gardien
 const HOCKEY_POSITIONS=["C","AG","AD","DG","DD","G"];
-const isHockey=lg=>/\bnhl\b|hockey/i.test(String(lg||""));
+const isHockey=lg=>/\bnhl\b|hockey/i.test(String((lg&&lg.name)||lg||""));
 const positionsFor=lg=>isHockey(lg)?HOCKEY_POSITIONS:BASKET_POSITIONS;
 
 // game peut être "EuroLeague" ou "EuroLeague,ACB" — on parse en tableau
