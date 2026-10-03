@@ -457,8 +457,17 @@ async function pasteImageRaw(name){
   // fallback: lire l'URL texte dans le presse-papier
   try{
     const text=(await navigator.clipboard.readText()).trim();
-    if(text.match(/^https?:\/\/.*\.(png|jpg|jpeg|webp|svg|gif)/i))return text;
+    if(text.match(/^https?:\/\//)){
+      try{const r=await fetch(text);if(r.ok){const b=await r.blob();if(b.type.startsWith("image/"))return uploadBlob(b);}}catch(_){}
+      return text;
+    }
   }catch(_){}
+  // Dernier recours : on demande l'adresse de l'image (clic-droit → « Copier l'adresse de l'image »)
+  const u=(window.prompt("Le presse-papier ne contient pas d'image lisible.\nFais clic-droit sur la photo → « Copier l'adresse de l'image », puis colle-la ici :")||"").trim();
+  if(/^https?:\/\//.test(u)){
+    try{const r=await fetch(u);if(r.ok){const b=await r.blob();if(b.type.startsWith("image/"))return uploadBlob(b);}}catch(_){}
+    return u;
+  }
   throw new Error("Aucune image trouvée — fais clic-droit → Copier l'image");
 }
 
@@ -3611,7 +3620,11 @@ function PlayerStatSearch({players,bets,onChanged}){
   </>);
 }
 
-function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
+function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
+  // Sports séparés : stats Basket (toutes ligues de basket) ou Hockey (NHL)
+  const hasHockey=allSports.some(b=>isHockey(b.game));
+  const[sport,setSport]=useState("basket");
+  const allRaw=allSports.filter(b=>(sport==="hockey")===isHockey(b.game));
   const[tab,setTab]=useState("overview");
   const[posterP,setPosterP]=useState(null);
   const[groupP,setGroupP]=useState(null);
@@ -3797,8 +3810,12 @@ function StatsView({bets:allRaw,players=[],bkPhotos={},onPlayersChanged}){
 
   return(
     <div style={{padding:"0 20px 8px"}}>
+      {hasHockey&&<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
+        {[["basket","🏀 Basket"],["hockey","🏒 Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
+          style={{flex:1,height:38,borderRadius:10,border:"none",background:sport===k?"rgba(52,211,153,.16)":"transparent",color:sport===k?C.green:C.sub,fontWeight:700,fontSize:14.5,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
+      </div>}
       {header}
-      <div key={tab+period} className="fade-in" style={{marginTop:16}}>
+      <div key={tab+period+sport} className="fade-in" style={{marginTop:16}}>
 
       {tab==="overview"&&<>
         <Hero s={total} title={(period==="all"?"Depuis le début":"Sur la période")+" · "+total.count+" paris"+(pending?" ("+pending+" en cours)":"")}
@@ -4832,8 +4849,8 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
           <div>
             <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.3)",
               letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Position</div>
-            <div style={{display:"flex",gap:8}}>
-              {BASKET_POSITIONS.map(r=>(
+            <div style={{display:"flex",gap:isHockey(league)?6:8}}>
+              {positionsFor(league).map(r=>(
                 <button key={r} onClick={()=>setRole(r===role?"":r)}
                   style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:13,fontWeight:800,letterSpacing:.3,
                     background:role===r?"#34D399":"rgba(255,255,255,.06)",
@@ -4858,6 +4875,10 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
 // ── MODAL ÉDITION JOUEUR ──────────────────────────────────────────────────────
 // Les 5 positions basket standard — on peut en cumuler plusieurs
 const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
+// Hockey (NHL) : Centre, Ailier gauche/droit, Défenseur gauche/droit, Gardien
+const HOCKEY_POSITIONS=["C","AG","AD","DG","DD","G"];
+const isHockey=lg=>/\bnhl\b|hockey/i.test(String(lg||""));
+const positionsFor=lg=>isHockey(lg)?HOCKEY_POSITIONS:BASKET_POSITIONS;
 
 // game peut être "EuroLeague" ou "EuroLeague,ACB" — on parse en tableau
 function parseGames(g){return(g||"").split(",").map(s=>s.trim()).filter(Boolean);}
@@ -4899,7 +4920,8 @@ function bigLabel(team){
 
 function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploadingId}){
   // Positions : tableau de positions sélectionnées (multi)
-  const initRoles=parseGames(player.role||"").filter(r=>BASKET_POSITIONS.includes(r));
+  const POS=positionsFor(player.game);
+  const initRoles=parseGames(player.role||"").filter(r=>POS.includes(r));
   const[roles,setRoles]=useState(initRoles.length?initRoles:(player.role?[player.role]:[]) );
   const[team,setTeam]=useState(player.team||"");
   // Ligues multiples
@@ -5117,7 +5139,7 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
               Position <span style={{color:"rgba(52,211,153,.6)",fontWeight:500,letterSpacing:0,textTransform:"none",fontSize:9}}>(plusieurs possible)</span>
             </div>
             <div style={{display:"flex",gap:8}}>
-              {BASKET_POSITIONS.map(r=>{
+              {positionsFor(selectedGames&&selectedGames.length?selectedGames.join(","):player.game).map(r=>{
                 const active=roles.includes(r);
                 return(
                   <button key={r} onClick={()=>toggleRole(r)}
