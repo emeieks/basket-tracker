@@ -1257,6 +1257,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     }
     if(!parseFloat(String(form.odds).replace(",",".")))return "Indique la cote";
     if(!parseFloat(String(form.stake).replace(",",".")))return "Indique la mise";
+    if(!String(form.bookmaker||"").trim())return "Choisis le bookmaker";
     return null;
   }
 
@@ -1462,7 +1463,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           })()}
           {teamLogoHeader&&!isTeamBet&&<>
             <img src={teamLogoHeader} alt="" aria-hidden="true" style={{position:"absolute",left:-70,top:-60,width:360,height:360,objectFit:"contain",opacity:.09,pointerEvents:"none",filter:"grayscale(1) brightness(2.2)",imageRendering:"auto"}}/>
-            <img src={teamLogoHeader} alt={teamName} style={{position:"absolute",left:16,top:16,width:50,height:50,objectFit:"contain",zIndex:2,pointerEvents:"none",filter:"drop-shadow(0 4px 10px rgba(0,0,0,.35))"}}/>
+            <img src={teamLogoHeader} alt={teamName} style={{position:"absolute",left:16,top:isHockey(form.game)?12:16,width:isHockey(form.game)?100:50,height:isHockey(form.game)?100:50,objectFit:"contain",zIndex:2,pointerEvents:"none",filter:"drop-shadow(0 4px 10px rgba(0,0,0,.35))"}}/>
           </>}
           {teamLogoHeader&&isTeamBet&&(
             <img src={teamLogoHeader} alt="" style={{position:"absolute",right:isTeamBet?22:6,top:isTeamBet?"50%":4,transform:isTeamBet?"translateY(-50%)":"none",
@@ -1681,7 +1682,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
                 fontSize:30,fontWeight:900,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>—</option>
-              {Array.from({length:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>{v}</option>)}
+              {Array.from({length:isHockey(form.game)?8:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>{v}</option>)}
             </select>
           </label>
           <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
@@ -3814,8 +3815,12 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   return(
     <div style={{padding:"0 20px 8px"}}>
       {hasHockey&&<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
-        {[["basket","🏀 Basket"],["hockey","🏒 Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
-          style={{flex:1,height:38,borderRadius:10,border:"none",background:sport===k?"rgba(52,211,153,.16)":"transparent",color:sport===k?C.green:C.sub,fontWeight:700,fontSize:14.5,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
+        {[["basket","Basket"],["hockey","Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
+          style={{flex:1,height:40,borderRadius:10,border:"none",background:sport===k?"rgba(52,211,153,.16)":"transparent",color:sport===k?C.green:C.sub,fontWeight:700,fontSize:14.5,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          {k==="basket"
+            ?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8v18.4"/><path d="M5.6 5.4c2.6 2 3.9 4.2 3.9 6.6s-1.3 4.6-3.9 6.6"/><path d="M18.4 5.4c-2.6 2-3.9 4.2-3.9 6.6s1.3 4.6 3.9 6.6"/></svg>
+            :<svg width="22" height="20" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2.5l9.2 14.2h4.6"/><path d="M21 2.5l-9.2 14.2H7.2"/><ellipse cx="13" cy="20.6" rx="3.6" ry="1.5"/></svg>}
+          {l}</button>)}
       </div>}
       {header}
       <div key={tab+period+sport} className="fade-in" style={{marginTop:16}}>
@@ -4052,10 +4057,11 @@ function LTBetsView({showToast,players=[],bookmakers=[]}){
   useEffect(()=>{load();fetchBookmakers().then(setBks).catch(()=>{});fetchTipsters().then(setTips).catch(()=>{});},[load]);
   const num=v=>parseFloat(String(v||"").replace(",","."));
   const ping=()=>{try{window.dispatchEvent(new Event("bets:reload"));}catch(_){}};
-  const okLegs=legs.filter(l=>num(l.odds)>1&&num(l.stake)>0);
+  const okLegs=legs.filter(l=>l.bookmaker&&num(l.odds)>1&&num(l.stake)>0);
   const add=async()=>{
     if(!league){showToast("Choisis la ligue","#FF8A80");return;}
-    if(!f.desc.trim()||!okLegs.length){showToast("Remplis le pari, une cote et une mise","#FF8A80");return;}
+    if(!f.desc.trim()||!okLegs.length){showToast("Remplis le pari, le bookmaker, la cote et la mise","#FF8A80");return;}
+    if(legs.some(l=>(l.odds||l.stake)&&!l.bookmaker)){showToast("Choisis le bookmaker sur chaque ligne","#FF8A80");return;}
     setBusy(true);
     try{
       const now=new Date().toISOString();
