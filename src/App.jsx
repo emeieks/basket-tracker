@@ -43,11 +43,14 @@ const STAT_FR={
   "Points+Rebonds+Assists":"Points + Rebonds + Assists","3 Points Made":"Tirs à 3 pts",
   "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
   "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Minutes":"Minutes",
+  "Passes":"Passes","Buts":"Buts","Shots on Goal":"Tirs au but",
 };
+// Stats proposées pour un pari NHL
+const HOCKEY_STATS=["Points","Passes","Buts","Shots on Goal"];
 const STAT_ABBR={
   "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A",
   "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
-  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Minutes":"Min",
+  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG",
 };
 const statFR=s=>STAT_FR[s]||s;
 // "Over 26.5 Points+Rebonds+Assists" → { ou, line, stat }
@@ -1688,9 +1691,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:900,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>Choisir</option>
-              {["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                "Turnovers","Fantasy Score","Minutes"].map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>{statFR(s)}</option>)}
+                "Turnovers","Fantasy Score","Minutes"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>{statFR(s)}</option>)}
             </select>
           </label>
         </div>
@@ -2185,7 +2188,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             const lines=Array.from({length:45},(_,i)=>(i+0.5).toFixed(1));
             const cur=parseFloat(String(pd.line).replace(",",".")).toFixed(1);
             if(!lines.includes(cur))lines.push(cur);
-            const stats=Object.keys(STAT_FR);
+            const stats=isHockey(localBet.game)?[...HOCKEY_STATS]:Object.keys(STAT_FR).filter(k=>!HOCKEY_STATS.includes(k)||k==="Points");
             if(!stats.includes(pd.stat))stats.push(pd.stat);
             const upd=ch=>{
               const n={ou:pd.ou,line:cur,stat:pd.stat,...ch};
