@@ -1131,8 +1131,14 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 }
 
 // ── FORMULAIRE AJOUT/EDIT PARI ────────────────────────────────────────────────
+// Brouillon du « Nouveau pari » : gardé quand tu changes de page, effacé seulement après l'ajout ou avec « Réinitialiser »
+let ADD_DRAFT=null;
+const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});
 function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged}){
+  const draft=!editBet?ADD_DRAFT:null;
   const[playerSettings,setPlayerSettings]=useState(false);
+  const[heroMenu,setHeroMenu]=useState(false);
+  useEffect(()=>{if(!heroMenu)return;const h=()=>setHeroMenu(false);setTimeout(()=>document.addEventListener("click",h),0);return()=>document.removeEventListener("click",h);},[heroMenu]);
   const[psLeagues,setPsLeagues]=useState([]);
   const[psClubs,setPsClubs]=useState([]);
   const[psUploading,setPsUploading]=useState(null);
@@ -1141,12 +1147,12 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     Promise.all([fetchLeagues(),fetchClubs()]).then(([l,c])=>{setPsLeagues(l);setPsClubs(c);setPlayerSettings(true);})
       .catch(e=>alert("Erreur: "+e.message));
   }
-  const[step,setStep]=useState(editBet?"form":"search");
-  const[search,setSearch]=useState("");
-  const[selectedType,setSelectedType]=useState(null);
+  const[step,setStep]=useState(editBet?"form":(draft?.step||"search"));
+  const[search,setSearch]=useState(draft?.search||"");
+  const[selectedType,setSelectedType]=useState(draft?.selectedType||null);
   const[saving,setSaving]=useState(false);
-  const[lockedBK,setLockedBK]=useState(false);
-  const[lockedTip,setLockedTip]=useState(false);
+  const[lockedBK,setLockedBK]=useState(!!draft?.lockedBK);
+  const[lockedTip,setLockedTip]=useState(!!draft?.lockedTip);
   const[winW,setWinW]=useState(window.innerWidth);
   useEffect(()=>{const h=()=>setWinW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
   const isDesktop=winW>=768;
@@ -1170,13 +1176,16 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     team:editBet.team||"",
     opponent:editBet.opponent||"",
     lt:editBet.notes==="longterm",ltDesc:editBet.notes==="longterm"?(editBet.description||""):"",
-  }:{
+  }:draft?.form?draft.form:{
     player:"",playerObj:null,stat:"",ou:"",line:"",
     odds:"",stake:"",bookmaker:"",
     status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",
     betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:"",
   });
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+  useEffect(()=>{if(!editBet)ADD_DRAFT={step,search,selectedType,form,lockedBK,lockedTip};},[step,search,selectedType,form,lockedBK,lockedTip,editBet]);
+  const resetDraft=()=>{ADD_DRAFT=null;setForm(EMPTY_ADD_FORM());setSearch("");setSelectedType(null);setLockedBK(false);setLockedTip(false);setStep("search");};
+  const hasDraft=!editBet&&(step!=="search"||!!form.player||!!form.team||!!form.odds||!!form.stake);
   // Compétitions du club (championnats + coupes) pour changer la ligue du pari
   const[clubLeagues,setClubLeagues]=useState([]);
   const[leagueMenu,setLeagueMenu]=useState(false);
@@ -1335,6 +1344,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           notes:"",betType:"moneyline",team:"",opponent:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",
         });
       }else{
+        ADD_DRAFT=null;
         onClose();
       }
     }catch(e){alert("Erreur: "+e.message);}
@@ -1382,7 +1392,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,zIndex:200,overflowY:"auto"}}>
       <div style={{maxWidth:430,margin:"0 auto",padding:"8px 20px calc(72px + env(safe-area-inset-bottom))"}}>
-        <div style={{textAlign:"center",padding:"12px 0",fontSize:16,fontWeight:600}}>{editBet?"Modifier le pari":"Nouveau pari"}</div>
+        <div style={{position:"relative",textAlign:"center",padding:"12px 0",fontSize:16,fontWeight:600}}>{editBet?"Modifier le pari":"Nouveau pari"}
+          {hasDraft&&<button type="button" onClick={()=>{if(window.confirm("Effacer ce pari en cours de saisie ?"))resetDraft();}}
+            style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",height:32,padding:"0 12px",borderRadius:16,border:"1px solid "+C.line,background:C.card,color:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>↺ Réinitialiser</button>}
+        </div>
 
         {/* ── Recherche joueur / équipe (intégrée) ── */}
         {step==="search"&&(
@@ -1433,19 +1446,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             border:"1px solid "+(!isTeamBet&&heroC?"rgba(255,255,255,.12)":C.line),background:!isTeamBet&&heroC?`linear-gradient(120deg,${shade(heroC,-.35)} 0%,${heroC} 55%,${shade(heroC,-.2)} 100%)`:`linear-gradient(135deg,${pc}40 0%,${C.card} 70%)`,
             boxShadow:!isTeamBet&&heroC?"inset 0 1px 0 rgba(255,255,255,.15),0 16px 30px -14px rgba(0,0,0,.8)":undefined,
             padding:0,color:C.text,textAlign:"left",display:"block"}}>
-          <span style={{position:"absolute",top:14,right:14,zIndex:2,display:"flex",flexDirection:isTeamBet?"column":"row-reverse",alignItems:isTeamBet?"flex-end":"center",gap:8}}>
-            {!isTeamBet&&form.playerObj&&(
-              <button type="button" aria-label="Réglages du joueur" className="press" onClick={openPlayerSettings}
-                style={{width:30,height:30,borderRadius:15,border:"none",cursor:"pointer",background:"rgba(0,0,0,.35)",
-                  backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-              </button>
-            )}
-            <button type="button" className="press" onClick={()=>{setSearch("");setForm({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});setLockedBK(false);setLockedTip(false);setStep("search");}}
-              style={{height:30,padding:"0 12px",borderRadius:15,border:"none",cursor:"pointer",fontFamily:"inherit",
-                background:"rgba(0,0,0,.35)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",color:"#fff",fontSize:12.5,fontWeight:600}}>
-              Changer {isTeamBet?"d'équipe":"de joueur"}
-            </button>
+          <span style={{position:"absolute",top:14,right:14,zIndex:4}}>
+            <button type="button" aria-label="Options" className="press" onClick={e=>{e.stopPropagation();setHeroMenu(v=>!v);}}
+              style={{width:34,height:34,borderRadius:17,border:"none",cursor:"pointer",background:"rgba(0,0,0,.4)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",color:"#fff",fontSize:20,fontWeight:800,lineHeight:"30px",display:"flex",alignItems:"center",justifyContent:"center"}}>⋯</button>
+            {heroMenu&&<span onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:40,minWidth:200,background:"#20242C",border:"1px solid "+C.line,borderRadius:14,boxShadow:"0 12px 30px rgba(0,0,0,.55)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+              <button type="button" onClick={()=>{setHeroMenu(false);setSearch("");setForm({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});setLockedBK(false);setLockedTip(false);setStep("search");}} style={{padding:"12px 14px",border:"none",background:"transparent",color:C.text,fontSize:14.5,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}>↺ Changer {isTeamBet?"d'équipe":"de joueur"}</button>
+              {!isTeamBet&&form.playerObj&&<button type="button" onClick={()=>{setHeroMenu(false);openPlayerSettings();}} style={{padding:"12px 14px",border:"none",borderTop:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:14.5,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}>⚙︎ Réglages du joueur</button>}
+            </span>}
           </span>
           {teamName&&isTeamBet&&(()=>{
             const tcol=getTeamColor(teamName);
@@ -1462,7 +1469,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             );
           })()}
           {teamLogoHeader&&!isTeamBet&&<>
-            <img src={teamLogoHeader} alt="" aria-hidden="true" style={{position:"absolute",left:-70,top:-60,width:360,height:360,objectFit:"contain",opacity:.09,pointerEvents:"none",filter:"grayscale(1) brightness(2.2)",imageRendering:"auto"}}/>
+            <img src={teamLogoHeader} alt="" aria-hidden="true" style={{position:"absolute",left:-70,top:-60,width:360,height:360,objectFit:"contain",opacity:.05,pointerEvents:"none",filter:"grayscale(1) brightness(2.2)",imageRendering:"auto"}}/>
             <img src={teamLogoHeader} alt={teamName} style={{position:"absolute",left:16,top:isHockey(form.game)?12:16,width:isHockey(form.game)?100:50,height:isHockey(form.game)?100:50,objectFit:"contain",zIndex:2,pointerEvents:"none",filter:"drop-shadow(0 4px 10px rgba(0,0,0,.35))"}}/>
           </>}
           {teamLogoHeader&&isTeamBet&&(
@@ -1855,6 +1862,17 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
+          {!editBet&&(()=>{const isT=isTeamBet;const steps=[
+              ["Joueur",isT?!!form.team:!!form.player],
+              ["Ligne",form.lt?!!String(form.ltDesc||"").trim():isT?(form.betType==="moneyline"||!!String(form.line).trim()):(!!form.ou&&!!form.line&&!!form.stat)],
+              ["Cote",!!parseFloat(String(form.odds).replace(",","."))],
+              ["Mise",!!parseFloat(String(form.stake).replace(",","."))],
+              ["Bookmaker",!!form.bookmaker]];
+            return(<div style={{display:"flex",gap:4,marginBottom:10}}>{steps.map(([l,ok])=>(
+              <div key={l} style={{flex:1,textAlign:"center"}}>
+                <div style={{height:4,borderRadius:2,background:ok?C.green:"rgba(255,255,255,.1)",transition:"background .2s"}}/>
+                <div style={{fontSize:10.5,fontWeight:700,marginTop:4,color:ok?C.green:C.dim}}>{ok?"✓ ":""}{l}</div>
+              </div>))}</div>);})()}
           {(()=>{const why=missing();return(
           <button onClick={submit} disabled={saving||!!why} className="press"
             style={{width:"100%",height:56,borderRadius:16,border:"none",cursor:why?"default":"pointer",
@@ -3093,13 +3111,13 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
       <div style={{position:"relative",flexShrink:0}}>
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={56}/>
         {b.game&&(
-          <span style={{position:"absolute",left:-4,bottom:-4,width:22,height:22,borderRadius:11,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <MiniLogo src={leagueLogo} label={b.game} size={16} round={false}/>
+          <span style={{position:"absolute",left:-5,bottom:-5,width:27,height:27,borderRadius:14,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={leagueLogo} label={b.game} size={20} round={false}/>
           </span>
         )}
         {teamName&&!isTeam&&(
-          <span style={{position:"absolute",right:-4,bottom:-4,width:22,height:22,borderRadius:11,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <MiniLogo src={clubLogo} label={teamName} size={18}/>
+          <span style={{position:"absolute",right:-5,bottom:-5,width:27,height:27,borderRadius:14,background:"#1D2029",border:"2px solid #1D2029",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <MiniLogo src={clubLogo} label={teamName} size={22}/>
           </span>
         )}
       </div>
@@ -3724,6 +3742,16 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
           <span style={{fontSize:34,fontWeight:700,letterSpacing:-1,color:pColor(s.profit),fontVariantNumeric:"tabular-nums"}}>{money(s.profit)}</span>
           {x.roi!=null&&<Pill v={x.roi}/>}
         </div>
+        {(()=>{const pts=[...bets].filter(b=>b.status==="won"||b.status==="lost").sort((a,z)=>String(a.created_at||"").localeCompare(String(z.created_at||"")));
+          if(pts.length<3)return null;let run=0;const v=[0,...pts.map(b=>run+=parseFloat(b.profit||0))];
+          const mn=Math.min(...v),mx=Math.max(...v),W=300,Hh=46,r=mx-mn||1;
+          const xy=v.map((y,i)=>[i/(v.length-1)*W,Hh-((y-mn)/r)*(Hh-4)-2]);const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+          const col=run>=0?C.green:C.red;
+          return(<svg viewBox={"0 0 "+W+" "+Hh} preserveAspectRatio="none" style={{width:"100%",height:46,marginTop:12,display:"block"}}>
+            <defs><linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={col} stopOpacity=".28"/><stop offset="1" stopColor={col} stopOpacity="0"/></linearGradient></defs>
+            <path d={d+" L"+W+" "+Hh+" L0 "+Hh+" Z"} fill="url(#hg)"/>
+            <path d={d} fill="none" stroke={col} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round"/>
+          </svg>);})()}
         <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",background:"#262B35",margin:"16px 0 6px"}}>
           <div style={{width:s.won/dec*100+"%",background:C.green}}/><div style={{width:s.lost/dec*100+"%",background:C.red}}/>
         </div>
@@ -3746,12 +3774,16 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
 
   const header=(
     <>
-      <div style={{display:"flex",gap:8,overflowX:"auto",margin:"0 -20px",padding:"2px 20px 4px",scrollbarWidth:"none"}}>
+      <div style={{position:"relative",margin:"0 -20px"}}>
+      <div style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 44px 4px 20px",scrollbarWidth:"none"}}>
         {TABS.map(([k,l])=>(
           <button key={k} type="button" onClick={()=>setTab(k)} className="press"
             style={{flexShrink:0,height:34,padding:"0 13px",borderRadius:17,cursor:"pointer",fontFamily:"inherit",fontSize:13.5,fontWeight:600,
               border:"1px solid "+(tab===k?C.text:C.line),background:tab===k?C.text:"transparent",color:tab===k?C.bg:"#C4C9D4"}}>{l}</button>
         ))}
+      </div>
+      {/* fondu à droite : on voit qu'il y a d'autres onglets */}
+      <div aria-hidden="true" style={{position:"absolute",right:0,top:0,bottom:0,width:48,pointerEvents:"none",background:"linear-gradient(to right,rgba(20,22,27,0),"+C.bg+" 85%)",display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:10,color:C.sub,fontSize:16}}>›</div>
       </div>
       <div style={{display:"flex",gap:4,marginTop:12,padding:3,background:C.inner,border:"1px solid "+C.line,borderRadius:12}}>
         {[["7","7 j"],["30","30 j"],["90","3 mois"],["all","Tout"]].map(([k,l])=>(
@@ -4231,10 +4263,12 @@ function LTBetsView({showToast,players=[],bookmakers=[]}){
   );
 }
 
+// Position dans Réglages › Joueurs gardée quand on change de page
+let EDIT_NAV={league:null,club:null};
 function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{teamIndex().catch(()=>{});},[]);
   const[leagues,setLeagues]=useState([]);
-  const[selectedLeague,setSelectedLeague]=useState(null);
+  const[selectedLeague,setSelectedLeague]=useState(EDIT_NAV.league);
   // Nombre de paris long terme EN COURS par ligue (un pari multi-bookmakers compte pour 1)
   const[ltCount,setLtCount]=useState({});
   useEffect(()=>{const load=()=>fetch(SUPA_URL+"/rest/v1/bets?select=id,game,group_id&notes=eq.longterm&status=eq.pending",{headers:H}).then(r=>r.ok?r.json():[]).then(rows=>{
@@ -4251,7 +4285,8 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   const[playerSearch,setPlayerSearch]=useState("");
   const[pickClubs,setPickClubs]=useState(false);
   const[gIndex,setGIndex]=useState(null); // {clubs:[],players:[]}
-  const navRef=useRef(null); // navigation en attente {club, player}
+  const navRef=useRef(EDIT_NAV.club?{club:EDIT_NAV.club}:null); // navigation en attente {club, player}
+  useEffect(()=>{EDIT_NAV={league:selectedLeague,club:selectedLeague?selectedClub:null};},[selectedLeague,selectedClub]);
   useEffect(()=>{
     if(globalSearch.trim().length<2||gIndex)return;
     Promise.all([
@@ -5198,8 +5233,10 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 }
 
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
+let SETTINGS_TAB="edit";
 function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPlayersChanged,players=[]}){
-  const[tab,setTab]=useState("edit");
+  const[tab,setTabRaw]=useState(SETTINGS_TAB);
+  const setTab=t=>{SETTINGS_TAB=t;setTabRaw(t);};
   const[showAdd,setShowAdd]=useState(false);
   const[editBK,setEditBK]=useState(null);
   const[newTip,setNewTip]=useState("");
