@@ -520,7 +520,7 @@ img{image-rendering:auto;}
 /* ── HEADER ── */
 .app::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#14161B;z-index:450;pointer-events:none;}
 .header{padding:calc(18px + env(safe-area-inset-top)) 20px 10px;display:flex;align-items:center;justify-content:space-between;}
-.header-title{font-size:24px;font-weight:700;color:#F2F3F5;letter-spacing:-.4px;}
+.header-title{font-size:22px;font-weight:700;color:#F2F3F5;letter-spacing:-.4px;}
 
 /* ── CHAMPS FORMULAIRE (nouveau pari) ── */
 .fld{width:100%;height:54px;background:#1C1F26 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238B92A0' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
@@ -1862,10 +1862,6 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
-          {(()=>{const st=form.stat,o=form.ou;if(!bets||!st||!o||isTeamBet)return null;
-            const same=bets.filter(x=>(x.status==="won"||x.status==="lost")&&(()=>{const pd=parseDesc(x.description);return pd&&pd.stat===st&&pd.ou===o;})());
-            if(same.length<5)return null;const pr=same.reduce((t,x)=>t+parseFloat(x.profit||0),0);if(pr>=0)return null;
-            return <div style={{marginBottom:8,padding:"9px 12px",borderRadius:12,background:"rgba(255,138,128,.12)",border:"1px solid rgba(255,138,128,.35)",fontSize:13,color:"#FFC9C4",fontWeight:600}}>⚠ {statFR(st)} {o} : {money(pr,0)} sur {same.length} paris. Mise moins ou passe.</div>;})()}
           {!editBet&&(isTeamBet?form.team:form.player)&&form.ou&&form.line&&(()=>{const pd=form.playerObj;const ph=pd?.photo_url||pd?.avatar_url||null;
             return <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
               <PlayerFace src={ph} name={formatName(form.player||form.team)} size={38}/>
@@ -3390,7 +3386,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:18,fontWeight:900,letterSpacing:-.2,whiteSpace:"nowrap",textTransform:"uppercase"}}>{m.label}</div>
                 <div style={{fontSize:14,color:"#8B92A0",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {m.bets.length} paris · {w}-{l} · <span style={{color:(()=>{const st=m.bets.filter(x=>x.status==="won"||x.status==="lost");const avgO=st.length?st.reduce((t,x)=>t+parseFloat(x.odds||0),0)/st.length:2;const need=avgO>1?100/avgO:50;return (w+l?w/(w+l)*100:0)>=need?C.green:C.red;})(),fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span>
+                  {m.bets.length} paris · {w}-{l} · <span style={{color:m.bets.reduce((t,x)=>t+parseFloat(x.profit||0),0)>=0?C.green:C.red,fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span>
                 </div>
               </div>
               <span style={{flexShrink:0,textAlign:"right"}}><span style={{display:"block",fontSize:22,fontWeight:900,color:pColor(p),letterSpacing:-.4,whiteSpace:"nowrap"}}>{money(p)}</span>
@@ -3845,7 +3841,6 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
         <div style={{fontSize:13,color:C.sub}}>{title}</div>
         <div style={{display:"flex",alignItems:"baseline",gap:10,marginTop:4}}>
           <span style={{fontSize:34,fontWeight:700,letterSpacing:-1,color:pColor(s.profit),fontVariantNumeric:"tabular-nums"}}>{money(s.profit)}</span>
-          {x.roi!=null&&<Pill v={x.roi}/>}
         </div>
         <div style={{fontSize:12,color:C.sub,marginTop:4}}>{x.roi!=null?"ROI "+(x.roi>0?"+":"")+x.roi.toFixed(1).replace(".",",")+" % (profit ÷ misé)":""} · Bankroll {(s.profit>0?"+":"")+(s.profit/START_BANKROLL*100).toFixed(2).replace(".",",")} %</div>
         {(()=>{const pts=[...(list||bets)].filter(b=>b.status==="won"||b.status==="lost").sort((a,z)=>String(a.created_at||"").localeCompare(String(z.created_at||"")));
@@ -4674,7 +4669,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
               title={lg.name}
               sub={isCup(lg.name)?"Coupe · "+(CUPS[Object.keys(CUPS).find(c=>normTeam(c)===normTeam(lg.name))]||""):null}
               onClick={()=>{setSelectedLeague(lg);setGlobalSearch("");}}
-              right={<IconBtn icon={Ico.paste} label={"Modifier "+lg.name} onClick={()=>setLgMenu(lg)}/>}
+              right={<button type="button" aria-label={"Modifier "+lg.name} onClick={e=>{e.stopPropagation();setLgMenu(lg);}} style={{width:36,height:36,borderRadius:10,border:"none",background:"transparent",color:C.sub,fontSize:20,fontWeight:900,cursor:"pointer",letterSpacing:1}}>⋯</button>}
               chevron/>
           );
           const tile=lg=>{let ls="";try{ls=localStorage.getItem("league_bg_"+lg.name)||"";}catch(e){}const bgi=lg.bg_url||ls||leagueBgDefault(lg.name);
