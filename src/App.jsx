@@ -507,7 +507,7 @@ img{image-rendering:auto;}
   padding:10px 8px calc(10px + env(safe-area-inset-bottom));
 }
 .nav-btn{
-  width:52px;height:40px;display:flex;align-items:center;justify-content:center;
+  width:64px;height:46px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;
   border:none;background:transparent;color:#6B7280;cursor:pointer;transition:color .15s;
 }
 .nav-btn.active{color:#34D399;}
@@ -520,7 +520,7 @@ img{image-rendering:auto;}
 /* ── HEADER ── */
 .app::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#14161B;z-index:450;pointer-events:none;}
 .header{padding:calc(18px + env(safe-area-inset-top)) 20px 10px;display:flex;align-items:center;justify-content:space-between;}
-.header-title{font-size:32px;font-weight:700;color:#F2F3F5;letter-spacing:-.6px;}
+.header-title{font-size:24px;font-weight:700;color:#F2F3F5;letter-spacing:-.4px;}
 
 /* ── CHAMPS FORMULAIRE (nouveau pari) ── */
 .fld{width:100%;height:54px;background:#1C1F26 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238B92A0' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
@@ -993,7 +993,7 @@ const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast(){
   const[toast,setToast]=useState(null);
-  const show=useCallback((msg,color="#4ADE80")=>{
+  const show=useCallback((msg,color="#34D399")=>{
     setToast({msg,color});
     setTimeout(()=>setToast(null),2500);
   },[]);
@@ -1134,7 +1134,7 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 // Brouillon du « Nouveau pari » : gardé quand tu changes de page, effacé seulement après l'ajout ou avec « Réinitialiser »
 let ADD_DRAFT=null;
 const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});
-function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged}){
+function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged,bets=null}){
   const draft=!editBet?ADD_DRAFT:null;
   const[playerSettings,setPlayerSettings]=useState(false);
   const[heroMenu,setHeroMenu]=useState(false);
@@ -1670,17 +1670,6 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         })()}
         {/* ── PARI JOUEUR : Over / Under ── */}
         {!isTeamBet&&!form.lt&&(<>
-        <div className="acard" style={clubVars}>
-          <div className="acard-h">Over / Under</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {["Over","Under"].map(v=>{const on=form.ou===v;return(
-              <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
-                style={{height:56,borderRadius:15,cursor:"pointer",fontFamily:"inherit",fontSize:17,fontWeight:800,
-                  border:"none",background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:"rgba(255,255,255,.4)",boxShadow:on?"0 8px 20px -6px "+hexA(btnBg,.55):"inset 0 2px 5px rgba(0,0,0,.45)",transition:"all .15s"}}>
-                {v==="Over"?"▲ ":"▼ "}{v}
-              </button>);})}
-          </div>
-        </div>
         {/* ── Ligne | Stat ── */}
         <div className="acard" style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0}}>
           <label style={{flex:1,position:"relative",padding:"14px 16px",cursor:"pointer"}}>
@@ -1704,6 +1693,17 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 "Turnovers","Fantasy Score","Minutes"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#1b1d24"}}>{statFR(s)}</option>)}
             </select>
           </label>
+        </div>
+        <div className="acard" style={clubVars}>
+          <div className="acard-h">Over / Under</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {["Over","Under"].map(v=>{const on=form.ou===v;return(
+              <button key={v} type="button" className="press" onClick={()=>f("ou",on?"":v)}
+                style={{height:56,borderRadius:15,cursor:"pointer",fontFamily:"inherit",fontSize:17,fontWeight:800,
+                  border:"none",background:on?btnBg:"rgba(0,0,0,.32)",color:on?btnFg:"rgba(255,255,255,.4)",boxShadow:on?"0 8px 20px -6px "+hexA(btnBg,.55):"inset 0 2px 5px rgba(0,0,0,.45)",transition:"all .15s"}}>
+                {v==="Over"?"▲ ":"▼ "}{v}
+              </button>);})}
+          </div>
         </div>
         </>)}
         </div>
@@ -1744,7 +1744,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             <input type="number" inputMode="decimal" placeholder="0" value={form.stake}
               onChange={e=>f("stake",e.target.value)} className="big-in" style={{flex:"none",width:(Math.max(1,String(form.stake||"0").length)+0.3)+"ch"}}/>
             <span style={{fontSize:20,fontWeight:800,color:C.sub,marginLeft:-2}}>€</span>
-            {stakeN>0&&oddsN>0&&<span style={{marginLeft:"auto",fontSize:13.5,fontWeight:800,color:"#4ADE80",whiteSpace:"nowrap"}}>→ +{(stakeN*(oddsN-1)).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})} €</span>}
+            {stakeN>0&&oddsN>0&&<span style={{marginLeft:"auto",fontSize:13.5,fontWeight:800,color:"#34D399",whiteSpace:"nowrap"}}>→ +{(stakeN*(oddsN-1)).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})} €</span>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:6,marginTop:10}}>
             {[{pct:"0.5%",val:50},{pct:"0.75%",val:75},{pct:"1%",val:100},{pct:"1.25%",val:125},{pct:"1.5%",val:150}].map(({pct,val})=>{
@@ -1753,8 +1753,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                 <button key={val} type="button" onClick={()=>f("stake",String(val))}
                   style={{height:38,borderRadius:11,cursor:"pointer",border:"none",
                     background:active?btnBg:"rgba(0,0,0,.32)",color:active?btnFg:C.sub,boxShadow:active?"0 6px 16px -6px "+hexA(btnBg,.55):"inset 0 2px 5px rgba(0,0,0,.45)",
-                    fontSize:12.5,fontWeight:800,lineHeight:1.2}}>
-                  {pct}
+                    fontSize:12.5,fontWeight:800,lineHeight:1.15,height:46}}>
+                  {pct}<div style={{fontSize:10.5,fontWeight:600,opacity:.75}}>{val} €</div>
                 </button>
               );
             })}
@@ -1862,6 +1862,18 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(20,22,27,0))"}}>
+          {(()=>{const st=form.stat,o=form.ou;if(!bets||!st||!o||isTeamBet)return null;
+            const same=bets.filter(x=>(x.status==="won"||x.status==="lost")&&(()=>{const pd=parseDesc(x.description);return pd&&pd.stat===st&&pd.ou===o;})());
+            if(same.length<5)return null;const pr=same.reduce((t,x)=>t+parseFloat(x.profit||0),0);if(pr>=0)return null;
+            return <div style={{marginBottom:8,padding:"9px 12px",borderRadius:12,background:"rgba(255,138,128,.12)",border:"1px solid rgba(255,138,128,.35)",fontSize:13,color:"#FFC9C4",fontWeight:600}}>⚠ {statFR(st)} {o} : {money(pr,0)} sur {same.length} paris. Mise moins ou passe.</div>;})()}
+          {!editBet&&(isTeamBet?form.team:form.player)&&form.ou&&form.line&&(()=>{const pd=form.playerObj;const ph=pd?.photo_url||pd?.avatar_url||null;
+            return <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
+              <PlayerFace src={ph} name={formatName(form.player||form.team)} size={38}/>
+              <div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}><b style={{fontSize:15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{formatName(form.player||form.team)}</b>
+                <span style={{flexShrink:0,padding:"1px 6px",borderRadius:6,background:form.ou==="Over"?"#34D399":"#60A5FA",color:"#0b1220",fontSize:10.5,fontWeight:900}}>{(form.ou==="Over"?"O ":"U ")+form.line+(form.stat?" "+statFR(form.stat).toUpperCase():"")}</span></div>
+                <div className="sysfont" style={{fontSize:12.5,color:C.sub}}>{oddsN?"@"+oddsN.toFixed(2).replace(".",","):"cote ?"} · {stakeN?eur(stakeN):"mise ?"}{form.bookmaker?" · "+form.bookmaker:""}</div></div>
+              {stakeN>0&&oddsN>0&&<b className="sysfont" style={{fontSize:16,color:C.green,whiteSpace:"nowrap"}}>+{eur(stakeN*(oddsN-1))}</b>}
+            </div>;})()}
           {!editBet&&(()=>{const isT=isTeamBet;const steps=[
               ["Joueur",isT?!!form.team:!!form.player],
               ["Ligne",form.lt?!!String(form.ltDesc||"").trim():isT?(form.betType==="moneyline"||!!String(form.line).trim()):(!!form.ou&&!!form.line&&!!form.stat)],
@@ -1936,7 +1948,7 @@ const EditCell=memo(function EditCell({fieldKey,label,value,suffix="",type="text
         cursor:"pointer",transition:"background .15s",minHeight:72,
         borderRadius:0,position:"relative",
       }}>
-        <span style={{fontSize:9,fontWeight:700,color:isDirty?"#4ADE80":"rgba(255,255,255,.3)",
+        <span style={{fontSize:9,fontWeight:700,color:isDirty?"#34D399":"rgba(255,255,255,.3)",
           letterSpacing:.8,textTransform:"uppercase",transition:"color .15s"}}>{label}</span>
 
         {isDropdown?(
@@ -1981,7 +1993,7 @@ const EditCell=memo(function EditCell({fieldKey,label,value,suffix="",type="text
                   cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,.04)",
                   background:value===o.label?"rgba(74,222,128,.08)":"transparent",
                   fontSize:13,fontWeight:value===o.label?700:500,
-                  color:value===o.label?"#4ADE80":"#F2F2F7",
+                  color:value===o.label?"#34D399":"#F2F2F7",
                 }}>
                 {o.logo&&<img src={o.logo} alt="" style={{width:18,height:18,objectFit:"contain",borderRadius:3,flexShrink:0}}/>}
                 {o.label}
@@ -2036,61 +2048,68 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
     setDropdown(null);
   },[]);
 
+  const fail=(e)=>{console.error(e);alert("Erreur de sauvegarde : "+(e&&e.message||e)+"\nVérifie ta connexion et réessaie.");};
   async function changeStatus(status){
     setSaving(true);
-    if(legs){
-      await Promise.all(legs.map(l=>updateBet(l.id,{status,profit:calcProfit(status,parseFloat(l.stake),parseFloat(l.odds))})));
-      const profit=legs.reduce((s,l)=>s+calcProfit(status,parseFloat(l.stake),parseFloat(l.odds)),0);
-      setLocalBet(prev=>({...prev,status,profit}));
-      setDirty({});onUpdate();setSaving(false);return;
-    }
-    const profit=calcProfit(status,localBet.stake,localBet.odds);
-    await updateBet(localBet.id,{status,profit});
-    setLocalBet(prev=>({...prev,status,profit}));
-    setDirty({});
-    onUpdate();
-    setSaving(false);
+    try{
+      if(legs){
+        const shared={...dirty};delete shared.odds;delete shared.stake;delete shared.bookmaker;delete shared.status;
+        let total=0;
+        await Promise.all(legs.map(l=>{const e=legEdits[l.id]||{};const st=parseFloat(e.stake??l.stake),od=parseFloat(e.odds??l.odds);
+          const p=calcProfit(status,st,od);total+=p;
+          return updateBet(l.id,{...shared,...(e.odds!=null?{odds:e.odds}:{}),...(e.stake!=null?{stake:e.stake}:{}),status,profit:p});}));
+        setLocalBet(prev=>({...prev,...shared,status,profit:total}));
+        setDirty({});setLegEdits({});onUpdate();return;
+      }
+      // Les modifications pas encore enregistrées partent avec le statut (sinon elles étaient perdues)
+      const merged={...dirty,status};
+      const profit=status==="pending"?0:calcProfit(status,parseFloat(merged.stake??localBet.stake),parseFloat(merged.odds??localBet.odds));
+      await updateBet(localBet.id,{...merged,profit});
+      setLocalBet(prev=>({...prev,...merged,profit}));
+      setDirty({});
+      onUpdate();
+    }catch(e){fail(e);}finally{setSaving(false);}
   }
 
   async function saveAll(){
     if(!hasDirty)return;
     setSaving(true);
-    if(legs){
-      const shared={...dirty};delete shared.odds;delete shared.stake;delete shared.bookmaker;
-      await Promise.all(legs.map(l=>{
-        const e=legEdits[l.id]||{};
-        const up={...shared};
-        if(e.odds!=null)up.odds=e.odds;
-        if(e.stake!=null)up.stake=e.stake;
-        const s=up.status||l.status;
-        if((e.odds!=null||e.stake!=null)&&s!=="pending")up.profit=calcProfit(s,parseFloat(up.stake??l.stake),parseFloat(up.odds??l.odds));
-        return Object.keys(up).length?updateBet(l.id,up):null;
-      }));
-      setDirty({});setLegEdits({});setSaveAnim(true);setTimeout(()=>setSaveAnim(false),1200);
-      onUpdate();setSaving(false);onClose();return;
-    }
-    const update={...dirty};
-    // Recalc profit si odds/stake changés et statut fixé
-    if((update.odds||update.stake)&&localBet.status!=="pending"){
-      update.profit=calcProfit(localBet.status,
-        update.stake||localBet.stake,
-        update.odds||localBet.odds);
+    try{
+      if(legs){
+        const shared={...dirty};delete shared.odds;delete shared.stake;delete shared.bookmaker;
+        await Promise.all(legs.map(l=>{
+          const e=legEdits[l.id]||{};
+          const up={...shared};
+          if(e.odds!=null)up.odds=e.odds;
+          if(e.stake!=null)up.stake=e.stake;
+          const s=up.status||l.status;
+          if(e.odds!=null||e.stake!=null||shared.status)up.profit=s==="pending"?0:calcProfit(s,parseFloat(up.stake??l.stake),parseFloat(up.odds??l.odds));
+          return Object.keys(up).length?updateBet(l.id,up):null;
+        }));
+        setDirty({});setLegEdits({});setSaveAnim(true);setTimeout(()=>setSaveAnim(false),1200);
+        onUpdate();onClose();return;
+      }
+      const update={...dirty};
+      const s=update.status??localBet.status;
+      if(update.odds!=null||update.stake!=null||update.status!=null)
+        update.profit=s==="pending"?0:calcProfit(s,parseFloat(update.stake??localBet.stake),parseFloat(update.odds??localBet.odds));
+      await updateBet(localBet.id,update);
       setLocalBet(prev=>({...prev,...update}));
-    }
-    await updateBet(localBet.id,update);
-    setDirty({});
-    setSaveAnim(true);
-    setTimeout(()=>setSaveAnim(false),1200);
-    onUpdate();
-    setSaving(false);
+      setDirty({});
+      setSaveAnim(true);
+      setTimeout(()=>setSaveAnim(false),1200);
+      onUpdate();
+    }catch(e){fail(e);}finally{setSaving(false);}
   }
 
   async function remove(){
     if(!window.confirm(legs?"Supprimer ce pari sur les "+legs.length+" sites ?":"Supprimer ce pari ?"))return;
-    if(legs){await Promise.all(legs.map(l=>deleteBet(l.id)));onUpdate();onClose();return;}
-    await deleteBet(localBet.id);
-    onUpdate();
-    onClose();
+    try{
+      if(legs){await Promise.all(legs.map(l=>deleteBet(l.id)));onUpdate();onClose();return;}
+      await deleteBet(localBet.id);
+      onUpdate();
+      onClose();
+    }catch(e){fail(e);}
   }
 
   const st=localBet.status;
@@ -2575,6 +2594,15 @@ function groupBy(bets,keyFn){
     if(!g[k])g[k]={won:0,lost:0,void:0,count:0,profit:0,staked:0,oddsSum:0};
     g[k].profit+=parseFloat(b.profit||0);g[k].count++;
     g[k].oddsSum+=parseFloat(b.odds||0);
+    // Pari sur plusieurs sites : mise comptée par part (gagnée/perdue), résultat selon le profit total
+    if(b._group&&b._group.length){
+      const legs=b._group;
+      g[k].staked+=legs.filter(l=>l.status==="won"||l.status==="lost").reduce((t,l)=>t+parseFloat(l.stake||0),0);
+      const anyDone=legs.some(l=>l.status==="won"||l.status==="lost");
+      if(anyDone){const p=legs.reduce((t,l)=>t+parseFloat(l.profit||0),0);if(p>0)g[k].won++;else if(p<0)g[k].lost++;else g[k].void++;}
+      else if(legs.every(l=>l.status==="void"))g[k].void++;
+      return;
+    }
     if(b.status==="won"||b.status==="lost")g[k].staked+=parseFloat(b.stake||0);
     if(b.status==="won")g[k].won++;
     if(b.status==="lost")g[k].lost++;
@@ -2927,6 +2955,55 @@ function CountUp({value,format,duration=900}){
 }
 
 // ── VUE ACCUEIL (Bankroll) ────────────────────────────────────────────────────
+function WeekRecap({bets,players=[],onClose}){
+  const [off,setOff]=useState(()=>new Date().getDay()===0?0:-1);
+  const n=new Date();const ws=new Date(n.getFullYear(),n.getMonth(),n.getDate());ws.setDate(ws.getDate()-((ws.getDay()+6)%7)+off*7);
+  const we=new Date(ws);we.setDate(we.getDate()+7);const ps=new Date(ws);ps.setDate(ps.getDate()-7);
+  const done=bets.filter(b=>(b.status==="won"||b.status==="lost")&&b.created_at);
+  const inR=(b,a,z)=>{const d=new Date(b.created_at);return d>=a&&d<z;};
+  const wk=done.filter(b=>inR(b,ws,we)),pv=done.filter(b=>inR(b,ps,ws));
+  const ag=l=>{const k=l.length,w=l.filter(b=>b.status==="won").length,st=l.reduce((t,b)=>t+parseFloat(b.stake||0),0),pr=l.reduce((t,b)=>t+parseFloat(b.profit||0),0);return{n:k,w,l:k-w,pr,roi:st?pr/st*100:0};};
+  const T=ag(wk),P=ag(pv);
+  const grp=fn=>{const m={};wk.forEach(b=>{const k=fn(b);if(!k)return;(m[k]=m[k]||[]).push(b);});return Object.entries(m).map(([k,l])=>({k,...ag(l)}));};
+  const mk=grp(b=>{const p=parseDesc(b.description);return p?statFR(p.stat):null;}),tp=grp(b=>b.tipster),pl=grp(b=>b.player?formatName(b.player):null),lg=grp(b=>b.game);
+  const best=a=>{const x=[...a].sort((p,q)=>q.pr-p.pr)[0];return x&&x.pr>0?x:null;},worst=a=>{const x=[...a].sort((p,q)=>p.pr-q.pr)[0];return x&&x.pr<0?x:null;};
+  const days=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map((l,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);const e=new Date(d);e.setDate(e.getDate()+1);const l2=wk.filter(b=>inR(b,d,e));return{l,v:l2.reduce((t,b)=>t+parseFloat(b.profit||0),0),has:l2.length>0};});
+  const mx=Math.max(1,...days.map(d=>Math.abs(d.v)));
+  const f=x=>x.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");const last=new Date(we);last.setDate(last.getDate()-1);
+  const tips=[];const wm=worst(mk),bm=best(mk),wt=worst(tp);
+  if(wm)tips.push("Évite le marché « "+wm.k+" » ("+money(wm.pr)+").");
+  if(wt)tips.push("Méfie-toi du tipster « "+wt.k+" » ("+money(wt.pr)+").");
+  if(bm)tips.push("Ton meilleur marché : « "+bm.k+" ». Garde-le.");
+  if(!tips.length&&T.n)tips.push("Semaine propre, continue.");
+  const Row=({l,x})=>x?<div style={{display:"flex",justifyContent:"space-between",gap:8,padding:"7px 0",borderTop:"1px solid "+C.line}}><span style={{fontSize:14,color:C.sub,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l} · <b style={{color:C.text}}>{x.k}</b></span><span className="sysfont" style={{fontSize:14,fontWeight:700,color:pColor(x.pr),whiteSpace:"nowrap"}}>{money(x.pr,0)}</span></div>:null;
+  return(<div onClick={onClose} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(0,0,0,.75)",overflowY:"auto",overscrollBehavior:"contain"}}>
+    <div onClick={e=>e.stopPropagation()} style={{maxWidth:430,margin:"0 auto",minHeight:"100%",background:C.bg,padding:"calc(16px + env(safe-area-inset-top)) 18px 40px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+        <button aria-label="Fermer" onClick={onClose} style={{width:36,height:36,borderRadius:18,border:"none",background:C.chip,color:C.text,fontSize:18,cursor:"pointer"}}>✕</button>
+        <div style={{flex:1}}><div style={{fontSize:22,fontWeight:700}}>Bilan de la semaine</div><div style={{fontSize:13,color:C.sub}}>{f(ws)} – {f(last)}</div></div>
+        <button onClick={()=>setOff(o=>o-1)} style={{...navArrow,width:30}}>‹</button><button disabled={off>=0} onClick={()=>setOff(o=>Math.min(0,o+1))} style={{...navArrow,width:30,opacity:off>=0?.3:1}}>›</button>
+      </div>
+      {!T.n?<div style={{padding:30,textAlign:"center",color:C.sub}}>Aucun pari terminé cette semaine.</div>:<>
+      <div style={{borderRadius:20,padding:"16px",background:C.card,border:"1px solid "+C.line,borderBottom:"3px solid "+pColor(T.pr)}}>
+        <div className="sysfont" style={{fontSize:44,fontWeight:800,color:pColor(T.pr),letterSpacing:-1.2}}>{money(T.pr)}</div>
+        <div className="sysfont" style={{fontSize:14,color:C.sub}}>{T.w}-{T.l} · ROI <b style={{color:pColor(T.roi)}}>{(T.roi>0?"+":"")+T.roi.toFixed(1)}%</b> · {T.n} paris</div>
+        {P.n>0&&<div className="sysfont" style={{fontSize:13,color:C.sub,marginTop:4}}>Semaine d'avant {money(P.pr,0)} → <b style={{color:pColor(T.pr-P.pr)}}>{T.pr>=P.pr?"mieux":"moins bien"}</b></div>}
+      </div>
+      <div style={{marginTop:10,borderRadius:18,padding:"12px 14px",background:C.card,border:"1px solid "+C.line}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,alignItems:"end",height:90}}>{days.map(d=>(<div key={d.l} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",gap:3,height:"100%"}}>
+          <span className="sysfont" style={{fontSize:10,fontWeight:700,color:d.has?pColor(d.v):C.dim}}>{d.has?Math.round(d.v):""}</span>
+          <div style={{width:"70%",height:Math.max(3,Math.abs(d.v)/mx*56),borderRadius:4,background:d.has?pColor(d.v):C.chip}}/><span style={{fontSize:11,color:C.sub}}>{d.l}</span></div>))}</div>
+      </div>
+      <div style={{marginTop:10,borderRadius:18,padding:"6px 14px",background:C.card,border:"1px solid "+C.line}}>
+        <Row l="Meilleur marché" x={best(mk)}/><Row l="Pire marché" x={worst(mk)}/><Row l="Meilleur joueur" x={best(pl)}/><Row l="Pire joueur" x={worst(pl)}/><Row l="Meilleur tipster" x={best(tp)}/><Row l="Pire tipster" x={worst(tp)}/><Row l="Meilleure ligue" x={best(lg)}/>
+      </div>
+      <div style={{marginTop:10,borderRadius:18,padding:"12px 14px",background:C.card,border:"1px solid "+C.line}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.sub,marginBottom:6}}>Pour la semaine prochaine</div>
+        {tips.map((t,i)=><div key={i} style={{fontSize:14,lineHeight:1.45,padding:"3px 0"}}>• {t}</div>)}
+      </div></>}
+    </div>
+  </div>);
+}
 function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   const bets=mergeGroups(rawBets);
   const now=new Date();
@@ -2935,6 +3012,11 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   const[period,setPeriod]=useState("all");
   const[pOff,setPOff]=useState(0);
   const[units,setUnits]=useState(false);
+  const[weekOpen,setWeekOpen]=useState(false);
+  useEffect(()=>{const d=new Date();const day=d.getDay();if(!((day===0&&d.getHours()>=18)||day===1))return;
+    const ws=new Date(d.getFullYear(),d.getMonth(),d.getDate());ws.setDate(ws.getDate()-((ws.getDay()+6)%7)-(day===1?7:0));const k=ws.toDateString();
+    try{if(localStorage.getItem("bk_week_seen")===k)return;localStorage.setItem("bk_week_seen",k);}catch(e){return;}
+    const t=setTimeout(()=>setWeekOpen(true),2000);return()=>clearTimeout(t);},[]);
   const won=bets.filter(b=>b.status==="won").length;
   const lost=bets.filter(b=>b.status==="lost").length;
   const voids=bets.filter(b=>b.status==="void").length;
@@ -3001,26 +3083,36 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         const sorted=[...settled].sort((x,y)=>new Date(y.created_at||0)-new Date(x.created_at||0));
         let streak=0;const kind=sorted[0]?.status;
         for(const s of sorted){if(s.status===kind)streak++;else break;}
+        const PER=[["all","Tout"],["week","Semaine"],["month","Mois"],["year","Année"]];
         return(
-          <div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",marginTop:2}}>
-              <div><div style={{fontSize:13,color:C.sub}}>Profit</div>
-                <div className="sysfont" style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div></div>
-              <div style={{textAlign:"center"}}><div style={{fontSize:13,color:C.sub}}>Progression</div>
-                <div className="sysfont" style={{fontSize:19,fontWeight:600,color:pColor(pp),marginTop:3}}>{(pp>0?"+":"")+(pp/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}</div></div>
-              <div style={{textAlign:"right"}}><div style={{fontSize:13,color:C.sub}}>Bilan</div>
-                <div className="sysfont" style={{fontSize:19,fontWeight:600,marginTop:3}}>{pw}-{pl}-{pv}</div></div>
+          <div style={{borderRadius:22,padding:"18px 16px 12px",border:"1px solid "+C.line,borderBottom:"3px solid "+pColor(pp),
+            background:"radial-gradient(120% 140% at 90% 0%,"+(pp>=0?"rgba(52,211,153,.16)":"rgba(255,138,128,.16)")+" 0%,rgba(28,31,38,0) 60%),"+C.card}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <span style={{fontSize:13,color:C.sub,fontWeight:600}}>{title}</span>
+              <button onClick={()=>setUnits(u=>!u)} style={{border:"1px solid "+C.line,background:"transparent",color:C.sub,borderRadius:9,height:28,padding:"0 10px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{units?"€":"Unités"}</button>
             </div>
-
-            <div className="sysfont" style={{marginTop:14,borderRadius:16,padding:"14px 10px 8px",background:"#181B21",border:"1px solid "+C.line,position:"relative"}}>
-              <span style={{position:"absolute",right:14,top:10,fontSize:12,color:C.sub,zIndex:1}}>{fmt(pp)}</span>
-              <BankrollChart key={period+pOff} bets={pb} height={160} fmt={fmt}/>
+            <div className="sysfont" style={{fontSize:"clamp(38px,12vw,52px)",fontWeight:800,letterSpacing:-1.5,lineHeight:1.05,color:pColor(pp),marginTop:4}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div>
+            <div className="sysfont" style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:14,color:C.sub,marginTop:6}}>
+              <span>Progression <b style={{color:pColor(pp)}}>{(pp>0?"+":"")+(pp/START_BANKROLL*100).toFixed(2).replace(".",",")+"\u00a0%"}</b></span>
+              <span>Bilan <b style={{color:C.text}}>{pw}-{pl}-{pv}</b></span>
+              <span>ROI <b style={{color:pColor(proi)}}>{(proi>0?"+":"")+proi.toFixed(1).replace(".",",")+"\u00a0%"}</b></span>
+              {streak>=2&&<span>Série <b style={{color:kind==="won"?C.green:C.red}}>{streak}{kind==="won"?"V":"D"}</b></span>}
+            </div>
+            <div className="sysfont" style={{marginTop:10}}><BankrollChart key={period+pOff} bets={pb} height={150} fmt={fmt}/></div>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}>
+              {PER.map(([k,l])=>{const on=period===k;return <button key={k} onClick={()=>{setPeriod(k);setPOff(0);}} style={{flex:1,height:32,borderRadius:10,border:"none",background:on?C.chip:"transparent",color:on?C.text:C.sub,fontSize:13,fontWeight:700,cursor:"pointer"}}>{l}</button>;})}
+              {period!=="all"&&<><button aria-label="Précédent" onClick={()=>setPOff(o=>o-1)} style={{...navArrow,width:28}}>‹</button><button aria-label="Suivant" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))} style={{...navArrow,width:28,opacity:pOff>=0?.3:1}}>›</button></>}
             </div>
           </div>
         );
       })()}
 
-      <div style={{marginTop:14,background:C.card,border:"1px solid "+C.line,borderRadius:18,overflow:"hidden"}}>
+      <button className="press" onClick={()=>setWeekOpen(true)} style={{width:"100%",marginTop:12,display:"flex",alignItems:"center",gap:10,padding:"14px 16px",borderRadius:18,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:C.text,cursor:"pointer",textAlign:"left"}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+        <span style={{flex:1,fontSize:16,fontWeight:600}}>Bilan de la semaine</span><span style={{display:"flex"}}>{Ico.chevron}</span>
+      </button>
+      {weekOpen&&<WeekRecap bets={bets} players={players} onClose={()=>setWeekOpen(false)}/>}
+      <div style={{marginTop:10,background:C.card,border:"1px solid "+C.line,borderRadius:18,overflow:"hidden"}}>
       <div role="button" tabIndex={0} aria-expanded={calOpen} onClick={()=>setCalOpen(o=>!o)} onKeyDown={e=>e.key==="Enter"&&setCalOpen(o=>!o)}
         style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px",cursor:"pointer"}}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.9" strokeLinecap="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
@@ -3043,7 +3135,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
           const v=dayP[day];
           const has=v!==undefined;
           const bg=!has?"#1A1D23":v>0?"#15352A":v<0?"#3A1F24":"#1F232B";
-          const fg=!has?C.dim:v>0?"#6EE7A0":v<0?C.red:C.sub;
+          const fg=!has?C.dim:v>0?"#34D399":v<0?C.red:C.sub;
           return(
             <div key={day} style={{height:44,borderRadius:8,background:bg,display:"flex",flexDirection:"column",
               alignItems:"center",justifyContent:"center",gap:1}}>
@@ -3061,7 +3153,19 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
           <span style={{fontSize:18,fontWeight:600,letterSpacing:-.3}}>Ligues</span>
           <button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>
         </div>
-        <ListCard rows={leagueRows} chevron numFont onRow={()=>onNavigate("stats")}/>
+        {(()=>{const mx=Math.max(1,...leagueRows.map(r=>Math.abs(r.profit)));return(
+        <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
+          {leagueRows.map((r,i)=>(
+            <div key={r.key} onClick={()=>onNavigate("stats")} style={{padding:"10px 14px",borderBottom:i<leagueRows.length-1?"1px solid "+C.line:"none",cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <MiniLogo src={r.logo} label={r.name} size={30} round={false}/>
+                <div style={{flex:1,minWidth:0}}><div style={{fontSize:16,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</div>
+                  <div className="sysfont" style={{fontSize:13,color:C.sub}}>{r.meta}</div></div>
+                <span className="sysfont" style={{fontSize:16,fontWeight:600,color:pColor(r.profit)}}>{money(r.profit)}</span>
+              </div>
+              <div style={{height:5,borderRadius:3,background:C.inner,marginTop:8,overflow:"hidden"}}><div style={{width:(Math.abs(r.profit)/mx*100)+"%",height:"100%",borderRadius:3,background:pColor(r.profit)}}/></div>
+            </div>))}
+        </div>);})()}
       </>}
     </div>
   );
@@ -3070,6 +3174,8 @@ const navArrow={width:32,height:32,border:"none",background:"transparent",color:
 const linkBtn={border:"none",background:"transparent",color:C.blue,fontSize:15,cursor:"pointer",fontFamily:"inherit"};
 
 // ── TICKET DE PARI ────────────────────────────────────────────────────────────
+const TIP_COLS=["#C4B5FD","#FBBF24","#F472B6","#38BDF8","#A3E635","#FB923C"];
+function tipColor(t){const s=String(t||"");if(/^moi$/i.test(s))return "#C4B5FD";let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return TIP_COLS[1+h%(TIP_COLS.length-1)];}
 function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const pData=players.find(p=>p.name===b.player);
   const isTeam=b.bet_type==="team";
@@ -3123,16 +3229,16 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
         <span style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-        <span style={{fontSize:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
+        <span style={{fontSize:lastName.length>14?12:lastName.length>10?13.5:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
           {lastName}
         </span>
-        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
+        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:/^O\b/.test(String(desc))?"#34D399":/^U\b/.test(String(desc))?"#60A5FA":"#fff",color:"#0b1220",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
             <span key="o" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
             <span key="m" style={{whiteSpace:"nowrap",color:"#C9CDD6",fontWeight:600}}>{eur(stake)}</span>,
-            b.tipster&&<span key="t" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:"#C4B5FD",fontWeight:600}}>{b.tipster}</span>,
+            b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:900,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#4B5260",flexShrink:0}}>·</span>{el}</React.Fragment>))}
         </span>
       </div>
@@ -3284,7 +3390,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:18,fontWeight:900,letterSpacing:-.2,whiteSpace:"nowrap",textTransform:"uppercase"}}>{m.label}</div>
                 <div style={{fontSize:14,color:"#8B92A0",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {m.bets.length} paris · {w}-{l} · <span style={{color:C.green,fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span>
+                  {m.bets.length} paris · {w}-{l} · <span style={{color:(()=>{const st=m.bets.filter(x=>x.status==="won"||x.status==="lost");const avgO=st.length?st.reduce((t,x)=>t+parseFloat(x.odds||0),0)/st.length:2;const need=avgO>1?100/avgO:50;return (w+l?w/(w+l)*100:0)>=need?C.green:C.red;})(),fontWeight:700}}>{w+l?Math.round(w/(w+l)*100):0}% WR</span>
                 </div>
               </div>
               <span style={{flexShrink:0,textAlign:"right"}}><span style={{display:"block",fontSize:22,fontWeight:900,color:pColor(p),letterSpacing:-.4,whiteSpace:"nowrap"}}>{money(p)}</span>
@@ -3475,7 +3581,7 @@ function PlayerPoster({player:player0,bets,onClose,onChanged}){
         <div style={{position:"absolute",left:"5%",top:"4%",width:"40%",zIndex:3}}>
           <Stat v={mine.length} l="PARIS"/>
           <Stat v={won+"-"+lost} l="BILAN"/>
-          <Stat v={(profit>=0?"+":"")+Math.round(profit)} l="PROFIT €" c={profit>=0?"#4ade80":"#f87171"}/>
+          <Stat v={(profit>=0?"+":"")+Math.round(profit)} l="PROFIT €" c={profit>=0?"#34D399":"#FF8A80"}/>
           <div style={{textAlign:"center",padding:"8px 0 0"}}>
             <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{won+lost?(wr>=1?"1,000":","+String(Math.round(wr*1000)).padStart(3,"0")):"—"}</div>
             <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>RÉUSSITE</div>
@@ -3570,7 +3676,7 @@ function GroupPoster({kind,name,bets,onClose}){
         <div style={{position:"absolute",left:"5%",top:"4%",width:"40%",zIndex:3}}>
           <Stat v={settled.length} l="PARIS"/>
           <Stat v={won+"-"+lost} l="BILAN"/>
-          <Stat v={(profit>=0?"+":"−")+Math.abs(Math.round(profit))} l="PROFIT €" c={profit>=0?"#4ade80":"#f87171"}/>
+          <Stat v={(profit>=0?"+":"−")+Math.abs(Math.round(profit))} l="PROFIT €" c={profit>=0?"#34D399":"#FF8A80"}/>
           <div style={{textAlign:"center",padding:"8px 0 0"}}>
             <div style={{fontSize:"clamp(40px,13vw,60px)",fontWeight:900,lineHeight:.95,letterSpacing:-2,whiteSpace:"nowrap",textShadow:"0 3px 14px rgba(0,0,0,.5)"}}>{settled.length?Math.round(wr*100)+"%":"—"}</div>
             <div style={{fontSize:14,fontWeight:800,letterSpacing:.6,marginTop:3}}>RÉUSSITE</div>
@@ -3580,7 +3686,7 @@ function GroupPoster({kind,name,bets,onClose}){
         {isLg&&(splitP.length>0||splitT.length>0)&&<div style={{position:"absolute",right:"4%",bottom:74,zIndex:3,display:"flex",gap:6}}>
           {[["Joueurs",splitP],["Équipes",splitT]].filter(x=>x[1].length).map(([l,a])=>{const p=pr(a);return(<div key={l} style={{background:"rgba(0,0,0,.45)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"5px 9px",textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:800,letterSpacing:.5,color:"rgba(255,255,255,.7)"}}>{l.toUpperCase()}</div>
-            <div style={{fontSize:13,fontWeight:900,color:p>=0?"#4ade80":"#f87171"}}>{(p>=0?"+":"−")+Math.abs(Math.round(p))} €</div></div>);})}
+            <div style={{fontSize:13,fontWeight:900,color:p>=0?"#34D399":"#FF8A80"}}>{(p>=0?"+":"−")+Math.abs(Math.round(p))} €</div></div>);})}
         </div>}
         <div style={{position:"absolute",left:0,right:0,bottom:0,height:62,background:isLg?"#111":sc,color:isLg?"#fff":(txt===pc?pc:(sc.toLowerCase()==="#111111"?"#fff":pc)),zIndex:4,display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"0 14px"}}>
           <span style={{fontSize:"clamp(22px,8cqw,34px)",fontWeight:900,textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.5}}>{name}</span>
@@ -3686,7 +3792,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   );
   const Pill=({v})=>v==null?<span style={{color:C.dim}}>–</span>:(
     <span style={{display:"inline-block",minWidth:52,textAlign:"center",padding:"3px 6px",borderRadius:8,fontSize:12.5,fontWeight:600,
-      color:v>=0?C.green:C.red,background:v>=0?"rgba(74,222,128,.10)":"rgba(255,138,128,.10)"}}>{(v>0?"+":"")+Math.round(v)+" %"}</span>
+      color:v>=0?C.green:C.red,background:v>=0?"rgba(52,211,153,.10)":"rgba(255,138,128,.10)"}}>{(v>0?"+":"")+Math.round(v)+" %"}</span>
   );
   const COLS="minmax(0,1fr) 40px 58px 70px";
   const Table=({rows,limit=6,empty:emp="Rien à afficher",onRow,bk=false})=>{
@@ -3696,30 +3802,29 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
     const maxAbs=Math.max(1,...rows.map(r=>Math.abs(r.s.profit)));
     return(
       <Card style={{overflow:"hidden"}}>
-        <div style={{display:"grid",gridTemplateColumns:COLS,gap:6,padding:"10px 14px 8px",fontSize:11,fontWeight:600,color:C.dim,letterSpacing:.3,textTransform:"uppercase"}}>
-          <span/><span style={{textAlign:"center"}}>Bilan</span><span style={{textAlign:"center"}}>ROI</span><span style={{textAlign:"right"}}>Profit</span>
-        </div>
-        {shown.map(r=>{
+        {shown.map((r,i)=>{
           const x=stat(r.s);
+          const roi=x.roi==null||isNaN(x.roi)?null:Math.round(x.roi);
+          const pos=r.s.profit>=0;
           return(
-            <div key={r.key} onClick={onRow?()=>onRow(r):undefined} style={{display:"grid",gridTemplateColumns:COLS,gap:6,alignItems:"center",padding:"11px 14px",borderTop:"1px solid "+C.line,cursor:onRow?"pointer":"default"}}>
-              <span style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-                {r.logo!==undefined&&(bk?<BkBadge src={r.logo} label={r.name} size={30}/>:<MiniLogo src={r.logo} label={r.name} size={26} round={false}/>)}
-                <span style={{minWidth:0,flex:1}}>
-                  <span style={{display:"block",fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</span>
-                  <span style={{display:"block",height:3,marginTop:6,borderRadius:2,background:"rgba(255,255,255,.05)",overflow:"hidden"}}>
-                    <span style={{display:"block",height:"100%",width:Math.max(4,Math.abs(r.s.profit)/maxAbs*100)+"%",borderRadius:2,background:r.s.profit>=0?"rgba(52,211,153,.7)":"rgba(255,138,128,.7)"}}/>
-                  </span>
-                </span>
-              </span>
-              <span style={{textAlign:"center",fontSize:13.5,color:"#C4C9D4",fontVariantNumeric:"tabular-nums"}}>{r.s.won}-{r.s.lost}</span>
-              <span style={{textAlign:"center",fontSize:13,fontWeight:600,color:"#9AA1AE",fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{x.roi==null||isNaN(x.roi)?"—":(x.roi>0?"+":"")+Math.round(x.roi)+"%"}</span>
-              <span style={{textAlign:"right",fontSize:15,fontWeight:700,color:pColor(r.s.profit),fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{money(r.s.profit,0)}</span>
+            <div key={r.key} onClick={onRow?()=>onRow(r):undefined} style={{position:"relative",display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderTop:i?"1px solid "+C.line:"none",cursor:onRow?"pointer":"default"}}>
+              {r.logo!==undefined&&(bk?<BkBadge src={r.logo} label={r.name} size={34}/>:<MiniLogo src={r.logo} label={r.name} size={30} round={false}/>)}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:15.5,fontWeight:650,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.1}}>{r.name}</div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5,fontSize:12.5,color:C.sub,fontVariantNumeric:"tabular-nums"}}>
+                  <span><b style={{color:C.green,fontWeight:700}}>{r.s.won}</b> G · <b style={{color:C.red,fontWeight:700}}>{r.s.lost}</b> P</span>
+                  {roi!=null&&<span style={{padding:"2px 7px",borderRadius:6,fontSize:11.5,fontWeight:700,color:roi>=0?C.green:C.red,background:roi>=0?"rgba(52,211,153,.10)":"rgba(255,138,128,.10)"}}>ROI {roi>0?"+":""}{roi}%</span>}
+                </div>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontSize:17,fontWeight:800,color:pColor(r.s.profit),fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap",letterSpacing:-.3}}>{money(r.s.profit,0)}</div>
+              </div>
+              <span style={{position:"absolute",left:0,top:12,bottom:12,width:3,borderRadius:"0 3px 3px 0",background:pos?C.green:C.red,opacity:.25+.75*Math.min(1,Math.abs(r.s.profit)/maxAbs)}}/>
             </div>
           );
         })}
         {rows.length>limit&&(
-          <button type="button" onClick={()=>setAll(v=>!v)} style={{width:"100%",height:44,border:"none",borderTop:"1px solid "+C.line,
+          <button type="button" onClick={()=>setAll(v=>!v)} style={{width:"100%",height:46,border:"none",borderTop:"1px solid "+C.line,
             background:"transparent",color:C.blue,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
             {all?"Voir moins":"Voir tout ("+rows.length+")"}
           </button>
@@ -3733,16 +3838,17 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
       <div style={{fontSize:17,fontWeight:700,marginTop:3,color:color||C.text,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{value}</div>
     </div>
   );
-  const Hero=({s,title,extra})=>{
+  const Hero=({s,title,extra,list})=>{
     const x=stat(s);const dec=s.won+s.lost||1;
     return(
-      <Card style={{padding:18,background:"radial-gradient(120% 90% at 0% 0%,"+(s.profit>=0?"rgba(74,222,128,.10)":"rgba(255,138,128,.10)")+" 0%,rgba(0,0,0,0) 60%),"+C.card}}>
+      <Card style={{padding:18,background:"radial-gradient(120% 90% at 0% 0%,"+(s.profit>=0?"rgba(52,211,153,.10)":"rgba(255,138,128,.10)")+" 0%,rgba(0,0,0,0) 60%),"+C.card}}>
         <div style={{fontSize:13,color:C.sub}}>{title}</div>
         <div style={{display:"flex",alignItems:"baseline",gap:10,marginTop:4}}>
           <span style={{fontSize:34,fontWeight:700,letterSpacing:-1,color:pColor(s.profit),fontVariantNumeric:"tabular-nums"}}>{money(s.profit)}</span>
           {x.roi!=null&&<Pill v={x.roi}/>}
         </div>
-        {(()=>{const pts=[...bets].filter(b=>b.status==="won"||b.status==="lost").sort((a,z)=>String(a.created_at||"").localeCompare(String(z.created_at||"")));
+        <div style={{fontSize:12,color:C.sub,marginTop:4}}>{x.roi!=null?"ROI "+(x.roi>0?"+":"")+x.roi.toFixed(1).replace(".",",")+" % (profit ÷ misé)":""} · Bankroll {(s.profit>0?"+":"")+(s.profit/START_BANKROLL*100).toFixed(2).replace(".",",")} %</div>
+        {(()=>{const pts=[...(list||bets)].filter(b=>b.status==="won"||b.status==="lost").sort((a,z)=>String(a.created_at||"").localeCompare(String(z.created_at||"")));
           if(pts.length<3)return null;let run=0;const v=[0,...pts.map(b=>run+=parseFloat(b.profit||0))];
           const mn=Math.min(...v),mx=Math.max(...v),W=300,Hh=46,r=mx-mn||1;
           const xy=v.map((y,i)=>[i/(v.length-1)*W,Hh-((y-mn)/r)*(Hh-4)-2]);const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
@@ -3795,8 +3901,16 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
     </>
   );
 
+  const sportToggle=(<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
+        {[["all","Tout"],["basket","Basket"],["hockey","Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
+          style={{flex:1,height:40,borderRadius:10,border:"none",background:sport===k?"rgba(52,211,153,.16)":"transparent",color:sport===k?C.green:C.sub,fontWeight:700,fontSize:14.5,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          {k==="all"?null:k==="basket"
+            ?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8v18.4"/><path d="M5.6 5.4c2.6 2 3.9 4.2 3.9 6.6s-1.3 4.6-3.9 6.6"/><path d="M18.4 5.4c-2.6 2-3.9 4.2-3.9 6.6s1.3 4.6 3.9 6.6"/></svg>
+            :<svg width="22" height="20" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2.5l9.2 14.2h4.6"/><path d="M21 2.5l-9.2 14.2H7.2"/><ellipse cx="13" cy="20.6" rx="3.6" ry="1.5"/></svg>}
+          {l}</button>)}
+      </div>);
   if(bets.length===0)return(
-    <div style={{padding:"0 20px 8px"}}>{header}
+    <div style={{padding:"0 20px 8px"}}>{sportToggle}{header}
       <div style={{marginTop:16}}><EmptyState title={allRaw.length?"Aucun pari sur cette période":"Pas encore de statistiques"} sub="Ajoute des paris : tes stats apparaîtront ici."/></div>
     </div>
   );
@@ -3811,13 +3925,13 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   const byBook=groupBy(rawBets,b=>b.bookmaker||"Sans bookmaker");
   const oddsOrder=["< 1,60","1,60 – 1,89","1,90 – 2,19","≥ 2,20"];
   const byOdds=groupBy(bets,b=>{const o=parseFloat(b.odds||0);return o<1.6?oddsOrder[0]:o<1.9?oddsOrder[1]:o<2.2?oddsOrder[2]:oddsOrder[3];});
-  const monthRows=rowsOf(groupBy(bets.filter(b=>b.created_at),b=>b.created_at.slice(0,7)),{sort:(a,b)=>b.key.localeCompare(a.key)})
+  const monthRows=rowsOf(groupBy(bets.filter(b=>b.created_at),b=>{const d=new Date(b.created_at);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}),{sort:(a,b)=>b.key.localeCompare(a.key)})
     .map(r=>{const[y,mo]=r.key.split("-");const l=new Date(+y,+mo-1,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});return{...r,name:l.charAt(0).toUpperCase()+l.slice(1)};});
 
   const best=g=>{const e=Object.entries(g).filter(([k,s])=>s.won+s.lost>0&&!/^(Sans|Autre|Poste inconnu)/.test(k)).sort((a,b)=>b[1].profit-a[1].profit)[0];return e?{name:e[0],s:e[1]}:null;};
   const worst=g=>{const e=Object.entries(g).filter(([k,s])=>s.won+s.lost>0&&!/^(Sans|Autre|Poste inconnu)/.test(k)).sort((a,b)=>a[1].profit-b[1].profit)[0];return e&&e[1].profit<0?{name:e[0],s:e[1]}:null;};
   const insights=[
-    ["Meilleur tipster",best(byTip)],["Meilleur marché",best(byMarket)],["Meilleur joueur",best(byPlayer)],["Pire marché",worst(byMarket)],
+    ["Meilleur tipster",best(byTip)],["Meilleur marché",best(byMarket)],["Meilleur joueur",best(byPlayer)],["Pire marché",worst(byMarket)],["Pire joueur",worst(byPlayer)],["Pire tipster",worst(byTip)],
   ].filter(x=>x[1]);
 
   const OU=()=>{
@@ -3832,7 +3946,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
           <span>{s.won}-{s.lost}</span><Pill v={x.roi}/>
         </div>
       </Card>);};
-    return <div style={{display:"flex",gap:10}}>{side("Over",C.green)}{side("Under",C.red)}</div>;
+    return <div style={{display:"flex",gap:10}}>{side("Over","#34D399")}{side("Under","#60A5FA")}</div>;
   };
 
   // Annonces
@@ -3846,39 +3960,17 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
 
   return(
     <div style={{padding:"0 20px 8px"}}>
-      {<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
-        {[["all","Tout"],["basket","Basket"],["hockey","Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
-          style={{flex:1,height:40,borderRadius:10,border:"none",background:sport===k?"rgba(52,211,153,.16)":"transparent",color:sport===k?C.green:C.sub,fontWeight:700,fontSize:14.5,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          {k==="all"?null:k==="basket"
-            ?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8v18.4"/><path d="M5.6 5.4c2.6 2 3.9 4.2 3.9 6.6s-1.3 4.6-3.9 6.6"/><path d="M18.4 5.4c-2.6 2-3.9 4.2-3.9 6.6s1.3 4.6 3.9 6.6"/></svg>
-            :<svg width="22" height="20" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2.5l9.2 14.2h4.6"/><path d="M21 2.5l-9.2 14.2H7.2"/><ellipse cx="13" cy="20.6" rx="3.6" ry="1.5"/></svg>}
-          {l}</button>)}
-      </div>}
+      {sportToggle}
       {header}
       <div key={tab+period+sport} className="fade-in" style={{marginTop:16}}>
 
       {tab==="overview"&&<>
         <Hero s={total} title={(period==="all"?"Depuis le début":"Sur la période")+" · "+total.count+" paris"+(pending?" ("+pending+" en cours)":"")}
           extra={clvAll.n>0?<Mini label="CLV" value={pct(clvAll.avg)} color={pColor(clvAll.avg)}/>:null}/>
-        {insights.length>0&&<>
-          <Title>À retenir</Title>
-          <Card style={{overflow:"hidden"}}>
-            {insights.map(([l,v],i)=>(
-              <div key={l} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderTop:i?"1px solid "+C.line:"none"}}>
-                <span style={{width:8,height:8,borderRadius:4,background:v.s.profit>=0?C.green:C.red,flexShrink:0}}/>
-                <span style={{fontSize:13,color:C.sub,width:118,flexShrink:0}}>{l}</span>
-                <span style={{flex:1,minWidth:0,fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.name}</span>
-                <span style={{fontSize:15,fontWeight:700,color:pColor(v.s.profit),whiteSpace:"nowrap"}}>{money(v.s.profit,0)}</span>
-              </div>
-            ))}
-          </Card>
-        </>}
         {(byOU.Over||byOU.Under)&&<><Title>Over vs Under</Title><OU/></>}
         <Title>Par ligue</Title>
         <Table rows={rowsOf(byLeague,{logo:g=>getLeagueLogo(g)||null})} onRow={r=>setGroupP({kind:"league",name:r.key})}/>
         {groupP&&groupP.kind==="league"&&<GroupPoster kind="league" name={groupP.name} bets={allRaw} onClose={()=>setGroupP(null)}/>}
-        <Title>Par cote</Title>
-        <Table rows={rowsOf(byOdds,{sort:(a,b)=>oddsOrder.indexOf(a.key)-oddsOrder.indexOf(b.key)})}/>
         <Title>Bookmakers</Title>
         <Table bk rows={rowsOf(byBook,{logo:n=>bkPhotos[n]||null})}/>
         <Title>Par mois</Title>
@@ -3886,38 +3978,34 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
       </>}
 
       {tab==="tipsters"&&<>
-        <Table rows={rowsOf(byTip)} limit={20}/>
-        <Title>Tipster × marché</Title>
-        <Table rows={rowsOf(groupBy(bets.filter(b=>b.tipster),b=>b.tipster+" · "+marketOf(b)))}/>
+        <Title>Tipsters</Title>
+        <Table rows={rowsOf(byTip)} limit={20} empty="Aucun tipster"/>
       </>}
 
       {tab==="players"&&<>
         <PlayerStatSearch players={players} bets={allRaw} onChanged={onPlayersChanged}/>
-        <Title>Par poste</Title>
-        <Table rows={rowsOf(byPos)} limit={10}/>
         <Title>Joueurs</Title>
-        <Table rows={rowsOf(byPlayer)} limit={8} onRow={r=>{const p=players.find(x=>formatName(x.name)===r.name);if(p)setPosterP(p);}}/>
-        <Title>Équipes (paris équipe)</Title>
+        <Table rows={rowsOf(byPlayer)} limit={6} onRow={r=>{const p=players.find(x=>formatName(x.name)===r.name);if(p)setPosterP(p);}}/>
+        <Title>Par poste</Title>
+        <Table rows={rowsOf(byPos)} limit={6}/>
+        <Title>Équipes</Title>
         <Table rows={rowsOf(groupBy(bets.filter(b=>b.bet_type==="team"&&(b.team||b.player)),b=>b.team||b.player),{logo:t=>getTeamLogo(t,null)||null})} limit={8} empty="Aucun pari équipe" onRow={r=>setGroupP({kind:"team",name:r.key})}/>
         {posterP&&<PlayerPoster player={posterP} bets={allRaw} onClose={()=>setPosterP(null)} onChanged={onPlayersChanged}/>}
         {groupP&&groupP.kind==="team"&&<GroupPoster kind="team" name={groupP.name} bets={allRaw} onClose={()=>setGroupP(null)}/>}
       </>}
 
       {tab==="markets"&&<>
-        <Table rows={rowsOf(groupBy(bets,b=>b.bet_type==="team"?"Paris équipe":"Paris joueur"))}/>
         <Title>Marchés joueur</Title>
         <Table rows={rowsOf(groupBy(playerBets,marketOf))} limit={12}/>
         <Title>Marchés équipe</Title>
         <Table rows={rowsOf(groupBy(bets.filter(b=>b.bet_type==="team"),b=>teamMarket(b)))} empty="Aucun pari équipe"/>
         {(byOU.Over||byOU.Under)&&<><Title>Over vs Under</Title><OU/></>}
-        <Title>Détail Over / Under</Title>
-        <Table rows={rowsOf(groupBy(bets.filter(b=>ouOf(b)),b=>ouOf(b)+" · "+marketOf(b)))} limit={10}/>
       </>}
 
       {tab==="annonces"&&(ann.length===0?(
         <EmptyState title="Aucun pari sur annonce" sub="Active « Annonce » quand tu paries suite à une absence : tes stats apparaîtront ici."/>
       ):<>
-        <Hero s={groupBy(ann,()=>"a").a} title={"Paris sur annonce · "+ann.length}
+        <Hero list={ann} s={groupBy(ann,()=>"a").a} title={"Paris sur annonce · "+ann.length}
           extra={clvOf(ann).n>0?<Mini label="CLV" value={pct(clvOf(ann).avg)} color={pColor(clvOf(ann).avg)}/>:null}/>
         <div style={{display:"flex",alignItems:"center",gap:8,margin:"10px 4px 0",fontSize:12.5,color:C.sub}}>
           <span style={{width:7,height:7,borderRadius:4,background:annSettled>=50?C.green:annSettled>=20?"#FBBF24":C.red}}/>
@@ -4267,6 +4355,7 @@ function LTBetsView({showToast,players=[],bookmakers=[]}){
 let EDIT_NAV={league:null,club:null};
 function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{teamIndex().catch(()=>{});},[]);
+  const[lgView,setLgView]=useState(()=>{try{return localStorage.getItem("lg_view")||"list";}catch(e){return "list";}});
   const[leagues,setLeagues]=useState([]);
   const[selectedLeague,setSelectedLeague]=useState(EDIT_NAV.league);
   // Nombre de paris long terme EN COURS par ligue (un pari multi-bookmakers compte pour 1)
@@ -4627,7 +4716,8 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
                   <Item l="Fermer" k="close" fn={()=>setLgMenu(null)}/>
                 </div></div>);})()}
 
-            {champ.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{champ.map(tile)}</div>}
+            <div style={{display:"flex",justifyContent:"flex-end",gap:4,margin:"0 2px 8px"}}>{[["list","Liste"],["tiles","Cartes"]].map(([k,l])=><button key={k} type="button" onClick={()=>{setLgView(k);try{localStorage.setItem("lg_view",k);}catch(e){}}} style={{height:28,padding:"0 10px",borderRadius:8,border:"none",background:lgView===k?C.chip:"transparent",color:lgView===k?C.text:C.sub,fontSize:12.5,fontWeight:700,cursor:"pointer"}}>{l}</button>)}</div>
+            {champ.length>0&&(lgView==="tiles"?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{champ.map(tile)}</div>:<SGroup>{champ.map(row)}</SGroup>)}
             <button type="button" onClick={cleanAllLeagueLogos} disabled={!!cleaning2} style={{display:"block",margin:"10px auto 0",background:"none",border:"none",color:C.sub,fontSize:12.5,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline",textUnderlineOffset:3}}>{cleaning2?"Nettoyage… "+cleaning2:"Nettoyer les fonds de tous les logos"}</button>
             {cups.length>0&&<>
               <div style={{fontSize:13,fontWeight:600,color:C.sub,margin:"24px 4px 8px"}}>Coupes</div>
@@ -5275,7 +5365,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
   return(
     <div style={{padding:"0 20px 16px"}}>
       <div className="segment" style={{marginBottom:20}}>
-        {[["edit","Joueurs"],["bookmakers","Bookmakers"],["tipsters","Tipsters"],["lt","Paris LT"]].map(([k,l])=>(
+        {[["edit","Joueurs"],["bookmakers","Bookmakers"],["tipsters","Tipsters"],["lt","Long terme"]].map(([k,l])=>(
           <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -5457,19 +5547,20 @@ export default function App(){
   },[]);
 
   // Paris long terme EN COURS : visibles seulement dans la page de leur ligue
+  const bkPhotoMap=useMemo(()=>Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v)),[bookmakers]);
   const shownBets=useMemo(()=>bets.filter(b=>!(b.notes==="longterm"&&b.status==="pending")),[bets]);
   useEffect(()=>{const h=()=>loadBetsRef.current&&loadBetsRef.current(true);window.addEventListener("bets:reload",h);return()=>window.removeEventListener("bets:reload",h);},[]);
   const loadBetsRef=useRef(null);
+  const loadSeq=useRef(0);
   const loadBets=useCallback(async(silent=false)=>{
     if(!silent)setLoading(true);
     else setSyncing(true);
+    const my=++loadSeq.current; // seule la dernière réponse compte (une vieille réponse lente n'écrase plus les données fraîches)
     try{
       const data=await fetchBets();
-      setBets(data);
-      setLastSync(new Date());
+      if(my===loadSeq.current){setBets(data);setLastSync(new Date());}
     }catch(e){if(!silent)console.error(e);}
-    setLoading(false);
-    setSyncing(false);
+    if(my===loadSeq.current){setLoading(false);setSyncing(false);}
   },[]);
   loadBetsRef.current=loadBets;
 
@@ -5489,8 +5580,8 @@ export default function App(){
   useEffect(()=>{
     let startY=null,dist=0;
     const start=e=>{startY=window.scrollY<=0?e.touches[0].clientY:null;dist=0;};
-    const move=e=>{if(startY===null)return;dist=Math.max(0,e.touches[0].clientY-startY);setPull(Math.min(dist,90));};
-    const end=()=>{if(startY!==null&&dist>70)loadBets(true);startY=null;dist=0;setPull(0);};
+    let last=-1;const move=e=>{if(startY===null)return;dist=Math.max(0,e.touches[0].clientY-startY);const v=Math.round(Math.min(dist,90)/6)*6;if(v!==last){last=v;setPull(v);}};
+    const end=()=>{if(startY!==null&&dist>70)loadBets(true);startY=null;dist=0;last=-1;setPull(0);};
     window.addEventListener("touchstart",start,{passive:true});
     window.addEventListener("touchmove",move,{passive:true});
     window.addEventListener("touchend",end);
@@ -5540,10 +5631,10 @@ export default function App(){
         <div key={view} className="view-in" style={{paddingTop:4}}>
           {view==="home"&&<div><HomeView bets={shownBets} players={players} onNavigate={setView} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/></div>}
           {view==="bets"&&<BetsView bets={shownBets} players={players} bookmakers={bookmakers}
-            bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
+            bkPhotos={bkPhotoMap}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
-          {view==="stats"&&<StatsView bets={shownBets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}/>}
+          {view==="stats"&&<StatsView bets={shownBets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={bkPhotoMap}/>}
           {view==="settings"&&<SettingsView
             onPlayersChanged={refreshPlayers}
             players={players}
@@ -5557,27 +5648,28 @@ export default function App(){
 
         <nav className="nav">
           <button aria-label="Bankroll" className={"nav-btn"+(view==="home"?" active":"")} onClick={()=>{setShowAdd(false);setEditBet(null);setView("home");}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M3 20h18M6 16V10M11 16V5M16 16v-4M21 16V8"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M3 20h18M6 16V10M11 16V5M16 16v-4M21 16V8"/></svg><span>Bankroll</span>
           </button>
           <button aria-label="Mes paris" className={"nav-btn"+(view==="bets"?" active":"")} onClick={()=>{setShowAdd(false);setEditBet(null);setView("bets");}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round"><path d="M5 3h14v18l-2.5-1.8L14 21l-2-1.8L10 21l-2.5-1.8L5 21z"/><path d="M9 8h6M9 12h6"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round"><path d="M5 3h14v18l-2.5-1.8L14 21l-2-1.8L10 21l-2.5-1.8L5 21z"/><path d="M9 8h6M9 12h6"/></svg><span>Paris</span>
           </button>
           <button aria-label="Ajouter un pari" className="nav-add" onClick={()=>{refreshPlayers();setShowAdd(true);}}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
           <button aria-label="Analyse" className={"nav-btn"+(view==="stats"?" active":"")} onClick={()=>{setShowAdd(false);setEditBet(null);setView("stats");}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>Analyse</span>
           </button>
           <button aria-label="Réglages" className={"nav-btn"+(view==="settings"?" active":"")} onClick={()=>{setShowAdd(false);setEditBet(null);setView("settings");}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Réglages</span>
           </button>
         </nav>
 
         {(showAdd||editBet)&&(
           <AddBetModal
+            bets={shownBets}
             players={players}
             bookmakers={bookmakers.length>0?bookmakers.filter(b=>!b.hidden||b.name===editBet?.bookmaker).map(b=>b.name):DEFAULT_BOOKMAKERS}
-            bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
+            bkPhotos={bkPhotoMap}
             tipsters={tipsters}
             editBet={editBet}
             onPlayersChanged={refreshPlayers}
@@ -5593,7 +5685,7 @@ export default function App(){
           <BetDetailModal
             bet={selectedBet}
             players={players}
-            bkPhotos={Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v))}
+            bkPhotos={bkPhotoMap}
             bookmakerList={bookmakers.map(bk=>({name:bk.name,logo:bk.logo,hidden:!!bk.hidden}))}
             tipsterList={tipsters}
             leagueList={leagues}
