@@ -1866,7 +1866,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             return <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
               <PlayerFace src={ph} name={formatName(form.player||form.team)} size={38}/>
               <div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}><b style={{fontSize:15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{formatName(form.player||form.team)}</b>
-                <span style={{flexShrink:0,padding:"1px 6px",borderRadius:6,background:form.ou==="Over"?"#34D399":"#60A5FA",color:"#0b1220",fontSize:10.5,fontWeight:900}}>{(form.ou==="Over"?"O ":"U ")+form.line+(form.stat?" "+statFR(form.stat).toUpperCase():"")}</span></div>
+                <span style={{flexShrink:0,padding:"1px 6px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:900}}>{(form.ou==="Over"?"O ":"U ")+form.line+(form.stat?" "+statFR(form.stat).toUpperCase():"")}</span></div>
                 <div className="sysfont" style={{fontSize:12.5,color:C.sub}}>{oddsN?"@"+oddsN.toFixed(2).replace(".",","):"cote ?"} · {stakeN?eur(stakeN):"mise ?"}{form.bookmaker?" · "+form.bookmaker:""}</div></div>
               {stakeN>0&&oddsN>0&&<b className="sysfont" style={{fontSize:16,color:C.green,whiteSpace:"nowrap"}}>+{eur(stakeN*(oddsN-1))}</b>}
             </div>;})()}
@@ -3009,10 +3009,6 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   const[pOff,setPOff]=useState(0);
   const[units,setUnits]=useState(false);
   const[weekOpen,setWeekOpen]=useState(false);
-  useEffect(()=>{const d=new Date();const day=d.getDay();if(!((day===0&&d.getHours()>=18)||day===1))return;
-    const ws=new Date(d.getFullYear(),d.getMonth(),d.getDate());ws.setDate(ws.getDate()-((ws.getDay()+6)%7)-(day===1?7:0));const k=ws.toDateString();
-    try{if(localStorage.getItem("bk_week_seen")===k)return;localStorage.setItem("bk_week_seen",k);}catch(e){return;}
-    const t=setTimeout(()=>setWeekOpen(true),2000);return()=>clearTimeout(t);},[]);
   const won=bets.filter(b=>b.status==="won").length;
   const lost=bets.filter(b=>b.status==="lost").length;
   const voids=bets.filter(b=>b.status==="void").length;
@@ -3103,11 +3099,6 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         );
       })()}
 
-      <button className="press" onClick={()=>setWeekOpen(true)} style={{width:"100%",marginTop:12,display:"flex",alignItems:"center",gap:10,padding:"14px 16px",borderRadius:18,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:C.text,cursor:"pointer",textAlign:"left"}}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
-        <span style={{flex:1,fontSize:16,fontWeight:600}}>Bilan de la semaine</span><span style={{display:"flex"}}>{Ico.chevron}</span>
-      </button>
-      {weekOpen&&<WeekRecap bets={bets} players={players} onClose={()=>setWeekOpen(false)}/>}
       <div style={{marginTop:10,background:C.card,border:"1px solid "+C.line,borderRadius:18,overflow:"hidden"}}>
       <div role="button" tabIndex={0} aria-expanded={calOpen} onClick={()=>setCalOpen(o=>!o)} onKeyDown={e=>e.key==="Enter"&&setCalOpen(o=>!o)}
         style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px",cursor:"pointer"}}>
@@ -3228,7 +3219,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{fontSize:lastName.length>14?12:lastName.length>10?13.5:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
           {lastName}
         </span>
-        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:/^O\b/.test(String(desc))?"#34D399":/^U\b/.test(String(desc))?"#60A5FA":"#fff",color:"#0b1220",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
+        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:900,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
