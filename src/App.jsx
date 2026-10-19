@@ -1202,6 +1202,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   },[betTeam]);
 
   const isTeamBet=editBet?.bet_type==="team"||(selectedType?.type==="team");
+  const[allClubs,setAllClubs]=useState([]);
+  useEffect(()=>{fetchClubs().then(c=>setAllClubs(Array.isArray(c)?c:[])).catch(()=>{});},[]);
 
   const searchLow=search.toLowerCase().trim();
   const playerResults=searchLow.length>=1
@@ -1214,9 +1216,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     :[];
 
   const allTeams=searchLow.length>=1
-    ?[...new Set(players.map(p=>p.team).filter(Boolean))]
-        .filter(t=>t.toLowerCase().includes(searchLow))
-        .slice(0,4)
+    ?[...new Set([...players.map(p=>p.team),...allClubs.map(c=>c.name)].filter(Boolean))]
+        .filter(t=>t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(searchLow.normalize("NFD").replace(/[\u0300-\u036f]/g,"")))
+        .slice(0,6)
     :[];
 
   function selectPlayer(p){
@@ -1230,7 +1232,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   function selectTeam(teamName){
     setSearch("");
     const playerOfTeam=players.find(p=>p.team===teamName);
-    const game=playerOfTeam?.game||"";
+    const game=playerOfTeam?.game||(allClubs.find(c=>c.name===teamName)||{}).league||"";
     f("team",teamName);f("game",game);
     setSelectedType({type:"team",data:{name:teamName,game}});
     setStep("form");
@@ -1642,7 +1644,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                   <div className="sentence">
                     {needsOU&&(
                       <select className="sent-sel" aria-label="Over ou Under" value={form.ou||"Over"} onChange={e=>f("ou",e.target.value)}
-                        style={{color:(form.ou||"Over")==="Over"?C.green:C.red}}>
+                        style={{color:C.text}}>
                         <option>Over</option><option>Under</option>
                       </select>
                     )}
@@ -2234,7 +2236,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             return(
               <div className="sentence" style={{borderColor:changed?C.green+"88":undefined}}>
                 <select className="sent-sel" aria-label="Over ou Under" value={pd.ou} onChange={e=>upd({ou:e.target.value})}
-                  style={{color:pd.ou==="Over"?C.green:C.red}}>
+                  style={{color:C.text}}>
                   <option>Over</option><option>Under</option>
                 </select>
                 <select className="sent-sel" aria-label="Ligne" value={cur} onChange={e=>upd({line:e.target.value})}>
@@ -3799,7 +3801,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:15.5,fontWeight:650,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.1}}>{r.name}</div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5,fontSize:12.5,color:C.sub,fontVariantNumeric:"tabular-nums"}}>
-                  <span><b style={{color:C.green,fontWeight:700}}>{r.s.won}</b> G · <b style={{color:C.red,fontWeight:700}}>{r.s.lost}</b> P</span>
+                  <span style={{color:C.text,fontWeight:600}}>{r.s.won}-{r.s.lost}-{r.s.void||0}</span>
                   {roi!=null&&<span style={{padding:"2px 7px",borderRadius:6,fontSize:11.5,fontWeight:700,color:roi>=0?C.green:C.red,background:roi>=0?"rgba(52,211,153,.10)":"rgba(255,138,128,.10)"}}>ROI {roi>0?"+":""}{roi}%</span>}
                 </div>
               </div>
@@ -3932,7 +3934,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
           <span>{s.won}-{s.lost}</span><Pill v={x.roi}/>
         </div>
       </Card>);};
-    return <div style={{display:"flex",gap:10}}>{side("Over","#34D399")}{side("Under","#60A5FA")}</div>;
+    return <div style={{display:"flex",gap:10}}>{side("Over",C.text)}{side("Under",C.text)}</div>;
   };
 
   // Annonces
