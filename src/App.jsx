@@ -1196,6 +1196,8 @@ const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"
 function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged,bets=null}){
   const tagList=useTagList();
   const oddsRef=useRef(null),stakeRef=useRef(null),oddsCard=useRef(null),stakeCard=useRef(null),tipCard=useRef(null);
+  const lineSel=useRef(null),statSel=useRef(null),lineCard=useRef(null),ouCard=useRef(null);
+  const openSel=el=>{if(!el)return;try{el.focus({preventScroll:true});}catch(e){}try{el.showPicker&&el.showPicker();}catch(e){}};
   const goTo=(inp,card)=>{if(inp&&inp.current)inp.current.focus({preventScroll:true});setTimeout(()=>{card&&card.current&&card.current.scrollIntoView({behavior:"smooth",block:"start"});},inp?250:0);};
   const draft=!editBet?ADD_DRAFT:null;
   const[playerSettings,setPlayerSettings]=useState(false);
@@ -1289,6 +1291,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     if(p.game)f("game",p.game);
     setSelectedType({type:"player",data:p});
     setStep("form");
+    if(!form.line)setTimeout(()=>{lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});openSel(lineSel.current);},120);
   }
 
   function selectTeam(teamName){
@@ -1744,10 +1747,10 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── PARI JOUEUR : Over / Under ── */}
         {!isTeamBet&&!form.lt&&(<>
         {/* ── Ligne | Stat ── */}
-        <div className="acard" style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0}}>
+        <div className="acard" ref={lineCard} style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0,scrollMarginTop:12}}>
           <label style={{flex:1,position:"relative",padding:"14px 16px",cursor:"pointer"}}>
             <div className="acard-h" style={{marginBottom:4}}>Ligne</div>
-            <select aria-label="Ligne" value={form.line} onChange={e=>f("line",e.target.value)}
+            <select ref={lineSel} aria-label="Ligne" value={form.line} onChange={e=>{f("line",e.target.value);if(e.target.value&&!form.stat)setTimeout(()=>openSel(statSel.current),150);}}
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
                 fontSize:30,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>—</option>
@@ -1757,7 +1760,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
           <label style={{flex:1.3,position:"relative",padding:"14px 16px",cursor:"pointer",minWidth:0}}>
             <div className="acard-h" style={{marginBottom:4}}>Stat</div>
-            <select aria-label="Type de stat" value={form.stat} onChange={e=>f("stat",e.target.value)}
+            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
@@ -1767,7 +1770,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             </select>
           </label>
         </div>
-        <div className="acard" style={clubVars}>
+        <div className="acard" ref={ouCard} style={{...clubVars,scrollMarginTop:12}}>
           <div className="acard-h">Over / Under</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {["Over","Under"].map(v=>{const on=form.ou===v;return(
@@ -1871,7 +1874,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         <div style={{marginTop:12,padding:"14px",borderRadius:18,background:C.card,border:"1px solid "+C.line}}>
           <div style={{fontSize:12,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Tags</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {tagList.map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
+            {[...tagList,...(form.tags||[]).filter(x=>!tagList.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
               return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{if(t.name==="Annonce")f("annonce",!form.annonce);else f("tags",on?(form.tags||[]).filter(x=>x!==t.name):[...(form.tags||[]),t.name]);}}/>;})}
           </div>
           {tagList.length<=1&&<div style={{fontSize:12,color:C.dim,marginTop:8}}>Ajoute tes propres tags dans Réglages → Tags.</div>}
@@ -2365,7 +2368,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <div style={{display:"none"}}>
               <span style={{...lab,width:"auto"}}>Tags</span>
               <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                {tagListD.map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+                {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
                   return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{
                     if(t.name==="Annonce"){const v=!localBet.annonce;setField("annonce",v);
                       if(!v){["annonce_player","annonce_note","annonce_side","annonce_status","annonce_role"].forEach(k=>setField(k,null));}
@@ -2440,7 +2443,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Tags</div>
           <div style={{padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
             <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-              {tagListD.map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+              {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
                 return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{
                   const ch=t.name==="Annonce"?(on?{annonce:false,annonce_player:null,annonce_note:null,annonce_side:null,annonce_status:null,annonce_role:null}:{annonce:true,annonce_side:localBet.annonce_side||"teammate",annonce_status:localBet.annonce_status||"out",annonce_role:localBet.annonce_role||"starter"}):{tags:on?cur.filter(x=>x!==t.name):[...cur,t.name]};
                   Object.entries(ch).forEach(([k,v])=>setField(k,v));
@@ -3171,10 +3174,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         const PER=[["all","Tout"],["week","Semaine"],["month","Mois"],["year","Année"]];
         return(
           <div style={{padding:"4px 2px 0"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <span style={{fontSize:12,color:C.sub,fontWeight:600,letterSpacing:.6,textTransform:"uppercase"}}>{title}</span>
-              <button onClick={()=>setUnits(u=>!u)} style={{border:"1px solid "+C.line,background:"transparent",color:C.sub,borderRadius:99,height:26,padding:"0 11px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{units?"€":"Unités"}</button>
-            </div>
+            {period!=="all"&&<div style={{fontSize:12,color:C.sub,fontWeight:600,letterSpacing:.6,textTransform:"uppercase"}}>{title}</div>}
             <div className="sysfont" style={{fontSize:"clamp(40px,12vw,54px)",fontWeight:600,letterSpacing:-2,lineHeight:1.05,color:C.text,marginTop:8}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div>
             <div className="sysfont" style={{display:"flex",alignItems:"center",gap:8,marginTop:8,fontSize:14}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:7,fontWeight:600,color:pColor(pp),background:pp>0?"rgba(61,214,140,.12)":pp<0?"rgba(255,107,107,.12)":"rgba(255,255,255,.06)"}}>
@@ -3189,7 +3189,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
               {period!=="all"&&<><button aria-label="Précédent" onClick={()=>setPOff(o=>o-1)} style={{...navArrow,width:28}}>‹</button><button aria-label="Suivant" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))} style={{...navArrow,width:28,opacity:pOff>=0?.3:1}}>›</button></>}
             </div>
             <div className="sysfont" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",marginTop:14,background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
-              {[["ROI",(proi>0?"+":"")+proi.toFixed(1).replace(".",",")+"\u00a0%",pColor(proi)],["Bilan",pw+"-"+pl+"-"+pv,C.text],[streak>=2?"Série":"Paris",streak>=2?streak+(kind==="won"?" V":" D"):String(pb.length),streak>=2?(kind==="won"?C.green:C.red):C.text]].map(([l,v,c],i)=>(
+              {[["Paris",String(pb.length),C.text],["Bilan",pw+"-"+pl+"-"+pv,C.text],["ROI",(proi>0?"+":"")+proi.toFixed(1).replace(".",",")+"\u00a0%",pColor(proi)]].map(([l,v,c],i)=>(
                 <div key={l} style={{padding:"13px 14px",borderLeft:i?"1px solid "+C.line:"none"}}>
                   <div style={{fontSize:11.5,color:C.sub,fontWeight:500}}>{l}</div>
                   <div style={{fontSize:18,fontWeight:600,color:c,marginTop:3,letterSpacing:-.3}}>{v}</div>
@@ -3292,7 +3292,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const bg=selected?"#10241A":C.card;
   const hcp=b.bet_type==="team"&&String(b.description||"").match(/\s([+-]?\d+(?:[.,]\d+)?)$/)&&!/pts|gagne/i.test(b.description||"")?String(b.description).match(/\s([+-]?\d+(?:[.,]\d+)?)$/)[1]:null;
   const fx1=x=>String(x).replace(",",".").replace(/^([+-]?\d+)$/,"$1.0");
-  const desc=(hcp?(/^[+-]/.test(hcp)?fx1(hcp):"+"+fx1(hcp))+" FT":b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U")).replace(/(^|\s)([+-]?\d+)(?=\s|$)(?![.,]\d)/,(m,p1,n)=>p1+n+".0");
+  const desc=(hcp?(/^[+-]/.test(hcp)?fx1(hcp):"+"+fx1(hcp))+" H":b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U")).replace(/(^|\s)([+-]?\d+)(?=\s|$)(?![.,]\d)/,(m,p1,n)=>p1+n+".0");
   return(
     <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"1px solid "+bc,borderRadius:16,
       padding:"12px 14px",minHeight:74,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
@@ -3317,7 +3317,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
         <span style={{display:"flex",alignItems:"center",gap:6,minWidth:0,paddingBottom:5,borderBottom:"1px solid rgba(255,255,255,.12)"}}>
-        <span style={{fontSize:lastName.length>16?12.5:lastName.length>12?13.5:15.5,fontWeight:600,letterSpacing:-.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0,textDecoration:"underline",textUnderlineOffset:3,textDecorationThickness:1.5,textDecorationColor:"rgba(255,255,255,.45)"}}>
+        <span style={{fontSize:lastName.length>16?12.5:lastName.length>12?13.5:15.5,fontWeight:600,letterSpacing:-.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0,}}>
           {lastName}
         </span>
         <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"rgba(255,255,255,.08)",color:"#FAFAFA",fontSize:10.5,fontWeight:600,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
@@ -5579,7 +5579,17 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
 function TagsSettings({showToast}){
   const list=useTagList();
   const[name,setName]=useState("");const[col,setCol]=useState(TAG_COLORS[1]);
-  useEffect(()=>{fetchTagsRemote();},[]);
+  const[used,setUsed]=useState({});const[busyTag,setBusyTag]=useState("");
+  const loadUsed=()=>fetchBets().then(bs=>{const m={};bs.forEach(b=>parseTags(b.tags).forEach(t=>{(m[t]=m[t]||[]).push(b);}));setUsed(m);}).catch(()=>{});
+  useEffect(()=>{fetchTagsRemote();loadUsed();},[]);
+  async function purge(name){
+    const bs=used[name]||[];
+    if(!window.confirm("Supprimer le tag « "+name+" »"+(bs.length?" et l'enlever de "+bs.length+" pari"+(bs.length>1?"s":""):"")+" ?"))return;
+    setBusyTag(name);
+    try{await Promise.all(bs.map(b=>updateBet(b.id,{tags:parseTags(b.tags).filter(x=>x!==name)})));await deleteTagRemote(name);await loadUsed();showToast("Tag supprimé","#FF6B6B");}
+    catch(e){alert("Erreur : "+e.message);}
+    setBusyTag("");
+  }
   async function add(e){e.preventDefault();const n=name.trim();if(!n)return;
     if(list.some(t=>t.name.toLowerCase()===n.toLowerCase())){showToast("Ce tag existe déjà","#FF6B6B");return;}
     const ok=await addTagRemote({name:n,color:col});setName("");
@@ -5596,10 +5606,22 @@ function TagsSettings({showToast}){
     <SGroup>
       {list.map(t=>(
         <SRow key={t.name} logo={<span style={{width:12,height:12,borderRadius:6,background:t.color,margin:"0 6px"}}/>}
-          title={t.name} sub={t.name==="Annonce"?"Tag intégré (absences)":null}
-          right={t.name==="Annonce"?null:<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>{if(window.confirm("Supprimer le tag "+t.name+" ? (il reste sur les anciens paris)"))deleteTagRemote(t.name);}}/>}/>
+          title={t.name} sub={t.name==="Annonce"?"Tag intégré (absences)":(used[t.name]?.length?used[t.name].length+" pari"+(used[t.name].length>1?"s":""):"Aucun pari")}
+          right={t.name==="Annonce"?null:<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>purge(t.name)}/>}/>
       ))}
     </SGroup>
+    {Object.keys(used).filter(n=>n!=="Annonce"&&!list.some(t=>t.name===n)).length>0&&<>
+      <div style={{fontSize:12,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",margin:"22px 4px 8px"}}>Anciens tags (sur des paris)</div>
+      <SGroup>
+        {Object.keys(used).filter(n=>n!=="Annonce"&&!list.some(t=>t.name===n)).map(n=>(
+          <SRow key={n} logo={<span style={{width:12,height:12,borderRadius:6,background:tagColor(n),margin:"0 6px"}}/>}
+            title={n} sub={used[n].length+" pari"+(used[n].length>1?"s":"")+(busyTag===n?" · suppression…":"")}
+            right={<span style={{display:"flex",gap:4}}>
+              <IconBtn icon={Ico.plus} label={"Remettre "+n} onClick={()=>addTagRemote({name:n,color:tagColor(n)})}/>
+              <IconBtn icon={Ico.trash} label={"Supprimer "+n} danger onClick={()=>purge(n)}/></span>}/>
+        ))}
+      </SGroup>
+    </>}
   </>);
 }
 
