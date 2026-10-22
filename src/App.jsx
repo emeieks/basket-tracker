@@ -1648,9 +1648,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                         <option>Over</option><option>Under</option>
                       </select>
                     )}
-                    <input type="number" step="0.5" inputMode="decimal" aria-label="Ligne"
+                    {form.betType==="handicap"&&(
+                      <button type="button" aria-label="Changer le signe" onClick={()=>{const v=String(form.line||"");f("line",v.startsWith("-")?v.slice(1):"-"+v);}}
+                        style={{height:"100%",padding:"0 16px",border:"none",borderRight:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                        {String(form.line||"").startsWith("-")?"−":"+"}
+                      </button>
+                    )}
+                    <input type="text" inputMode="decimal" aria-label="Ligne"
                       placeholder={form.betType==="handicap"?"-5.5":form.betType==="team_total"?"112.5":"220.5"}
-                      value={form.line} onChange={e=>f("line",e.target.value)}
+                      value={form.line} onChange={e=>{let v=e.target.value.replace(",",".").replace(/[^0-9.\-]/g,"");if(form.betType==="handicap"&&String(form.line||"").startsWith("-")&&!v.startsWith("-"))v="-"+v;f("line",v);}}
                       style={{flex:1,minWidth:0,height:"100%",border:"none",borderLeft:needsOU?"1px solid "+C.line:"none",background:"transparent",
                         color:C.text,fontSize:17,fontWeight:600,padding:"0 14px",outline:"none",fontFamily:"inherit"}}/>
                     <span style={{padding:"0 14px",color:C.sub,fontSize:15}}>{form.betType==="handicap"?"pts":"points"}</span>
