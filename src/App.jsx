@@ -190,16 +190,37 @@ function useTagList(){
   useEffect(()=>{tagSubs.add(setL);return()=>tagSubs.delete(setL);},[]);
   return tagListWithAnnonce(l);
 }
+let TAGS_DELETED=(()=>{try{return JSON.parse(localStorage.getItem("bk_tags_deleted")||"[]");}catch(e){return [];}})();
+let TAG_SYNC_ERR="";
 async function fetchTagsRemote(){
-  try{const r=await fetch(SUPA_URL+"/rest/v1/bet_tags?select=*&order=created_at.asc",{headers:H});if(!r.ok)return;
-    const rows=await r.json();if(Array.isArray(rows))setTagsCache(rows.map(x=>({name:x.name,color:x.color||TAG_COLORS[0]})));}catch(e){}
+  // Fusion : on ne perd JAMAIS un tag local si le serveur n'en a pas (table absente, RLS…)
+  try{const r=await fetch(SUPA_URL+"/rest/v1/bet_tags?select=*",{headers:H});
+    if(!r.ok){TAG_SYNC_ERR="Table bet_tags inaccessible ("+r.status+")";return;}
+    const rows=await r.json();if(!Array.isArray(rows))return;
+    const remote=rows.map(x=>({name:x.name,color:x.color||TAG_COLORS[0]}));
+    const merged=[...TAGS_CACHE];
+    remote.forEach(t=>{if(!merged.some(x=>x.name===t.name)&&!TAGS_DELETED.includes(t.name))merged.push(t);});
+    setTagsCache(merged);
+    // renvoie au serveur les tags qui n'y sont pas encore
+    const missing=merged.filter(t=>!remote.some(x=>x.name===t.name));
+    if(missing.length){const r2=await fetch(SUPA_URL+"/rest/v1/bet_tags",{method:"POST",headers:{...H,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(missing)});
+      TAG_SYNC_ERR=r2.ok?"":"Envoi refusé ("+r2.status+") : "+(await r2.text().catch(()=>"")).slice(0,140);}
+    else TAG_SYNC_ERR="";
+  }catch(e){TAG_SYNC_ERR="Hors ligne";}
+}
+// Tags présents sur des paris mais absents de la liste → on les remet dans la liste
+function adoptTagsFromBets(bets){
+  const add=[];(bets||[]).forEach(b=>parseTags(b.tags).forEach(t=>{if(t!=="Annonce"&&!TAGS_CACHE.some(x=>x.name===t)&&!TAGS_DELETED.includes(t)&&!add.some(x=>x.name===t))add.push({name:t,color:tagColor(t)});}));
+  if(add.length)setTagsCache([...TAGS_CACHE,...add]);
 }
 async function addTagRemote(t){
+  TAGS_DELETED=TAGS_DELETED.filter(x=>x!==t.name);try{localStorage.setItem("bk_tags_deleted",JSON.stringify(TAGS_DELETED));}catch(e){}
   setTagsCache([...TAGS_CACHE.filter(x=>x.name!==t.name),t]);
   try{const r=await fetch(SUPA_URL+"/rest/v1/bet_tags",{method:"POST",headers:{...H,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(t)});if(!r.ok)return false;}catch(e){return false;}
   return true;
 }
 async function deleteTagRemote(name){
+  TAGS_DELETED=[...new Set([...TAGS_DELETED,name])];try{localStorage.setItem("bk_tags_deleted",JSON.stringify(TAGS_DELETED));}catch(e){}
   setTagsCache(TAGS_CACHE.filter(x=>x.name!==name));
   try{await fetch(SUPA_URL+"/rest/v1/bet_tags?name=eq."+encodeURIComponent(name),{method:"DELETE",headers:H});}catch(e){}
 }
@@ -5654,7 +5675,8 @@ function TagsSettings({showToast}){
   const[name,setName]=useState("");const[col,setCol]=useState(TAG_COLORS[1]);
   const[used,setUsed]=useState({});const[busyTag,setBusyTag]=useState("");
   const loadUsed=()=>fetchBets().then(bs=>{const m={};bs.forEach(b=>parseTags(b.tags).forEach(t=>{(m[t]=m[t]||[]).push(b);}));setUsed(m);}).catch(()=>{});
-  useEffect(()=>{fetchTagsRemote();loadUsed();},[]);
+  const[syncErr,setSyncErr]=useState("");
+  useEffect(()=>{fetchTagsRemote().then(()=>setSyncErr(TAG_SYNC_ERR));loadUsed();},[]);
   async function purge(name){
     const bs=used[name]||[];
     if(!window.confirm("Supprimer le tag « "+name+" »"+(bs.length?" et l'enlever de "+bs.length+" pari"+(bs.length>1?"s":""):"")+" ?"))return;
@@ -5665,10 +5687,13 @@ function TagsSettings({showToast}){
   }
   async function add(e){e.preventDefault();const n=name.trim();if(!n)return;
     if(list.some(t=>t.name.toLowerCase()===n.toLowerCase())){showToast("Ce tag existe déjà","#FF6B6B");return;}
-    const ok=await addTagRemote({name:n,color:col});setName("");
+    const ok=await addTagRemote({name:n,color:col});setName("");await fetchTagsRemote();setSyncErr(TAG_SYNC_ERR);
     showToast(ok?"Tag ajouté":"Tag ajouté (local) — crée la table bet_tags pour synchroniser",ok?"#3DD68C":"#FBBF24");}
   return(<>
     <SHeader title="Tags" sub="Étiquettes à coller sur tes paris (ex. Hors analyse, Blowout, Fun)"/>
+    {syncErr&&<div style={{marginBottom:12,padding:"10px 12px",borderRadius:12,background:"rgba(251,191,36,.08)",border:"1px solid rgba(251,191,36,.3)",fontSize:12.5,color:"#FBBF24",lineHeight:1.45}}>
+      Tes tags sont gardés sur cet appareil, mais pas encore synchronisés ({syncErr}).<br/>Dans Supabase → SQL Editor, lance :
+      <pre style={{marginTop:6,whiteSpace:"pre-wrap",fontSize:11,color:"#FAFAFA",background:"rgba(0,0,0,.35)",padding:8,borderRadius:8,userSelect:"all"}}>{"create table if not exists bet_tags (name text primary key, color text, created_at timestamptz default now());\nalter table bet_tags disable row level security;\ngrant all on bet_tags to anon, authenticated;"}</pre></div>}
     <form onSubmit={add} style={{display:"flex",gap:8,marginBottom:10}}>
       <input className="form-input" placeholder="Nom du tag" value={name} onChange={e=>setName(e.target.value)} style={{flex:1}}/>
       <button type="submit" className="s-add" disabled={!name.trim()} style={{height:46,opacity:name.trim()?1:.5}}>{Ico.plus}Ajouter</button>
@@ -5813,7 +5838,7 @@ export default function App(){
     const my=++loadSeq.current; // seule la dernière réponse compte (une vieille réponse lente n'écrase plus les données fraîches)
     try{
       const data=await fetchBets();
-      if(my===loadSeq.current){setBets(data);setLastSync(new Date());}
+      if(my===loadSeq.current){setBets(data);setLastSync(new Date());adoptTagsFromBets(data);}
     }catch(e){if(!silent)console.error(e);}
     if(my===loadSeq.current){setLoading(false);setSyncing(false);}
   },[]);
