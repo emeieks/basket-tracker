@@ -115,7 +115,7 @@ async function supaError(prefix,r){
   let msg="";
   try{const j=await r.json();msg=j.message||j.hint||JSON.stringify(j);}catch(_){}
   const col=(msg.match(/'([a-z_]+)' column/)||msg.match(/column "?([a-z_]+)"? .*does not exist/)||[])[1];
-  if(col)return new Error("La colonne « "+col+" » n'existe pas encore dans ta table bets.\nAjoute-la dans Supabase (SQL Editor) :\nalter table bets add column if not exists "+col+" "+(col==="closing_odds"?"numeric":col==="annonce"?"boolean default false":"text")+";");
+  if(col)return new Error("La colonne « "+col+" » n'existe pas encore dans ta table bets.\nAjoute-la dans Supabase (SQL Editor) :\nalter table bets add column if not exists "+col+" "+(col==="closing_odds"?"numeric":col==="annonce"?"boolean default false":col==="tags"?"text[]":"text")+";");
   return new Error(prefix+" "+r.status+(msg?" — "+msg:""));
 }
 
@@ -174,6 +174,41 @@ async function updateBookmaker(id,fields){
 async function deleteBookmaker(id){
   const r=await fetch(SUPA_URL+"/rest/v1/bookmakers?id=eq."+id,{method:"DELETE",headers:H});
   if(!r.ok)throw new Error("delete bookmaker: "+r.status);
+}
+
+// ── TAGS (catalogue + paris) ─────────────────────────────────────────────────
+const TAG_COLORS=["#FBBF24","#60A5FA","#F472B6","#A78BFA","#34D399","#FB923C","#F87171","#22D3EE","#A3E635","#E5E7EB"];
+let TAGS_CACHE=(()=>{try{return JSON.parse(localStorage.getItem("bk_tags")||"null")||[];}catch(e){return [];}})();
+const tagSubs=new Set();
+function setTagsCache(l){TAGS_CACHE=l;try{localStorage.setItem("bk_tags",JSON.stringify(l));}catch(e){}tagSubs.forEach(fn=>fn(l));}
+function tagListWithAnnonce(l){return l.some(t=>t.name==="Annonce")?l:[{name:"Annonce",color:"#FBBF24"},...l];}
+function useTagList(){
+  const[l,setL]=useState(TAGS_CACHE);
+  useEffect(()=>{tagSubs.add(setL);return()=>tagSubs.delete(setL);},[]);
+  return tagListWithAnnonce(l);
+}
+async function fetchTagsRemote(){
+  try{const r=await fetch(SUPA_URL+"/rest/v1/bet_tags?select=*&order=created_at.asc",{headers:H});if(!r.ok)return;
+    const rows=await r.json();if(Array.isArray(rows))setTagsCache(rows.map(x=>({name:x.name,color:x.color||TAG_COLORS[0]})));}catch(e){}
+}
+async function addTagRemote(t){
+  setTagsCache([...TAGS_CACHE.filter(x=>x.name!==t.name),t]);
+  try{const r=await fetch(SUPA_URL+"/rest/v1/bet_tags",{method:"POST",headers:{...H,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify(t)});if(!r.ok)return false;}catch(e){return false;}
+  return true;
+}
+async function deleteTagRemote(name){
+  setTagsCache(TAGS_CACHE.filter(x=>x.name!==name));
+  try{await fetch(SUPA_URL+"/rest/v1/bet_tags?name=eq."+encodeURIComponent(name),{method:"DELETE",headers:H});}catch(e){}
+}
+function parseTags(v){if(Array.isArray(v))return v.filter(Boolean);if(typeof v==="string"&&v.trim()){try{const j=JSON.parse(v);if(Array.isArray(j))return j;}catch(e){}return v.replace(/^\{|\}$/g,"").split(",").map(x=>x.replace(/^"|"$/g,"").trim()).filter(Boolean);}return [];}
+function tagsOf(b){const t=parseTags(b&&b.tags).filter(x=>x!=="Annonce");return b&&b.annonce?["Annonce",...t]:t;}
+function tagColor(name){if(name==="Annonce")return "#FBBF24";const t=TAGS_CACHE.find(x=>x.name===name);if(t)return t.color;let h=0;for(const c of String(name))h=(h*31+c.charCodeAt(0))>>>0;return TAG_COLORS[h%TAG_COLORS.length];}
+function TagChip({name,small,on,onClick}){
+  const c=tagColor(name);
+  return <span onClick={onClick} style={{display:"inline-flex",alignItems:"center",gap:5,flexShrink:0,whiteSpace:"nowrap",cursor:onClick?"pointer":"default",
+    padding:small?"1px 7px":"6px 12px",borderRadius:99,fontSize:small?11:13,fontWeight:600,
+    color:on===false?"#8A8A93":c,background:on===false?"transparent":c+"1F",border:"1px solid "+(on===false?"#26262B":c+(on?"":"33"))}}>
+    <span style={{width:small?5:6,height:small?5:6,borderRadius:3,background:on===false?"#4A4A52":c}}/>{name}</span>;
 }
 
 // ── TIPSTERS API ──────────────────────────────────────────────────────────────
@@ -1154,8 +1189,9 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 // ── FORMULAIRE AJOUT/EDIT PARI ────────────────────────────────────────────────
 // Brouillon du « Nouveau pari » : gardé quand tu changes de page, effacé seulement après l'ajout ou avec « Réinitialiser »
 let ADD_DRAFT=null;
-const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});
+const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:"",tags:[]});
 function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged,bets=null}){
+  const tagList=useTagList();
   const draft=!editBet?ADD_DRAFT:null;
   const[playerSettings,setPlayerSettings]=useState(false);
   const[heroMenu,setHeroMenu]=useState(false);
@@ -1190,7 +1226,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     game:editBet.game||"",
     tipster:editBet.tipster||"",
     annonce:!!editBet.annonce,annoncePlayer:editBet.annonce_player||"",annonceSide:editBet.annonce_side||"teammate",
-    annonceStatus:editBet.annonce_status||"out",annonceRole:editBet.annonce_role||"starter",annonceSearch:"",
+    annonceStatus:editBet.annonce_status||"out",annonceRole:editBet.annonce_role||"starter",annonceSearch:"",tags:parseTags(editBet.tags).filter(x=>x!=="Annonce"),
     notes:editBet.notes||"",
     created_at:editBet.created_at?editBet.created_at.slice(0,16):"",
     betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
@@ -1260,7 +1296,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   }
 
   function annPayload(){
-    if(!form.annonce&&!editBet?.annonce)return{};
+    const tg=(form.tags||[]).filter(x=>x!=="Annonce");
+    const tp=tg.length||parseTags(editBet?.tags).length?{tags:tg}:{};
+    if(!form.annonce&&!editBet?.annonce)return tp;
     const on=!!form.annonce;
     return{
       annonce:on,
@@ -1269,6 +1307,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       annonce_side:on?form.annonceSide:null,
       annonce_status:on?form.annonceStatus:null,
       annonce_role:on?form.annonceRole:null,
+      ...tp,
     };
   }
   // Ce qui manque pour pouvoir enregistrer
@@ -1820,16 +1859,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
         </div>
 
-        {/* ── Annonce (pari pris sur une absence) ── */}
-        <div style={{marginTop:12,padding:"14px",borderRadius:18,background:form.annonce?"rgba(245,158,11,.08)":"linear-gradient(180deg,#18181C,#121215)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.06),0 10px 24px -12px rgba(0,0,0,.7)",
-          border:"1px solid "+(form.annonce?"rgba(245,158,11,.35)":"rgba(255,255,255,.06)"),transition:"all .2s"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:15,fontWeight:600,color:form.annonce?"#FBBF24":C.text}}>Annonce</div>
-              <div style={{fontSize:12,color:C.sub,marginTop:2}}>Pari pris suite à une absence (joueur out)</div>
-            </div>
-            <Switch on={form.annonce} onChange={v=>f("annonce",v)} label="Pari sur annonce"/>
+        {/* ── Tags (Annonce = tag spécial avec détails) ── */}
+        <div style={{marginTop:12,padding:"14px",borderRadius:18,background:C.card,border:"1px solid "+C.line}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Tags</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {tagList.map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
+              return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{if(t.name==="Annonce")f("annonce",!form.annonce);else f("tags",on?(form.tags||[]).filter(x=>x!==t.name):[...(form.tags||[]),t.name]);}}/>;})}
           </div>
+          {tagList.length<=1&&<div style={{fontSize:12,color:C.dim,marginTop:8}}>Ajoute tes propres tags dans Réglages → Tags.</div>}
           {form.annonce&&(()=>{
             const myTeam=isTeamBet?form.team:(form.playerObj?.team||"");
             const q=form.annonceSearch.toLowerCase().trim();
@@ -2038,7 +2075,8 @@ const EditCell=memo(function EditCell({fieldKey,label,value,suffix="",type="text
 });
 
 // ── DÉTAIL PARI ───────────────────────────────────────────────────────────────
-function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[],leagueList=[],onClose,onUpdate,onDelete}){
+function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[],leagueList=[],onClose,onUpdate,onDelete,onSoftUpdate}){
+  const tagListD=useTagList();
   const[saving,setSaving]=useState(false);
   const[localBet,setLocalBet]=useState({...bet});
   const[dirty,setDirty]=useState({}); // champs modifiés non sauvegardés
@@ -2194,7 +2232,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 <span style={{width:6,height:6,borderRadius:3,background:statusColor}}/>{statusLabel}
               </span>
               {d&&<span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</span>}
-              {localBet.annonce&&<AnnonceBadge small note={localBet.annonce_player?formatName(localBet.annonce_player):localBet.annonce_note}/>}
+              {tagsOf(localBet).map(t=><TagChip key={t} small name={t}/>)}
             </div>
             <div style={{fontSize:26,fontWeight:700,letterSpacing:-.6,lineHeight:1.08,marginTop:2}}>{nameFormatted}</div>
             <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"rgba(255,255,255,.75)",minWidth:0}}>
@@ -2227,6 +2265,19 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               <Tile l="Ligue">{localBet.game?<><MiniLogo src={getLeagueLogo(localBet.game)} label={localBet.game} size={20} round={false}/>{localBet.game}</>:<span style={{color:C.dim}}>—</span>}</Tile>
               <Tile l="Date" full={!!legs}>{d?d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" · "+pad(d.getHours())+":"+pad(d.getMinutes()):"—"}</Tile>
             </div>);})()}
+
+          {/* Tags : un clic = enregistré */}
+          <div style={{marginTop:10,padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
+            <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:8}}>Tags</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+              {tagListD.map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+                return <TagChip key={t.name} name={t.name} on={on} onClick={async()=>{
+                  const ch=t.name==="Annonce"?(on?{annonce:false,annonce_player:null,annonce_note:null,annonce_side:null,annonce_status:null,annonce_role:null}:{annonce:true}):{tags:on?cur.filter(x=>x!==t.name):[...cur,t.name]};
+                  setLocalBet(prev=>({...prev,...ch}));
+                  try{await Promise.all((legs||[localBet]).map(l=>updateBet(l.id,ch)));onSoftUpdate&&onSoftUpdate();}catch(e){fail(e);}
+                }}/>;})}
+            </div>
+          </div>
 
           {/* Statut : gros boutons */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:14}}>
@@ -2340,8 +2391,18 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 {leagueList.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}
               </select>
             </div>
-            <div style={row}>
-              <span style={{...lab,color:localBet.annonce?"#FBBF24":C.sub,flex:1,width:"auto"}}>Pari sur annonce</span>
+            <div style={{...row,flexDirection:"column",alignItems:"stretch",gap:8}}>
+              <span style={{...lab,width:"auto"}}>Tags</span>
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {tagListD.map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+                  return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{
+                    if(t.name==="Annonce"){const v=!localBet.annonce;setField("annonce",v);
+                      if(!v){["annonce_player","annonce_note","annonce_side","annonce_status","annonce_role"].forEach(k=>setField(k,null));}
+                      else{if(!localBet.annonce_side)setField("annonce_side","teammate");if(!localBet.annonce_status)setField("annonce_status","out");if(!localBet.annonce_role)setField("annonce_role","starter");}}
+                    else setField("tags",on?cur.filter(x=>x!==t.name):[...cur,t.name]);}}/>;})}
+              </div>
+            </div>
+            <div style={{display:"none"}}>
               <Switch on={!!localBet.annonce} onChange={v=>{
                 setField("annonce",v);
                 if(!v){["annonce_player","annonce_note","annonce_side","annonce_status","annonce_role"].forEach(k=>setField(k,null));}
@@ -2853,16 +2914,7 @@ function Switch({on,onChange,label}){
     </button>
   );
 }
-function AnnonceBadge({note,small}){
-  return(
-    <span title={note?"Annonce : "+note:"Pari sur annonce"} style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0,
-      padding:small?"1px 6px":"3px 9px",borderRadius:8,fontSize:small?11:12,fontWeight:700,
-      background:"rgba(245,158,11,.16)",color:"#FBBF24",whiteSpace:"nowrap"}}>
-      <svg width={small?10:12} height={small?10:12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
-      Annonce
-    </span>
-  );
-}
+function AnnonceBadge({note,small}){return <TagChip name="Annonce" small={small}/>;}
 
 // Regroupe les paris liés (même pari sur plusieurs bookmakers) en une seule entrée
 function mergeGroups(list){
@@ -3257,7 +3309,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"rgba(255,255,255,.08)",color:"#FAFAFA",fontSize:10.5,fontWeight:600,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
-            b.annonce&&<AnnonceBadge key="a" small note={b.annonce_player?formatName(b.annonce_player):b.annonce_note}/>,
+            tagsOf(b).length>0&&<span key="a" style={{display:"inline-flex",gap:4,flexShrink:0}}><TagChip small name={tagsOf(b)[0]}/>{tagsOf(b).length>1&&<span style={{fontSize:11,color:C.sub,fontWeight:600}}>+{tagsOf(b).length-1}</span>}</span>,
             <span key="o" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
             <span key="m" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>{eur(stake)}</span>,
             b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
@@ -3778,6 +3830,8 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   const[tab,setTab]=useState("overview");
   const[posterP,setPosterP]=useState(null);
   const[groupP,setGroupP]=useState(null);
+  const[tipSel,setTipSel]=useState(null);
+  const[tagSel,setTagSel]=useState(null);
   const[period,setPeriod]=useState("all");
   const cutoff=period==="all"?null:Date.now()-({"7":7,"30":30,"90":90}[period])*864e5;
   const rawBets=cutoff?allRaw.filter(b=>b.created_at&&new Date(b.created_at).getTime()>=cutoff):allRaw;
@@ -3809,7 +3863,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   const Title=({children,right})=>(
     <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",margin:"26px 4px 10px"}}>
       <span style={{fontSize:18,fontWeight:700,letterSpacing:-.3}}>{children}</span>
-      {right&&<span style={{fontSize:12,color:C.dim}}>{right}</span>}
+      {right!=null&&(typeof right==="number"?<span className="sysfont" style={{fontSize:16,fontWeight:600,color:pColor(right)}}>{money(right,0)}</span>:<span style={{fontSize:12,color:C.dim}}>{right}</span>)}
     </div>
   );
   const Pill=({v})=>v==null?<span style={{color:C.dim}}>–</span>:(
@@ -3897,7 +3951,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
     );
   };
 
-  const TABS=[["overview","Aperçu"],["tipsters","Tipsters"],["players","Joueurs"],["markets","Marchés"],["annonces","Annonces"]];
+  const TABS=[["overview","Aperçu"],["tipsters","Tipsters"],["players","Joueurs"],["markets","Marchés"],["tags","Tags"]];
 
   const header=(
     <>
@@ -3913,7 +3967,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
       <div aria-hidden="true" style={{position:"absolute",right:0,top:0,bottom:0,width:48,pointerEvents:"none",background:"linear-gradient(to right,rgba(9,9,11,0),"+C.bg+" 85%)",display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:10,color:C.sub,fontSize:16}}>›</div>
       </div>
       <div style={{display:"flex",gap:4,marginTop:12,padding:3,background:C.inner,border:"1px solid "+C.line,borderRadius:12}}>
-        {[["7","7 j"],["30","30 j"],["90","3 mois"],["all","Tout"]].map(([k,l])=>(
+        {[["all","Tout"],["7","7 j"],["30","30 j"],["90","3 mois"]].map(([k,l])=>(
           <button key={k} type="button" onClick={()=>setPeriod(k)}
             style={{flex:1,height:30,borderRadius:9,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,
               background:period===k?C.chip:"transparent",color:period===k?C.text:C.sub}}>{l}</button>
@@ -3998,10 +4052,28 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
         <Table rows={monthRows}/>
       </>}
 
-      {tab==="tipsters"&&<>
-        <Title>Tipsters</Title>
-        <Table rows={rowsOf(byTip)} limit={20} empty="Aucun tipster"/>
-      </>}
+      {tab==="tipsters"&&(tipSel?(()=>{const tb=bets.filter(b=>(b.tipster||"Sans tipster")===tipSel);const tpb=tb.filter(b=>b.bet_type!=="team");return <>
+        <button type="button" onClick={()=>setTipSel(null)} style={{display:"flex",alignItems:"center",gap:8,border:"none",background:"transparent",color:C.sub,fontSize:14,cursor:"pointer",fontFamily:"inherit",padding:"0 2px 12px"}}>{Ico.back} Tous les tipsters</button>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+          <span style={{width:42,height:42,borderRadius:21,background:tipColor(tipSel),color:"#0b1220",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:700}}>{String(tipSel)[0].toUpperCase()}</span>
+          <span style={{fontSize:24,fontWeight:700,letterSpacing:-.5}}>{tipSel}</span>
+        </div>
+        {tb.length===0?<EmptyState title="Aucun pari sur cette période" sub="Change la période en haut."/>:<>
+        <Hero list={tb} s={groupBy(tb,()=>"t").t} title={tb.length+" paris"} extra={clvOf(tb).n>0?<Mini label="CLV" value={pct(clvOf(tb).avg)} color={pColor(clvOf(tb).avg)}/>:null}/>
+        <Title right={groupBy(tb,()=>"t").t.profit}>Par marché</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>b.bet_type==="team"?teamMarket(b):marketOf(b)))} limit={8}/>
+        <Title>Par ligue</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>b.game),{logo:g=>getLeagueLogo(g)||null})}/>
+        {tpb.length>0&&<><Title>Joueurs</Title><Table rows={rowsOf(groupBy(tpb,b=>formatName(b.player)))} limit={6}/></>}
+        <Title>Par tag</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>tagsOf(b)[0]||"Sans tag"))}/>
+        <Title>Par mois</Title>
+        <Table rows={rowsOf(groupBy(tb.filter(b=>b.created_at),b=>{const d=new Date(b.created_at);const l=d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});return l.charAt(0).toUpperCase()+l.slice(1);}))}/>
+        </>}
+      </>;})():<>
+        <Title right={total.profit}>Tipsters</Title>
+        <Table rows={rowsOf(byTip)} limit={20} empty="Aucun tipster" onRow={r=>setTipSel(r.key)}/>
+      </>)}
 
       {tab==="players"&&<>
         <PlayerStatSearch players={players} bets={allRaw} onChanged={onPlayersChanged}/>
@@ -4016,14 +4088,39 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
       </>}
 
       {tab==="markets"&&<>
-        <Title>Marchés joueur</Title>
+        <Title right={playerBets.reduce((t,b)=>t+parseFloat(b.profit||0),0)}>Marchés joueur</Title>
         <Table rows={rowsOf(groupBy(playerBets,marketOf))} limit={12}/>
-        <Title>Marchés équipe</Title>
+        <Title right={bets.filter(b=>b.bet_type==="team").reduce((t,b)=>t+parseFloat(b.profit||0),0)}>Marchés équipe</Title>
         <Table rows={rowsOf(groupBy(bets.filter(b=>b.bet_type==="team"),b=>teamMarket(b)))} empty="Aucun pari équipe"/>
-        {(byOU.Over||byOU.Under)&&<><Title>Over vs Under</Title><OU/></>}
+        {(byOU.Over||byOU.Under)&&<><Title right={(byOU.Over?.profit||0)+(byOU.Under?.profit||0)}>Over vs Under</Title><OU/></>}
       </>}
 
-      {tab==="annonces"&&(ann.length===0?(
+      {tab==="tags"&&!tagSel&&(()=>{
+        const g={};bets.forEach(b=>{const ts=tagsOf(b);(ts.length?ts:["Sans tag"]).forEach(t=>{(g[t]=g[t]||[]).push(b);});});
+        const rows=Object.entries(g).map(([k,l])=>({key:k,name:k,s:groupBy(l,()=>"x").x,logo:undefined})).sort((a,b)=>b.s.profit-a.s.profit);
+        const tagged=bets.filter(b=>tagsOf(b).length);
+        return <>
+          {tagged.length===0&&<EmptyState title="Aucun pari tagué" sub="Ajoute des tags dans Réglages → Tags, puis colle-les sur tes paris."/>}
+          <Title right={tagged.reduce((t,b)=>t+parseFloat(b.profit||0),0)}>Par tag</Title>
+          <Table rows={rows} limit={20} onRow={r=>r.key!=="Sans tag"&&setTagSel(r.key)}/>
+          <div style={{fontSize:12,color:C.dim,margin:"8px 4px 0"}}>Un pari avec plusieurs tags compte dans chacun.</div>
+        </>;})()}
+      {tab==="tags"&&tagSel&&<button type="button" onClick={()=>setTagSel(null)} style={{display:"flex",alignItems:"center",gap:8,border:"none",background:"transparent",color:C.sub,fontSize:14,cursor:"pointer",fontFamily:"inherit",padding:"0 2px 12px"}}>{Ico.back} Tous les tags</button>}
+      {tab==="tags"&&tagSel&&tagSel!=="Annonce"&&(()=>{const tb=bets.filter(b=>tagsOf(b).includes(tagSel));return <>
+        <div style={{marginBottom:12}}><TagChip name={tagSel}/></div>
+        {tb.length===0?<EmptyState title="Aucun pari sur cette période" sub="Change la période en haut."/>:<>
+        <Hero list={tb} s={groupBy(tb,()=>"t").t} title={tb.length+" paris"}/>
+        <Title>{tagSel} vs autres</Title>
+        <Table rows={rowsOf(groupBy(bets,b=>tagsOf(b).includes(tagSel)?tagSel:"Autres paris"))}/>
+        <Title>Par marché</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>b.bet_type==="team"?teamMarket(b):marketOf(b)))}/>
+        <Title>Par tipster</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>b.tipster||"Sans tipster"))}/>
+        <Title>Par ligue</Title>
+        <Table rows={rowsOf(groupBy(tb,b=>b.game),{logo:g=>getLeagueLogo(g)||null})}/>
+        </>}
+      </>;})()}
+      {tab==="tags"&&tagSel==="Annonce"&&(ann.length===0?(
         <EmptyState title="Aucun pari sur annonce" sub="Active « Annonce » quand tu paries suite à une absence : tes stats apparaîtront ici."/>
       ):<>
         <Hero list={ann} s={groupBy(ann,()=>"a").a} title={"Paris sur annonce · "+ann.length}
@@ -5386,8 +5483,8 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
   return(
     <div style={{padding:"0 20px 16px"}}>
       <div className="segment" style={{marginBottom:20}}>
-        {[["edit","Joueurs"],["bookmakers","Bookmakers"],["tipsters","Tipsters"],["lt","Long terme"]].map(([k,l])=>(
-          <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)}>{l}</button>
+        {[["edit","Joueurs"],["bookmakers","Bookies"],["tipsters","Tipsters"],["tags","Tags"],["lt","Long terme"]].map(([k,l])=>(
+          <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)} style={{fontSize:12.5}}>{l}</button>
         ))}
       </div>
 
@@ -5458,10 +5555,38 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
         </>
       )}
 
+      {tab==="tags"&&<TagsSettings showToast={showToast}/>}
       {tab==="edit"&&<EditView showToast={showToast} onPlayersChanged={onPlayersChanged}/>}
       {tab==="lt"&&<LTBetsView showToast={showToast} players={players} bookmakers={bookmakers}/>}
     </div>
   );
+}
+
+function TagsSettings({showToast}){
+  const list=useTagList();
+  const[name,setName]=useState("");const[col,setCol]=useState(TAG_COLORS[1]);
+  useEffect(()=>{fetchTagsRemote();},[]);
+  async function add(e){e.preventDefault();const n=name.trim();if(!n)return;
+    if(list.some(t=>t.name.toLowerCase()===n.toLowerCase())){showToast("Ce tag existe déjà","#FF6B6B");return;}
+    const ok=await addTagRemote({name:n,color:col});setName("");
+    showToast(ok?"Tag ajouté":"Tag ajouté (local) — crée la table bet_tags pour synchroniser",ok?"#3DD68C":"#FBBF24");}
+  return(<>
+    <SHeader title="Tags" sub="Étiquettes à coller sur tes paris (ex. Hors analyse, Blowout, Fun)"/>
+    <form onSubmit={add} style={{display:"flex",gap:8,marginBottom:10}}>
+      <input className="form-input" placeholder="Nom du tag" value={name} onChange={e=>setName(e.target.value)} style={{flex:1}}/>
+      <button type="submit" className="s-add" disabled={!name.trim()} style={{height:46,opacity:name.trim()?1:.5}}>{Ico.plus}Ajouter</button>
+    </form>
+    <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+      {TAG_COLORS.map(c=><button key={c} type="button" aria-label={"Couleur "+c} onClick={()=>setCol(c)} style={{width:26,height:26,borderRadius:13,background:c,cursor:"pointer",border:col===c?"2px solid #FAFAFA":"2px solid transparent",outline:col===c?"2px solid "+c:"none",outlineOffset:1}}/>)}
+    </div>
+    <SGroup>
+      {list.map(t=>(
+        <SRow key={t.name} logo={<span style={{width:12,height:12,borderRadius:6,background:t.color,margin:"0 6px"}}/>}
+          title={t.name} sub={t.name==="Annonce"?"Tag intégré (absences)":null}
+          right={t.name==="Annonce"?null:<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>{if(window.confirm("Supprimer le tag "+t.name+" ? (il reste sur les anciens paris)"))deleteTagRemote(t.name);}}/>}/>
+      ))}
+    </SGroup>
+  </>);
 }
 
 // ── MODAL BOOKMAKER ───────────────────────────────────────────────────────────
@@ -5586,6 +5711,7 @@ export default function App(){
   loadBetsRef.current=loadBets;
 
   useEffect(()=>{loadBets();},[loadBets]);
+  useEffect(()=>{fetchTagsRemote();},[]);
 
   useEffect(()=>{
     pollRef.current=setInterval(()=>{
@@ -5715,6 +5841,7 @@ export default function App(){
             leagueList={leagues}
             onClose={()=>setSelectedBet(null)}
             onUpdate={()=>{loadBets(true);setSelectedBet(null);}}
+            onSoftUpdate={()=>loadBets(true)}
             onDelete={()=>{loadBets(true);setSelectedBet(null);}}
           />
         )}
