@@ -2844,6 +2844,8 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
   const[date,setDate]=useState("");
   const[annonce,setAnnonce]=useState("");
   const[saving,setSaving]=useState(false);
+  const[tagOps,setTagOps]=useState({}); // {nom:"add"|"remove"}
+  const tagListB=useTagList();
   const ch={};
   if(status)ch.status=status;
   if(game)ch.game=game;
@@ -2852,7 +2854,12 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
   if(date)ch.created_at=new Date(date).toISOString();
   if(annonce)ch.annonce=annonce==="yes";
   if(annonce==="no"){ch.annonce_note=null;ch.annonce_player=null;ch.annonce_side=null;ch.annonce_status=null;ch.annonce_role=null;}
-  const n=[status,game,tipster,bookmaker,date,annonce].filter(Boolean).length;
+  const tAdd=Object.keys(tagOps).filter(k=>tagOps[k]==="add"),tRem=Object.keys(tagOps).filter(k=>tagOps[k]==="remove");
+  if(tAdd.includes("Annonce"))ch.annonce=true;
+  if(tRem.includes("Annonce")){ch.annonce=false;ch.annonce_note=null;ch.annonce_player=null;ch.annonce_side=null;ch.annonce_status=null;ch.annonce_role=null;}
+  const tA=tAdd.filter(x=>x!=="Annonce"),tR=tRem.filter(x=>x!=="Annonce");
+  if(tA.length||tR.length){ch.__tagsAdd=tA;ch.__tagsRemove=tR;}
+  const n=[status,game,tipster,bookmaker,date,annonce].filter(Boolean).length+tAdd.length+tRem.length;
   const Section=({icon,title,value,onReset,children})=>(
     <div style={{padding:"14px 0",borderTop:"1px solid "+C.line}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -2929,10 +2936,16 @@ function BulkEditSheet({count,bookmakers,tipsters,leagues,onClose,onApply}){
               ))}
             </div>
           </Section>
-          <Section icon={I.ann} title="Annonce" value={annonce} onReset={()=>setAnnonce("")}>
-            <div style={{display:"flex",gap:8}}>
-              {chip(annonce==="yes","Pari sur annonce",()=>setAnnonce(annonce==="yes"?"":"yes"),annonce==="yes"?{borderColor:"#F59E0B",background:"rgba(245,158,11,.14)",color:"#FBBF24"}:{})}
-              {chip(annonce==="no","Pas d'annonce",()=>setAnnonce(annonce==="no"?"":"no"))}
+          <Section icon={I.ann} title="Tags" value={tAdd.length+tRem.length?"x":""} onReset={()=>setTagOps({})}>
+            <div style={{fontSize:12,color:C.sub,marginBottom:8}}>1 clic = ajouter · 2 clics = retirer · 3 clics = ne rien changer</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {tagListB.map(t=>{const op=tagOps[t.name];return(
+                <span key={t.name} onClick={()=>setTagOps(o=>{const n0={...o};const cur=o[t.name];if(!cur)n0[t.name]="add";else if(cur==="add")n0[t.name]="remove";else delete n0[t.name];return n0;})}
+                  style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",padding:"7px 12px",borderRadius:99,fontSize:13,fontWeight:600,
+                    color:op==="add"?t.color:op==="remove"?C.red:C.sub,background:op==="add"?t.color+"22":op==="remove"?"rgba(255,107,107,.1)":"transparent",
+                    border:"1px solid "+(op==="add"?t.color:op==="remove"?C.red:C.line),textDecoration:op==="remove"?"line-through":"none"}}>
+                  <span style={{fontSize:12}}>{op==="add"?"+":op==="remove"?"−":""}</span>
+                  <span style={{width:7,height:7,borderRadius:4,background:t.color}}/>{t.name}</span>);})}
             </div>
           </Section>
           <Section icon={I.date} title="Date" value={date} onReset={()=>setDate("")}>
@@ -3622,7 +3635,8 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
             const chosenIds=new Set(filtered.filter(b=>sel[b.id]).flatMap(b=>b._group?b._group.map(x=>x.id):[b.id]));
             const chosen=bets.filter(b=>chosenIds.has(b.id));
             await Promise.all(chosen.map(b=>{
-              const up={...ch};
+              const up={...ch};delete up.__tagsAdd;delete up.__tagsRemove;
+              if(ch.__tagsAdd||ch.__tagsRemove){const cur=parseTags(b.tags).filter(x=>x!=="Annonce");const nx=[...new Set([...cur,...(ch.__tagsAdd||[])])].filter(x=>!(ch.__tagsRemove||[]).includes(x));up.tags=nx;}
               if(ch.status)up.profit=calcProfit(ch.status,parseFloat(b.stake),parseFloat(b.odds));
               return updateBet(b.id,up);
             }));
