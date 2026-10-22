@@ -790,11 +790,13 @@ body{background:#09090B;letter-spacing:-.01em;}
 .toast{border-radius:99px;background:#18181C;border-color:rgba(255,255,255,.08)!important;color:#FAFAFA!important;}
 .skel{background-color:#17171B;}
 
-.slip-cols,.slip-strip{display:none;}
+.slip-cols,.slip-strip,.slip-dl{display:none;}
 @media (min-width:1024px){
   .slip-grid{display:flex!important;flex-direction:column;gap:8px!important;}
-  .slip-cols{display:grid;grid-template-columns:repeat(4,120px);gap:8px;margin-left:auto;padding-right:56px;}
-  .slip-res,.slip-m,.slip-m+span{display:none!important;}
+  .slip-cols{display:grid;grid-template-columns:repeat(4,104px);gap:6px;margin-left:auto;padding-right:52px;flex-shrink:0;}
+  .slip-res,.slip-m,.slip-m+span,.slip-av,.slip-left{display:none!important;}
+  .slip-dl{display:flex;}
+  .slip-grid article{padding:14px 18px!important;border-radius:14px!important;}
   .slip-strip{display:flex;position:absolute;right:0;top:0;bottom:0;width:40px;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:600;letter-spacing:.3px;}
 }
 /* ── VERSION ORDINATEUR (≥ 1024 px) ── */
@@ -3332,7 +3334,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
           {selected&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#05231A" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
         </span>
       )}
-      <div style={{position:"relative",flexShrink:0}}>
+      <div className="slip-av" style={{position:"relative",flexShrink:0}}>
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={50}/>
         {b.game&&(
           <span style={{position:"absolute",left:-5,bottom:-5,width:27,height:27,borderRadius:14,background:"#16161A",border:"2px solid #16161A",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -3345,7 +3347,27 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
           </span>
         )}
       </div>
-      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
+      <div className="slip-dl" style={{flex:1,minWidth:0,flexDirection:"column",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap",overflow:"hidden",maskImage:"linear-gradient(to right,#000 90%,transparent)",WebkitMaskImage:"linear-gradient(to right,#000 90%,transparent)"}}>
+          {(()=>{const ch={display:"inline-flex",alignItems:"center",gap:5,height:24,padding:"0 8px",borderRadius:7,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",fontSize:12.5,fontWeight:500,color:"#C7C7CC",whiteSpace:"nowrap"};
+            return <>
+              <span style={{...ch,background:"rgba(255,255,255,.08)",borderColor:"transparent",color:C.text,fontWeight:600}}>{String(desc)}</span>
+              {d&&<span style={ch}>{String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}</span>}
+              {b.bookmaker&&<span style={ch}><BkBadge src={bkLogo} label={b.bookmaker} size={16}/>{b.bookmaker}</span>}
+              {b.game&&<span style={ch}><MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>{b.game}</span>}
+              {b.tipster&&<span style={{...ch,color:tipColor(b.tipster)}}>{b.tipster}</span>}
+              {tagsOf(b).map(t=><span key={t} style={ch}><span style={{width:7,height:7,borderRadius:4,background:tagColor(t)}}/>{t}</span>)}
+            </>;})()}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:9,minWidth:0}}>
+          <span style={{width:26,height:26,borderRadius:13,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:C.inner}}>
+            {isTeam?<MiniLogo src={clubLogo} label={name} size={24}/>:photo?<img src={photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}}/>:<MiniLogo src={clubLogo} label={teamName||name} size={22}/>}
+          </span>
+          <span style={{fontSize:15.5,fontWeight:500,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isTeam?name:formatName(b.player)}</span>
+          {!isTeam&&teamName&&<span style={{fontSize:12.5,color:C.dim,whiteSpace:"nowrap"}}>{teamName}</span>}
+        </div>
+      </div>
+      <div className="slip-left" style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
         <span style={{display:"inline-flex",alignSelf:"flex-start",maxWidth:"100%",alignItems:"center",gap:6,minWidth:0,paddingBottom:5,borderBottom:"1px solid rgba(255,255,255,.12)"}}>
         <span style={{fontSize:lastName.length>16?12.5:lastName.length>12?13.5:15.5,fontWeight:600,letterSpacing:-.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0,}}>
           {lastName}
