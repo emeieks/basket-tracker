@@ -2082,7 +2082,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const[dirty,setDirty]=useState({}); // champs modifiés non sauvegardés
   const[dropdown,setDropdown]=useState(null); // "bookmaker"|"tipster"|"game"
   const[saveAnim,setSaveAnim]=useState(false);
-  const[editMode,setEditMode]=useState(false);
+  const[editMode,setEditMode]=useState(true);
+  const[imgBump,setImgBump]=useState(0);const[imgBusy,setImgBusy]=useState("");const imgFile=useRef(null);const imgKind=useRef("player");
   const editRef=useRef(null);
   const toggleEdit=()=>setEditMode(v=>{const n=!v;if(n)setTimeout(()=>editRef.current&&editRef.current.scrollIntoView({behavior:"smooth",block:"start"}),60);return n;});
   const legs=bet._group||null;
@@ -2219,12 +2220,6 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               background:"rgba(0,0,0,.35)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
-          <button type="button" aria-label="Modifier le pari" onClick={toggleEdit} className="press"
-            style={{position:"absolute",top:14,right:56,height:34,padding:"0 12px",borderRadius:17,border:"none",zIndex:3,
-              background:editMode?C.green:"rgba(0,0,0,.35)",color:editMode?"#05231A":"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontWeight:700,fontFamily:"inherit"}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            {editMode?"Fermer":"Modifier"}
-          </button>
           <div style={{position:"absolute",left:18,top:26,bottom:18,right:"46%",display:"flex",flexDirection:"column",gap:6,zIndex:2}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"3px 10px",borderRadius:12,
@@ -2250,21 +2245,35 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
 
         {/* ── Corps ── */}
         <div style={{overflowY:"auto",padding:"16px 20px 0",flex:1}}>
-          {/* Résumé lisible */}
-          {(()=>{const pd=!isTeamBet?parseDesc(localBet.description):null;
-            const Tile=({l,children,full})=>(<div style={{gridColumn:full?"1 / -1":undefined,background:C.card,border:"1px solid "+C.line,borderRadius:14,padding:"10px 12px",minWidth:0}}>
-              <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.3,textTransform:"uppercase"}}>{l}</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5,fontSize:17,fontWeight:700,color:C.text,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{children}</div></div>);
-            return(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <Tile l="Pari" full>{pd?<><span style={{padding:"2px 9px",borderRadius:8,background:"#fff",color:"#111",fontSize:15,fontWeight:700}}>{(pd.ou==="Over"?"O ":"U ")+String(pd.line).replace(".",",")}</span><span>{statFR(pd.stat)}</span></>:<span style={{whiteSpace:"normal"}}>{descFR(localBet.description)||"—"}</span>}</Tile>
-              {legs?<Tile l={"Sur "+legs.length+" sites"} full>{legs.map(l=><span key={l.id} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:14,marginRight:8}}><BkBadge src={bkPhotos[l.bookmaker]} label={l.bookmaker||"?"} size={20}/>@{Number(l.odds).toFixed(2).replace(".",",")} · {eur(parseFloat(l.stake)||0)}</span>)}</Tile>:<>
-                <Tile l="Cote">@{Number(localBet.odds||0).toFixed(2).replace(".",",")}</Tile>
-                <Tile l="Mise">{eur(parseFloat(localBet.stake)||0)}</Tile>
-                <Tile l="Bookmaker">{localBet.bookmaker?<><BkBadge src={bkPhotos[localBet.bookmaker]} label={localBet.bookmaker} size={22}/><span style={{overflow:"hidden",textOverflow:"ellipsis"}}>{localBet.bookmaker}</span></>:<span style={{color:C.dim}}>—</span>}</Tile></>}
-              <Tile l="Tipster"><span style={{color:localBet.tipster?"#C4B5FD":C.dim}}>{localBet.tipster||"—"}</span></Tile>
-              <Tile l="Ligue">{localBet.game?<><MiniLogo src={getLeagueLogo(localBet.game)} label={localBet.game} size={20} round={false}/>{localBet.game}</>:<span style={{color:C.dim}}>—</span>}</Tile>
-              <Tile l="Date" full={!!legs}>{d?d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" · "+pad(d.getHours())+":"+pad(d.getMinutes()):"—"}</Tile>
-            </div>);})()}
+
+          {/* Photos : joueur + logo club */}
+          {(()=>{const team=localBet.team||pData?.team||"";const slug=x=>String(x||"x").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"_");
+            const doUpload=async(blob,kind)=>{
+              if(kind==="player"){if(!pData)throw new Error("Joueur introuvable");const url=await uploadAvatarBlob(blob,"player_"+slug(pData.name));await updatePlayer(pData.id,{photo_url:url});pData.photo_url=url;}
+              else{try{blob=await removeWhiteBg(blob,true);}catch(_){}const url=await uploadAvatarBlob(blob,"club_"+slug(team));await syncClubLogoAllLeagues(team,url);CLUB_LOGOS_MAP[team]=url;if(pData)pData.team_logo_url=url;}
+              setImgBump(x=>x+1);onSoftUpdate&&onSoftUpdate();};
+            const paste=async kind=>{setImgBusy(kind);try{const items=await navigator.clipboard.read();let blob=null;for(const it of items){const t=it.types.find(x=>x.startsWith("image/"));if(t){blob=await it.getType(t);break;}}
+              if(!blob)throw new Error("Aucune image dans le presse-papier");await doUpload(blob,kind);}catch(e){alert("Erreur : "+e.message);}setImgBusy("");};
+            const pick=kind=>{imgKind.current=kind;imgFile.current&&imgFile.current.click();};
+            const onFile=async e=>{const fl=e.target.files&&e.target.files[0];e.target.value="";if(!fl)return;const k=imgKind.current;setImgBusy(k);try{await doUpload(fl,k);}catch(err){alert("Erreur : "+err.message);}setImgBusy("");};
+            const items=[...(!isTeamBet&&pData?[["player","Photo joueur",pData.photo_url||pData.avatar_url,true]]:[]),...(team?[["club","Logo club",getTeamLogo(team,pData?.team_logo_url),false]]:[])];
+            if(!items.length)return null;
+            const sb={height:32,padding:"0 10px",borderRadius:9,border:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:5};
+            return <div key={imgBump} style={{display:"grid",gridTemplateColumns:items.length>1?"1fr 1fr":"1fr",gap:8}}>
+              <input ref={imgFile} type="file" accept="image/*" onChange={onFile} style={{display:"none"}}/>
+              {items.map(([k,l,src,round])=>(
+                <div key={k} style={{background:C.card,border:"1px solid "+C.line,borderRadius:14,padding:"10px 12px"}}>
+                  <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase"}}>{l}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginTop:8}}>
+                    <span style={{width:40,height:40,borderRadius:round?20:8,background:C.inner,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {src?<img src={src} alt="" style={{width:"100%",height:"100%",objectFit:round?"cover":"contain"}}/>:<span style={{color:C.dim,fontSize:11}}>—</span>}</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                      <button type="button" style={sb} disabled={!!imgBusy} onClick={()=>paste(k)}>{imgBusy===k?"…":"Coller"}</button>
+                      <button type="button" style={sb} disabled={!!imgBusy} onClick={()=>pick(k)}>Fichier</button>
+                    </div>
+                  </div>
+                </div>))}
+            </div>;})()}
 
           {/* Tags : un clic = enregistré */}
           <div style={{marginTop:10,padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
@@ -2327,7 +2336,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             );
           })()}
 
-          <div className="pick-head"><span>Modifier</span>{dirty&&hasDirty&&<span style={{fontSize:12,color:C.green}}>Modifié</span>}</div>
+          <div className="pick-head"><span>Détails</span>{dirty&&hasDirty&&<span style={{fontSize:12,color:C.green}}>Modifié</span>}</div>
           <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
             {legs?(
               <div style={{padding:"12px 16px",borderBottom:"1px solid "+C.line}}>
@@ -2391,7 +2400,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 {leagueList.map(l=><option key={l.id||l.name} value={l.name}>{l.name}</option>)}
               </select>
             </div>
-            <div style={{...row,flexDirection:"column",alignItems:"stretch",gap:8}}>
+            <div style={{display:"none"}}>
               <span style={{...lab,width:"auto"}}>Tags</span>
               <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
                 {tagListD.map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
@@ -2552,15 +2561,15 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
           {/* Enregistrer : collé en bas, visible seulement s'il y a des modifications */}
           <div style={{position:"sticky",bottom:0,margin:"0 -20px",padding:"14px 20px calc(16px + env(safe-area-inset-bottom))",
             background:"linear-gradient(to top,#121215 70%,rgba(26,29,35,0))"}}>
-            {hasDirty?(
-              <button type="button" onClick={saveAll} disabled={saving} className="press"
-                style={{width:"100%",height:54,borderRadius:16,border:"none",cursor:"pointer",background:accent,color:accentFg,
-                  fontSize:17,fontWeight:600,boxShadow:"0 6px 24px "+accent+"40"}}>
-                {saving?"Enregistrement…":"Enregistrer les modifications"}
-              </button>
-            ):saveAnim?(
+            {saveAnim&&!hasDirty?(
               <div style={{height:54,display:"flex",alignItems:"center",justifyContent:"center",color:C.green,fontSize:15,fontWeight:600}}>✓ Enregistré</div>
-            ):null}
+            ):(
+              <button type="button" onClick={saveAll} disabled={saving||!hasDirty} className="press"
+                style={{width:"100%",height:54,borderRadius:16,border:"none",cursor:hasDirty?"pointer":"default",background:hasDirty?"#FAFAFA":C.card,color:hasDirty?"#09090B":C.dim,
+                  fontSize:17,fontWeight:600,transition:"all .15s"}}>
+                {saving?"Enregistrement…":"Sauvegarder"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -3278,7 +3287,8 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const bc=selected?"#3DD68C":C.line;
   const bar=st==="won"?"#3DD68C":st==="lost"?"#FF6B6B":st==="pending"?"#E8EAEE":"#34343B";
   const bg=selected?"#10241A":C.card;
-  const desc=b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U");
+  const hcp=b.bet_type==="team"&&String(b.description||"").match(/\s([+-]?\d+(?:[.,]\d+)?)$/)&&!/pts|gagne/i.test(b.description||"")?String(b.description).match(/\s([+-]?\d+(?:[.,]\d+)?)$/)[1]:null;
+  const desc=hcp?(/^[+-]/.test(hcp)?hcp:"+"+hcp):b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U");
   return(
     <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"1px solid "+bc,borderRadius:16,
       padding:"12px 14px",minHeight:74,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
@@ -3309,9 +3319,9 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"rgba(255,255,255,.08)",color:"#FAFAFA",fontSize:10.5,fontWeight:600,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
-            tagsOf(b).length>0&&<span key="a" style={{display:"inline-flex",gap:4,flexShrink:0}}><TagChip small name={tagsOf(b)[0]}/>{tagsOf(b).length>1&&<span style={{fontSize:11,color:C.sub,fontWeight:600}}>+{tagsOf(b).length-1}</span>}</span>,
+            tagsOf(b).length>0&&<span key="a" title={tagsOf(b).join(", ")} style={{display:"inline-flex",gap:3,flexShrink:0,alignItems:"center"}}>{tagsOf(b).map(t=><span key={t} style={{width:9,height:9,borderRadius:5,background:tagColor(t)}}/>)}</span>,
             <span key="o" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
-            <span key="m" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>{eur(stake)}</span>,
+            <span key="m" style={{whiteSpace:"nowrap",color:C.text,fontWeight:600}}>{eur(stake)}</span>,
             b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#4A4A52",flexShrink:0}}>·</span>{el}</React.Fragment>))}
         </span>
