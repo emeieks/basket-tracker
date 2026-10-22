@@ -790,6 +790,13 @@ body{background:#09090B;letter-spacing:-.01em;}
 .toast{border-radius:99px;background:#18181C;border-color:rgba(255,255,255,.08)!important;color:#FAFAFA!important;}
 .skel{background-color:#17171B;}
 
+.slip-cols,.slip-strip{display:none;}
+@media (min-width:1024px){
+  .slip-grid{display:flex!important;flex-direction:column;gap:8px!important;}
+  .slip-cols{display:grid;grid-template-columns:repeat(4,120px);gap:8px;margin-left:auto;padding-right:56px;}
+  .slip-res,.slip-m,.slip-m+span{display:none!important;}
+  .slip-strip{display:flex;position:absolute;right:0;top:0;bottom:0;width:40px;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:600;letter-spacing:.3px;}
+}
 /* ── VERSION ORDINATEUR (≥ 1024 px) ── */
 @media (min-width:1024px){
   .app{max-width:1240px;padding:0 32px 40px 268px;}
@@ -804,7 +811,6 @@ body{background:#09090B;letter-spacing:-.01em;}
   .header{padding:36px 4px 16px;}
   .header-title{font-size:34px;}
   .view-in>div>div[style*="padding: 0px 20px"],.view-in>div[style*="padding: 0px 20px"]{padding-left:4px!important;padding-right:4px!important;}
-  .slip-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:10px!important;}
   .home-wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:28px;align-items:start;}
   .home-wrap>*:first-child{grid-row:1 / span 6;}
   .home-wrap>*:not(:first-child){grid-column:2;}
@@ -3348,13 +3354,21 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             tagsOf(b).length>0&&<span key="a" title={tagsOf(b).join(", ")} style={{display:"inline-flex",gap:3,flexShrink:0,alignItems:"center"}}>{tagsOf(b).map(t=><span key={t} style={{width:9,height:9,borderRadius:5,background:tagColor(t)}}/>)}</span>,
-            <span key="o" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
-            <span key="m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>{eur(stake)}</span>,
+            <span key="o" className="slip-m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
+            <span key="m" className="slip-m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>{eur(stake)}</span>,
             b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#6E6E77",flexShrink:0,fontSize:18,fontWeight:700,lineHeight:"12px"}}>·</span>{el}</React.Fragment>))}
         </span>
       </div>
-      <span style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
+      <div className="slip-cols sysfont">
+        {[["Cote",Number(b.odds||0).toFixed(2).replace(".",","),C.text],["Mise",eur(stake),C.text],
+          [st==="pending"?"Gain pot.":"Retour",st==="pending"?eur(stake*odds):out,st==="won"?C.green:st==="lost"?C.red:C.text],
+          ["Bénéfice",st==="pending"?"—":st==="void"?"0,00 €":money(profit),st==="pending"?C.dim:resultCol]].map(([l,v,c])=>(
+          <div key={l}><div style={{fontSize:16,fontWeight:600,color:c,whiteSpace:"nowrap"}}>{v}</div><div style={{fontSize:12,color:C.sub,marginTop:2}}>{l}</div></div>))}
+      </div>
+      <span className="slip-strip" style={{background:st==="won"?"rgba(61,214,140,.12)":st==="lost"?"rgba(255,107,107,.12)":"rgba(255,255,255,.05)",color:st==="won"?C.green:st==="lost"?C.red:C.sub}}>
+        {st==="won"?"Gagné":st==="lost"?"Perdu":st==="void"?"Void":"En cours"}</span>
+      <span className="slip-res" style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
         {st==="pending"?<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600,color:C.text,padding:"4px 9px",borderRadius:99,background:"rgba(255,255,255,.07)"}}><span className="live-dot" style={{width:6,height:6,borderRadius:3,background:C.green}}/>En cours</span>
           :<b className="sysfont" style={{fontSize:16,fontWeight:600,letterSpacing:-.3,color:resultCol}}>{st==="void"?"Void":money(profit)}</b>}
       </span>
