@@ -784,7 +784,7 @@ body{background:#09090B;letter-spacing:-.01em;}
 .nav-btn{width:62px;height:48px;font-size:10px;font-weight:500;color:#6E6E77;border-radius:16px;}
 .nav-btn.active{color:#FAFAFA;background:rgba(255,255,255,.07);}
 .nav-add{width:48px;height:48px;border-radius:16px;background:#FAFAFA;color:#09090B;box-shadow:0 4px 16px rgba(255,255,255,.12);}
-.header{padding:calc(20px + env(safe-area-inset-top)) 22px 14px;align-items:flex-end;}
+.header{padding:calc(20px + env(safe-area-inset-top)) 22px 8px;align-items:flex-end;}
 .header-title{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1.05;}
 .header-date{font-size:12px;font-weight:600;color:#8A8A93;letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;}
 .toast{border-radius:99px;background:#18181C;border-color:rgba(255,255,255,.08)!important;color:#FAFAFA!important;}
@@ -3173,9 +3173,9 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         const PER=[["all","Tout"],["week","Semaine"],["month","Mois"],["year","Année"]];
         return(
-          <div style={{padding:"4px 2px 0"}}>
+          <div style={{padding:"0 2px 0"}}>
             {period!=="all"&&<div style={{fontSize:12,color:C.sub,fontWeight:600,letterSpacing:.6,textTransform:"uppercase"}}>{title}</div>}
-            <div className="sysfont" style={{fontSize:"clamp(40px,12vw,54px)",fontWeight:600,letterSpacing:-2,lineHeight:1.05,color:C.text,marginTop:8}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div>
+            <div className="sysfont" style={{fontSize:"clamp(40px,12vw,54px)",fontWeight:600,letterSpacing:-2,lineHeight:1.05,color:C.text,marginTop:period==="all"?6:6}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div>
             <div className="sysfont" style={{display:"flex",alignItems:"center",gap:8,marginTop:8,fontSize:14}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:7,fontWeight:600,color:pColor(pp),background:pp>0?"rgba(61,214,140,.12)":pp<0?"rgba(255,107,107,.12)":"rgba(255,255,255,.06)"}}>
                 <svg width="10" height="10" viewBox="0 0 10 10" style={{transform:pp<0?"rotate(180deg)":"none"}}><path d="M5 1.5L9 7.5H1z" fill="currentColor"/></svg>
@@ -3316,7 +3316,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         )}
       </div>
       <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
-        <span style={{display:"flex",alignItems:"center",gap:6,minWidth:0,paddingBottom:5,borderBottom:"1px solid rgba(255,255,255,.12)"}}>
+        <span style={{display:"inline-flex",alignSelf:"flex-start",maxWidth:"100%",alignItems:"center",gap:6,minWidth:0,paddingBottom:5,borderBottom:"1px solid rgba(255,255,255,.12)"}}>
         <span style={{fontSize:lastName.length>16?12.5:lastName.length>12?13.5:15.5,fontWeight:600,letterSpacing:-.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0,}}>
           {lastName}
         </span>
