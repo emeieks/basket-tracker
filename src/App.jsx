@@ -3347,24 +3347,24 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
           </span>
         )}
       </div>
-      <div className="slip-dl" style={{flex:1,minWidth:0,flexDirection:"column",gap:8}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap",overflow:"hidden",maskImage:"linear-gradient(to right,#000 90%,transparent)",WebkitMaskImage:"linear-gradient(to right,#000 90%,transparent)"}}>
-          {(()=>{const ch={display:"inline-flex",alignItems:"center",gap:5,height:24,padding:"0 8px",borderRadius:7,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",fontSize:12.5,fontWeight:500,color:"#C7C7CC",whiteSpace:"nowrap"};
-            return <>
-              <span style={{...ch,background:"rgba(255,255,255,.08)",borderColor:"transparent",color:C.text,fontWeight:600}}>{String(desc)}</span>
-              {d&&<span style={ch}>{String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}</span>}
-              {b.bookmaker&&<span style={ch}><BkBadge src={bkLogo} label={b.bookmaker} size={16}/>{b.bookmaker}</span>}
-              {b.game&&<span style={ch}><MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>{b.game}</span>}
-              {b.tipster&&<span style={{...ch,color:tipColor(b.tipster)}}>{b.tipster}</span>}
-              {tagsOf(b).map(t=><span key={t} style={ch}><span style={{width:7,height:7,borderRadius:4,background:tagColor(t)}}/>{t}</span>)}
-            </>;})()}
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:9,minWidth:0}}>
-          <span style={{width:26,height:26,borderRadius:13,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:C.inner}}>
-            {isTeam?<MiniLogo src={clubLogo} label={name} size={24}/>:photo?<img src={photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}}/>:<MiniLogo src={clubLogo} label={teamName||name} size={22}/>}
-          </span>
-          <span style={{fontSize:15.5,fontWeight:500,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isTeam?name:formatName(b.player)}</span>
-          {!isTeam&&teamName&&<span style={{fontSize:12.5,color:C.dim,whiteSpace:"nowrap"}}>{teamName}</span>}
+      <div className="slip-dl" style={{flex:1,minWidth:0,alignItems:"center",gap:14}}>
+        <span style={{width:48,height:48,borderRadius:24,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:C.inner}}>
+          {isTeam?<MiniLogo src={clubLogo} label={name} size={40}/>:photo?<img src={photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}}/>:<MiniLogo src={clubLogo} label={teamName||name} size={36}/>}
+        </span>
+        <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap",overflow:"hidden",maskImage:"linear-gradient(to right,#000 90%,transparent)",WebkitMaskImage:"linear-gradient(to right,#000 90%,transparent)"}}>
+            {(()=>{const ch={display:"inline-flex",alignItems:"center",gap:5,height:24,padding:"0 8px",borderRadius:7,border:"1px solid "+C.line,background:"rgba(255,255,255,.03)",fontSize:12.5,fontWeight:500,color:"#C7C7CC",whiteSpace:"nowrap",flexShrink:0};
+              return <>
+                {b.bookmaker&&<span style={ch}><BkBadge src={bkLogo} label={b.bookmaker} size={16}/>{b.bookmaker}</span>}
+                {b.game&&<span style={ch}><MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>{b.game}</span>}
+                {b.tipster&&<span style={{...ch,color:tipColor(b.tipster)}}>{b.tipster}</span>}
+                {tagsOf(b).map(t=><span key={t} style={ch}><span style={{width:7,height:7,borderRadius:4,background:tagColor(t)}}/>{t}</span>)}
+              </>;})()}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}</span>
+            <span style={{flexShrink:0,height:24,display:"inline-flex",alignItems:"center",padding:"0 9px",borderRadius:7,background:"rgba(255,255,255,.09)",color:C.text,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap"}}>{String(desc)}</span>
+          </div>
         </div>
       </div>
       <div className="slip-left" style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:5}}>
