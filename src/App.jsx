@@ -39,7 +39,7 @@ function eur(v,dec=2){
 
 const STAT_FR={
   "Points":"Points","Rebonds":"Rebonds","Assists":"Assists",
-  "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Assists",
+  "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Assists","Rebonds+Assists":"Rebonds + Assists",
   "Points+Rebonds+Assists":"Points + Rebonds + Assists","3 Points Made":"Tirs à 3 pts",
   "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
   "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Triple-Double":"Triple-double","Minutes":"Minutes",
@@ -48,7 +48,7 @@ const STAT_FR={
 // Stats proposées pour un pari NHL
 const HOCKEY_STATS=["Points","Passes","Buts","Shots on Goal"];
 const STAT_ABBR={
-  "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A",
+  "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A","Rebonds+Assists":"R+A",
   "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
   "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Triple-Double":"TD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG",
 };
@@ -1100,7 +1100,7 @@ const PlayerAvatar=memo(function PlayerAvatar({
 
 // ── BOOKMAKERS ────────────────────────────────────────────────────────────────
 const DEFAULT_BOOKMAKERS=["Pinnacle","ps3838","Bet365","Unibet","Winamax","Betclic","Bwin","1xBet","Betway","DraftKings","FanDuel","BetMGM","Autre"];
-const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Points+Rebonds+Assists","3 Points Made","Steals","Blocks","Turnovers","Fantasy Score","Double-Double","Minutes"];
+const STATS_TYPES=["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists","Points+Rebonds+Assists","3 Points Made","Steals","Blocks","Turnovers","Fantasy Score","Double-Double","Minutes"];
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function useToast(){
@@ -1817,7 +1817,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
-              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
+              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
                 "Turnovers","Fantasy Score","Minutes","Double-Double","Triple-Double"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
             </select>
