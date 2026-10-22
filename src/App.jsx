@@ -42,7 +42,7 @@ const STAT_FR={
   "Points+Rebonds":"Points + Rebonds","Points+Assists":"Points + Assists",
   "Points+Rebonds+Assists":"Points + Rebonds + Assists","3 Points Made":"Tirs à 3 pts",
   "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
-  "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Minutes":"Minutes",
+  "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Triple-Double":"Triple-double","Minutes":"Minutes",
   "Passes":"Passes","Buts":"Buts","Shots on Goal":"Tirs au but",
 };
 // Stats proposées pour un pari NHL
@@ -50,7 +50,7 @@ const HOCKEY_STATS=["Points","Passes","Buts","Shots on Goal"];
 const STAT_ABBR={
   "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A",
   "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
-  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG",
+  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Triple-Double":"TD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG",
 };
 const statFR=s=>STAT_FR[s]||s;
 // "Over 26.5 Points+Rebonds+Assists" → { ou, line, stat }
@@ -1792,13 +1792,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
           <label style={{flex:1.3,position:"relative",padding:"14px 16px",cursor:"pointer",minWidth:0}}>
             <div className="acard-h" style={{marginBottom:4}}>Stat</div>
-            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
+            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(/Double$/.test(e.target.value)&&!form.line)f("line","0.5");if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
               {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                "Turnovers","Fantasy Score","Minutes"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
+                "Turnovers","Fantasy Score","Minutes","Double-Double","Triple-Double"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
             </select>
           </label>
         </div>
@@ -1839,7 +1839,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               const on=form.bookmaker===bk;
               return(
                 <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
-                  onClick={()=>{f("bookmaker",on?"":bk);if(!on&&!form.stake)goTo(stakeRef,stakeCard);}}>
+                  onClick={()=>{f("bookmaker",on?"":bk);if(!on&&!form.stake&&parseFloat(String(form.odds||"").replace(",","."))>1)goTo(stakeRef,stakeCard);}}>
                   <BkBadge src={bkPhotos[bk]} label={bk} size={26}/>
                 </button>
               );
@@ -3362,8 +3362,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
               </>;})()}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}</span>
-            <span style={{flexShrink:0,height:24,display:"inline-flex",alignItems:"center",padding:"0 9px",borderRadius:7,background:"rgba(255,255,255,.09)",color:C.text,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap"}}>{String(desc)}</span>
+            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>
           </div>
         </div>
       </div>
