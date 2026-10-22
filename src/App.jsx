@@ -790,6 +790,30 @@ body{background:#09090B;letter-spacing:-.01em;}
 .toast{border-radius:99px;background:#18181C;border-color:rgba(255,255,255,.08)!important;color:#FAFAFA!important;}
 .skel{background-color:#17171B;}
 
+/* ── VERSION ORDINATEUR (≥ 1024 px) ── */
+@media (min-width:1024px){
+  .app{max-width:1240px;padding:0 32px 40px 268px;}
+  .nav{left:0;top:0;bottom:0;transform:none;width:232px;max-width:none;border-radius:0;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:4px;
+    padding:28px 14px;border:none;border-right:1px solid #1F1F24;background:#0C0C0E;box-shadow:none;}
+  .nav::before{content:"Basket Tracker";display:block;order:-2;font-size:17px;font-weight:700;letter-spacing:-.4px;color:#FAFAFA;padding:0 12px 22px;}
+  .nav-btn{width:100%;height:44px;flex-direction:row;justify-content:flex-start;gap:12px;padding:0 12px;font-size:14px;font-weight:500;border-radius:12px;color:#8A8A93;}
+  .nav-btn:hover{background:rgba(255,255,255,.04);color:#FAFAFA;}
+  .nav-btn.active{background:rgba(255,255,255,.07);color:#FAFAFA;}
+  .nav-add{order:-1;width:100%;height:44px;border-radius:12px;margin-bottom:14px;gap:8px;font-size:14px;font-weight:600;}
+  .nav-add::after{content:"Nouveau pari";}
+  .header{padding:36px 4px 16px;}
+  .header-title{font-size:34px;}
+  .view-in>div>div[style*="padding: 0px 20px"],.view-in>div[style*="padding: 0px 20px"]{padding-left:4px!important;padding-right:4px!important;}
+  .slip-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:10px!important;}
+  .home-wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:28px;align-items:start;}
+  .home-wrap>*:first-child{grid-row:1 / span 6;}
+  .home-wrap>*:not(:first-child){grid-column:2;}
+  .home-wrap>*:nth-child(2){margin-top:0!important;}
+  .modal-overlay{align-items:center;justify-content:center;}
+  .modal-sheet{max-width:560px;border-radius:22px!important;border-bottom:1px solid #1F1F24;max-height:90vh;}
+  .chip-row{margin:0;padding:0 0 2px;}
+}
+
 `;
 
 // ── LEAGUE LOGOS (dynamique depuis Supabase) ─────────────────────────────────
@@ -3140,7 +3164,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   );
 
   return(
-    <div style={{padding:"0 20px 8px"}}>
+    <div className="home-wrap" style={{padding:"0 20px 8px"}}>
 
       {(()=>{
         // ── période
@@ -3324,8 +3348,8 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             tagsOf(b).length>0&&<span key="a" title={tagsOf(b).join(", ")} style={{display:"inline-flex",gap:3,flexShrink:0,alignItems:"center"}}>{tagsOf(b).map(t=><span key={t} style={{width:9,height:9,borderRadius:5,background:tagColor(t)}}/>)}</span>,
-            <span key="o" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
-            <span key="m" style={{whiteSpace:"nowrap",color:C.sub,fontWeight:500}}>{eur(stake)}</span>,
+            <span key="o" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
+            <span key="m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>{eur(stake)}</span>,
             b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#6E6E77",flexShrink:0,fontSize:18,fontWeight:700,lineHeight:"12px"}}>·</span>{el}</React.Fragment>))}
         </span>
@@ -3456,7 +3480,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               → {eur(pendingList.reduce((s,x)=>s+parseFloat(x.stake||0)*parseFloat(x.odds||0),0))}
             </span>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div className="slip-grid" style={{display:"flex",flexDirection:"column",gap:8}}>
             {pendingList.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
           </div>
         </div>
@@ -3520,7 +3544,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                         );
                       })():settledDay&&d.k!==new Date().toDateString()&&<span className="sysfont" style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
                     </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    <div className="slip-grid" style={{display:"flex",flexDirection:"column",gap:8}}>
                       {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
                     </div>
                   </div>
