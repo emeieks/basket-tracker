@@ -3477,8 +3477,8 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
               </>;})()}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-            {isCombo?<span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n}<span style={{margin:"0 5px"}}> </span>{l.full}</span>)}</span>:
-            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{margin:"0 5px"}}> </span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>}
+            {isCombo?<span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n}{" "}{l.full}</span>)}</span>:
+            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}{" "}{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>}
           </div>
         </div>
       </div>
