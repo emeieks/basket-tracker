@@ -185,7 +185,7 @@ const TAG_COLORS=["#FBBF24","#60A5FA","#F472B6","#A78BFA","#34D399","#FB923C","#
 let TAGS_CACHE=(()=>{try{return JSON.parse(localStorage.getItem("bk_tags")||"null")||[];}catch(e){return [];}})();
 const tagSubs=new Set();
 function setTagsCache(l){TAGS_CACHE=l;try{localStorage.setItem("bk_tags",JSON.stringify(l));}catch(e){}tagSubs.forEach(fn=>fn(l));}
-const BUILTIN_TAGS=[{name:"Annonce",color:"#FBBF24",sub:"Joueur out imprévu"},{name:"Temps de jeu",color:"#22D3EE",sub:"Absence connue → un autre joueur profite des minutes"}];
+const BUILTIN_TAGS=[{name:"Annonce",color:"#FBBF24",sub:"Joueur out imprévu"}];
 function tagListWithAnnonce(l){const rest=l.filter(t=>!BUILTIN_TAGS.some(b=>b.name===t.name));return [...BUILTIN_TAGS.map(({name,color})=>({name,color})),...rest];}
 function useTagList(){
   const[l,setL]=useState(TAGS_CACHE);
@@ -1375,7 +1375,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     if(p.game)f("game",p.game);
     setSelectedType({type:"player",data:p});
     setStep("form");
-    if(!form.line)setTimeout(()=>{if(lineSel.current)lineSel.current.focus({preventScroll:true});lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});},60);
+    if(!form.line)setTimeout(()=>{lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});openSel(lineSel.current);},80);
   }
 
   function selectTeam(teamName){
@@ -1814,27 +1814,29 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         })()}
         {/* ── PARI JOUEUR : Over / Under ── */}
         {!isTeamBet&&!form.lt&&(<>
-        {/* ── Ligne + Stat ── */}
-        <div className="acard" ref={lineCard} style={{...clubVars,scrollMarginTop:12}}>
-          <label style={{display:"flex",alignItems:"baseline",gap:10,cursor:"text"}}>
-            <span className="acard-h" style={{margin:0,minWidth:52}}>Ligne</span>
-            <input ref={lineSel} type="text" inputMode="decimal" enterKeyHint="next" aria-label="Ligne" placeholder="28.5" value={form.line}
-              onChange={e=>f("line",e.target.value.replace(",",".").replace(/[^0-9.]/g,""))}
-              onBlur={e=>{const v=e.target.value;if(/^\d+$/.test(v))f("line",v+".0");}}
-              onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();e.target.blur();}}}
-              className="big-in" style={{flex:1,minWidth:0}}/>
+        {/* ── Ligne | Stat ── */}
+        <div className="acard" ref={lineCard} style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0,scrollMarginTop:12}}>
+          <label style={{flex:1,position:"relative",padding:"14px 16px",cursor:"pointer"}}>
+            <div className="acard-h" style={{marginBottom:4}}>Ligne</div>
+            <select ref={lineSel} aria-label="Ligne" value={form.line} onChange={e=>{f("line",e.target.value);if(e.target.value&&!form.stat)setTimeout(()=>openSel(statSel.current),150);}}
+              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
+                fontSize:30,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
+              <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>—</option>
+              {Array.from({length:isHockey(form.game)?8:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{v}</option>)}
+            </select>
           </label>
-          <div className="acard-h" style={{margin:"12px 0 8px"}}>Stat</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:6}}>
-            {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","3 Points Made","Points+Rebonds","Points+Assists","Rebonds+Assists",
-              "Points+Rebonds+Assists","Steals","Blocks","Turnovers","Double-Double","Triple-Double"]).map(st0=>{const on=form.stat===st0;return(
-              <button key={st0} type="button" className="press" onMouseDown={e=>e.preventDefault()} onClick={()=>{
-                  const v=on?"":st0;f("stat",v);if(/Double$/.test(v)&&!form.line)f("line","0.5");
-                  if(lineSel.current)lineSel.current.blur();
-                  if(v&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),120);}}
-                style={{height:40,borderRadius:10,border:"1px solid "+(on?"#FAFAFA":"#1F1F24"),background:on?"rgba(255,255,255,.1)":"#0F0F12",color:on?"#FAFAFA":C.sub,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:"0 2px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {({"3 Points Made":"3 pts","Points+Rebonds":"P + R","Points+Assists":"P + A","Rebonds+Assists":"R + A","Points+Rebonds+Assists":"PRA","Steals":"Interc.","Blocks":"Contres","Turnovers":"Pertes","Double-Double":"Double-D","Triple-Double":"Triple-D","Shots on Goal":"Tirs"})[st0]||statFR(st0)}</button>);})}
-          </div>
+          <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
+          <label style={{flex:1.3,position:"relative",padding:"14px 16px",cursor:"pointer",minWidth:0}}>
+            <div className="acard-h" style={{marginBottom:4}}>Stat</div>
+            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(/Double$/.test(e.target.value)&&!form.line)f("line","0.5");if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
+              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
+                fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
+              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists",
+                "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
+                "Turnovers","Double-Double","Triple-Double"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
+            </select>
+          </label>
         </div>
         <div className="acard" ref={ouCard} style={{...clubVars,scrollMarginTop:12}}>
           <div className="acard-h">Over / Under</div>
@@ -2582,17 +2584,10 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             </div>
           </div>
 
-          {/* Note + analyse */}
-          <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px",display:"flex",justifyContent:"space-between"}}>
-            <span>Note du pari</span>{localBet.rating!=null&&localBet.rating!==""&&<span style={{color:C.text}}>{localBet.rating}/10</span>}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:4}}>
-            {Array.from({length:10},(_,i)=>i+1).map(n=>{const on=Number(localBet.rating)===n;const c=n>=8?C.green:n>=5?"#FBBF24":C.red;return(
-              <button key={n} type="button" className="press" onClick={()=>setField("rating",on?null:n)}
-                style={{height:38,borderRadius:9,border:"1px solid "+(on?c:C.line),background:on?c+"26":C.card,color:on?c:C.sub,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:0}}>{n}</button>);})}
-          </div>
+          {/* Analyse */}
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Analyse</div>
           <textarea value={localBet.analysis||""} onChange={e=>{const v=e.target.value;setLocalBet(p=>({...p,analysis:v}));setDirty(p=>({...p,analysis:v}));}}
-            placeholder="Pourquoi ce pari ? Edge, minutes, matchup, absences…" rows={4}
+            rows={4}
             style={{width:"100%",resize:"vertical",padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+(dirty.analysis!==undefined?C.green+"88":C.line),color:C.text,fontSize:15,lineHeight:1.45,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
 
           {/* Tags : un clic = enregistré */}
@@ -3269,7 +3264,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   const bets=mergeGroups(rawBets);
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
-  const[calOpen,setCalOpen]=useState(true);
+  const[calOpen,setCalOpen]=useState(false);
   const[period,setPeriod]=useState("all");
   const[pOff,setPOff]=useState(0);
   const[units,setUnits]=useState(false);
@@ -3482,8 +3477,8 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
               </>;})()}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-            {isCombo?<span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{l.full}</span>)}</span>:
-            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>}
+            {isCombo?<span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n}<span style={{margin:"0 5px"}}> </span>{l.full}</span>)}</span>:
+            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{margin:"0 5px"}}> </span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>}
           </div>
         </div>
       </div>
