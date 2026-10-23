@@ -72,6 +72,7 @@ function teamMarket(b){
 }
 function marketOf(b){
   if(b.notes==="longterm")return "Long terme";
+  if(b.bet_type==="combo")return "Combiné";
   if(b.bet_type==="team")return "Équipe · "+teamMarket(b);
   const p=parseDesc(b.description);return p?statFR(p.stat):"Autre";
 }
@@ -115,7 +116,7 @@ async function supaError(prefix,r){
   let msg="";
   try{const j=await r.json();msg=j.message||j.hint||JSON.stringify(j);}catch(_){}
   const col=(msg.match(/'([a-z_]+)' column/)||msg.match(/column "?([a-z_]+)"? .*does not exist/)||[])[1];
-  if(col)return new Error("La colonne « "+col+" » n'existe pas encore dans ta table bets.\nAjoute-la dans Supabase (SQL Editor) :\nalter table bets add column if not exists "+col+" "+(col==="closing_odds"?"numeric":col==="annonce"?"boolean default false":col==="tags"?"text[]":"text")+";");
+  if(col)return new Error("La colonne « "+col+" » n'existe pas encore dans ta table bets.\nAjoute-la dans Supabase (SQL Editor) :\nalter table bets add column if not exists "+col+" "+(col==="closing_odds"?"numeric":col==="annonce"?"boolean default false":col==="tags"?"text[]":col==="rating"?"smallint":"text")+";");
   return new Error(prefix+" "+r.status+(msg?" — "+msg:""));
 }
 
@@ -184,7 +185,8 @@ const TAG_COLORS=["#FBBF24","#60A5FA","#F472B6","#A78BFA","#34D399","#FB923C","#
 let TAGS_CACHE=(()=>{try{return JSON.parse(localStorage.getItem("bk_tags")||"null")||[];}catch(e){return [];}})();
 const tagSubs=new Set();
 function setTagsCache(l){TAGS_CACHE=l;try{localStorage.setItem("bk_tags",JSON.stringify(l));}catch(e){}tagSubs.forEach(fn=>fn(l));}
-function tagListWithAnnonce(l){return l.some(t=>t.name==="Annonce")?l:[{name:"Annonce",color:"#FBBF24"},...l];}
+const BUILTIN_TAGS=[{name:"Annonce",color:"#FBBF24",sub:"Joueur out imprévu"},{name:"Temps de jeu",color:"#22D3EE",sub:"Absence connue → un autre joueur profite des minutes"}];
+function tagListWithAnnonce(l){const rest=l.filter(t=>!BUILTIN_TAGS.some(b=>b.name===t.name));return [...BUILTIN_TAGS.map(({name,color})=>({name,color})),...rest];}
 function useTagList(){
   const[l,setL]=useState(TAGS_CACHE);
   useEffect(()=>{tagSubs.add(setL);return()=>tagSubs.delete(setL);},[]);
@@ -210,7 +212,7 @@ async function fetchTagsRemote(){
 }
 // Tags présents sur des paris mais absents de la liste → on les remet dans la liste
 function adoptTagsFromBets(bets){
-  const add=[];(bets||[]).forEach(b=>parseTags(b.tags).forEach(t=>{if(t!=="Annonce"&&!TAGS_CACHE.some(x=>x.name===t)&&!TAGS_DELETED.includes(t)&&!add.some(x=>x.name===t))add.push({name:t,color:tagColor(t)});}));
+  const add=[];(bets||[]).forEach(b=>parseTags(b.tags).forEach(t=>{if(t!=="Annonce"&&!t.startsWith("__")&&!TAGS_CACHE.some(x=>x.name===t)&&!TAGS_DELETED.includes(t)&&!add.some(x=>x.name===t))add.push({name:t,color:tagColor(t)});}));
   if(add.length)setTagsCache([...TAGS_CACHE,...add]);
 }
 async function addTagRemote(t){
@@ -224,9 +226,21 @@ async function deleteTagRemote(name){
   setTagsCache(TAGS_CACHE.filter(x=>x.name!==name));
   try{await fetch(SUPA_URL+"/rest/v1/bet_tags?name=eq."+encodeURIComponent(name),{method:"DELETE",headers:H});}catch(e){}
 }
+// Cote : sans virgule tapée, la virgule va après le 1er chiffre (183 → 1.83, 1834 → 1.834)
+// Combiné : une jambe = {kind:"player"|"team",name,ou,line,stat,mk}
+function legDesc(l){
+  if(l.kind==="team"){const mk=l.mk||"handicap";return mk==="moneyline"?l.name+" gagne":mk==="handicap"?l.name+" "+fmtLine(l.line,true):l.name+" "+(l.ou||"Over")+" "+fmtLine(l.line)+" pts";}
+  return formatName(l.name)+" "+(l.ou||"Over")+" "+fmtLine(l.line)+" "+(l.stat||"Points");
+}
+function legOk(l){return l.kind==="team"?((l.mk||"handicap")==="moneyline"||!!String(l.line||"").trim()):(!!String(l.line||"").trim()&&!!l.stat);}
+function comboLegs(b){return String(b.description||"").split(" + ").map(x=>x.trim()).filter(Boolean);}
+function fmtLine(v,signed){let t=String(v??"").trim().replace(",",".");if(!t)return t;if(/^[+-]?\d+$/.test(t))t+=".0";if(signed&&!/^[+-]/.test(t))t="+"+t;return t;}
+function normOdds(v){const t=String(v??"").trim().replace(",",".");if(/^\d{2,}$/.test(t))return t[0]+"."+t.slice(1);return t;}
 function parseTags(v){if(Array.isArray(v))return v.filter(Boolean);if(typeof v==="string"&&v.trim()){try{const j=JSON.parse(v);if(Array.isArray(j))return j;}catch(e){}return v.replace(/^\{|\}$/g,"").split(",").map(x=>x.replace(/^"|"$/g,"").trim()).filter(Boolean);}return [];}
-function tagsOf(b){const t=parseTags(b&&b.tags).filter(x=>x!=="Annonce");return b&&b.annonce?["Annonce",...t]:t;}
-function tagColor(name){if(name==="Annonce")return "#FBBF24";const t=TAGS_CACHE.find(x=>x.name===name);if(t)return t.color;let h=0;for(const c of String(name))h=(h*31+c.charCodeAt(0))>>>0;return TAG_COLORS[h%TAG_COLORS.length];}
+const ARCH_TAG="__archive";
+function isArchived(b){return parseTags(b&&b.tags).includes(ARCH_TAG);}
+function tagsOf(b){const t=parseTags(b&&b.tags).filter(x=>x!=="Annonce"&&!String(x).startsWith("__"));return b&&b.annonce?["Annonce",...t]:t;}
+function tagColor(name){const bi=BUILTIN_TAGS.find(b=>b.name===name);if(bi)return bi.color;const t=TAGS_CACHE.find(x=>x.name===name);if(t)return t.color;let h=0;for(const c of String(name))h=(h*31+c.charCodeAt(0))>>>0;return TAG_COLORS[h%TAG_COLORS.length];}
 function TagChip({name,small,on,onClick}){
   const c=tagColor(name);
   return <span onClick={onClick} style={{display:"inline-flex",alignItems:"center",gap:5,flexShrink:0,whiteSpace:"nowrap",cursor:onClick?"pointer":"default",
@@ -236,10 +250,22 @@ function TagChip({name,small,on,onClick}){
 }
 
 // ── TIPSTERS API ──────────────────────────────────────────────────────────────
+let TIP_PHOTOS=(()=>{try{return JSON.parse(localStorage.getItem("bk_tip_photos")||"{}");}catch(e){return {};}})();
 async function fetchTipsters(){
   const r=await fetch(SUPA_URL+"/rest/v1/tipsters?select=*&order=name.asc",{headers:H});
   if(!r.ok)throw new Error("fetch tipsters: "+r.status);
-  return r.json();
+  const rows=await r.json();
+  (rows||[]).forEach(t=>{if(t.photo_url)TIP_PHOTOS[t.name]=t.photo_url;});
+  return rows;
+}
+async function setTipsterPhoto(t,url){
+  TIP_PHOTOS={...TIP_PHOTOS,[t.name]:url};try{localStorage.setItem("bk_tip_photos",JSON.stringify(TIP_PHOTOS));}catch(e){}
+  try{const r=await fetch(SUPA_URL+"/rest/v1/tipsters?id=eq."+t.id,{method:"PATCH",headers:H,body:JSON.stringify({photo_url:url})});return r.ok;}catch(e){return false;}
+}
+function TipIcon({name,size=18}){
+  const ph=TIP_PHOTOS[name];
+  if(ph)return <img src={ph} alt={name} title={name} style={{width:size,height:size,borderRadius:size/2,objectFit:"cover",flexShrink:0}}/>;
+  return <span title={name} style={{width:size,height:size,borderRadius:size/2,background:tipColor(name),color:"#0b1220",fontSize:size*.55,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(name||"?").charAt(0).toUpperCase()}</span>;
 }
 
 async function insertTipster(t){
@@ -657,8 +683,8 @@ article:active{transform:scale(.985);}
 .leg-in{width:100%;height:34px;border-radius:9px;border:1px solid #1F1F24;background:#0F0F12;color:#FAFAFA;text-align:center;font-size:14px;font-weight:600;outline:none;font-family:inherit;-moz-appearance:textfield;}
 .leg-in:focus{border-color:#3DD68C;}
 .leg-in::-webkit-outer-spin-button,.leg-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-.row-select{flex:1;min-width:0;height:44px;border:none;background:transparent;color:#FAFAFA;font-size:15px;
-  text-align:right;text-align-last:right;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
+.row-select{flex:1;min-width:0;height:36px;border:none;background:transparent;color:#FAFAFA;font-size:17px;font-weight:600;
+  text-align:left;text-align-last:left;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;padding:0;}
 .row-select::-webkit-outer-spin-button,.row-select::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .row-select[type=number]{-moz-appearance:textfield;}
 .row-select option{background:#141417;color:#FAFAFA;}
@@ -1251,6 +1277,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const oddsRef=useRef(null),stakeRef=useRef(null),oddsCard=useRef(null),stakeCard=useRef(null),tipCard=useRef(null);
   const lineSel=useRef(null),statSel=useRef(null),lineCard=useRef(null),ouCard=useRef(null);
   const openSel=el=>{if(!el)return;try{el.focus({preventScroll:true});}catch(e){}try{el.showPicker&&el.showPicker();}catch(e){}};
+  const oddsTimer=useRef(null);const comboCard=useRef(null);const[comboQ,setComboQ]=useState("");
   const goTo=(inp,card)=>{if(inp&&inp.current)inp.current.focus({preventScroll:true});setTimeout(()=>{card&&card.current&&card.current.scrollIntoView({behavior:"smooth",block:"start"});},inp?250:0);};
   const draft=!editBet?ADD_DRAFT:null;
   const[playerSettings,setPlayerSettings]=useState(false);
@@ -1289,7 +1316,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     annonceStatus:editBet.annonce_status||"out",annonceRole:editBet.annonce_role||"starter",annonceSearch:"",tags:parseTags(editBet.tags).filter(x=>x!=="Annonce"),
     notes:editBet.notes||"",
     created_at:editBet.created_at?editBet.created_at.slice(0,16):"",
-    betType:editBet.bet_type==="team"?(editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"half":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":"moneyline"):"moneyline",
+    betType:editBet.bet_type==="team"?(/\((Q[1-4]|1re MT|2e MT)\)$/.test(editBet.description||"")?"period":editBet.description?.includes("gagne")?"moneyline":editBet.description?.includes("mi-temps")?"period":editBet.description?.includes("match")?"total":editBet.description?.includes("pts")?"team_total":/[+-]?\d+(\.\d+)?$/.test(editBet.description||"")?"handicap":"moneyline"):"moneyline",
+    period:((editBet.description||"").match(/\((Q[1-4]|1re MT|2e MT)\)$/)||[])[1]||(editBet.description?.includes("mi-temps")?"1re MT":"Q1"),
+    pMarket:/gagne \(/.test(editBet.description||"")?"moneyline":/^(Over|Under)/.test(editBet.description||"")?"total":"handicap",
     team:editBet.team||"",
     opponent:editBet.opponent||"",
     lt:editBet.notes==="longterm",ltDesc:editBet.notes==="longterm"?(editBet.description||""):"",
@@ -1323,19 +1352,21 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   useEffect(()=>{fetchClubs().then(c=>setAllClubs(Array.isArray(c)?c:[])).catch(()=>{});},[]);
 
   const searchLow=search.toLowerCase().trim();
+  const betCount=useMemo(()=>{const m={};(bets||[]).forEach(b=>{const k=String(b.player||"").toLowerCase();if(k)m[k]=(m[k]||0)+1;if(b.bet_type==="team"&&b.team){const t=String(b.team).toLowerCase();if(t!==k)m[t]=(m[t]||0)+1;}});return m;},[bets]);
+  const cnt=n=>betCount[String(n||"").toLowerCase()]||0;
   const playerResults=searchLow.length>=1
     ?players.filter(p=>{
         const n=p.name.toLowerCase();
         const words=n.split(" ");
         const initials=words.map(w=>w[0]||"").join("");
         return n.includes(searchLow)||initials.includes(searchLow);
-      }).slice(0,6)
+      }).sort((a,b)=>cnt(b.name)-cnt(a.name)).slice(0,8)
     :[];
 
   const allTeams=searchLow.length>=1
     ?[...new Set([...players.map(p=>p.team),...allClubs.map(c=>c.name)].filter(Boolean))]
         .filter(t=>t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(searchLow.normalize("NFD").replace(/[\u0300-\u036f]/g,"")))
-        .slice(0,6)
+        .sort((a,b)=>cnt(b)-cnt(a)).slice(0,6)
     :[];
 
   function selectPlayer(p){
@@ -1344,7 +1375,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     if(p.game)f("game",p.game);
     setSelectedType({type:"player",data:p});
     setStep("form");
-    if(!form.line)setTimeout(()=>{lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});openSel(lineSel.current);},120);
+    if(!form.line)setTimeout(()=>{if(lineSel.current)lineSel.current.focus({preventScroll:true});lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});},60);
   }
 
   function selectTeam(teamName){
@@ -1380,14 +1411,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
     if(!isTeamBet&&form.player&&!form.ou)return "Choisis Over ou Under";
     if(isTeamBet){
       if(!form.team)return "Choisis une équipe";
-      if(form.betType!=="moneyline"&&!String(form.line).trim())return "Indique la ligne";
+      if(form.betType!=="moneyline"&&!(form.betType==="period"&&(form.pMarket||"total")==="moneyline")&&!String(form.line).trim())return "Indique la ligne";
     }else{
       if(!form.player)return "Choisis un joueur";
       if(!form.line)return "Choisis la ligne";
       if(!form.stat)return "Choisis la stat";
     }
     }
-    if(!parseFloat(String(form.odds).replace(",",".")))return "Indique la cote";
+    if(form.combo&&form.combo.some(l=>!legOk(l)))return "Complète chaque joueur du combiné";
+    if(!parseFloat(normOdds(form.odds)))return "Indique la cote";
     if(!parseFloat(String(form.stake).replace(",",".")))return "Indique la mise";
     if(!String(form.bookmaker||"").trim())return "Choisis le bookmaker";
     return null;
@@ -1396,7 +1428,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   async function submit(){
     const why=missing();
     if(why){alert(why);return;}
-    const odds=parseFloat(String(form.odds).replace(",","."));
+    const odds=parseFloat(normOdds(form.odds));
     const stake=parseFloat(String(form.stake).replace(",","."));
     const savedBK=lockedBK?form.bookmaker:null;
     const savedTip=lockedTip?form.tipster:null;
@@ -1421,10 +1453,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
       else if(form.betType==="total") desc=(form.ou||"Over")+" "+form.line+" pts (match)";
       else if(form.betType==="team_total") desc=form.team+" "+(form.ou||"Over")+" "+form.line+" pts";
       else if(form.betType==="half") desc=(form.ou||"Over")+" "+form.line+" pts (1re mi-temps)";
+      else if(form.betType==="period"){const pm=form.pMarket||"total",per=form.period||"Q1";
+        desc=pm==="moneyline"?form.team+" gagne ("+per+")":pm==="handicap"?form.team+" "+fmtLine(form.line,true)+" ("+per+")":(form.ou||"Over")+" "+fmtLine(form.line)+" pts ("+per+")";}
+      if(form.betType==="handicap")desc=form.team+" "+fmtLine(form.line,true);
       const dateIso=form.created_at?new Date(form.created_at).toISOString():(editBet?undefined:new Date().toISOString());
       bet={
-        player:form.team,team:form.team,opponent:form.opponent||null,
-        description:desc,over_under:["total","team_total","half"].includes(form.betType)?(form.ou||"Over"):null,
+        player:form.team,team:form.team,opponent:null,
+        description:desc,over_under:["total","team_total","half"].includes(form.betType)||(form.betType==="period"&&(form.pMarket||"total")==="total")?(form.ou||"Over"):null,
         line:form.line?parseFloat(form.line):null,
         odds,stake,bookmaker:form.bookmaker||null,
         status:form.status,profit:calcProfit(form.status,stake,odds),
@@ -1449,6 +1484,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         ...annPayload(),
         ...(dateIso?{created_at:dateIso}:{}),
       };
+    }
+    if(form.combo&&form.combo.length&&!form.lt){
+      const first=isTeamBet?(bet.description.toLowerCase().startsWith(String(form.team).toLowerCase())?bet.description:form.team+" "+bet.description):formatName(form.player)+" "+bet.description;
+      bet={...bet,bet_type:"combo",player:"Combiné",team:null,over_under:null,line:null,
+        description:[first,...form.combo.map(legDesc)].join(" + ")};
     }
     setSaving(true);
     try{
@@ -1499,7 +1539,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const firstLine=isTeamBet?"":nameParts[0]||"";
   const secondLine=isTeamBet?form.team:nameParts.slice(1).join(" ")||nameParts[0]||"";
   const stakeN=parseFloat(String(form.stake).replace(",","."))||0;
-  const oddsN=parseFloat(String(form.odds).replace(",","."))||0;
+  const oddsN=parseFloat(normOdds(form.odds))||0;
   const potential=stakeN&&oddsN?eur(stakeN*oddsN):null;
   const lockBtn=(on,toggle,label)=>(
     <button type="button" onClick={toggle} aria-label={label} title={on?"Verrouillé":"Verrouiller"}
@@ -1537,21 +1577,21 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             </div>
             {(allTeams.length>0||playerResults.length>0)&&(
               <div style={{marginTop:8,background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+                {playerResults.map(p=>(
+                  <div key={p.name} style={{borderTop:"1px solid "+C.line}}>
+                    <SRow onClick={()=>selectPlayer(p)}
+                      logo={<PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} team={p.team} size={44}/>}
+                      title={formatName(p.name)} sub={[p.role,p.team].filter(Boolean).join(" · ")} right={cnt(p.name)?<span style={{fontSize:13,fontWeight:600,color:C.text,background:"rgba(255,255,255,.07)",padding:"3px 9px",borderRadius:99}}>{cnt(p.name)} pari{cnt(p.name)>1?"s":""}</span>:null} chevron/>
+                  </div>
+                ))}
                 {allTeams.map(team=>{
                   const pt=players.find(p=>p.team===team);
                   return(
                     <SRow key={"t"+team} onClick={()=>selectTeam(team)}
                       logo={<SLogo src={getTeamLogo(team,pt?.team_logo_url||null)} name={team} size={44}/>}
-                      title={team} sub={["Équipe",pt?.game].filter(Boolean).join(" · ")} chevron/>
+                      title={team} sub={["Équipe",pt?.game].filter(Boolean).join(" · ")} right={cnt(team)?<span style={{fontSize:13,fontWeight:600,color:C.text,background:"rgba(255,255,255,.07)",padding:"3px 9px",borderRadius:99}}>{cnt(team)} pari{cnt(team)>1?"s":""}</span>:null} chevron/>
                   );
                 })}
-                {playerResults.map(p=>(
-                  <div key={p.name} style={{borderTop:"1px solid "+C.line}}>
-                    <SRow onClick={()=>selectPlayer(p)}
-                      logo={<PlayerFace src={p.photo_url||p.avatar_url} name={formatName(p.name)} team={p.team} size={44}/>}
-                      title={formatName(p.name)} sub={[p.role,p.team].filter(Boolean).join(" · ")} chevron/>
-                  </div>
-                ))}
               </div>
             )}
             {search.length>=1&&playerResults.length===0&&allTeams.length===0&&(
@@ -1574,6 +1614,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{width:34,height:34,borderRadius:17,border:"none",cursor:"pointer",background:"rgba(0,0,0,.4)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",color:"#fff",fontSize:20,fontWeight:600,lineHeight:"30px",display:"flex",alignItems:"center",justifyContent:"center"}}>⋯</button>
             {heroMenu&&<span onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:40,minWidth:200,background:"#20242C",border:"1px solid "+C.line,borderRadius:14,boxShadow:"0 12px 30px rgba(0,0,0,.55)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
               <button type="button" onClick={()=>{setHeroMenu(false);setSearch("");setForm({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:""});setLockedBK(false);setLockedTip(false);setStep("search");}} style={{padding:"12px 14px",border:"none",background:"transparent",color:C.text,fontSize:14.5,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}>↺ Changer {isTeamBet?"d'équipe":"de joueur"}</button>
+              {!form.lt&&<button type="button" onClick={()=>{setHeroMenu(false);f("combo",form.combo?null:[]);if(!form.combo)setTimeout(()=>comboCard.current&&comboCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}} style={{padding:"12px 14px",border:"none",borderTop:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:14.5,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}>{form.combo?"✕ Annuler le combiné":"＋ Combiner (plusieurs paris)"}</button>}
               {!isTeamBet&&form.playerObj&&<button type="button" onClick={()=>{setHeroMenu(false);openPlayerSettings();}} style={{padding:"12px 14px",border:"none",borderTop:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:14.5,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}>⚙︎ Réglages du joueur</button>}
             </span>}
           </span>
@@ -1715,53 +1756,36 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             {key:"handicap",label:"Handicap"},
             {key:"total",label:"Total match"},
             {key:"team_total",label:"Total équipe"},
-            {key:"half",label:"1re mi-temps"},
+            {key:"period",label:"Quart / Mi-temps"},
           ];
-          const needsOU=["total","team_total","half"].includes(form.betType);
-          const needsLine=form.betType!=="moneyline";
-          const leagueTeams=[...new Set(players.filter(p=>p.team&&p.team!==form.team&&(!form.game||p.game===form.game)).map(p=>p.team))].sort();
-          const oppLogo=form.opponent?getTeamLogo(form.opponent,players.find(p=>p.team===form.opponent)?.team_logo_url||null):null;
-          const lineTxt=form.line||"…";
-          const preview=form.betType==="moneyline"?form.team+" gagne"
-            :form.betType==="handicap"?form.team+" "+(String(form.line).startsWith("-")||!form.line?"":"+")+lineTxt
-            :form.betType==="total"?(form.ou||"Over")+" "+lineTxt+" pts (match)"
-            :form.betType==="team_total"?form.team+" "+(form.ou||"Over")+" "+lineTxt+" pts"
-            :(form.ou||"Over")+" "+lineTxt+" pts (1re mi-temps)";
-          const teamBadge=(logo,name,size=40)=>(
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,flex:1,minWidth:0}}>
-              <div style={{width:size+16,height:size+16,borderRadius:16,background:C.chip,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                {logo?<img src={logo} alt="" style={{width:size,height:size,objectFit:"contain"}}/>
-                  :<span style={{color:C.sub,fontSize:13,fontWeight:700}}>{(name||"?").slice(0,3).toUpperCase()}</span>}
-              </div>
-              <span style={{fontSize:13,fontWeight:600,color:name?C.text:C.dim,textAlign:"center",maxWidth:"100%",
-                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{name||"Adversaire"}</span>
-            </div>
-          );
+          const pm=form.pMarket||"total";
+          const needsOU=["total","team_total","half"].includes(form.betType)||(form.betType==="period"&&pm==="total");
+          const isHcp=form.betType==="handicap"||(form.betType==="period"&&pm==="handicap");
+          const needsLine=form.betType!=="moneyline"&&!(form.betType==="period"&&pm==="moneyline");
           return(
-            <>
-              {/* Affiche du match */}
-              <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:18,padding:"16px 14px",display:"flex",alignItems:"center",gap:8}}>
-                {teamBadge(teamLogoHeader,form.team)}
-                <span style={{fontSize:13,fontWeight:700,color:C.dim,letterSpacing:1}}>VS</span>
-                {teamBadge(oppLogo,form.opponent||null)}
-              </div>
-              <select className="fld" aria-label="Adversaire (optionnel)" value={form.opponent} onChange={e=>f("opponent",e.target.value)}
-                style={{marginTop:8,color:form.opponent?C.text:C.sub,fontWeight:500}}>
-                <option value="">Choisir l'adversaire (optionnel)</option>
-                {leagueTeams.map(tn=><option key={tn} value={tn}>{tn}</option>)}
-              </select>
-
-              <div className="pick-head"><span>Type de pari</span></div>
-              <div className="chip-row">
+            <div className="acard" style={clubVars}>
+              <div className="acard-h">Type de pari</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {types.map(ty=>(
                   <button key={ty.key} type="button" className={"pick-chip"+(form.betType===ty.key?" on":"")}
                     onClick={()=>f("betType",ty.key)}>{ty.label}</button>
                 ))}
               </div>
-
+              {form.betType==="period"&&<>
+                <div className="acard-h" style={{margin:"14px 0 8px"}}>Période</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(0,1fr))",gap:5}}>
+                  {["Q1","Q2","Q3","Q4","1re MT","2e MT"].map(per=>{const on=(form.period||"Q1")===per;return(
+                    <button key={per} type="button" onClick={()=>f("period",per)} style={{height:38,borderRadius:10,border:"1px solid "+(on?"#FAFAFA":"#1F1F24"),background:on?"rgba(255,255,255,.1)":"#0F0F12",color:on?"#FAFAFA":C.sub,fontSize:per.length>2?11:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:0,whiteSpace:"nowrap"}}>{per}</button>);})}
+                </div>
+                <div className="acard-h" style={{margin:"14px 0 8px"}}>Marché</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5}}>
+                  {[["total","Total"],["handicap","Handicap"],["moneyline","Vainqueur"]].map(([k,l])=>{const on=pm===k;return(
+                    <button key={k} type="button" onClick={()=>f("pMarket",k)} style={{height:38,borderRadius:10,border:"1px solid "+(on?"#FAFAFA":"#1F1F24"),background:on?"rgba(255,255,255,.1)":"#0F0F12",color:on?"#FAFAFA":C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>);})}
+                </div>
+              </>}
               {needsLine&&(
                 <>
-                  <div className="pick-head"><span>{form.betType==="handicap"?"Handicap":"Ligne"}</span></div>
+                  <div className="acard-h" style={{margin:"14px 0 8px"}}>{isHcp?"Handicap":"Ligne"}</div>
                   <div className="sentence">
                     {needsOU&&(
                       <select className="sent-sel" aria-label="Over ou Under" value={form.ou||"Over"} onChange={e=>f("ou",e.target.value)}
@@ -1769,59 +1793,48 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                         <option>Over</option><option>Under</option>
                       </select>
                     )}
-                    {form.betType==="handicap"&&(
-                      <button type="button" aria-label="Changer le signe" onClick={()=>{const v=String(form.line||"");f("line",v.startsWith("-")?v.slice(1):"-"+v);}}
+                    {isHcp&&(
+                      <button type="button" aria-label="Changer le signe" onClick={()=>{const v=String(form.line||"").replace(/^\+/,"");f("line",v.startsWith("-")?v.slice(1):"-"+v);}}
                         style={{height:"100%",padding:"0 16px",border:"none",borderRight:"1px solid "+C.line,background:"transparent",color:C.text,fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                         {String(form.line||"").startsWith("-")?"−":"+"}
                       </button>
                     )}
                     <input type="text" inputMode="decimal" aria-label="Ligne"
-                      placeholder={form.betType==="handicap"?"-5.5":form.betType==="team_total"?"112.5":"220.5"}
-                      value={form.line} onChange={e=>{let v=e.target.value.replace(",",".").replace(/[^0-9.\-]/g,"");if(form.betType==="handicap"&&String(form.line||"").startsWith("-")&&!v.startsWith("-"))v="-"+v;f("line",v);}}
+                      placeholder={isHcp?"5.5":form.betType==="team_total"?"112.5":form.betType==="period"?"55.5":"220.5"}
+                      value={String(form.line||"").replace(/^\+/,"")} onChange={e=>{let v=e.target.value.replace(",",".").replace(/[^0-9.\-+]/g,"").replace(/^\+/,"");if(isHcp&&String(form.line||"").startsWith("-")&&!v.startsWith("-"))v="-"+v;f("line",v);}}
+                      onBlur={e=>{const v=String(form.line||"");if(/^-?\d+$/.test(v))f("line",v+".0");}}
                       style={{flex:1,minWidth:0,height:"100%",border:"none",borderLeft:needsOU?"1px solid "+C.line:"none",background:"transparent",
                         color:C.text,fontSize:17,fontWeight:600,padding:"0 14px",outline:"none",fontFamily:"inherit"}}/>
-                    <span style={{padding:"0 14px",color:C.sub,fontSize:15}}>{form.betType==="handicap"?"pts":"points"}</span>
+                    <span style={{padding:"0 14px",color:C.sub,fontSize:15}}>pts</span>
                   </div>
                 </>
               )}
-
-              {/* Aperçu du pari */}
-              <div style={{marginTop:14,display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:14,
-                background:pc+"1F",border:"1px solid "+pc+"55"}}>
-                {teamLogoHeader&&<img src={teamLogoHeader} alt="" style={{width:28,height:28,objectFit:"contain",flexShrink:0}}/>}
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:16,fontWeight:600}}>{preview}</div>
-                  {form.opponent&&<div style={{fontSize:13,color:C.sub,marginTop:1}}>vs {form.opponent}</div>}
-                </div>
-              </div>
-            </>
+            </div>
           );
         })()}
         {/* ── PARI JOUEUR : Over / Under ── */}
         {!isTeamBet&&!form.lt&&(<>
-        {/* ── Ligne | Stat ── */}
-        <div className="acard" ref={lineCard} style={{...clubVars,display:"flex",alignItems:"stretch",gap:0,padding:0,scrollMarginTop:12}}>
-          <label style={{flex:1,position:"relative",padding:"14px 16px",cursor:"pointer"}}>
-            <div className="acard-h" style={{marginBottom:4}}>Ligne</div>
-            <select ref={lineSel} aria-label="Ligne" value={form.line} onChange={e=>{f("line",e.target.value);if(e.target.value&&!form.stat)setTimeout(()=>openSel(statSel.current),150);}}
-              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
-                fontSize:30,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
-              <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>—</option>
-              {Array.from({length:isHockey(form.game)?8:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{v}</option>)}
-            </select>
+        {/* ── Ligne + Stat ── */}
+        <div className="acard" ref={lineCard} style={{...clubVars,scrollMarginTop:12}}>
+          <label style={{display:"flex",alignItems:"baseline",gap:10,cursor:"text"}}>
+            <span className="acard-h" style={{margin:0,minWidth:52}}>Ligne</span>
+            <input ref={lineSel} type="text" inputMode="decimal" enterKeyHint="next" aria-label="Ligne" placeholder="28.5" value={form.line}
+              onChange={e=>f("line",e.target.value.replace(",",".").replace(/[^0-9.]/g,""))}
+              onBlur={e=>{const v=e.target.value;if(/^\d+$/.test(v))f("line",v+".0");}}
+              onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();e.target.blur();}}}
+              className="big-in" style={{flex:1,minWidth:0}}/>
           </label>
-          <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
-          <label style={{flex:1.3,position:"relative",padding:"14px 16px",cursor:"pointer",minWidth:0}}>
-            <div className="acard-h" style={{marginBottom:4}}>Stat</div>
-            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(/Double$/.test(e.target.value)&&!form.line)f("line","0.5");if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
-              style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
-                fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
-              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists",
-                "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
-                "Turnovers","Fantasy Score","Minutes","Double-Double","Triple-Double"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
-            </select>
-          </label>
+          <div className="acard-h" style={{margin:"12px 0 8px"}}>Stat</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:6}}>
+            {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","3 Points Made","Points+Rebonds","Points+Assists","Rebonds+Assists",
+              "Points+Rebonds+Assists","Steals","Blocks","Turnovers","Double-Double","Triple-Double"]).map(st0=>{const on=form.stat===st0;return(
+              <button key={st0} type="button" className="press" onMouseDown={e=>e.preventDefault()} onClick={()=>{
+                  const v=on?"":st0;f("stat",v);if(/Double$/.test(v)&&!form.line)f("line","0.5");
+                  if(lineSel.current)lineSel.current.blur();
+                  if(v&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),120);}}
+                style={{height:40,borderRadius:10,border:"1px solid "+(on?"#FAFAFA":"#1F1F24"),background:on?"rgba(255,255,255,.1)":"#0F0F12",color:on?"#FAFAFA":C.sub,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:"0 2px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {({"3 Points Made":"3 pts","Points+Rebonds":"P + R","Points+Assists":"P + A","Rebonds+Assists":"R + A","Points+Rebonds+Assists":"PRA","Steals":"Interc.","Blocks":"Contres","Turnovers":"Pertes","Double-Double":"Double-D","Triple-Double":"Triple-D","Shots on Goal":"Tirs"})[st0]||statFR(st0)}</button>);})}
+          </div>
         </div>
         <div className="acard" ref={ouCard} style={{...clubVars,scrollMarginTop:12}}>
           <div className="acard-h">Over / Under</div>
@@ -1837,6 +1850,51 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </>)}
         </div>
 
+        {/* ── Combiné ── */}
+        {form.combo&&!form.lt&&(()=>{
+          const legs=form.combo;const setLeg=(i,ch)=>f("combo",legs.map((l,k)=>k===i?{...l,...ch}:l));
+          const q=comboQ.toLowerCase().trim();
+          const pr=q?players.filter(p=>{const n=p.name.toLowerCase();return n.includes(q)||n.split(" ").map(w=>w[0]||"").join("").includes(q);}).sort((a,b)=>cnt(b.name)-cnt(a.name)).slice(0,5):[];
+          const tr=q?[...new Set([...players.map(p=>p.team),...allClubs.map(c=>c.name)].filter(Boolean))].filter(t=>t.toLowerCase().includes(q)).slice(0,3):[];
+          const STATS=["Points","Rebonds","Assists","3 Points Made","Points+Rebonds","Points+Assists","Rebonds+Assists","Points+Rebonds+Assists","Steals","Blocks","Double-Double","Triple-Double"];
+          const ab={"3 Points Made":"3 pts","Points+Rebonds":"P+R","Points+Assists":"P+A","Rebonds+Assists":"R+A","Points+Rebonds+Assists":"PRA","Steals":"Interc.","Blocks":"Contres","Double-Double":"DD","Triple-Double":"TD"};
+          const mini={height:34,borderRadius:9,border:"1px solid #1F1F24",background:"#0F0F12",color:C.text,fontSize:13.5,fontWeight:600,fontFamily:"inherit",padding:"0 8px",outline:"none"};
+          return(
+            <div className="acard" ref={comboCard} style={{...clubVars,scrollMarginTop:12}}>
+              <div className="acard-h" style={{display:"flex",justifyContent:"space-between"}}><span>Combiné · {legs.length+1} paris</span></div>
+              {legs.map((l,i)=>{const ph=l.kind==="player"?(l.photo||null):getTeamLogo(l.name,null);return(
+                <div key={i} style={{padding:"10px 0",borderTop:"1px solid "+C.line}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{width:32,height:32,borderRadius:16,overflow:"hidden",background:C.inner,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{ph?<img src={ph} alt="" style={{width:"100%",height:"100%",objectFit:l.kind==="player"?"cover":"contain"}}/>:<span style={{fontSize:11,color:C.sub}}>{String(l.name).slice(0,2).toUpperCase()}</span>}</span>
+                    <b style={{flex:1,fontSize:15,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.kind==="player"?formatName(l.name):l.name}</b>
+                    <button type="button" aria-label="Retirer" onClick={()=>f("combo",legs.filter((_,k)=>k!==i))} style={{border:"none",background:"transparent",color:C.sub,fontSize:20,cursor:"pointer"}}>×</button>
+                  </div>
+                  <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+                    {(l.kind==="player"||(l.mk||"handicap")==="total")&&<button type="button" onClick={()=>setLeg(i,{ou:(l.ou||"Over")==="Over"?"Under":"Over"})} style={{...mini,minWidth:64}}>{l.ou||"Over"}</button>}
+                    {l.kind==="team"&&<select value={l.mk||"handicap"} onChange={e=>setLeg(i,{mk:e.target.value})} style={{...mini,appearance:"none"}}><option value="handicap">Handicap</option><option value="moneyline">Vainqueur</option><option value="total">Total équipe</option></select>}
+                    {!(l.kind==="team"&&l.mk==="moneyline")&&<input inputMode="decimal" placeholder="Ligne" aria-label={"Ligne "+l.name} value={l.line||""} onChange={e=>setLeg(i,{line:e.target.value.replace(",",".").replace(/[^0-9.\-+]/g,"")})} style={{...mini,width:72}}/>}
+                    {l.kind==="player"&&<select value={l.stat||""} onChange={e=>setLeg(i,{stat:e.target.value})} style={{...mini,flex:1,minWidth:110,appearance:"none",color:l.stat?C.text:C.sub}}>
+                      <option value="">Stat…</option>{STATS.map(x=><option key={x} value={x}>{statFR(x)}</option>)}</select>}
+                  </div>
+                </div>);})}
+              <div style={{position:"relative",marginTop:10}}>
+                <input value={comboQ} onChange={e=>setComboQ(e.target.value)} placeholder="+ Ajouter un joueur ou une équipe…"
+                  style={{width:"100%",height:46,padding:"0 14px",borderRadius:12,background:"#0F0F12",border:"1px dashed #34343B",color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                {(pr.length>0||tr.length>0)&&<div style={{marginTop:6,background:C.card,border:"1px solid "+C.line,borderRadius:12,overflow:"hidden"}}>
+                  {pr.map(p0=><SRow key={p0.name} onClick={()=>{f("combo",[...legs,{kind:"player",name:p0.name,photo:p0.photo_url||p0.avatar_url||null,ou:"Over",line:"",stat:""}]);setComboQ("");}}
+                    logo={<PlayerFace src={p0.photo_url||p0.avatar_url} name={formatName(p0.name)} team={p0.team} size={36}/>} title={formatName(p0.name)} sub={p0.team} right={cnt(p0.name)?<span style={{fontSize:12,color:C.sub}}>{cnt(p0.name)} paris</span>:null}/>)}
+                  {tr.map(t0=><SRow key={t0} onClick={()=>{f("combo",[...legs,{kind:"team",name:t0,mk:"handicap",ou:"Over",line:""}]);setComboQ("");}}
+                    logo={<SLogo src={getTeamLogo(t0,null)} name={t0} size={36}/>} title={t0} sub="Équipe"/>)}
+                </div>}
+              </div>
+              {legs.length>0&&<div style={{marginTop:12,padding:"10px 12px",borderRadius:12,background:"#0F0F12",border:"1px solid "+C.line}}>
+                {[(isTeamBet?form.team:formatName(form.player))+" — "+(isTeamBet?"":(form.ou||"?")+" "+(form.line?fmtLine(form.line):"?")+" "+(form.stat?statFR(form.stat):"?")),...legs.map(l=>(l.kind==="player"?formatName(l.name):l.name)+" — "+legDesc(l).slice((l.kind==="player"?formatName(l.name):l.name).length+1).replace(/(Over|Under) ([\d.]+) (.+)$/,(m,a,b,c)=>a+" "+b+" "+statFR(c)))].map((t,i)=>(
+                  <div key={i} style={{fontSize:14,fontWeight:600,padding:"4px 0",borderTop:i?"1px solid "+C.line:"none"}}>{t}</div>))}
+              </div>}
+            </div>
+          );
+        })()}
+
         {/* ── Cote + Bookmaker ── */}
         <div className="acard" ref={oddsCard} style={{...clubVars,scrollMarginTop:12}}>
           <div style={{display:"flex",alignItems:"flex-end",gap:10}}>
@@ -1844,9 +1902,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               <div className="acard-h" style={{marginBottom:4}}>Cote</div>
               <input type="text" inputMode="decimal" placeholder="1,85" value={String(form.odds||"").replace(".",",")}
                 ref={oddsRef} enterKeyHint="next"
-                onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();goTo(stakeRef,stakeCard);}}}
-                onChange={e=>{const v=e.target.value.replace(",",".");f("odds",v);if(/^\d+\.\d\d$/.test(v)||/^\d{3}$/.test(v)){if(/^\d{3}$/.test(v))f("odds",(parseInt(v)/100).toFixed(2));if(!form.stake)goTo(stakeRef,stakeCard);}}}
-                onBlur={e=>{const n=parseFloat(e.target.value.replace(",","."));if(!isNaN(n)&&n>=100)f("odds",(n/100).toFixed(2));}}
+                onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();f("odds",normOdds(form.odds));goTo(stakeRef,stakeCard);}}}
+                onChange={e=>{const v=e.target.value.replace(",",".").replace(/[^0-9.]/g,"");f("odds",v);
+                  clearTimeout(oddsTimer.current);
+                  if(/^\d{3}$/.test(v)||/^\d+\.\d\d$/.test(v))oddsTimer.current=setTimeout(()=>{f("odds",normOdds(v));if(!form.stake)goTo(stakeRef,stakeCard);},900);}}
+                onBlur={e=>{const v=e.target.value.replace(",",".");if(v)f("odds",normOdds(v));}}
                 className="big-in"/>
             </label>
             <div style={{textAlign:"right",paddingBottom:4,minWidth:0}}>
@@ -1860,7 +1920,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               const on=form.bookmaker===bk;
               return(
                 <button key={bk} type="button" className={"pick-chip logo"+(on?" on":"")} aria-label={bk} title={bk}
-                  onClick={()=>{f("bookmaker",on?"":bk);if(!on&&!form.stake&&parseFloat(String(form.odds||"").replace(",","."))>1)goTo(stakeRef,stakeCard);}}>
+                  onClick={()=>{f("bookmaker",on?"":bk);if(!on&&!form.stake&&parseFloat(normOdds(form.odds||""))>1){f("odds",normOdds(form.odds));goTo(stakeRef,stakeCard);}}}>
                   <BkBadge src={bkPhotos[bk]} label={bk} size={26}/>
                 </button>
               );
@@ -1927,7 +1987,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         <div style={{marginTop:12,padding:"14px",borderRadius:18,background:C.card,border:"1px solid "+C.line}}>
           <div style={{fontSize:12,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Tags</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {[...tagList,...(form.tags||[]).filter(x=>!tagList.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
+            {[...tagList,...(form.tags||[]).filter(x=>!x.startsWith("__")&&!tagList.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
               return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{if(t.name==="Annonce")f("annonce",!form.annonce);else f("tags",on?(form.tags||[]).filter(x=>x!==t.name):[...(form.tags||[]),t.name]);}}/>;})}
           </div>
           {tagList.length<=1&&<div style={{fontSize:12,color:C.dim,marginTop:8}}>Ajoute tes propres tags dans Réglages → Tags.</div>}
@@ -1992,13 +2052,39 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(9,9,11,0))"}}>
-          {!editBet&&(isTeamBet?form.team:form.player)&&form.ou&&form.line&&(()=>{const pd=form.playerObj;const ph=pd?.photo_url||pd?.avatar_url||null;
-            return <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
-              <PlayerFace src={ph} name={formatName(form.player||form.team)} size={38}/>
-              <div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}><b style={{fontSize:15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{formatName(form.player||form.team)}</b>
-                <span style={{flexShrink:0,padding:"1px 6px",borderRadius:6,background:"#fff",color:"#111",fontSize:10.5,fontWeight:700}}>{(form.ou==="Over"?"O ":"U ")+form.line+(form.stat?" "+statFR(form.stat).toUpperCase():"")}</span></div>
-                <div className="sysfont" style={{fontSize:12.5,color:C.sub}}>{oddsN?"@"+oddsN.toFixed(2).replace(".",","):"cote ?"} · {stakeN?eur(stakeN):"mise ?"}{form.bookmaker?" · "+form.bookmaker:""}</div></div>
-              {stakeN>0&&oddsN>0&&<b className="sysfont" style={{fontSize:16,color:C.green,whiteSpace:"nowrap"}}>+{eur(stakeN*(oddsN-1))}</b>}
+          {(isTeamBet?form.team:form.player)&&!form.lt&&oddsN>0&&(()=>{
+            const pd=form.playerObj;const ph=isTeamBet?null:(pd?.photo_url||pd?.avatar_url||null);
+            const tLogo=teamLogoHeader;
+            const pm=form.pMarket||"total",per=form.period||"Q1";
+            const L=form.line?fmtLine(form.line):"…";
+            const market=isTeamBet
+              ?(form.betType==="moneyline"?"Vainqueur du match":form.betType==="handicap"?"Handicap "+fmtLine(form.line||"…",true):form.betType==="total"?(form.ou||"Over")+" "+L+" pts · match":form.betType==="team_total"?(form.ou||"Over")+" "+L+" pts · équipe"
+                :form.betType==="period"?(pm==="moneyline"?"Vainqueur":pm==="handicap"?"Handicap "+fmtLine(form.line||"…",true):(form.ou||"Over")+" "+L+" pts")+" · "+per:"")
+              :(form.ou||"Over / Under")+" "+(form.line?fmtLine(form.line):"…")+" "+(form.stat?statFR(form.stat):"…");
+            const gain=stakeN>0&&oddsN>0?stakeN*(oddsN-1):0;
+            return <div style={{marginBottom:10,padding:"14px 16px",borderRadius:18,background:C.card,border:"1px solid "+C.line,boxShadow:"0 10px 30px rgba(0,0,0,.45)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <div style={{position:"relative",flexShrink:0}}>
+                  <span style={{width:54,height:54,borderRadius:27,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",background:C.inner}}>
+                    {ph?<img src={ph} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 15%"}}/>:tLogo?<img src={tLogo} alt="" style={{width:40,height:40,objectFit:"contain"}}/>:<span style={{color:C.sub,fontWeight:700}}>{String(form.player||form.team).slice(0,2).toUpperCase()}</span>}
+                  </span>
+                  {ph&&tLogo&&<span style={{position:"absolute",right:-4,bottom:-4,width:24,height:24,borderRadius:12,background:"#16161A",border:"2px solid "+C.card,display:"flex",alignItems:"center",justifyContent:"center"}}><img src={tLogo} alt="" style={{width:18,height:18,objectFit:"contain"}}/></span>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:16.5,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.2}}>{isTeamBet?form.team:formatName(form.player)}</div>
+                  <div style={{fontSize:14.5,fontWeight:600,color:"#D4D4D8",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{market}</div>
+                </div>
+              </div>
+              {form.combo&&form.combo.map((l,i)=>{const ph=l.kind==="player"?l.photo:getTeamLogo(l.name,null);const nm=l.kind==="player"?formatName(l.name):l.name;return(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:12,marginTop:10,paddingTop:10,borderTop:"1px dashed "+C.line}}>
+                  <span style={{width:54,height:40,display:"flex",justifyContent:"center",flexShrink:0}}><span style={{width:40,height:40,borderRadius:20,overflow:"hidden",background:C.inner,display:"flex",alignItems:"center",justifyContent:"center"}}>{ph?<img src={ph} alt="" style={{width:"100%",height:"100%",objectFit:l.kind==="player"?"cover":"contain"}}/>:null}</span></span>
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:15.5,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{nm}</div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#D4D4D8",marginTop:1}}>{legDesc(l).slice(nm.length+1).replace(/^(Over|Under) ([\d.]+) (.+)$/,(m,a,b,c)=>a+" "+b+" "+statFR(c)).replace(/^gagne$/,"Vainqueur").replace(/^([+-][\d.]+)$/,"Handicap $1")}</div></div>
+                </div>);})}
+              <div className="sysfont" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",marginTop:12,paddingTop:10,borderTop:"1px solid "+C.line}}>
+                {[["Cote",oddsN?oddsN.toFixed(oddsN*1000%10?3:2).replace(".",","):"—"],["Mise",stakeN?eur(stakeN,0):"—"],["Site",form.bookmaker?<BkBadge src={bkPhotos[form.bookmaker]} label={form.bookmaker} size={20}/>:"—"],["Gain",gain?<span style={{color:C.green}}>+{eur(gain,0)}</span>:"—"]].map(([l,v])=>(
+                  <div key={l}><div style={{fontSize:10.5,color:C.sub,fontWeight:600,textTransform:"uppercase",letterSpacing:.4}}>{l}</div><div style={{fontSize:15,fontWeight:600,marginTop:3,minHeight:20,display:"flex",alignItems:"center"}}>{v}</div></div>))}
+              </div>
             </div>;})()}
           {!editBet&&(()=>{const isT=isTeamBet;const steps=[
               ["Joueur",isT?!!form.team:!!form.player],
@@ -2255,8 +2341,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
   const d=localBet.created_at?new Date(localBet.created_at):null;
   const pad=n=>String(n).padStart(2,"0");
   const localDT=d?d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()):"";
-  const row={display:"flex",alignItems:"center",gap:10,minHeight:52,padding:"0 16px",borderBottom:"1px solid "+C.line};
-  const lab={fontSize:15,color:C.sub,width:92,flexShrink:0};
+  const row={display:"flex",flexWrap:"wrap",alignItems:"center",gap:"2px 8px",padding:"11px 14px 6px",background:C.card,border:"1px solid "+C.line,borderRadius:14,minWidth:0};
+  const lab={width:"100%",fontSize:11,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase"};
   const numInput=(k)=>(
     <input type="number" inputMode="decimal" className="row-select" defaultValue={localBet[k]??""} key={k+String(localBet[k])}
       onBlur={e=>{
@@ -2311,10 +2397,14 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
         <div style={{overflowY:"auto",padding:"16px 20px 0",flex:1}}>
 
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Statut</div>
-          <div style={{display:"flex",gap:4,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
-            {[["pending","En cours",C.text],["won","Gagné",C.green],["lost","Perdu",C.red],["void","Void",C.sub]].map(([k,l,col])=>{const on=st===k;return(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[["won","Gagné",C.green,"M5 12l5 5 9-10"],["lost","Perdu",C.red,"M6 6l12 12M18 6L6 18"],["pending","En cours",C.text,"M12 7v5l3 2"],["void","Void",C.sub,"M5 12h14"]].map(([k,l,col,ic])=>{const on=st===k;return(
               <button key={k} type="button" disabled={saving} onClick={()=>!on&&changeStatus(k)} className="press"
-                style={{flex:1,height:40,borderRadius:10,border:"none",background:on?(k==="won"?"rgba(61,214,140,.16)":k==="lost"?"rgba(255,107,107,.16)":"rgba(255,255,255,.1)"):"transparent",color:on?col:C.sub,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>);})}
+                style={{height:58,borderRadius:14,border:"1.5px solid "+(on?col:C.line),background:on?(k==="won"?"rgba(61,214,140,.14)":k==="lost"?"rgba(255,107,107,.14)":"rgba(255,255,255,.08)"):C.card,color:on?col:C.sub,fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">{k==="pending"&&<circle cx="12" cy="12" r="9"/>}<path d={ic}/></svg>{l}</button>);})}
+          </div>
+          <div style={{display:"none"}}>{[].map(([k,l,col])=>{const on=st===k;return(
+              <button key={k} type="button" style={{fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>);})}
           </div>
           {editMode&&<div ref={editRef} className="fade-in" style={{scrollMarginTop:8}}>
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Pari</div>
@@ -2329,7 +2419,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             const lines=Array.from({length:45},(_,i)=>(i+0.5).toFixed(1));
             const cur=parseFloat(String(pd.line).replace(",",".")).toFixed(1);
             if(!lines.includes(cur))lines.push(cur);
-            const stats=isHockey(localBet.game)?[...HOCKEY_STATS]:Object.keys(STAT_FR).filter(k=>!HOCKEY_STATS.includes(k)||k==="Points");
+            const stats=isHockey(localBet.game)?[...HOCKEY_STATS]:Object.keys(STAT_FR).filter(k=>(!HOCKEY_STATS.includes(k)||k==="Points")&&k!=="Fantasy Score"&&k!=="Minutes");
             if(!stats.includes(pd.stat))stats.push(pd.stat);
             const upd=ch=>{
               const n={ou:pd.ou,line:cur,stat:pd.stat,...ch};
@@ -2355,9 +2445,9 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
           })()}
 
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Détails</div>
-          <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,overflow:"hidden"}}>
+          <div className="det-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {legs?(
-              <div style={{padding:"12px 16px",borderBottom:"1px solid "+C.line}}>
+              <div style={{gridColumn:"1 / -1",padding:"12px 14px",background:C.card,border:"1px solid "+C.line,borderRadius:14}}>
                 <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:C.sub,marginBottom:8}}>
                   <span>Répartition sur {legs.length} sites</span>
                   <span>Total {eur(legs.reduce((s,l)=>s+parseFloat(legEdits[l.id]?.stake??l.stake??0),0))}</span>
@@ -2421,7 +2511,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
             <div style={{display:"none"}}>
               <span style={{...lab,width:"auto"}}>Tags</span>
               <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+                {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!x.startsWith("__")&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
                   return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{
                     if(t.name==="Annonce"){const v=!localBet.annonce;setField("annonce",v);
                       if(!v){["annonce_player","annonce_note","annonce_side","annonce_status","annonce_role"].forEach(k=>setField(k,null));}
@@ -2437,8 +2527,8 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
               }} label="Pari sur annonce"/>
             </div>
             {localBet.annonce&&<>
-              <div style={row}>
-                <span style={lab}>Absent</span>
+              <div style={{...row,gridColumn:"1 / -1"}}>
+                <span style={lab}>Joueur absent</span>
                 <input className="row-select" list="annonce-players" placeholder="Nom du joueur out"
                   defaultValue={localBet.annonce_player?formatName(localBet.annonce_player):(localBet.annonce_note||"")}
                   key={"ap"+(localBet.annonce_player||"")}
@@ -2485,18 +2575,31 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}}
                 style={{fontWeight:600,color:dirty.closing_odds!==undefined?C.green:C.text}}/>
             </div>
-            <div style={{...row,borderBottom:"none"}}>
+            <div style={{...row,gridColumn:"1 / -1"}}>
               <span style={lab}>Date</span>
               <input type="datetime-local" className="row-select" value={localDT} style={{colorScheme:"dark",color:dirty.created_at!==undefined?C.green:C.text}}
                 onChange={e=>setField("created_at",e.target.value?new Date(e.target.value).toISOString():"")}/>
             </div>
           </div>
 
+          {/* Note + analyse */}
+          <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px",display:"flex",justifyContent:"space-between"}}>
+            <span>Note du pari</span>{localBet.rating!=null&&localBet.rating!==""&&<span style={{color:C.text}}>{localBet.rating}/10</span>}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:4}}>
+            {Array.from({length:10},(_,i)=>i+1).map(n=>{const on=Number(localBet.rating)===n;const c=n>=8?C.green:n>=5?"#FBBF24":C.red;return(
+              <button key={n} type="button" className="press" onClick={()=>setField("rating",on?null:n)}
+                style={{height:38,borderRadius:9,border:"1px solid "+(on?c:C.line),background:on?c+"26":C.card,color:on?c:C.sub,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",padding:0}}>{n}</button>);})}
+          </div>
+          <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Analyse</div>
+          <textarea value={localBet.analysis||""} onChange={e=>{const v=e.target.value;setLocalBet(p=>({...p,analysis:v}));setDirty(p=>({...p,analysis:v}));}}
+            placeholder="Pourquoi ce pari ? Edge, minutes, matchup, absences…" rows={4}
+            style={{width:"100%",resize:"vertical",padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+(dirty.analysis!==undefined?C.green+"88":C.line),color:C.text,fontSize:15,lineHeight:1.45,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+
           {/* Tags : un clic = enregistré */}
           <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.6,textTransform:"uppercase",margin:"20px 4px 8px"}}>Tags</div>
           <div style={{padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
             <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-              {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
+              {[...tagListD,...parseTags(localBet.tags).filter(x=>x!=="Annonce"&&!x.startsWith("__")&&!tagListD.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const cur=parseTags(localBet.tags).filter(x=>x!=="Annonce");const on=t.name==="Annonce"?!!localBet.annonce:cur.includes(t.name);
                 return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{
                   const ch=t.name==="Annonce"?(on?{annonce:false,annonce_player:null,annonce_note:null,annonce_side:null,annonce_status:null,annonce_role:null}:{annonce:true,annonce_side:localBet.annonce_side||"teammate",annonce_status:localBet.annonce_status||"out",annonce_role:localBet.annonce_role||"starter"}):{tags:on?cur.filter(x=>x!==t.name):[...cur,t.name]};
                   Object.entries(ch).forEach(([k,v])=>setField(k,v));
@@ -3166,7 +3269,7 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
   const bets=mergeGroups(rawBets);
   const now=new Date();
   const[cal,setCal]=useState({y:now.getFullYear(),m:now.getMonth()});
-  const[calOpen,setCalOpen]=useState(false);
+  const[calOpen,setCalOpen]=useState(true);
   const[period,setPeriod]=useState("all");
   const[pOff,setPOff]=useState(0);
   const[units,setUnits]=useState(false);
@@ -3301,25 +3404,6 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
       </div>}
       </div>
 
-      {leagueRows.length>0&&<>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"22px 2px 10px"}}>
-          <span style={{fontSize:18,fontWeight:600,letterSpacing:-.3}}>Ligues</span>
-          <button onClick={()=>onNavigate("stats")} style={linkBtn}>Tout voir</button>
-        </div>
-        {(()=>{const mx=Math.max(1,...leagueRows.map(r=>Math.abs(r.profit)));return(
-        <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
-          {leagueRows.map((r,i)=>(
-            <div key={r.key} onClick={()=>onNavigate("stats")} style={{padding:"10px 14px",borderBottom:i<leagueRows.length-1?"1px solid "+C.line:"none",cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <MiniLogo src={r.logo} label={r.name} size={30} round={false}/>
-                <div style={{flex:1,minWidth:0}}><div style={{fontSize:16,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</div>
-                  <div className="sysfont" style={{fontSize:13,color:C.sub}}>{r.meta}</div></div>
-                <span className="sysfont" style={{fontSize:16,fontWeight:600,color:pColor(r.profit)}}>{money(r.profit)}</span>
-              </div>
-              <div style={{height:3,borderRadius:3,background:C.inner,marginTop:8,overflow:"hidden"}}><div style={{width:(Math.abs(r.profit)/mx*100)+"%",height:"100%",borderRadius:3,background:pColor(r.profit)}}/></div>
-            </div>))}
-        </div>);})()}
-      </>}
     </div>
   );
 }
@@ -3330,7 +3414,7 @@ const linkBtn={border:"none",background:"transparent",color:C.sub,fontSize:14,cu
 const TIP_COLS=["#C4B5FD","#FBBF24","#F472B6","#38BDF8","#A3E635","#FB923C"];
 function tipColor(t){const s=String(t||"");if(/^moi$/i.test(s))return "#C4B5FD";let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return TIP_COLS[1+h%(TIP_COLS.length-1)];}
 function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
-  const pData=players.find(p=>p.name===b.player);
+  const pData=b.bet_type==="combo"?players.find(p=>String(b.description||"").toLowerCase().startsWith(formatName(p.name).toLowerCase()+" ")):players.find(p=>p.name===b.player);
   const isTeam=b.bet_type==="team";
   const teamName=b.team||pData?.team||"";
   const clubLogo=getTeamLogo(teamName,pData?.team_logo_url);
@@ -3346,9 +3430,11 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   else if(b.status==="lost"){result=money(profit);resultCol=C.red;outLabel="Retour";out=eur(0);}
   else if(b.status==="void"){result="Void";resultCol=C.sub;outLabel="Retour";out=eur(stake);}
   else{result="→ "+eur(stake*odds);resultCol=C.blue;outLabel="Gain potentiel";out=eur(stake*odds);}
-  const name=isTeam?(b.team||b.player):formatName(b.player);
+  const isCombo=b.bet_type==="combo";
+  const cLegs=isCombo?comboLegs(b).map(x=>{const m=x.match(/^(.*?) (Over|Under) ([\d.]+) (.+)$/);return m?{n:m[1],t:(m[2]==="Over"?"O ":"U ")+m[3]+" "+(STAT_ABBR[m[4]]||m[4]).toUpperCase(),full:m[2]+" "+m[3]+" "+statFR(m[4])}:{n:x.replace(/ (gagne|[+-][\d.]+)$/,""),t:(x.match(/ ([+-][\d.]+)$/)||[])[1]?(x.match(/ ([+-][\d.]+)$/)[1]+" H"):"Vainqueur",full:(x.match(/ ([+-][\d.]+)$/)||[])[1]?x.match(/ ([+-][\d.]+)$/)[1]+" H":"Vainqueur"};}):[];
+  const name=isCombo?"Combiné":isTeam?(b.team||b.player):formatName(b.player);
   const parts=name.split(" ").filter(Boolean);
-  const lastName=isTeam||parts.length<2?name:parts[0][0]+". "+parts.slice(1).join(" ");
+  const lastName=isCombo||isTeam||parts.length<2?name:parts[0][0]+". "+parts.slice(1).join(" ");
   const bkLogo=bkPhotos&&b.bookmaker?bkPhotos[b.bookmaker]:null;
   const lc=b.game?(LEAGUE_COLORS[b.game]||Object.entries(LEAGUE_COLORS).find(([k])=>k.toLowerCase()===String(b.game).toLowerCase())?.[1]||{p:"#34343B"}):null;
   const st=b.status;
@@ -3358,7 +3444,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const bg=selected?"#10241A":C.card;
   const hcp=b.bet_type==="team"&&String(b.description||"").match(/\s([+-]?\d+(?:[.,]\d+)?)$/)&&!/pts|gagne/i.test(b.description||"")?String(b.description).match(/\s([+-]?\d+(?:[.,]\d+)?)$/)[1]:null;
   const fx1=x=>String(x).replace(",",".").replace(/^([+-]?\d+)$/,"$1.0");
-  const desc=(hcp?(/^[+-]/.test(hcp)?fx1(hcp):"+"+fx1(hcp))+" H":b.bet_type==="team"?b.description:String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U")).replace(/(^|\s)([+-]?\d+)(?=\s|$)(?![.,]\d)/,(m,p1,n)=>p1+n+".0");
+  const desc=(hcp?(/^[+-]/.test(hcp)?fx1(hcp):"+"+fx1(hcp))+" H":b.bet_type==="team"?(()=>{let d0=String(b.description||"");const tn=String(b.team||b.player||"");if(tn&&d0.toLowerCase().startsWith(tn.toLowerCase()+" "))d0=d0.slice(tn.length+1);return d0.replace(/^gagne/,"Vainqueur").replace(/ pts \(match\)$/," pts").replace(/\((Q[1-4]|1re MT|2e MT)\)$/,"· $1");})():String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U")).replace(/(^|\s)([+-]?\d+)(?=\s|$)(?![.,]\d)/,(m,p1,n)=>p1+n+".0");
   return(
     <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"1px solid "+bc,borderRadius:16,
       padding:"12px 14px",minHeight:74,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
@@ -3391,12 +3477,13 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
               return <>
                 {b.bookmaker&&<span style={ch}><BkBadge src={bkLogo} label={b.bookmaker} size={16}/>{b.bookmaker}</span>}
                 {b.game&&<span style={ch}><MiniLogo src={leagueLogo} label={b.game} size={14} round={false}/>{b.game}</span>}
-                {b.tipster&&<span style={{...ch,color:tipColor(b.tipster)}}>{b.tipster}</span>}
+                {b.tipster&&<span style={{...ch,padding:"0 4px"}}><TipIcon name={b.tipster} size={16}/></span>}
                 {tagsOf(b).map(t=><span key={t} style={ch}><span style={{width:7,height:7,borderRadius:4,background:tagColor(t)}}/>{t}</span>)}
               </>;})()}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>
+            {isCombo?<span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:15,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{l.full}</span>)}</span>:
+            <span style={{fontSize:16,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{isTeam?name:formatName(b.player)}<span style={{color:C.dim,margin:"0 8px"}}>—</span>{(()=>{const pd=b.bet_type!=="team"?parseDesc(b.description):null;return pd?pd.ou+" "+fx1(pd.line)+" "+statFR(pd.stat):String(desc);})()}</span>}
           </div>
         </div>
       </div>
@@ -3405,13 +3492,14 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
         <span style={{fontSize:lastName.length>16?12.5:lastName.length>12?13.5:15.5,fontWeight:600,letterSpacing:-.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flexShrink:1,minWidth:0,}}>
           {lastName}
         </span>
-        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"rgba(255,255,255,.08)",color:"#FAFAFA",fontSize:10.5,fontWeight:600,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{String(desc).toUpperCase()}</span></span>
+        <span style={{flexShrink:0,padding:"1px 6px",lineHeight:"18px",borderRadius:6,background:"rgba(255,255,255,.08)",color:"#FAFAFA",fontSize:10.5,fontWeight:600,letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isCombo?cLegs.length+" SÉL.":String(desc).toUpperCase()}</span></span>
+        {isCombo&&<span style={{display:"flex",flexDirection:"column",gap:2}}>{cLegs.map((l,i)=><span key={i} style={{fontSize:12.5,color:"#D4D4D8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}><b style={{fontWeight:600}}>{l.n.split(" ").length>1&&!/^[A-Z][a-z]+ [A-Z]/.test("")?l.n:l.n}</b> <span style={{color:C.sub}}>{l.t}</span></span>)}</span>}
         <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,overflow:"hidden"}}>
           {[
             tagsOf(b).length>0&&<span key="a" title={tagsOf(b).join(", ")} style={{display:"inline-flex",gap:3,flexShrink:0,alignItems:"center"}}>{tagsOf(b).map(t=><span key={t} style={{width:9,height:9,borderRadius:5,background:tagColor(t)}}/>)}</span>,
             <span key="o" className="slip-m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>@{Number(b.odds).toFixed(2).replace(".",",")}</span>,
             <span key="m" className="slip-m" style={{whiteSpace:"nowrap",color:"#B8B8C0",fontWeight:500}}>{eur(stake)}</span>,
-            b.tipster&&<span key="t" style={{display:"inline-flex",alignItems:"center",gap:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",color:tipColor(b.tipster),fontWeight:700}}><span style={{width:15,height:15,borderRadius:8,background:tipColor(b.tipster),color:"#0b1220",fontSize:9,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{String(b.tipster).charAt(0).toUpperCase()}</span>{b.tipster}</span>,
+            b.tipster&&<span key="t" style={{display:"inline-flex",flexShrink:0}}><TipIcon name={b.tipster} size={17}/></span>,
           ].filter(Boolean).map((el,i)=>i===0?el:(<React.Fragment key={"g"+i}><span style={{color:"#6E6E77",flexShrink:0,fontSize:18,fontWeight:700,lineHeight:"12px"}}>·</span>{el}</React.Fragment>))}
         </span>
       </div>
@@ -3523,13 +3611,6 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
       {selectMode&&(
         <div className="fade-in" style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"10px 4px 0",fontSize:14}}>
           <span style={{color:C.sub}}>Touche les paris à modifier</span>
-          <button type="button" onClick={()=>{
-              const all=selIds.length===filtered.length;
-              setSel(all?{}:Object.fromEntries(filtered.map(b=>[b.id,true])));
-            }}
-            style={{border:"none",background:"transparent",color:C.blue,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-            {selIds.length===filtered.length&&filtered.length>0?"Tout désélectionner":"Tout sélectionner"}
-          </button>
         </div>
       )}
 
@@ -5550,7 +5631,8 @@ function PlayerEditModal({player,leagues,clubs,onClose,onPastePhoto,onSave,uploa
 
 // ── VUE SETTINGS ─────────────────────────────────────────────────────────────
 let SETTINGS_TAB="edit";
-function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPlayersChanged,players=[]}){
+function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPlayersChanged,players=[],archivedBets=[],activeCount=0,onArchive,bkPhotos={},leagues=[],onSelectBet,onEdit,onRefresh}){
+  const[archTab,setArchTab]=useState("bets");const[archBusy,setArchBusy]=useState(false);
   const[tab,setTabRaw]=useState(SETTINGS_TAB);
   const setTab=t=>{SETTINGS_TAB=t;setTabRaw(t);};
   const[showAdd,setShowAdd]=useState(false);
@@ -5591,7 +5673,7 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
   return(
     <div style={{padding:"0 20px 16px"}}>
       <div className="segment" style={{marginBottom:20}}>
-        {[["edit","Joueurs"],["bookmakers","Bookies"],["tipsters","Tipsters"],["tags","Tags"],["lt","Long terme"]].map(([k,l])=>(
+        {[["edit","Joueurs"],["bookmakers","Bookies"],["tipsters","Tipsters"],["tags","Tags"],["lt","LT"],["arch","Archives"]].map(([k,l])=>(
           <button key={k} className={"seg-btn"+(tab===k?" active":"")} onClick={()=>setTab(k)} style={{fontSize:12.5}}>{l}</button>
         ))}
       </div>
@@ -5653,10 +5735,15 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
           ):(
             <SGroup>
               {tipsters.map(t=>(
-                <SRow key={t.id}
-                  logo={<SLogo name={t.name} size={36}/>}
+                <SRow key={t.id+(TIP_PHOTOS[t.name]||"")}
+                  logo={<TipIcon name={t.name} size={36}/>}
                   title={t.name}
-                  right={<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>deleteTip(t)}/>}/>
+                  right={<span style={{display:"flex",gap:4}}>
+                    <IconBtn icon={Ico.paste} label={"Coller la photo de "+t.name} onClick={async()=>{try{const items=await navigator.clipboard.read();let blob=null;for(const it of items){const ty=it.types.find(x=>x.startsWith("image/"));if(ty){blob=await it.getType(ty);break;}}
+                      if(!blob)throw new Error("Aucune image dans le presse-papier");const url=await uploadAvatarBlob(blob,"tipster_"+t.id);await setTipsterPhoto(t,url);onUpdateTip();showToast("Photo ajoutée","#3DD68C");}catch(e){alert("Erreur : "+e.message);}}}/>
+                    <label style={{display:"inline-flex"}}><input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{const fl=e.target.files&&e.target.files[0];e.target.value="";if(!fl)return;try{const url=await uploadAvatarBlob(fl,"tipster_"+t.id);await setTipsterPhoto(t,url);onUpdateTip();showToast("Photo ajoutée","#3DD68C");}catch(err){alert("Erreur : "+err.message);}}}/>
+                      <span style={{pointerEvents:"none"}}><IconBtn icon={Ico.upload} label={"Photo de "+t.name}/></span></label>
+                    <IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>deleteTip(t)}/></span>}/>
               ))}
             </SGroup>
           )}
@@ -5664,6 +5751,29 @@ function SettingsView({bookmakers,onUpdateBK,tipsters,onUpdateTip,showToast,onPl
       )}
 
       {tab==="tags"&&<TagsSettings showToast={showToast}/>}
+      {tab==="arch"&&<>
+        <SHeader title="Archives" sub={archivedBets.length+" pari"+(archivedBets.length>1?"s":"")+" archivé"+(archivedBets.length>1?"s":"")+" · cachés de l'accueil, de Mes paris et d'Analyse"}/>
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          <button type="button" disabled={archBusy||!activeCount} className="press" onClick={async()=>{
+              if(!window.confirm("Repartir à 0 ?\n\nLes "+activeCount+" paris actuels seront archivés (rien n'est supprimé). Tu pourras toujours les voir et les modifier ici."))return;
+              setArchBusy(true);try{const n=await onArchive(false);showToast(n+" paris archivés · nouvelle bankroll","#3DD68C");}catch(e){alert("Erreur : "+e.message);}setArchBusy(false);}}
+            style={{flex:1,height:46,borderRadius:12,border:"none",background:"#FAFAFA",color:"#09090B",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",opacity:activeCount?1:.4}}>{archBusy?"…":"Repartir à 0 (archiver "+activeCount+")"}</button>
+          {archivedBets.length>0&&<button type="button" disabled={archBusy} className="press" onClick={async()=>{
+              if(!window.confirm("Remettre les "+archivedBets.length+" paris archivés dans l'app ?"))return;
+              setArchBusy(true);try{await onArchive(true);showToast("Archives restaurées","#3DD68C");}catch(e){alert("Erreur : "+e.message);}setArchBusy(false);}}
+            style={{height:46,padding:"0 14px",borderRadius:12,border:"1px solid "+C.line,background:"transparent",color:C.sub,fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Restaurer</button>}
+        </div>
+        {archivedBets.length>0&&<>
+          <div className="segment" style={{marginBottom:14}}>
+            {[["bets","Paris"],["stats","Stats"]].map(([k,l])=><button key={k} type="button" className={"seg-btn"+(archTab===k?" active":"")} onClick={()=>setArchTab(k)}>{l}</button>)}
+          </div>
+          <div style={{margin:"0 -20px"}}>
+            {archTab==="bets"?<BetsView bets={archivedBets} players={players} bookmakers={bookmakers} bkPhotos={bkPhotos} tipsters={tipsters} leagues={leagues}
+              onSelectBet={onSelectBet} onEdit={onEdit} onRefresh={onRefresh} showToast={showToast}/>
+              :<StatsView bets={archivedBets} players={players} onPlayersChanged={onPlayersChanged} bkPhotos={bkPhotos}/>}
+          </div>
+        </>}
+      </>}
       {tab==="edit"&&<EditView showToast={showToast} onPlayersChanged={onPlayersChanged}/>}
       {tab==="lt"&&<LTBetsView showToast={showToast} players={players} bookmakers={bookmakers}/>}
     </div>
@@ -5674,7 +5784,7 @@ function TagsSettings({showToast}){
   const list=useTagList();
   const[name,setName]=useState("");const[col,setCol]=useState(TAG_COLORS[1]);
   const[used,setUsed]=useState({});const[busyTag,setBusyTag]=useState("");
-  const loadUsed=()=>fetchBets().then(bs=>{const m={};bs.forEach(b=>parseTags(b.tags).forEach(t=>{(m[t]=m[t]||[]).push(b);}));setUsed(m);}).catch(()=>{});
+  const loadUsed=()=>fetchBets().then(bs=>{const m={};bs.forEach(b=>parseTags(b.tags).forEach(t=>{if(!t.startsWith("__"))(m[t]=m[t]||[]).push(b);}));setUsed(m);}).catch(()=>{});
   const[syncErr,setSyncErr]=useState("");
   useEffect(()=>{fetchTagsRemote().then(()=>setSyncErr(TAG_SYNC_ERR));loadUsed();},[]);
   async function purge(name){
@@ -5704,8 +5814,8 @@ function TagsSettings({showToast}){
     <SGroup>
       {list.map(t=>(
         <SRow key={t.name} logo={<span style={{width:12,height:12,borderRadius:6,background:t.color,margin:"0 6px"}}/>}
-          title={t.name} sub={t.name==="Annonce"?"Tag intégré (absences)":(used[t.name]?.length?used[t.name].length+" pari"+(used[t.name].length>1?"s":""):"Aucun pari")}
-          right={t.name==="Annonce"?null:<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>purge(t.name)}/>}/>
+          title={t.name} sub={BUILTIN_TAGS.find(b=>b.name===t.name)?"Intégré · "+BUILTIN_TAGS.find(b=>b.name===t.name).sub:(used[t.name]?.length?used[t.name].length+" pari"+(used[t.name].length>1?"s":""):"Aucun pari")}
+          right={BUILTIN_TAGS.some(b=>b.name===t.name)?null:<IconBtn icon={Ico.trash} label={"Supprimer "+t.name} danger onClick={()=>purge(t.name)}/>}/>
       ))}
     </SGroup>
     {Object.keys(used).filter(n=>n!=="Annonce"&&!list.some(t=>t.name===n)).length>0&&<>
@@ -5828,7 +5938,15 @@ export default function App(){
 
   // Paris long terme EN COURS : visibles seulement dans la page de leur ligue
   const bkPhotoMap=useMemo(()=>Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v)),[bookmakers]);
-  const shownBets=useMemo(()=>bets.filter(b=>!(b.notes==="longterm"&&b.status==="pending")),[bets]);
+  const allShown=useMemo(()=>bets.filter(b=>!(b.notes==="longterm"&&b.status==="pending")),[bets]);
+  const shownBets=useMemo(()=>allShown.filter(b=>!isArchived(b)),[allShown]);
+  const archivedBets=useMemo(()=>allShown.filter(b=>isArchived(b)),[allShown]);
+  async function archiveAll(undo){
+    const list=undo?bets.filter(isArchived):bets.filter(b=>!isArchived(b));
+    await Promise.all(list.map(b=>{const cur=parseTags(b.tags);return updateBet(b.id,{tags:undo?cur.filter(x=>x!==ARCH_TAG):[...cur,ARCH_TAG]});}));
+    await loadBets(true);
+    return list.length;
+  }
   useEffect(()=>{const h=()=>loadBetsRef.current&&loadBetsRef.current(true);window.addEventListener("bets:reload",h);return()=>window.removeEventListener("bets:reload",h);},[]);
   const loadBetsRef=useRef(null);
   const loadSeq=useRef(0);
@@ -5920,6 +6038,8 @@ export default function App(){
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
           {view==="stats"&&<StatsView bets={shownBets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={bkPhotoMap}/>}
           {view==="settings"&&<SettingsView
+            archivedBets={archivedBets} activeCount={shownBets.length} onArchive={archiveAll} bkPhotos={bkPhotoMap} leagues={leagues}
+            onSelectBet={setSelectedBet} onEdit={openEdit} onRefresh={()=>loadBets(true)}
             onPlayersChanged={refreshPlayers}
             players={players}
             bookmakers={bookmakers}
