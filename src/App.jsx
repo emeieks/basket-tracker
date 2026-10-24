@@ -113,7 +113,7 @@ function formatName(name){
 
 // ── API SUPABASE ──────────────────────────────────────────────────────────────
 async function fetchBets(){
-  const r=await fetch(SUPA_URL+"/rest/v1/bets?select=*&order=created_at.desc",{headers:H});
+  const r=await pagedFetch("bets?select=*&order=created_at.desc");
   if(!r.ok)throw new Error("fetch bets: "+r.status);
   return r.json();
 }
@@ -337,7 +337,7 @@ async function fetchClubs(league){
 
 // Charge TOUS les clubs d'un coup au démarrage pour construire le map teamName→logo
 async function fetchAllClubs(){
-  const r=await fetch(SUPA_URL+"/rest/v1/clubs?select=name,logo&order=name.asc",{headers:H});
+  const r=await pagedFetch("clubs?select=name,logo&order=name.asc");
   if(!r.ok)throw new Error("fetch all clubs: "+r.status);
   return r.json();
 }
@@ -373,6 +373,14 @@ async function updatePlayer(id,fields){
   return r.json();
 }
 
+// Supabase renvoie 1000 lignes max par requête : on pagine
+async function pagedFetch(q){
+  let all=[],offset=0;const lim=1000;
+  while(true){const r=await fetch(SUPA_URL+"/rest/v1/"+q+(q.includes("?")?"&":"?")+"limit="+lim+"&offset="+offset,{headers:H});
+    if(!r.ok){if(!all.length)return {ok:false,status:r.status,json:async()=>[]};break;}
+    const rows=await r.json();all=all.concat(rows);if(rows.length<lim)break;offset+=lim;}
+  return {ok:true,json:async()=>all};
+}
 async function fetchPlayers(){
   let all=[],offset=0,limit=500;
   while(true){
@@ -905,7 +913,7 @@ function teamWord(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,
 function teamIndex(force){
   if(!force&&_TEAM_IDX&&Date.now()-_TEAM_IDX_T<60000)return Promise.resolve(_TEAM_IDX);
   if(_TEAM_IDX_P)return _TEAM_IDX_P;
-  _TEAM_IDX_P=fetch(SUPA_URL+"/rest/v1/players?select=team&limit=10000",{headers:H}).then(r=>r.ok?r.json():[]).then(rows=>{
+  _TEAM_IDX_P=pagedFetch("players?select=team").then(r=>r.ok?r.json():[]).then(rows=>{
     const m={};const w=teamWord;
     rows.forEach(p=>{if(!p.team)return;[normTeam(p.team),"w:"+w(p.team)].forEach(k=>{if(k==="w:")return;const e=m[k]||(m[k]={n:0,names:new Set()});e.n++;e.names.add(p.team);});});
     m.__w=w;
@@ -1345,7 +1353,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const betTeam=(editBet?.bet_type==="team"||selectedType?.type==="team")?form.team:(form.playerObj?.team||editBet?.team||"");
   useEffect(()=>{
     if(!betTeam){setClubLeagues([]);return;}
-    fetch(SUPA_URL+"/rest/v1/clubs?select=name,league&limit=5000",{headers:H})
+    pagedFetch("clubs?select=name,league")
       .then(r=>r.json())
       .then(rows=>{
         const ls=[...new Set((Array.isArray(rows)?rows:[]).filter(c=>c.league&&sameTeam(c.name,betTeam)).map(c=>c.league))];
@@ -3129,7 +3137,7 @@ function CupClubPicker({cup,existing,onClose,onAdd}){
   const[sel,setSel]=useState({});
   const[busy,setBusy]=useState(false);
   useEffect(()=>{
-    fetch(SUPA_URL+"/rest/v1/clubs?select=name,league,logo&order=name.asc&limit=5000",{headers:H})
+    pagedFetch("clubs?select=name,league,logo&order=name.asc")
       .then(r=>r.json()).then(rows=>setAll(Array.isArray(rows)?rows:[])).catch(()=>setAll([]));
   },[]);
   const taken=new Set(existing.map(normTeam));
@@ -4688,8 +4696,8 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{
     if(globalSearch.trim().length<2||gIndex)return;
     Promise.all([
-      fetch(SUPA_URL+"/rest/v1/clubs?select=*&order=name.asc&limit=5000",{headers:H}).then(r=>r.json()).catch(()=>[]),
-      fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H}).then(r=>r.json()).catch(()=>[]),
+      pagedFetch("clubs?select=*&order=name.asc").then(r=>r.json()).catch(()=>[]),
+      pagedFetch("players?select=*&order=name.asc").then(r=>r.json()).catch(()=>[]),
     ]).then(([cl,pl])=>setGIndex({clubs:Array.isArray(cl)?cl:[],players:Array.isArray(pl)?pl:[]}));
   },[globalSearch,gIndex]);
   useEffect(()=>{if(!globalSearch)setGIndex(null);},[globalSearch]);
@@ -4736,7 +4744,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{
     if(!selectedClub)return;
     setLoading(true);setPlayers([]);setPlayerSearch("");
-    fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H})
+    pagedFetch("players?select=*&order=name.asc")
       .then(r=>r.json())
       .then(rows=>{
         const list=Array.isArray(rows)?rows.filter(p=>p.team&&sameTeam(p.team,selectedClub.name)):[];
@@ -4882,7 +4890,7 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
       }catch(e){fail++;}
     }
     setNflBusy("");onPlayersChanged();
-    fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H}).then(r=>r.json()).then(setPlayers).catch(()=>{});
+    pagedFetch("players?select=*&order=name.asc").then(r=>r.json()).then(setPlayers).catch(()=>{});
     showToast(added+" joueurs NFL ajoutés"+(fail?" · "+fail+" équipes en erreur":"")+" ✓",fail?"#FBBF24":"#3DD68C");
   }
   async function createPlayer(fields){
