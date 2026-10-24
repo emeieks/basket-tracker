@@ -374,14 +374,26 @@ async function updatePlayer(id,fields){
 }
 
 // Supabase renvoie 1000 lignes max par requête : on pagine
-async function pagedFetch(q){
-  let all=[],offset=0;const lim=1000;
-  while(true){const r=await fetch(SUPA_URL+"/rest/v1/"+q+(q.includes("?")?"&":"?")+"limit="+lim+"&offset="+offset,{headers:H});
-    if(!r.ok){if(!all.length)return {ok:false,status:r.status,json:async()=>[]};break;}
-    const rows=await r.json();all=all.concat(rows);if(rows.length<lim)break;offset+=lim;}
+const _pagedCache={};
+async function pagedFetch(q,maxAge=0){
+  const c=_pagedCache[q];if(maxAge&&c&&Date.now()-c.t<maxAge)return {ok:true,json:async()=>c.rows};
+  const lim=1000,sep=q.includes("?")?"&":"?";
+  // 1re page + total, puis le reste EN PARALLÈLE
+  const r=await fetch(SUPA_URL+"/rest/v1/"+q+sep+"limit="+lim+"&offset=0",{headers:{...H,"Prefer":"count=exact"}});
+  if(!r.ok)return {ok:false,status:r.status,json:async()=>[]};
+  let all=await r.json();
+  const total=parseInt(((r.headers.get("content-range")||"").split("/")[1])||"0",10);
+  if(all.length>=lim){
+    const n=total>all.length?Math.ceil((total-lim)/lim):0;
+    if(n>0){const pages=await Promise.all(Array.from({length:n},(_,i)=>fetch(SUPA_URL+"/rest/v1/"+q+sep+"limit="+lim+"&offset="+(lim*(i+1)),{headers:H}).then(x=>x.ok?x.json():[]).catch(()=>[])));pages.forEach(pg=>{all=all.concat(pg);});}
+    else{let off=lim;while(true){const x=await fetch(SUPA_URL+"/rest/v1/"+q+sep+"limit="+lim+"&offset="+off,{headers:H});if(!x.ok)break;const rows=await x.json();all=all.concat(rows);if(rows.length<lim)break;off+=lim;}}
+  }
+  _pagedCache[q]={t:Date.now(),rows:all};
   return {ok:true,json:async()=>all};
 }
 async function fetchPlayers(){
+  const pr=await pagedFetch("players?select=id,name,game,team,role,photo_url,avatar_url,team_logo_url&order=name.asc");
+  if(pr.ok)return pr.json();
   let all=[],offset=0,limit=500;
   while(true){
     const r=await fetch(
@@ -899,7 +911,9 @@ function getLeagueLogo(game,leagueLogos={}){
 // PRIORITÉ : logo du club (Édition) > team_logo_url du joueur
 let CLUB_LOGOS_MAP={};
 // "Bayern München" = "Bayern Munchen" = "BAYERN-MUNCHEN"
-function normTeam(s){
+const _ntC=new Map(),_twC=new Map();
+function normTeam(s){const k=s||"";let v=_ntC.get(k);if(v===undefined){v=_normTeam(k);_ntC.set(k,v);}return v;}
+function _normTeam(s){
   return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss").replace(/ı/g,"i")
     .toLowerCase().replace(/[^a-z0-9]/g,"");
 }
@@ -909,11 +923,12 @@ let _TEAM_IDX=null,_TEAM_IDX_T=0,_TEAM_IDX_P=null;
 // Mot distinctif d'un club (≥5 lettres) en sautant les VILLES partagées par plusieurs sports
 // (« Boston » Celtics/Bruins, « Chicago » Bulls/Blackhawks…) pour ne pas mélanger NBA et NHL.
 const CITY_WORDS=new Set(["boston","chicago","dallas","detroit","toronto","washington","philadelphia","minnesota","angeles","denver","phoenix","golden","vegas","florida","tampa","carolina","colorado","seattle","vancouver","montreal","ottawa","calgary","edmonton","winnipeg","nashville","pittsburgh","columbus","buffalo","anaheim","louis","jersey","atlanta","miami","milwaukee","orlando","portland","sacramento","antonio","houston","memphis","cleveland","indiana","charlotte","brooklyn","francisco","oklahoma","orleans"]);
-function teamWord(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5&&!CITY_WORDS.has(x))[0]||"";}
+function teamWord(s){const k=s||"";let v=_twC.get(k);if(v===undefined){v=_teamWord(k);_twC.set(k,v);}return v;}
+function _teamWord(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>=5&&!CITY_WORDS.has(x))[0]||"";}
 function teamIndex(force){
   if(!force&&_TEAM_IDX&&Date.now()-_TEAM_IDX_T<60000)return Promise.resolve(_TEAM_IDX);
   if(_TEAM_IDX_P)return _TEAM_IDX_P;
-  _TEAM_IDX_P=pagedFetch("players?select=team").then(r=>r.ok?r.json():[]).then(rows=>{
+  _TEAM_IDX_P=pagedFetch("players?select=team",60000).then(r=>r.ok?r.json():[]).then(rows=>{
     const m={};const w=teamWord;
     rows.forEach(p=>{if(!p.team)return;[normTeam(p.team),"w:"+w(p.team)].forEach(k=>{if(k==="w:")return;const e=m[k]||(m[k]={n:0,names:new Set()});e.n++;e.names.add(p.team);});});
     m.__w=w;
@@ -2560,7 +2575,7 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                     }
                   }}
                   style={{color:dirty.annonce_player!==undefined?C.green:"#FBBF24",fontWeight:500}}/>
-                <datalist id="annonce-players">{players.map(p=><option key={p.name} value={formatName(p.name)}/>)}</datalist>
+                <datalist id="annonce-players">{players.filter(p=>!localBet.game||String(p.game||"").includes(localBet.game)).slice(0,600).map(p=><option key={p.name} value={formatName(p.name)}/>)}</datalist>
               </div>
               {[["annonce_side","Côté",[["teammate","Coéquipier"],["opponent","Adversaire"]]],
                 ["annonce_status","Statut absent",[["out","Out confirmé"],["doubt","Incertain"]]],
@@ -4744,8 +4759,9 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
   useEffect(()=>{
     if(!selectedClub)return;
     setLoading(true);setPlayers([]);setPlayerSearch("");
-    pagedFetch("players?select=*&order=name.asc")
-      .then(r=>r.json())
+    fetch(SUPA_URL+"/rest/v1/players?select=*&team=eq."+encodeURIComponent(selectedClub.name)+"&order=name.asc&limit=1000",{headers:H})
+      .then(r=>r.ok?r.json():[])
+      .then(async rows=>(Array.isArray(rows)&&rows.length)?rows:(await (await pagedFetch("players?select=*&order=name.asc",60000)).json()))
       .then(rows=>{
         const list=Array.isArray(rows)?rows.filter(p=>p.team&&sameTeam(p.team,selectedClub.name)):[];
         setPlayers(list);
