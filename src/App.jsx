@@ -44,13 +44,20 @@ const STAT_FR={
   "Steals":"Interceptions","Blocks":"Contres","Turnovers":"Balles perdues",
   "Fantasy Score":"Score fantasy","Double-Double":"Double-double","Triple-Double":"Triple-double","Minutes":"Minutes",
   "Passes":"Passes","Buts":"Buts","Shots on Goal":"Tirs au but",
+  "Passing Yards":"Yards à la passe","Rushing Yards":"Yards à la course","Receiving Yards":"Yards en réception","Rush+Rec Yards":"Yards course + réception",
+  "Receptions":"Réceptions","Targets":"Cibles (targets)","Passing TDs":"TD à la passe","Anytime TD":"TD marqué","Completions":"Passes réussies","Pass Attempts":"Tentatives de passe",
+  "Rush Attempts":"Courses","Interceptions Thrown":"Interceptions lancées","Longest Reception":"Plus longue réception",
 };
 // Stats proposées pour un pari NHL
 const HOCKEY_STATS=["Points","Passes","Buts","Shots on Goal"];
+// NFL
+const NFL_STATS=["Passing Yards","Rushing Yards","Receiving Yards","Rush+Rec Yards","Receptions","Targets","Passing TDs","Anytime TD","Completions","Pass Attempts","Rush Attempts","Interceptions Thrown","Longest Reception"];
+function isNFL(lg){return /\bnfl\b|football am|american football|\bncaaf\b/i.test(String((lg&&lg.name)||lg||""));}
+function sportOf(lg){return isNFL(lg)?"nfl":/\bnhl\b|hockey/i.test(String((lg&&lg.name)||lg||""))?"hockey":"basket";}
 const STAT_ABBR={
   "Points":"Pts","Rebonds":"Reb","Assists":"AST","Points+Rebonds":"P+R","Points+Assists":"P+A","Rebonds+Assists":"R+A",
   "Points+Rebonds+Assists":"PRA","3 Points Made":"3PTS","Steals":"Int","Blocks":"Ctr",
-  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Triple-Double":"TD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG",
+  "Turnovers":"BP","Fantasy Score":"Fantasy","Double-Double":"DD","Triple-Double":"TD","Minutes":"Min","Passes":"PASSES","Buts":"BUTS","Shots on Goal":"SOG","Passing Yards":"PASS YDS","Rushing Yards":"RUSH YDS","Receiving Yards":"REC YDS","Rush+Rec Yards":"R+R YDS","Receptions":"REC","Targets":"TGT","Passing TDs":"PASS TD","Anytime TD":"TD","Completions":"CMP","Pass Attempts":"ATT","Rush Attempts":"CAR","Interceptions Thrown":"INT","Longest Reception":"LONG REC",
 };
 const statFR=s=>STAT_FR[s]||s;
 // "Over 26.5 Points+Rebonds+Assists" → { ou, line, stat }
@@ -301,7 +308,7 @@ async function insertClubs(rows){
   return r.json();
 }
 // Ligues prêtes à importer (clubs de la saison 2026-27)
-const LEAGUE_PRESETS={};
+const LEAGUE_PRESETS={"NFL":[{name:"Arizona Cardinals",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ari.png"},{name:"Atlanta Falcons",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/atl.png"},{name:"Baltimore Ravens",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/bal.png"},{name:"Buffalo Bills",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"},{name:"Carolina Panthers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/car.png"},{name:"Chicago Bears",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/chi.png"},{name:"Cincinnati Bengals",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/cin.png"},{name:"Cleveland Browns",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/cle.png"},{name:"Dallas Cowboys",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/dal.png"},{name:"Denver Broncos",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/den.png"},{name:"Detroit Lions",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/det.png"},{name:"Green Bay Packers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/gb.png"},{name:"Houston Texans",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/hou.png"},{name:"Indianapolis Colts",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ind.png"},{name:"Jacksonville Jaguars",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/jax.png"},{name:"Kansas City Chiefs",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/kc.png"},{name:"Las Vegas Raiders",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lv.png"},{name:"Los Angeles Chargers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lac.png"},{name:"Los Angeles Rams",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lar.png"},{name:"Miami Dolphins",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/mia.png"},{name:"Minnesota Vikings",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/min.png"},{name:"New England Patriots",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ne.png"},{name:"New Orleans Saints",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/no.png"},{name:"New York Giants",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png"},{name:"New York Jets",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png"},{name:"Philadelphia Eagles",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/phi.png"},{name:"Pittsburgh Steelers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/pit.png"},{name:"San Francisco 49ers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/sf.png"},{name:"Seattle Seahawks",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/sea.png"},{name:"Tampa Bay Buccaneers",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/tb.png"},{name:"Tennessee Titans",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ten.png"},{name:"Washington Commanders",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png"}]};
 // Coupes nationales : affichées à part, en bas de la liste des ligues
 const CUPS={
   "NBA Cup":"États-Unis","Leaders Cup":"France","Coupe de France":"France",
@@ -1822,7 +1829,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.line?"#fff":C.sub,
                 fontSize:30,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>—</option>
-              {Array.from({length:isHockey(form.game)?8:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{v}</option>)}
+              {Array.from({length:isHockey(form.game)?8:isNFL(form.game||form.playerObj?.game)?400:45},(_,i)=>(i+0.5).toFixed(1)).map(v=><option key={v} value={v} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{v}</option>)}
             </select>
           </label>
           <div style={{width:1,background:"rgba(255,255,255,.07)",margin:"14px 0"}}/>
@@ -1832,7 +1839,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 fontSize:form.stat&&statFR(form.stat).length>10?18:24,fontWeight:700,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
-              {(isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists",
+              {(isNFL(form.game||form.playerObj?.game)?NFL_STATS:isHockey(form.game||form.playerObj?.game)?HOCKEY_STATS:["Points","Rebonds","Assists","Points+Rebonds","Points+Assists","Rebonds+Assists",
                 "Points+Rebonds+Assists","3 Points Made","Steals","Blocks",
                 "Turnovers","Double-Double","Triple-Double"]).map(s=><option key={s} value={s} style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>{statFR(s)}</option>)}
             </select>
@@ -1858,7 +1865,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           const q=comboQ.toLowerCase().trim();
           const pr=q?players.filter(p=>{const n=p.name.toLowerCase();return n.includes(q)||n.split(" ").map(w=>w[0]||"").join("").includes(q);}).sort((a,b)=>cnt(b.name)-cnt(a.name)).slice(0,5):[];
           const tr=q?[...new Set([...players.map(p=>p.team),...allClubs.map(c=>c.name)].filter(Boolean))].filter(t=>t.toLowerCase().includes(q)).slice(0,3):[];
-          const STATS=["Points","Rebonds","Assists","3 Points Made","Points+Rebonds","Points+Assists","Rebonds+Assists","Points+Rebonds+Assists","Steals","Blocks","Double-Double","Triple-Double"];
+          const BSTATS=["Points","Rebonds","Assists","3 Points Made","Points+Rebonds","Points+Assists","Rebonds+Assists","Points+Rebonds+Assists","Steals","Blocks","Double-Double","Triple-Double"];
           const ab={"3 Points Made":"3 pts","Points+Rebonds":"P+R","Points+Assists":"P+A","Rebonds+Assists":"R+A","Points+Rebonds+Assists":"PRA","Steals":"Interc.","Blocks":"Contres","Double-Double":"DD","Triple-Double":"TD"};
           const mini={height:34,borderRadius:9,border:"1px solid #1F1F24",background:"#0F0F12",color:C.text,fontSize:13.5,fontWeight:600,fontFamily:"inherit",padding:"0 8px",outline:"none"};
           return(
@@ -1876,14 +1883,14 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
                     {l.kind==="team"&&<select value={l.mk||"handicap"} onChange={e=>setLeg(i,{mk:e.target.value})} style={{...mini,appearance:"none"}}><option value="handicap">Handicap</option><option value="moneyline">Vainqueur</option><option value="total">Total équipe</option></select>}
                     {!(l.kind==="team"&&l.mk==="moneyline")&&<input inputMode="decimal" placeholder="Ligne" aria-label={"Ligne "+l.name} value={l.line||""} onChange={e=>setLeg(i,{line:e.target.value.replace(",",".").replace(/[^0-9.\-+]/g,"")})} style={{...mini,width:72}}/>}
                     {l.kind==="player"&&<select value={l.stat||""} onChange={e=>setLeg(i,{stat:e.target.value})} style={{...mini,flex:1,minWidth:110,appearance:"none",color:l.stat?C.text:C.sub}}>
-                      <option value="">Stat…</option>{STATS.map(x=><option key={x} value={x}>{statFR(x)}</option>)}</select>}
+                      <option value="">Stat…</option>{(isNFL(l.game)?NFL_STATS:isHockey(l.game)?HOCKEY_STATS:BSTATS).map(x=><option key={x} value={x}>{statFR(x)}</option>)}</select>}
                   </div>
                 </div>);})}
               <div style={{position:"relative",marginTop:10}}>
                 <input value={comboQ} onChange={e=>setComboQ(e.target.value)} placeholder="+ Ajouter un joueur ou une équipe…"
                   style={{width:"100%",height:46,padding:"0 14px",borderRadius:12,background:"#0F0F12",border:"1px dashed #34343B",color:C.text,fontSize:15,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
                 {(pr.length>0||tr.length>0)&&<div style={{marginTop:6,background:C.card,border:"1px solid "+C.line,borderRadius:12,overflow:"hidden"}}>
-                  {pr.map(p0=><SRow key={p0.name} onClick={()=>{f("combo",[...legs,{kind:"player",name:p0.name,photo:p0.photo_url||p0.avatar_url||null,ou:"Over",line:"",stat:""}]);setComboQ("");}}
+                  {pr.map(p0=><SRow key={p0.name} onClick={()=>{f("combo",[...legs,{kind:"player",name:p0.name,game:p0.game,photo:p0.photo_url||p0.avatar_url||null,ou:"Over",line:"",stat:""}]);setComboQ("");}}
                     logo={<PlayerFace src={p0.photo_url||p0.avatar_url} name={formatName(p0.name)} team={p0.team} size={36}/>} title={formatName(p0.name)} sub={p0.team} right={cnt(p0.name)?<span style={{fontSize:12,color:C.sub}}>{cnt(p0.name)} paris</span>:null}/>)}
                   {tr.map(t0=><SRow key={t0} onClick={()=>{f("combo",[...legs,{kind:"team",name:t0,mk:"handicap",ou:"Over",line:""}]);setComboQ("");}}
                     logo={<SLogo src={getTeamLogo(t0,null)} name={t0} size={36}/>} title={t0} sub="Équipe"/>)}
@@ -2418,10 +2425,10 @@ function BetDetailModal({bet,players,bkPhotos={},bookmakerList=[],tipsterList=[]
                 {descFR(localBet.description)||"—"}
               </div>
             );
-            const lines=Array.from({length:45},(_,i)=>(i+0.5).toFixed(1));
+            const lines=Array.from({length:isNFL(localBet.game)?400:45},(_,i)=>(i+0.5).toFixed(1));
             const cur=parseFloat(String(pd.line).replace(",",".")).toFixed(1);
             if(!lines.includes(cur))lines.push(cur);
-            const stats=isHockey(localBet.game)?[...HOCKEY_STATS]:Object.keys(STAT_FR).filter(k=>(!HOCKEY_STATS.includes(k)||k==="Points")&&k!=="Fantasy Score"&&k!=="Minutes");
+            const stats=isNFL(localBet.game)?[...NFL_STATS]:isHockey(localBet.game)?[...HOCKEY_STATS]:Object.keys(STAT_FR).filter(k=>(!HOCKEY_STATS.includes(k)||k==="Points")&&k!=="Fantasy Score"&&k!=="Minutes");
             if(!stats.includes(pd.stat))stats.push(pd.stat);
             const upd=ch=>{
               const n={ou:pd.ou,line:cur,stat:pd.stat,...ch};
@@ -3875,7 +3882,7 @@ function leagueBgDefault(name){const n=String(name||"").toLowerCase().normalize(
  if(n==="bcl"||n.includes("champions league"))return LEAGUE_BG_DEFAULT.BCL;if(n.includes("acb")||n.includes("liga endesa"))return LEAGUE_BG_DEFAULT.ACB;
  if(n.includes("betclic")||n.includes("elite")||n.includes("lnb")||n.includes("pro a"))return LEAGUE_BG_DEFAULT.BETCLIC;
  if(n.includes("lega")||n==="lba"||n.includes("serie a"))return LEAGUE_BG_DEFAULT.LEGA;if(n==="bbl"||n.includes("bundesliga")||n.includes("easycredit"))return LEAGUE_BG_DEFAULT.BBL;return "";}
-const LEAGUE_COLORS={"NHL":{p:"#111111",s:"#A2AAAD"},"Super Lig":{p:"#E30A17",s:"#0B1F3A"},"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#111111",s:"#E4002B"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0072CE",s:"#111111"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
+const LEAGUE_COLORS={"NFL":{p:"#013369",s:"#D50A0A"},"NHL":{p:"#111111",s:"#A2AAAD"},"Super Lig":{p:"#E30A17",s:"#0B1F3A"},"NBA":{p:"#1D428A",s:"#C8102E"},"NBL":{p:"#111111",s:"#E4002B"},"BCL":{p:"#F2A900",s:"#0E2C5A"},"ACB":{p:"#FF6B00",s:"#1B2A4A"},"Betclic Elite":{p:"#E4002B",s:"#0B1F3A"},"Betclic Élite":{p:"#E4002B",s:"#0B1F3A"},"Lega A":{p:"#1E5BC6",s:"#E30613"},"LBA":{p:"#1E5BC6",s:"#E30613"},"BBL":{p:"#FF6A13",s:"#111111"},"EuroLeague":{p:"#E35205",s:"#111111"},"Euroleague":{p:"#E35205",s:"#111111"},"EuroCup":{p:"#0072CE",s:"#111111"},"WNBA":{p:"#F57B20",s:"#1B1B1B"},"NCAA":{p:"#003E7E",s:"#FFFFFF"}};
 function GroupPoster({kind,name,bets,onClose}){
   const isLg=kind==="league";
   const bgKey="league_bg_"+name;
@@ -4010,7 +4017,7 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   // Sports séparés : stats Basket (toutes ligues de basket) ou Hockey (NHL)
   const hasHockey=allSports.some(b=>isHockey(b.game));
   const[sport,setSport]=useState("all");
-  const allRaw=sport==="all"?allSports:allSports.filter(b=>(sport==="hockey")===isHockey(b.game));
+  const allRaw=sport==="all"?allSports:allSports.filter(b=>sportOf(b.game)===sport);
   const[tab,setTab]=useState("overview");
   const[posterP,setPosterP]=useState(null);
   const[groupP,setGroupP]=useState(null);
@@ -4161,9 +4168,9 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
   );
 
   const sportToggle=(<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
-        {[["all","Tout"],["basket","Basket"],["hockey","Hockey"]].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
+        {[["all","Tout"],["basket","Basket"],["hockey","Hockey"],...(allSports.some(b=>isNFL(b.game))?[["nfl","NFL"]]:[])].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
           style={{flex:1,height:40,borderRadius:10,border:"none",background:sport===k?C.chip:"transparent",color:sport===k?C.text:C.sub,fontWeight:600,fontSize:14.5,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          {k==="all"?null:k==="basket"
+          {k==="all"?null:k==="nfl"?<svg width="22" height="18" viewBox="0 0 26 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><ellipse cx="13" cy="10" rx="11" ry="7" transform="rotate(-20 13 10)"/><path d="M9 12l8-4M11 9.5l1.5 2M13.5 8.5l1.5 2"/></svg>:k==="basket"
             ?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8v18.4"/><path d="M5.6 5.4c2.6 2 3.9 4.2 3.9 6.6s-1.3 4.6-3.9 6.6"/><path d="M18.4 5.4c-2.6 2-3.9 4.2-3.9 6.6s1.3 4.6 3.9 6.6"/></svg>
             :<svg width="22" height="20" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2.5l9.2 14.2h4.6"/><path d="M21 2.5l-9.2 14.2H7.2"/><ellipse cx="13" cy="20.6" rx="3.6" ry="1.5"/></svg>}
           {l}</button>)}
@@ -4859,6 +4866,25 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
     setUploadingId(null);
   }
 
+  const[nflBusy,setNflBusy]=useState("");
+  async function importNflRosters(){
+    const teams=LEAGUE_PRESETS.NFL||[];const MAP={OT:"OL",G:"OL",C:"OL",OG:"OL",T:"OL",NT:"DT",ILB:"LB",OLB:"LB",MLB:"LB",FS:"S",SS:"S",DB:"CB",PK:"K"};
+    const have=new Set(players.map(p=>String(p.name).toLowerCase()));let added=0,fail=0;
+    for(let i=0;i<teams.length;i++){const t=teams[i];const abbr=(t.logo.match(/\/(\w+)\.png$/)||[])[1];
+      setNflBusy("Équipe "+(i+1)+"/"+teams.length+" · "+added+" joueurs ajoutés");
+      try{
+        const r=await fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+abbr+"/roster");
+        if(!r.ok)throw new Error(r.status);const j=await r.json();
+        const rows=[];(j.athletes||[]).forEach(g=>(g.items||[]).forEach(a=>{const pos=a.position&&a.position.abbreviation;const nm=String(a.fullName||"").toLowerCase();
+          if(!nm||have.has(nm))return;have.add(nm);const role=MAP[pos]||pos||"";
+          rows.push({name:nm,team:t.name,game:"NFL",role,photo_url:a.headshot&&a.headshot.href||null,team_logo_url:t.logo});}));
+        if(rows.length){const r2=await fetch(SUPA_URL+"/rest/v1/players",{method:"POST",headers:H,body:JSON.stringify(rows)});if(!r2.ok)throw new Error("Supabase "+r2.status);added+=rows.length;}
+      }catch(e){fail++;}
+    }
+    setNflBusy("");onPlayersChanged();
+    fetch(SUPA_URL+"/rest/v1/players?select=*&order=name.asc&limit=10000",{headers:H}).then(r=>r.json()).then(setPlayers).catch(()=>{});
+    showToast(added+" joueurs NFL ajoutés"+(fail?" · "+fail+" équipes en erreur":"")+" ✓",fail?"#FBBF24":"#3DD68C");
+  }
   async function createPlayer(fields){
     // fields: {name, role, team, game, team_logo_url, photo_url?}
     try{
@@ -4926,13 +4952,20 @@ function EditView({showToast,onPlayersChanged=()=>{}}){
             <button type="button" className="s-add" onClick={async()=>{
               try{
                 const[lg]=await insertLeague(n);
-                await insertClubs(clubsList.map(c=>({name:c,league:n})));
+                await insertClubs(clubsList.map(c=>typeof c==="string"?{name:c,league:n}:{name:c.name,league:n,logo:c.logo}));
+                clubsList.forEach(c=>{if(c&&c.logo)CLUB_LOGOS_MAP[c.name]=c.logo;});
+                if(n==="NFL"){try{await updateLeague(lg.id,{logo:"https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"});LEAGUE_LOGOS_DYNAMIC.NFL="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png";}catch(_){}}
                 setLeagues(prev=>[...prev,lg||{id:n,name:n}]);
                 showToast(n+" et ses "+clubsList.length+" clubs ajoutés ✓");
               }catch(e){showToast("Erreur: "+e.message,"#FF6B6B");}
             }}>Importer</button>
           </div>
         ))}
+        {leagues.some(l=>normTeam(l.name)==="nfl")&&(
+          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:14,borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
+            <div style={{flex:1,fontSize:13,color:"#C7C7CC",lineHeight:1.4}}><b style={{color:C.text}}>Rosters NFL</b> · depuis ESPN<br/><span style={{color:C.sub}}>{nflBusy||"Tous les joueurs avec photo et poste"}</span></div>
+            <button type="button" className="s-add" disabled={!!nflBusy} onClick={importNflRosters}>{nflBusy?"…":"Importer"}</button>
+          </div>)}
         <SSearch value={globalSearch} onChange={setGlobalSearch} placeholder="Ligue, club ou joueur…"/>
         {globalSearch.trim().length>=2&&(()=>{
           const q=normTeam(globalSearch);
@@ -5305,7 +5338,7 @@ function PlayerCreateModal({club,league,onClose,onCreate,pasteImage,showToast}){
           <div style={{background:C.card,border:"1px solid "+C.line,borderRadius:16,padding:14,flexShrink:0}}>
             <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:10}}>Identité</div>
             <input className="form-input" placeholder="Prénom Nom" value={name} onChange={e=>setName(e.target.value)} style={{fontSize:17,fontWeight:700}} autoFocus/>
-            <div style={{fontSize:12,fontWeight:700,color:C.sub,margin:"14px 2px 8px"}}>Position{isHockey(league)?" (hockey)":""}</div>
+            <div style={{fontSize:12,fontWeight:700,color:C.sub,margin:"14px 2px 8px"}}>Position{isHockey(league)?" (hockey)":isNFL(league)?" (NFL)":""}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat("+POS.length+",1fr)",gap:6}}>
               {POS.map(r=>(
                 <button key={r} type="button" onClick={()=>setRole(r===role?"":r)}
@@ -5337,7 +5370,8 @@ const BASKET_POSITIONS=["PG","SG","SF","PF","C"];
 // Hockey (NHL) : Centre, Ailier gauche/droit, Défenseur gauche/droit, Gardien
 const HOCKEY_POSITIONS=["C","AG","AD","DG","DD","G"];
 const isHockey=lg=>/\bnhl\b|hockey/i.test(String((lg&&lg.name)||lg||""));
-const positionsFor=lg=>isHockey(lg)?HOCKEY_POSITIONS:BASKET_POSITIONS;
+const NFL_POSITIONS=["QB","RB","FB","WR","TE","OL","DL","DE","DT","LB","CB","S","K","P","LS"];
+const positionsFor=lg=>isNFL(lg)?NFL_POSITIONS:isHockey(lg)?HOCKEY_POSITIONS:BASKET_POSITIONS;
 
 // game peut être "EuroLeague" ou "EuroLeague,ACB" — on parse en tableau
 function parseGames(g){return(g||"").split(",").map(s=>s.trim()).filter(Boolean);}
