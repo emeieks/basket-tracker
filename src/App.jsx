@@ -705,6 +705,7 @@ img{image-rendering:auto;}
 .big-in{border:none;background:transparent;color:#fff;font-size:19px;font-weight:700;outline:none;padding:0;width:100%;font-family:inherit;-moz-appearance:textfield;}
 .big-in::-webkit-outer-spin-button,.big-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .big-in::placeholder{color:#34343B;}
+.wheel-col::-webkit-scrollbar{display:none;}
 input[type=date],input[type=time]{text-align:left;-webkit-appearance:none;appearance:none;}
 input::-webkit-date-and-time-value{text-align:left;margin:0;}
 .acard .segment{background:rgba(0,0,0,.32);box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
@@ -1339,11 +1340,26 @@ function PlayerAutocomplete({value,onChange,players,onSelect}){
 // Brouillon du « Nouveau pari » : gardé quand tu changes de page, effacé seulement après l'ajout ou avec « Réinitialiser »
 let ADD_DRAFT=null;
 const EMPTY_ADD_FORM=()=>({player:"",playerObj:null,stat:"",ou:"",line:"",odds:"",stake:"",bookmaker:"",status:"pending",game:"",tipster:"",notes:"",created_at:"",annonce:false,annoncePlayer:"",annonceSide:"teammate",annonceStatus:"out",annonceRole:"starter",annonceSearch:"",betType:"moneyline",team:"",opponent:"",lt:false,ltDesc:"",tags:[]});
+function Wheel({items,value,onChange,render,width}){
+  const ref=useRef(null);const IH=40;const t=useRef(null);
+  const idx=Math.max(0,items.indexOf(value));
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=idx*IH;},[]);// eslint-disable-line
+  const onScroll=()=>{clearTimeout(t.current);t.current=setTimeout(()=>{const el=ref.current;if(!el)return;const i=Math.min(items.length-1,Math.max(0,Math.round(el.scrollTop/IH)));if(items[i]!==value)onChange(items[i]);if(Math.abs(el.scrollTop-i*IH)>1)el.scrollTo({top:i*IH,behavior:"smooth"});},90);};
+  return <div ref={ref} onScroll={onScroll} className="wheel-col" style={{flex:width||1,height:IH*5,overflowY:"auto",scrollSnapType:"y mandatory",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",
+    maskImage:"linear-gradient(to bottom,transparent,#000 35%,#000 65%,transparent)",WebkitMaskImage:"linear-gradient(to bottom,transparent,#000 35%,#000 65%,transparent)",position:"relative",zIndex:1}}>
+    <div style={{height:IH*2}}/>
+    {items.map((it,i)=>{const on=it===value;return <div key={String(it)} onClick={()=>{ref.current&&ref.current.scrollTo({top:i*IH,behavior:"smooth"});onChange(it);}}
+      style={{height:IH,scrollSnapAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",fontSize:on?20:17,fontWeight:on?600:400,color:on?"#F4F5F7":"#6B717C",cursor:"pointer",transition:"all .12s",whiteSpace:"nowrap"}}>{render?render(it):it}</div>;})}
+    <div style={{height:IH*2}}/>
+  </div>;
+}
+
 function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,editBet=null,onPlayersChanged,bets=null}){
   const tagList=useTagList();
   const[prefilled,setPrefilled]=useState(false);
   const[bkOpen,setBkOpen]=useState(false);
   const[tagsOpen,setTagsOpen]=useState(false);
+  const[wheel,setWheel]=useState(null);
   const oddsRef=useRef(null),stakeRef=useRef(null),oddsCard=useRef(null),stakeCard=useRef(null),tipCard=useRef(null);
   const lineSel=useRef(null),statSel=useRef(null),lineCard=useRef(null),ouCard=useRef(null);
   const openSel=el=>{if(!el)return;try{el.focus({preventScroll:true});}catch(e){}try{el.showPicker&&el.showPicker();}catch(e){}};
@@ -1450,6 +1466,8 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         .sort((a,b)=>cnt(b)-cnt(a)).slice(0,6)
     :[];
 
+  function openWheel(p){const g=(p&&p.game)||form.game||form.playerObj?.game;const sts=statsForGame(g);
+    setWheel({ou:form.ou||"Over",line:form.line||(isHockey(g)?"0.5":"10.5"),stat:form.stat&&sts.includes(form.stat)?form.stat:sts[0],game:g});}
   function selectPlayer(p){
     setSearch("");
     f("player",p.name);f("playerObj",p);
@@ -1463,7 +1481,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         if(pd)setPrefilled(true);}}
     setSelectedType({type:"player",data:p});
     setStep("form");
-    if(!form.ou)setTimeout(()=>{ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"center"});},80);
+    setTimeout(()=>openWheel(p),120);
   }
 
   function selectTeam(teamName){
@@ -1730,6 +1748,9 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           </span>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isTeamBet?form.team:formatName(form.player)}</div>
+            {!isTeamBet&&!form.lt&&<div role="button" onClick={()=>openWheel()} style={{marginTop:3,fontSize:16,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:form.ou&&form.line&&form.stat?"#F4F5F7":"#8A909B"}}>
+              {form.ou&&form.line&&form.stat?form.ou+" "+fmtLine(form.line)+" "+statFR(form.stat):"Over / Under · ligne · stat"}
+              <svg width="11" height="7" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 1.5l5 5 5-5"/></svg></div>}
             <div style={{display:"flex",alignItems:"center",gap:7,marginTop:2,fontSize:13,color:"#9097A3",minWidth:0}}>
               {!isTeamBet&&teamName&&<span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{teamName}</span>}
               {isTeamBet&&<span>Équipe</span>}
@@ -1861,13 +1882,13 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         })()}
         {/* ── PARI JOUEUR : Over / Under ── */}
         {!isTeamBet&&!form.lt&&(<>
-        <div ref={ouCard} style={{display:"flex",gap:12,margin:"14px 0 0",scrollMarginTop:12}}>
+        <div ref={ouCard} style={{display:"none",gap:12,margin:"14px 0 0",scrollMarginTop:12}}>
           {["Over","Under"].map(v=>{const on=form.ou===v;return(
             <button key={v} type="button" className="press" onClick={()=>{f("ou",on?"":v);if(!on){if(!form.line)setTimeout(()=>openSel(lineSel.current),120);else if(!form.stat)setTimeout(()=>openSel(statSel.current),120);else if(!form.odds)goTo(oddsRef,oddsCard);}}}
               style={{flex:1,height:52,padding:"0 14px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",fontSize:16,fontWeight:500,border:"1px solid "+(on?clubC:"#2A2B31"),background:on?clubC:"#18191D",color:on?clubFg:"#9097A3"}}>{v}</button>);})}
         </div>
         {/* ── Ligne | Stat ── */}
-        <div ref={lineCard} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:14,scrollMarginTop:12}}>
+        <div ref={lineCard} style={{display:"none",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:14,scrollMarginTop:12}}>
           <label style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:3,height:60,boxSizing:"border-box",padding:"0 14px",borderRadius:12,background:"#18191D",border:"1px solid #2A2B31",minWidth:0,position:"relative",cursor:"pointer"}}>
             <div className="acard-h" style={{margin:0}}>Ligne</div>
             <select ref={lineSel} aria-label="Ligne" value={form.line} onChange={e=>{f("line",e.target.value);if(e.target.value&&!form.stat)setTimeout(()=>openSel(statSel.current),150);}}
@@ -2090,6 +2111,22 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
         )}
 
+        {wheel&&(()=>{const lines=Array.from({length:isHockey(wheel.game)?8:isNFL(wheel.game)?400:60},(_,i)=>(i+0.5).toFixed(1));const sts=statsForGame(wheel.game);
+          const set=(k,v)=>setWheel(w=>({...w,[k]:v}));
+          return <div className="modal-overlay" style={{zIndex:3000}} onClick={e=>{if(e.target===e.currentTarget)setWheel(null);}}>
+            <div className="modal-sheet" style={{paddingBottom:"calc(100px + env(safe-area-inset-bottom))"}}>
+              <div className="modal-handle"/>
+              <div style={{textAlign:"center",fontSize:15,fontWeight:600,margin:"2px 0 4px"}}>{formatName(form.player)}</div>
+              <div style={{textAlign:"center",fontSize:14,color:"#9097A3",marginBottom:10}}>{wheel.ou} {wheel.line} {statFR(wheel.stat)}</div>
+              <div style={{position:"relative",display:"flex",gap:4}}>
+                <div style={{position:"absolute",left:0,right:0,top:80,height:40,borderRadius:10,background:"rgba(255,255,255,.07)",pointerEvents:"none"}}/>
+                <Wheel items={["Over","Under"]} value={wheel.ou} onChange={v=>set("ou",v)} width={1}/>
+                <Wheel items={lines} value={wheel.line} onChange={v=>set("line",v)} width={1}/>
+                <Wheel items={sts} value={wheel.stat} onChange={v=>set("stat",v)} render={statFR} width={1.6}/>
+              </div>
+              <button type="button" className="press" onClick={()=>{f("ou",wheel.ou);f("line",wheel.line);f("stat",wheel.stat);setWheel(null);if(!form.odds)goTo(oddsRef,oddsCard);}}
+                style={{width:"100%",marginTop:14,height:52,borderRadius:14,border:"none",background:clubC,color:clubFg,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Valider</button>
+            </div></div>;})()}
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
           background:"linear-gradient(to top,"+C.bg+" 70%,rgba(9,9,11,0))"}}>
