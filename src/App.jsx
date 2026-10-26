@@ -864,12 +864,19 @@ body{background:#09090B;letter-spacing:-.01em;}
 .toast{border-radius:99px;background:#18181C;border-color:rgba(255,255,255,.08)!important;color:#FAFAFA!important;}
 .skel{background-color:#17171B;}
 
-.slip-cols,.slip-strip,.slip-dl{display:none;}
+.slip-cols,.slip-strip,.slip-dl,.slip-av,.slip-left,.slip-res{display:none!important;}
+.slip-p2{display:flex;}
+.slip-grid{gap:0!important;}
 @media (min-width:1024px){
   .slip-grid{display:flex!important;flex-direction:column;gap:8px!important;}
   .slip-cols{display:grid;grid-template-columns:repeat(4,104px);gap:6px;margin-left:auto;padding-right:52px;flex-shrink:0;}
   .slip-res,.slip-m,.slip-m+span,.slip-av,.slip-left{display:none!important;}
-  .slip-dl{display:flex;}
+  .slip-dl{display:flex!important;}.slip-p2{display:none!important;}
+  .slip-cols{display:grid!important;}.slip-strip{display:flex!important;}
+  .slip-grid{gap:8px!important;}
+  .slip-grid article{background:#141417!important;border:1px solid #1F1F24!important;}
+  .home-today .slip-p2{display:flex!important;}
+  .home-today .slip-dl,.home-today .slip-cols,.home-today .slip-strip{display:none!important;}
   .slip-grid article{padding:14px 18px!important;border-radius:14px!important;}
   .slip-strip{display:flex;position:absolute;right:0;top:0;bottom:0;width:40px;align-items:center;justify-content:center;writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:600;letter-spacing:.3px;}
 }
@@ -3367,28 +3374,27 @@ function HomeView({bets:rawBets,players,onNavigate,onAdd}){
         for(const s of sorted){if(s.status===kind)streak++;else break;}
         const PER=[["all","Tout"],["week","Semaine"],["month","Mois"],["year","Année"]];
         return(
-          <div style={{padding:"0 2px 0"}}>
-            {period!=="all"&&<div style={{fontSize:12,color:C.sub,fontWeight:600,letterSpacing:.6,textTransform:"uppercase"}}>{title}</div>}
-            <div className="sysfont" style={{fontSize:"clamp(40px,12vw,54px)",fontWeight:600,letterSpacing:-2,lineHeight:1.05,color:C.text,marginTop:period==="all"?6:6}}><CountUp key={period+pOff+units} value={pp} format={fmt}/></div>
-            <div className="sysfont" style={{display:"flex",alignItems:"center",gap:8,marginTop:8,fontSize:14}}>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:7,fontWeight:600,color:pColor(pp),background:pp>0?"rgba(61,214,140,.12)":pp<0?"rgba(255,107,107,.12)":"rgba(255,255,255,.06)"}}>
-                <svg width="10" height="10" viewBox="0 0 10 10" style={{transform:pp<0?"rotate(180deg)":"none"}}><path d="M5 1.5L9 7.5H1z" fill="currentColor"/></svg>
-                {(pp/START_BANKROLL*100).toFixed(2).replace(".",",").replace("-","")+"\u00a0%"}
-              </span>
-              <span style={{color:C.sub}}>de la bankroll</span>
+          <div style={{padding:"18px 2px 0",textAlign:"center"}}>
+            <div style={{fontSize:11.5,color:"#5E6470",fontWeight:600,letterSpacing:.8,textTransform:"uppercase"}}>{period==="all"?"Résultat total":title}</div>
+            {(()=>{const neg=pp<0;const a=Math.abs(pp);const ent=Math.floor(a).toLocaleString("fr-FR");const dec=(a%1).toFixed(2).slice(2);
+              return <div className="sysfont" style={{marginTop:10,fontSize:"clamp(44px,14vw,56px)",fontWeight:700,letterSpacing:-2,lineHeight:1,color:C.text}}>
+                {neg?"−":pp>0?"+":""}{units?(a/(START_BANKROLL/100)).toFixed(2).replace(".",","):ent}<span style={{fontSize:"0.55em",color:"#9097A3",letterSpacing:-.5}}>{units?" u":","+dec+" €"}</span></div>;})()}
+            <div className="sysfont" style={{fontSize:14,color:"#9097A3",marginTop:10}}>{pb.length} pari{pb.length>1?"s":""} · {pw} gagné{pw>1?"s":""} · ROI <span style={{color:pColor(proi)}}>{(proi>0?"+":"")+proi.toFixed(1).replace(".",",")+"\u00a0%"}</span></div>
+            <div className="sysfont" style={{margin:"26px -4px 0"}}><BankrollChart key={period+pOff} bets={pb} height={150} fmt={fmt}/></div>
+            <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:22,marginTop:14}}>
+              {period!=="all"&&<button aria-label="Précédent" onClick={()=>setPOff(o=>o-1)} style={{...navArrow,width:24,color:"#9097A3"}}>‹</button>}
+              {PER.map(([k,l])=>{const on=period===k;return <button key={k} onClick={()=>{setPeriod(k);setPOff(0);}} style={{border:"none",background:"transparent",padding:"4px 0",color:on?C.text:"#5E6470",fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",borderBottom:"2px solid "+(on?C.text:"transparent")}}>{l}</button>;})}
+              {period!=="all"&&<button aria-label="Suivant" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))} style={{...navArrow,width:24,color:"#9097A3",opacity:pOff>=0?.3:1}}>›</button>}
             </div>
-            <div className="sysfont" style={{marginTop:14,marginLeft:-4,marginRight:-4}}><BankrollChart key={period+pOff} bets={pb} height={170} fmt={fmt}/></div>
-            <div style={{display:"flex",alignItems:"center",gap:4,marginTop:10,padding:3,borderRadius:12,background:C.card,border:"1px solid "+C.line}}>
-              {PER.map(([k,l])=>{const on=period===k;return <button key={k} onClick={()=>{setPeriod(k);setPOff(0);}} style={{flex:1,height:30,borderRadius:9,border:"none",background:on?C.chip:"transparent",color:on?C.text:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>;})}
-              {period!=="all"&&<><button aria-label="Précédent" onClick={()=>setPOff(o=>o-1)} style={{...navArrow,width:28}}>‹</button><button aria-label="Suivant" disabled={pOff>=0} onClick={()=>setPOff(o=>Math.min(0,o+1))} style={{...navArrow,width:28,opacity:pOff>=0?.3:1}}>›</button></>}
-            </div>
-            <div className="sysfont" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",marginTop:14,background:C.card,border:"1px solid "+C.line,borderRadius:16}}>
-              {[["Paris",String(pb.length),C.text],["Bilan",pw+"-"+pl+"-"+pv,C.text],["ROI",(proi>0?"+":"")+proi.toFixed(1).replace(".",",")+"\u00a0%",pColor(proi)]].map(([l,v,c],i)=>(
-                <div key={l} style={{padding:"13px 14px",borderLeft:i?"1px solid "+C.line:"none"}}>
-                  <div style={{fontSize:11.5,color:C.sub,fontWeight:500}}>{l}</div>
-                  <div style={{fontSize:18,fontWeight:600,color:c,marginTop:3,letterSpacing:-.3}}>{v}</div>
-                </div>))}
-            </div>
+            {(()=>{const td=new Date().toDateString();const today=bets.filter(b=>b.created_at&&new Date(b.created_at).toDateString()===td).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at));
+              if(!today.length)return null;const tp=today.reduce((s0,x)=>s0+parseFloat(x.profit||0),0);
+              return <div style={{textAlign:"left",marginTop:30}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:2}}>
+                  <span style={{fontSize:17,fontWeight:700,letterSpacing:-.3}}>Aujourd'hui</span>
+                  <span className="sysfont" style={{fontSize:13,color:"#9097A3"}}>{today.length} pari{today.length>1?"s":""}{today.some(x=>x.status==="won"||x.status==="lost")&&<> · <span style={{color:pColor(tp),fontWeight:600}}>{money(tp)}</span></>}</span>
+                </div>
+                <div className="home-today">{today.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={{}} onClick={()=>onNavigate("bets")}/>)}</div>
+              </div>;})()}
           </div>
         );
       })()}
@@ -3470,15 +3476,44 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
   const hcp=b.bet_type==="team"&&String(b.description||"").match(/\s([+-]?\d+(?:[.,]\d+)?)$/)&&!/pts|gagne/i.test(b.description||"")?String(b.description).match(/\s([+-]?\d+(?:[.,]\d+)?)$/)[1]:null;
   const fx1=x=>String(x).replace(",",".").replace(/^([+-]?\d+)$/,"$1.0");
   const desc=(hcp?(/^[+-]/.test(hcp)?fx1(hcp):"+"+fx1(hcp))+" H":b.bet_type==="team"?(()=>{let d0=String(b.description||"");const tn=String(b.team||b.player||"");if(tn&&d0.toLowerCase().startsWith(tn.toLowerCase()+" "))d0=d0.slice(tn.length+1);return d0.replace(/^gagne/,"Vainqueur").replace(/ pts \(match\)$/," pts").replace(/\((Q[1-4]|1re MT|2e MT)\)$/,"· $1");})():String(descShort(b.description)||"").replace(/^Over\b/i,"O").replace(/^Under\b/i,"U")).replace(/(^|\s)([+-]?\d+)(?=\s|$)(?![.,]\d)/,(m,p1,n)=>p1+n+".0");
+  // ── P2 (mobile) : ligne 1 = le pari, ligne 2 = cote · mise · tipster
+  const SH={"Points":"Pts","Rebonds":"Reb","Assists":"Ast","3 Points Made":"3 pts","Points+Rebonds":"P+R","Points+Assists":"P+A","Rebonds+Assists":"R+A","Points+Rebonds+Assists":"PRA","Steals":"Int","Blocks":"Ctr","Turnovers":"BP","Double-Double":"DD","Triple-Double":"TD"};
+  const pdx=!isTeam&&!isCombo?parseDesc(b.description):null;
+  const shortName=isTeam?(b.team||b.player):(parts.length>1?parts.slice(1).join(" "):name);
+  const line1=isCombo?"Combiné · "+cLegs.length+" sélections":isTeam?shortName+" "+String(desc||"").replace(/^\+?(\d)/,"+$1"):pdx?shortName+" "+pdx.ou+" "+fx1(pdx.line)+" "+(SH[pdx.stat]||((STAT_ABBR[pdx.stat]||pdx.stat).charAt(0)+(STAT_ABBR[pdx.stat]||pdx.stat).slice(1).toLowerCase())):shortName+" "+String(desc||"");
+  const pillBg=st==="won"?"rgba(52,208,123,.14)":st==="lost"?"rgba(242,85,90,.14)":"#16181C";
+  const pillC=st==="won"?"#34D07B":st==="lost"?"#F2555A":st==="void"?C.sub:C.text;
+  const pillTxt=st==="pending"?"→ "+eur(stake*odds,0):st==="void"?"Void":money(profit).replace(" €","");
   return(
-    <article onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:bg,border:"1px solid "+bc,borderRadius:16,
-      padding:"12px 14px",minHeight:74,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+    <article className="slip" onClick={onClick} aria-selected={selectMode?selected:undefined} style={{position:"relative",overflow:"hidden",background:selected?"rgba(52,208,123,.08)":"transparent",border:"none",borderBottom:"1px solid #24272D",borderRadius:0,
+      padding:"13px 0",minHeight:66,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
       {selectMode&&(
         <span style={{width:24,height:24,borderRadius:12,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
           border:selected?"none":"2px solid #4A4A52",background:selected?C.blue:"transparent",transition:"all .15s"}}>
           {selected&&<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#05231A" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10"/></svg>}
         </span>
       )}
+      <div className="slip-p2" style={{flex:1,minWidth:0,alignItems:"center",gap:13}}>
+        <span style={{position:"relative",flexShrink:0}}>
+          <span style={{width:40,height:40,borderRadius:20,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",background:"#23262B"}}>
+            {isCombo?<span style={{fontSize:13,fontWeight:700,color:"#C9CCD2"}}>{cLegs.length}×</span>
+              :isTeam?<MiniLogo src={clubLogo} label={name} size={30}/>
+              :photo?<img src={photo} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"50% 12%"}}/>
+              :<span style={{fontSize:12,fontWeight:700,color:"#C9CCD2"}}>{name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>}
+          </span>
+          {!isTeam&&!isCombo&&clubLogo&&<span style={{position:"absolute",right:-3,bottom:-3,width:19,height:19,borderRadius:10,background:"#0E0F12",border:"2px solid #0E0F12",display:"flex",alignItems:"center",justifyContent:"center"}}><MiniLogo src={clubLogo} label={teamName} size={15}/></span>}
+        </span>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:15,fontWeight:600,lineHeight:1.25,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:-.2}}>{line1}</div>
+          {isCombo&&cLegs.map((l,i)=><div key={i} style={{fontSize:13,color:"#C9CCD2",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l.n} <span style={{color:C.sub}}>{l.full}</span></div>)}
+          <div className="sysfont" style={{display:"flex",alignItems:"center",gap:5,fontSize:13,color:"#9097A3",marginTop:3,whiteSpace:"nowrap",overflow:"hidden"}}>
+            <span>@{Number(b.odds||0).toFixed(2).replace(".",",")}</span><span>·</span><span>{eur(stake,stake%1?2:0)}</span>
+            {b.tipster&&<><span>·</span><span style={{display:"inline-flex",alignItems:"center",gap:5,minWidth:0,overflow:"hidden"}}><TipIcon name={b.tipster} size={15}/><span style={{overflow:"hidden",textOverflow:"ellipsis"}}>{b.tipster}</span></span></>}
+            {tagsOf(b).length>0&&<span style={{display:"inline-flex",gap:3,marginLeft:4}}>{tagsOf(b).map(t=><span key={t} title={t} style={{width:7,height:7,borderRadius:4,background:tagColor(t)}}/>)}</span>}
+          </div>
+        </div>
+        <span className="sysfont" style={{flexShrink:0,background:pillBg,color:pillC,fontWeight:st==="pending"?600:700,fontSize:st==="pending"?12.5:14,padding:"6px 10px",borderRadius:9,whiteSpace:"nowrap"}}>{pillTxt}</span>
+      </div>
       <div className="slip-av" style={{position:"relative",flexShrink:0}}>
         <PlayerFace src={photo} name={name} team={isTeam?null:teamName} size={50}/>
         {b.game&&(
@@ -3546,6 +3581,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false}){
 
 // ── VUE MES PARIS ─────────────────────────────────────────────────────────────
 function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[],onSelectBet,onEdit,onAdd,onRefresh,showToast}){
+  const[stF,setStF]=useState("all");
   const[selectMode,setSelectMode]=useState(false);
   const[sel,setSel]=useState({});
   const[bulkOpen,setBulkOpen]=useState(false);
@@ -3575,6 +3611,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
   const legsF=fltCount?bets.filter(legOk):bets;
   // filtre au niveau de chaque site, puis regroupement : seuls les montants retenus comptent
   const filtered=mergeGroups(legsF).filter(b=>{
+    if(stF!=="all"&&b.status!==stF)return false;
     if(search){
       const q=search.toLowerCase();
       if(!(b.player||"").toLowerCase().includes(q)&&!(b.description||"").toLowerCase().includes(q)&&
@@ -3633,6 +3670,11 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
               <BkBadge src={bkPhotos[n]} label={n} size={36}/>
             </button>);})}
         </div>);})()}
+      <div style={{display:"flex",gap:6,marginTop:12,overflowX:"auto",scrollbarWidth:"none"}}>
+        {[["all","Tous"],["pending","En cours"],["won","Gagnés"],["lost","Perdus"]].map(([k,l])=>{const on=stF===k;const n=k==="pending"?bets.filter(b=>b.status==="pending").length:0;return(
+          <button key={k} type="button" onClick={()=>setStF(k)} style={{flexShrink:0,height:30,padding:"0 13px",borderRadius:15,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,
+            background:on?"#F4F5F7":"#16181C",color:on?"#000":"#9097A3"}}>{l}{n?" "+n:""}</button>);})}
+      </div>
       {selectMode&&(
         <div className="fade-in" style={{display:"flex",justifyContent:"space-between",alignItems:"center",margin:"10px 4px 0",fontSize:14}}>
           <span style={{color:C.sub}}>Touche les paris à modifier</span>
@@ -3703,12 +3745,9 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                 const settledDay=d.bets.some(x=>x.status==="won"||x.status==="lost");
                 return(
                   <div key={d.k} className="fade-in">
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:d.k===new Date().toDateString()?"flex-end":"baseline",margin:"18px 4px 8px"}}>
-                      {d.k===new Date().toDateString()
-                        ?<span style={{display:"flex",flexDirection:"column",flex:1,minWidth:0}}><span style={{fontSize:11,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:C.green}}>Aujourd'hui</span>
-                          <span style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}><span style={{fontSize:15,fontWeight:600,color:C.text}}>{d.label}</span>
-                          {!selectMode&&settledDay&&<span className="sysfont" style={{fontSize:15,fontWeight:600,color:pColor(dp),whiteSpace:"nowrap"}}>{money(dp)}</span>}</span></span>
-                        :<span style={{fontSize:14,fontWeight:500,color:C.sub}}>{d.label}</span>}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"22px 0 2px"}}>
+                      {(()=>{const td=new Date();const yd=new Date(Date.now()-864e5);const lbl=d.k===td.toDateString()?"Aujourd'hui":d.k===yd.toDateString()?"Hier":d.label;
+                        return <span style={{fontSize:17,fontWeight:700,letterSpacing:-.3,color:C.text}}>{lbl}</span>;})()}
                       {selectMode?(()=>{
                         const allOn=d.bets.every(x=>sel[x.id]);
                         return(
@@ -3717,7 +3756,7 @@ function BetsView({bets,players,bookmakers=[],bkPhotos={},tipsters=[],leagues=[]
                             {allOn?"Désélectionner la journée":"Sélectionner la journée"}
                           </button>
                         );
-                      })():settledDay&&d.k!==new Date().toDateString()&&<span className="sysfont" style={{fontSize:14,fontWeight:600,color:pColor(dp)}}>{money(dp)}</span>}
+                      })():<span className="sysfont" style={{fontSize:13,color:"#9097A3",whiteSpace:"nowrap"}}>{d.bets.length} pari{d.bets.length>1?"s":""}{settledDay&&<> · <span style={{color:pColor(dp),fontWeight:600}}>{money(dp)}</span></>}</span>}
                     </div>
                     <div className="slip-grid" style={{display:"flex",flexDirection:"column",gap:8}}>
                       {d.bets.map(b=><BetSlip key={b.id} b={b} players={players} bkPhotos={bkPhotos} onClick={()=>slipClick(b)} selectMode={selectMode} selected={!!sel[b.id]}/>)}
@@ -4036,7 +4075,8 @@ function PlayerStatSearch({players,bets,onChanged}){
   </>);
 }
 
-function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
+function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged,hideCfg=null,setHideCfg,hiddenCount=0,tipsterNames=[]}){
+  const[hideOpen,setHideOpen]=useState(false);const tagListH=useTagList();
   // Sports séparés : stats Basket (toutes ligues de basket) ou Hockey (NHL)
   const hasHockey=allSports.some(b=>isHockey(b.game));
   const[sport,setSport]=useState("all");
@@ -4190,14 +4230,42 @@ function StatsView({bets:allSports,players=[],bkPhotos={},onPlayersChanged}){
     </>
   );
 
-  const sportToggle=(<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
+  const hideBar=hideCfg&&setHideCfg?(<div style={{marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:14,background:C.card,border:"1px solid "+(hideCfg.on?"rgba(251,191,36,.35)":C.line)}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={hideCfg.on?"#FBBF24":C.sub} strokeWidth="2" strokeLinecap="round"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6"/></svg>
+        <div style={{flex:1,minWidth:0}} onClick={()=>setHideOpen(o=>!o)}>
+          <div style={{fontSize:14.5,fontWeight:600}}>Masquer des paris</div>
+          <div style={{fontSize:12,color:C.sub,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{hideCfg.tips.length+hideCfg.tags.length===0?"Choisis des tipsters ou des tags":[...hideCfg.tips,...hideCfg.tags].join(", ")+(hideCfg.on?" · "+hiddenCount+" masqués partout":"")}</div>
+        </div>
+        <button type="button" onClick={()=>setHideOpen(o=>!o)} style={{border:"none",background:"transparent",color:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{hideOpen?"Fermer":"Choisir"}</button>
+        <Switch on={!!hideCfg.on} onChange={v=>setHideCfg({...hideCfg,on:v})} label="Masquer partout"/>
+      </div>
+      {hideOpen&&<div className="fade-in" style={{marginTop:8,padding:"12px 14px",borderRadius:14,background:C.card,border:"1px solid "+C.line}}>
+        <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:8}}>Tipsters</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+          {tipsterNames.map(n=>{const on=hideCfg.tips.includes(n);return(
+            <button key={n} type="button" onClick={()=>setHideCfg({...hideCfg,tips:on?hideCfg.tips.filter(x=>x!==n):[...hideCfg.tips,n]})}
+              style={{display:"inline-flex",alignItems:"center",gap:6,height:34,padding:"0 12px 0 6px",borderRadius:99,border:"1px solid "+(on?"#FBBF24":C.line),background:on?"rgba(251,191,36,.1)":"transparent",color:on?"#FBBF24":C.text,fontSize:13.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:on?"line-through":"none"}}>
+              <TipIcon name={n} size={22}/>{n}</button>);})}
+        </div>
+        <div style={{fontSize:11.5,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",margin:"14px 0 8px"}}>Tags</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+          {tagListH.map(t=>{const on=hideCfg.tags.includes(t.name);return(
+            <button key={t.name} type="button" onClick={()=>setHideCfg({...hideCfg,tags:on?hideCfg.tags.filter(x=>x!==t.name):[...hideCfg.tags,t.name]})}
+              style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:99,border:"1px solid "+(on?"#FBBF24":C.line),background:on?"rgba(251,191,36,.1)":"transparent",color:on?"#FBBF24":C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:on?"line-through":"none"}}>
+              <span style={{width:7,height:7,borderRadius:4,background:t.color}}/>{t.name}</button>);})}
+        </div>
+        <div style={{fontSize:12,color:C.dim,marginTop:12}}>Interrupteur activé : ces paris disparaissent de Bankroll, Mes paris et Analyse. Rien n'est supprimé.</div>
+      </div>}
+    </div>):null;
+  const sportToggle=(<>{hideBar}<div style={{display:"flex",gap:6,padding:4,borderRadius:14,background:C.card,border:"1px solid "+C.line,marginBottom:12}}>
         {[["all","Tout"],["basket","Basket"],["hockey","Hockey"],...(allSports.some(b=>isNFL(b.game))?[["nfl","NFL"]]:[])].map(([k,l])=><button key={k} type="button" onClick={()=>setSport(k)}
           style={{flex:1,height:40,borderRadius:10,border:"none",background:sport===k?C.chip:"transparent",color:sport===k?C.text:C.sub,fontWeight:600,fontSize:14.5,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
           {k==="all"?null:k==="nfl"?<svg width="22" height="18" viewBox="0 0 26 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><ellipse cx="13" cy="10" rx="11" ry="7" transform="rotate(-20 13 10)"/><path d="M9 12l8-4M11 9.5l1.5 2M13.5 8.5l1.5 2"/></svg>:k==="basket"
             ?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8v18.4"/><path d="M5.6 5.4c2.6 2 3.9 4.2 3.9 6.6s-1.3 4.6-3.9 6.6"/><path d="M18.4 5.4c-2.6 2-3.9 4.2-3.9 6.6s1.3 4.6 3.9 6.6"/></svg>
             :<svg width="22" height="20" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2.5l9.2 14.2h4.6"/><path d="M21 2.5l-9.2 14.2H7.2"/><ellipse cx="13" cy="20.6" rx="3.6" ry="1.5"/></svg>}
           {l}</button>)}
-      </div>);
+      </div></>);
   if(bets.length===0)return(
     <div style={{padding:"0 20px 8px"}}>{sportToggle}{header}
       <div style={{marginTop:16}}><EmptyState title={allRaw.length?"Aucun pari sur cette période":"Pas encore de statistiques"} sub="Ajoute des paris : tes stats apparaîtront ici."/></div>
@@ -5992,7 +6060,11 @@ export default function App(){
   // Paris long terme EN COURS : visibles seulement dans la page de leur ligue
   const bkPhotoMap=useMemo(()=>Object.fromEntries(bookmakers.map(bk=>[bk.name,bk.logo]).filter(([,v])=>v)),[bookmakers]);
   const allShown=useMemo(()=>bets.filter(b=>!(b.notes==="longterm"&&b.status==="pending")),[bets]);
-  const shownBets=useMemo(()=>allShown.filter(b=>!isArchived(b)),[allShown]);
+  const[hideCfg,setHideCfgRaw]=useState(()=>{try{return JSON.parse(localStorage.getItem("bk_hide_cfg")||"null")||{on:false,tips:[],tags:[]};}catch(e){return {on:false,tips:[],tags:[]};}});
+  const setHideCfg=v=>{setHideCfgRaw(v);try{localStorage.setItem("bk_hide_cfg",JSON.stringify(v));}catch(e){}};
+  const isHidden=useCallback(b=>hideCfg.on&&((b.tipster&&hideCfg.tips.includes(b.tipster))||tagsOf(b).some(t=>hideCfg.tags.includes(t))),[hideCfg]);
+  const hiddenCount=useMemo(()=>allShown.filter(b=>!isArchived(b)&&isHidden(b)).length,[allShown,isHidden]);
+  const shownBets=useMemo(()=>allShown.filter(b=>!isArchived(b)&&!isHidden(b)),[allShown,isHidden]);
   const archivedBets=useMemo(()=>allShown.filter(b=>isArchived(b)),[allShown]);
   async function archiveAll(undo){
     const list=undo?bets.filter(isArchived):bets.filter(b=>!isArchived(b));
@@ -6081,6 +6153,10 @@ export default function App(){
             </div>
           </div>
           {syncing&&<span style={{fontSize:13,color:"#8A8A93"}}>Actualisation…</span>}
+          {hideCfg.on&&hiddenCount>0&&<button type="button" onClick={()=>setHideCfg({...hideCfg,on:false})} title="Afficher tout"
+            style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 11px",borderRadius:99,border:"1px solid rgba(251,191,36,.35)",background:"rgba(251,191,36,.08)",color:"#FBBF24",fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6"/></svg>
+            {hiddenCount} masqué{hiddenCount>1?"s":""}</button>}
         </div>
 
         <div key={view} className="view-in" style={{paddingTop:4}}>
@@ -6089,7 +6165,8 @@ export default function App(){
             bkPhotos={bkPhotoMap}
             tipsters={tipsters} leagues={leagues} onRefresh={()=>loadBets(true)} showToast={showToast}
             onSelectBet={setSelectedBet} onEdit={openEdit} onAdd={()=>{refreshPlayers();setShowAdd(true);}}/>}
-          {view==="stats"&&<StatsView bets={shownBets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={bkPhotoMap}/>}
+          {view==="stats"&&<StatsView bets={shownBets} players={players} onPlayersChanged={refreshPlayers} bkPhotos={bkPhotoMap}
+            hideCfg={hideCfg} setHideCfg={setHideCfg} hiddenCount={hiddenCount} tipsterNames={[...new Set([...tipsters.map(t=>t.name),...allShown.map(b=>b.tipster).filter(Boolean)])]}/>}
           {view==="settings"&&<SettingsView
             archivedBets={archivedBets} activeCount={shownBets.length} onArchive={archiveAll} bkPhotos={bkPhotoMap} leagues={leagues}
             onSelectBet={setSelectedBet} onEdit={openEdit} onRefresh={()=>loadBets(true)}
