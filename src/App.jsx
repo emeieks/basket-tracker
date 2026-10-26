@@ -1343,6 +1343,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
   const tagList=useTagList();
   const[prefilled,setPrefilled]=useState(false);
   const[bkOpen,setBkOpen]=useState(false);
+  const[tagsOpen,setTagsOpen]=useState(false);
   const oddsRef=useRef(null),stakeRef=useRef(null),oddsCard=useRef(null),stakeCard=useRef(null),tipCard=useRef(null);
   const lineSel=useRef(null),statSel=useRef(null),lineCard=useRef(null),ouCard=useRef(null);
   const openSel=el=>{if(!el)return;try{el.focus({preventScroll:true});}catch(e){}try{el.showPicker&&el.showPicker();}catch(e){}};
@@ -1462,7 +1463,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         if(pd)setPrefilled(true);}}
     setSelectedType({type:"player",data:p});
     setStep("form");
-    if(!form.line)setTimeout(()=>{lineCard.current&&lineCard.current.scrollIntoView({behavior:"smooth",block:"start"});openSel(lineSel.current);},80);
+    if(!form.ou)setTimeout(()=>{ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"center"});},80);
   }
 
   function selectTeam(teamName){
@@ -1862,7 +1863,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         {!isTeamBet&&!form.lt&&(<>
         <div ref={ouCard} style={{display:"flex",gap:12,margin:"14px 0 0",scrollMarginTop:12}}>
           {["Over","Under"].map(v=>{const on=form.ou===v;return(
-            <button key={v} type="button" className="press" onClick={()=>{f("ou",on?"":v);if(!on&&!form.odds)goTo(oddsRef,oddsCard);}}
+            <button key={v} type="button" className="press" onClick={()=>{f("ou",on?"":v);if(!on){if(!form.line)setTimeout(()=>openSel(lineSel.current),120);else if(!form.stat)setTimeout(()=>openSel(statSel.current),120);else if(!form.odds)goTo(oddsRef,oddsCard);}}}
               style={{flex:1,height:52,padding:"0 14px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",fontSize:16,fontWeight:500,border:"1px solid "+(on?clubC:"#2A2B31"),background:on?clubC:"#18191D",color:on?clubFg:"#9097A3"}}>{v}</button>);})}
         </div>
         {/* ── Ligne | Stat ── */}
@@ -1878,7 +1879,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           </label>
           <label style={{display:"flex",flexDirection:"column",justifyContent:"center",gap:3,height:60,boxSizing:"border-box",padding:"0 14px",borderRadius:12,background:"#18191D",border:"1px solid #2A2B31",minWidth:0,position:"relative",cursor:"pointer"}}>
             <div className="acard-h" style={{margin:0}}>Stat</div>
-            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(/Double$/.test(e.target.value)&&!form.line)f("line","0.5");if(e.target.value&&!form.ou)setTimeout(()=>ouCard.current&&ouCard.current.scrollIntoView({behavior:"smooth",block:"start"}),150);}}
+            <select ref={statSel} aria-label="Type de stat" value={form.stat} onChange={e=>{f("stat",e.target.value);if(/Double$/.test(e.target.value)&&!form.line)f("line","0.5");if(e.target.value&&!form.odds)setTimeout(()=>goTo(oddsRef,oddsCard),150);}}
               style={{appearance:"none",WebkitAppearance:"none",border:"none",background:"transparent",color:form.stat?"#fff":C.sub,
                 height:22,fontSize:16,fontWeight:500,padding:0,outline:"none",width:"100%",colorScheme:"dark",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               <option value="" style={{fontSize:15,fontWeight:500,color:"#fff",background:"#131316"}}>Choisir</option>
@@ -1890,7 +1891,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
           <div className="acard-h">Over / Under</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {["Over","Under"].map(v=>{const on=form.ou===v;return(
-              <button key={v} type="button" className="press" onClick={()=>{f("ou",on?"":v);if(!on&&!form.odds)goTo(oddsRef,oddsCard);}}
+              <button key={v} type="button" className="press" onClick={()=>{f("ou",on?"":v);if(!on){if(!form.line)setTimeout(()=>openSel(lineSel.current),120);else if(!form.stat)setTimeout(()=>openSel(statSel.current),120);else if(!form.odds)goTo(oddsRef,oddsCard);}}}
                 style={{height:56,borderRadius:15,cursor:"pointer",fontFamily:"inherit",fontSize:17,fontWeight:600,
                   border:"none",background:on?btnBg:"#1F2025",color:on?btnFg:"#9097A3",boxShadow:"none",transition:"all .15s"}}>
                 {v==="Over"?"▲ ":"▼ "}{v}
@@ -2020,8 +2021,11 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
         </div>
 
         {/* ── Tags (Annonce = tag spécial avec détails) ── */}
-        <div style={{marginTop:12,padding:"14px",borderRadius:18,background:C.card,border:"1px solid "+C.line}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.sub,letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Tags</div>
+        {!(tagsOpen||form.annonce||(form.tags||[]).length)?(
+          <button type="button" onClick={()=>setTagsOpen(true)} style={{marginTop:14,height:40,padding:"0 16px",borderRadius:20,border:"1px solid #2A2B31",background:"transparent",color:"#9097A3",fontSize:14.5,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>+ Tags</button>
+        ):(
+        <div style={{marginTop:12,padding:"14px",borderRadius:18,background:"#111214",border:"1px solid #222327"}}>
+          <div style={{fontSize:15,fontWeight:600,color:"#F4F5F7",marginBottom:10}}>Tags</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {[...tagList,...(form.tags||[]).filter(x=>!x.startsWith("__")&&!tagList.some(t=>t.name===x)).map(x=>({name:x,color:tagColor(x)}))].map(t=>{const on=t.name==="Annonce"?!!form.annonce:(form.tags||[]).includes(t.name);
               return <TagChip key={t.name} name={t.name} on={on} onClick={()=>{if(t.name==="Annonce")f("annonce",!form.annonce);else f("tags",on?(form.tags||[]).filter(x=>x!==t.name):[...(form.tags||[]),t.name]);}}/>;})}
@@ -2084,6 +2088,7 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             );
           })()}
         </div>
+        )}
 
         {/* ── Bouton collé en bas avec le gain ── */}
         <div style={{position:"sticky",bottom:"calc(64px + env(safe-area-inset-bottom))",margin:"20px -20px 0",padding:"14px 20px 12px",
@@ -2142,15 +2147,15 @@ function AddBetModal({players,bookmakers,bkPhotos={},tipsters=[],onSave,onClose,
             const fg=clubFg,dim=fg==="#000"?"rgba(0,0,0,.62)":"rgba(255,255,255,.78)";
             const it=(l,v)=><span style={{display:"flex",flexDirection:"column",minWidth:0}}><span style={{fontSize:11,color:dim}}>{l}</span><span className="sysfont" style={{fontSize:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</span></span>;
             return <>
-            {rows.length>0&&<div style={{borderRadius:16,padding:"12px 14px",marginBottom:10,background:"linear-gradient(110deg,"+clubC+","+hexA(clubC,.8)+")",color:fg,boxShadow:"0 -8px 30px rgba(0,0,0,.6)"}}>
-              {rows.map((r,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:12,marginTop:i?8:0,minWidth:0}}>
-                <span style={{width:(rows.length>1?44:60),height:(rows.length>1?44:60),borderRadius:30,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.85)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {rows.length>0&&<div style={{borderRadius:16,padding:why?"8px 12px":"12px 14px",marginBottom:10,transition:"padding .2s",background:"linear-gradient(110deg,"+clubC+","+hexA(clubC,.8)+")",color:fg,boxShadow:"0 -8px 30px rgba(0,0,0,.6)"}}>
+              {rows.map((r,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:12,marginTop:i?(why?4:8):0,minWidth:0}}>
+                <span style={{width:why?32:(rows.length>1?44:60),height:why?32:(rows.length>1?44:60),borderRadius:30,overflow:"hidden",flexShrink:0,background:"rgba(255,255,255,.85)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {r.ph?<img src={r.ph} alt="" style={{width:r.team?"78%":"100%",height:r.team?"78%":"100%",objectFit:r.team?"contain":"cover",objectPosition:"50% 12%"}}/>:<span style={{fontSize:11,fontWeight:700,color:"#333"}}>{r.nm.replace(".","").split(" ").map(w=>w[0]).join("").slice(0,2)}</span>}</span>
                 <span style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}}><span style={{fontSize:15,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.nm}{r.mk?" - "+r.mk:""}</span>
-                  {rows.length===1&&info&&<span className="sysfont" style={{fontSize:14,fontWeight:600,color:dim}}>{info}</span>}</span>
+                  {!why&&rows.length===1&&info&&<span className="sysfont" style={{fontSize:14,fontWeight:600,color:dim}}>{info}</span>}</span>
                 {i===0&&form.game&&<span style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:30,height:30,borderRadius:9,background:"rgba(255,255,255,.9)"}}><MiniLogo src={getLeagueLogo(form.game)} label={form.game} size={20} round={false}/></span>}
               </div>)}
-              {(()=>{return rows.length>1&&info?<div className="sysfont" style={{marginTop:8,marginLeft:56,fontSize:14,fontWeight:600,color:dim}}>{info}</div>:null;})()}
+              {(()=>{return !why&&rows.length>1&&info?<div className="sysfont" style={{marginTop:8,marginLeft:56,fontSize:14,fontWeight:600,color:dim}}>{info}</div>:null;})()}
             </div>}
             <button onClick={submit} disabled={saving||!!why} className="press" aria-label={editBet?"Modifier le pari":"Ajouter pari"}
               style={{width:"100%",height:50,borderRadius:14,border:"none",cursor:why?"default":"pointer",fontFamily:"inherit",fontSize:16,fontWeight:700,
