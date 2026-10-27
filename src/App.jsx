@@ -3781,7 +3781,7 @@ function BetSlip({b,players,bkPhotos,onClick,selectMode=false,selected=false,onQ
           ["Bénéfice",st==="pending"?"—":st==="void"?"0,00 €":money(profit),st==="pending"?C.dim:resultCol]].map(([l,v,c])=>(
           <div key={l}><div style={{fontSize:16,fontWeight:600,color:c,whiteSpace:"nowrap"}}>{v}</div><div style={{fontSize:12,color:C.sub,marginTop:2}}>{l}</div></div>))}
       </div>
-      <span className="slip-strip" style={{background:st==="won"?"rgba(61,214,140,.12)":st==="lost"?"rgba(255,107,107,.12)":"rgba(255,255,255,.05)",color:st==="won"?C.green:st==="lost"?C.red:C.sub}}>
+      <span className="slip-strip" role={onQuick&&!selectMode?"button":undefined} title={onQuick?"Changer le résultat":undefined} onClick={onQuick&&!selectMode?e=>{e.stopPropagation();onQuick(b);}:undefined} style={{cursor:onQuick&&!selectMode?"pointer":undefined,background:st==="won"?"rgba(61,214,140,.12)":st==="lost"?"rgba(255,107,107,.12)":"rgba(255,255,255,.05)",color:st==="won"?C.green:st==="lost"?C.red:C.sub}}>
         {st==="won"?"Gagné":st==="lost"?"Perdu":st==="void"?"Void":"En cours"}</span>
       <span className="slip-res" style={{flexShrink:0,alignSelf:"center",textAlign:"right",whiteSpace:"nowrap",paddingRight:6}}>
         {st==="pending"?<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12,fontWeight:600,color:C.text,padding:"4px 9px",borderRadius:99,background:"rgba(255,255,255,.07)"}}><span className="live-dot" style={{width:6,height:6,borderRadius:3,background:C.green}}/>En cours</span>
